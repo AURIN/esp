@@ -1,0 +1,16 @@
+{
+  "name": "meteor-atlas-sandbox",
+  "version": "0.0.0",
+  "repository": {
+    "type": "git",
+    "url": "git@bitbucket.org:mutopia/meteor-atlas-sandbox.git"
+  },
+  "private": "true",
+  "devDependencies": {
+    "grunt": "~0.4.1",
+    "grunt-contrib-clean": "~0.5.0",
+    "grunt-contrib-copy": "~0.4.1",
+    "load-grunt-tasks": "~0.1.0",
+    "shelljs": "~0.2.6"
+  }
+}

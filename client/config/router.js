@@ -1,5 +1,5 @@
 Router.configure({
-  layoutTemplate: 'basicLayout',
+  layoutTemplate: 'atlasLayout',
   notFoundTemplate: 'notFound',
   yieldTemplates: {
     'header': { to: 'header' },

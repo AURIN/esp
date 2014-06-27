@@ -2,8 +2,16 @@
   "packages": {
     "iron-router": {},
     "handlebar-helpers": {},
-    "iron-router-progress": {},
     "semantic-ui": {},
-    "collection2": {}
+    "collection2": {},
+    "requirejs": {
+      "path": "/Users/Aram/Desktop/meteor/requirejs"
+    },
+    "atlas": {
+      "path": "bower_components/atlas"
+    },
+    "atlas-cesium": {
+      "path": "bower_components/atlas-cesium"
+    }
   }
 }

@@ -4,9 +4,17 @@
     "basePackages": {
       "iron-router": {},
       "handlebar-helpers": {},
-      "iron-router-progress": {},
       "semantic-ui": {},
-      "collection2": {}
+      "collection2": {},
+      "requirejs": {
+        "path": "../../../../Desktop/meteor/requirejs"
+      },
+      "atlas": {
+        "path": "bower_components/atlas"
+      },
+      "atlas-cesium": {
+        "path": "bower_components/atlas-cesium"
+      }
     },
     "packages": {
       "iron-router": {
@@ -19,20 +27,24 @@
         "tag": "v0.1.1",
         "commit": "0b407ab65e7c1ebd53d71aef0de2e2c1d21a597c"
       },
-      "iron-router-progress": {
-        "git": "https://github.com/Multiply/iron-router-progress.git",
-        "tag": "v0.3.1",
-        "commit": "3f7900feb4bb70a1289b39a1fdcd1f438c0335b3"
-      },
       "semantic-ui": {
         "git": "https://github.com/nooitaf/meteor-semantic-ui.git",
-        "tag": "v0.16.1",
-        "commit": "46da3245561e5e64f03b1e2c8807cc6125aa4d98"
+        "tag": "v0.18.0",
+        "commit": "a27035712167b248366a7719399a2257513530ee"
       },
       "collection2": {
         "git": "https://github.com/aldeed/meteor-collection2.git",
-        "tag": "v0.3.11",
-        "commit": "7e970671305657678e8508d8107d5e6c5e158559"
+        "tag": "v0.4.1",
+        "commit": "a9ffc9b285c3af8ad631f9cda4851b0ffc30c5ce"
+      },
+      "requirejs": {
+        "path": "../../../../Desktop/meteor/requirejs"
+      },
+      "atlas": {
+        "path": "bower_components/atlas"
+      },
+      "atlas-cesium": {
+        "path": "bower_components/atlas-cesium"
       },
       "blaze-layout": {
         "git": "https://github.com/EventedMind/blaze-layout.git",
@@ -41,8 +53,8 @@
       },
       "simple-schema": {
         "git": "https://github.com/aldeed/meteor-simple-schema.git",
-        "tag": "v0.4.0",
-        "commit": "2cc6aac0d35a4e00b065c1437d540b2aefba5241"
+        "tag": "v0.5.1",
+        "commit": "a29956b34d03a4591dbd0eaed9d37009ef48b8db"
       }
     }
   }

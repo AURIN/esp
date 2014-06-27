@@ -1,6 +1,10 @@
+public/atlas
+public/atlas-cesium
+
 .meteor/local
 tests/mongo
 node_modules
+bower_components
 *.lock
 *.swp
 

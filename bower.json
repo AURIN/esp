@@ -1,0 +1,17 @@
+{
+  "name": "meteor-atlas-sandbox",
+  "version": "0.0.0",
+  "private": true,
+  "license": "MIT",
+  "dependencies": {
+    "atlas-cesium": "https://bitbucket.org/mutopia/atlas-cesium.git#develop",
+    "atlas": "https://bitbucket.org/mutopia/atlas.git#develop"
+  },
+  "ignore": [
+    "**/.*",
+    "node_modules",
+    "bower_components",
+    "test",
+    "tests"
+  ]
+}
