@@ -2,19 +2,6 @@ Template.atlas.rendered = function() {
 
   var atlasNode = this.find('.atlas');
 
-//  require.config({
-//    baseUrl: '',
-//    packages: [
-//      'moduleA'
-//    ]
-//  });
-
-//  require(['test123'], function() {
-//    console.error(arguments);
-//  }, function() {
-//    console.error(arguments);
-//  });
-
   require([
     'atlas-cesium/core/CesiumAtlas',
     'atlas/assets/testWKT'
