@@ -79,7 +79,7 @@ module.exports = function(grunt) {
   });
 
   grunt.registerTask('install-bower', 'Gets all bower dependencies', function() {
-    [''].concat(bowerPaths).forEach(function(dir) {
+    ['.'].concat(bowerPaths).forEach(function(dir) {
       grunt.log.writeln(dir + ': running bower install');
       shell.exec('cd ' + dir + ' && bower install');
     });
