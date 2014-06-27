@@ -1,10 +1,10 @@
-var AtlasController = RouteController.extend({
-  template: 'atlas'
+var MainController = RouteController.extend({
+  template: 'main'
 });
 
 Router.map(function () {
-  this.route('atlas', {
+  this.route('main', {
     path :  '/',
-    controller :  AtlasController
+    controller :  MainController
   });
 });

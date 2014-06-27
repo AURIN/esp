@@ -5,7 +5,8 @@
   "license": "MIT",
   "dependencies": {
     "atlas-cesium": "https://bitbucket.org/mutopia/atlas-cesium.git#develop",
-    "atlas": "https://bitbucket.org/mutopia/atlas.git#develop"
+    "atlas": "https://bitbucket.org/mutopia/atlas.git#develop",
+    "utility": "https://bitbucket.org/mutopia/utility.git"
   },
   "ignore": [
     "**/.*",

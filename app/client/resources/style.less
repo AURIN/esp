@@ -1,0 +1,41 @@
+html, body {
+  padding: 0;
+  margin: 0;
+  font-family: Arial, Helvetica, sans-serif;
+  font-size: 12px;
+  width: 100%;
+  height: 100%;
+}
+
+.main.container {
+
+  height: 100%;
+  display: flex;
+  flex-direction: row;
+
+  > .left.sidebar {
+    position: relative;
+  }
+
+  > .atlas {
+    flex-grow: 1;
+    background: black;
+    color: white;
+    height: 100%;
+  }
+
+  .table {
+    tr {
+      td:first-child {
+        .ui.checkbox {
+          width: 15px;
+        }
+        width: 15px;
+      }
+      &.heading td {
+        background: #ccc;
+      }
+    }
+  }
+
+}
