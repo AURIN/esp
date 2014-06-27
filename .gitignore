@@ -1,8 +1,8 @@
-public/atlas
-public/atlas-cesium
+app/public/atlas
+app/public/atlas-cesium
+app/.meteor/local
+app/tests/mongo
 
-.meteor/local
-tests/mongo
 node_modules
 bower_components
 *.lock

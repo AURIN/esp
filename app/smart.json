@@ -8,10 +8,10 @@
       "path": "/Users/Aram/Desktop/meteor/requirejs"
     },
     "atlas": {
-      "path": "bower_components/atlas"
+      "path": "../bower_components/atlas"
     },
     "atlas-cesium": {
-      "path": "bower_components/atlas-cesium"
+      "path": "../bower_components/atlas-cesium"
     }
   }
 }

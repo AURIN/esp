@@ -14,5 +14,5 @@ accounts-ui
 semantic-ui
 collection2
 requirejs
-#atlas
-#atlas-cesium
+atlas
+atlas-cesium
