@@ -1,6 +1,5 @@
-Meteor Atlas
+AURIN ESP
 ============
-A sample Meteor application using [Atlas](https://bitbucket.org/urbanetic/atlas).
 
 Installation
 ------------
