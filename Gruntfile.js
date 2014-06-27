@@ -71,7 +71,7 @@ module.exports = function(grunt) {
         };
     addTasks('install-bower', 'install-npm', 'install-grunt');
     addTasks('build-atlas' + (hasArgs('atlas-lazy') ? ':lazy' : ''));
-    addTasks('fix-atlas-build', 'copy:atlasResources');
+    addTasks('fix-atlas-build', 'copy:atlasResources', 'install-mrt');
     console.log('Running tasks', tasks);
     tasks.forEach(function(task) {
       grunt.task.run(task);
@@ -97,6 +97,10 @@ module.exports = function(grunt) {
       grunt.log.writeln(dir + ': running grunt install');
       shell.exec('cd ' + dir + ' && grunt install');
     });
+  });
+
+  grunt.registerTask('install-mrt', 'Installs Meteorite dependencies.', function() {
+    shell.exec('cd ' + APP_DIR + ' && mrt install');
   });
 
   grunt.registerTask('fix-atlas-build', 'Fixes the Atlas build.', function(arg1) {
