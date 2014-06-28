@@ -61,6 +61,11 @@ _.extend(AtlasRenderer.prototype, {
       this._showLayer(asset);
     }
     // TODO(aramk) Only use camera of asset for assets, just zoom into entity otherwise.
+    this.zoomAsset(asset.id);
+  },
+
+  zoomAsset: function (id) {
+    var asset = this.assets[id];
     var camera = asset.camera;
     var position = asset.position;
     if (camera) {
@@ -69,7 +74,7 @@ _.extend(AtlasRenderer.prototype, {
         position = _.defaults(position, {elevation: elevation});
       }
     }
-    this._zoomTo(merge({position: position}, camera));
+    this._zoomTo(Setter.merge({position: position}, camera));
   },
 
   hideAsset: function(id) {
@@ -85,8 +90,8 @@ _.extend(AtlasRenderer.prototype, {
 
   showEntity: function(id) {
     var entity = this.entities[id],
-        asset = entity._asset;
-    entity = merge({id: id}, asset.defaults, entity);
+        asset = entity._asset || {};
+    entity = Setter.merge({id: id}, asset.defaults, entity);
     this._showEntity(entity);
   },
 
@@ -94,9 +99,8 @@ _.extend(AtlasRenderer.prototype, {
     var id = entity.id;
     var showArg,
         publish = function() {
-          console.log('showArg', showArg);
           this.atlas.publish('entity/show', showArg);
-        };
+        }.bind(this);
     if (!this.atlas._managers.entity.getById(id)) {
       AtlasConverter.ready(function() {
         showArg = this.converter.toGeoEntityArgs(entity);

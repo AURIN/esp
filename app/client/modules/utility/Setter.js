@@ -2,11 +2,11 @@ Setter = {
 
   merge: function() {
     var args = Array.prototype.slice.apply(arguments);
-    var src = this.clone(args[0]);
+    var dest = this.clone(args[0]);
     for (var i = 1; i < args.length; i++) {
-      _.extend(src, args[i]);
+      _.extend(dest, args[i]);
     }
-    return src;
+    return dest;
   },
 
   clone: function(src) {
