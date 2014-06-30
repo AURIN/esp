@@ -14,7 +14,7 @@ class @AtlasConverter
     # TODO(aramk) Enable opacity in atlas-cesium.
     opacity = args.opacity
     borderOpacity = args.borderOpacity || 1
-    geometry = ->
+    geometry =
       vertices: vertices,
       elevation: elevation,
       height: height,
@@ -24,7 +24,7 @@ class @AtlasConverter
     wkt = WKT.getInstance()
     if wkt.isPolygon(vertices)
       geoEntity.polygon = geometry
-      geoEntity.displayMode = (height > 0 || elevation > 0) ? 'extrusion': 'footprint'
+      geoEntity.displayMode = if height > 0 || elevation > 0 then 'extrusion' else 'footprint'
     else if wkt.isLineString vertices
       geoEntity.line = geometry
     else if vertices != null
