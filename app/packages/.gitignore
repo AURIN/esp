@@ -25,3 +25,5 @@ iron-router-progress
 /requirejs
 /npm
 /lodash
+/autoform
+/moment

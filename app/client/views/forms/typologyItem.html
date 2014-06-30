@@ -1,0 +1,18 @@
+<template name="typologyItem">
+  <div class="ui error form segment">
+    {{#autoForm collection=collection id=formName doc=doc type=formType}}
+    {{> afQuickField name="name"}}
+    {{> afQuickField name="desc"}}
+    {{> afQuickField name="geom"}}
+    {{> afQuickField name="state"}}
+    {{> afQuickField name="code"}}
+    {{> afQuickField name="class"}}
+    {{> afQuickField name="subclass"}}
+    {{> afQuickField name="type"}}
+    <div class="buttons">
+      <button type="button" class="ui red cancel button">Cancel</button>
+      <button type="submit" class="ui button submit green">{{submitText}}</button>
+    </div>
+    {{/autoForm}}
+  </div>
+</template>

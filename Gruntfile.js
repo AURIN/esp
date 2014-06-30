@@ -3,11 +3,29 @@ module.exports = function(grunt) {
   require('load-grunt-tasks')(grunt, ['grunt-*']);
   var path = require('path'),
       fs = require('fs'),
-      shell = require('shelljs');
+      shell = require('shelljs'),
+      child_process = require('child_process');
 
   var BOWER_DIR = 'bower_components';
   var APP_DIR = 'app';
+  var DIST_DIR = 'dist';
   var PUBLIC_DIR = appPath('public');
+
+  var DEPLOY_CONFIGS = {
+    LOCAL: {
+      MONGO_USER: null,
+      MONGO_PASSWORD: null,
+      MONGO_HOST: 'localhost',
+      MONGO_PORT: '27017',
+      MONGO_DB_NAME: 'aurin-vre',
+      DEPLOY_URL: 'http://localhost',
+      DEPLOY_PORT: '3000'
+    },
+    HEROKU: {
+      // Environment variables are configured in Heroku app settings.
+      APP_NAME: 'aurin-esp'
+    }
+  };
 
   var ATLAS_PATH = bowerPath('atlas');
   var ATLAS_BUILD_PATH = path.join(ATLAS_PATH, 'dist');
@@ -47,7 +65,17 @@ module.exports = function(grunt) {
       }
     },
     clean: {
-
+      dist: {
+        files: [
+          {
+            expand: true,
+            cwd: DIST_DIR,
+            src: [
+              path.join('**', '*')
+            ]
+          }
+        ]
+      }
     }
   });
 
@@ -55,7 +83,7 @@ module.exports = function(grunt) {
   // INSTALL TASKS
   //////////////////////////////////////////////////////////////////////////////////////////////////
 
-  grunt.registerTask('install', 'Installs all dependencies', function () {
+  grunt.registerTask('install', 'Installs all dependencies', function() {
     var args = arguments,
         tasks = [],
         addTasks = function() {
@@ -105,7 +133,7 @@ module.exports = function(grunt) {
 
   grunt.registerTask('fix-atlas-build', 'Fixes the Atlas build.', function(arg1) {
     // Replace the path to the cesium style which is now in the app's public folder.
-    writeFile(ATLAS_CESIUM_STYLE_FILE, function (data) {
+    writeFile(ATLAS_CESIUM_STYLE_FILE, function(data) {
       return data.replace(/(@import\s+["'])(cesium)/, '$1atlas-cesium/$2');
     });
   });
@@ -114,16 +142,81 @@ module.exports = function(grunt) {
     var isLazy = arg1 === 'lazy';
     if (!isLazy || !fs.existsSync(ATLAS_BUILD_FILE)) {
       console.log('Atlas needs building...');
-      shell.exec('cd ' + ATLAS_PATH + ' && grunt build');
+      shell.cd(ATLAS_PATH);
+      shell.exec('grunt build');
     }
     if (!isLazy || !fs.existsSync(ATLAS_CESIUM_BUILD_FILE)) {
       console.log('Atlas-Cesium needs building...');
-      shell.exec('cd ' + ATLAS_CESIUM_PATH + ' && grunt build');
+      shell.cd(ATLAS_CESIUM_PATH);
+      shell.exec('grunt build');
     }
   });
 
-  grunt.registerTask('meteor', 'Runs Meteor.', function() {
-    shell.exec('cd ' + APP_DIR + ' && meteor');
+  grunt.registerTask('build', 'Builds the app.', function() {
+    var cmd = 'meteor bundle --debug --directory ' + path.join('..', DIST_DIR);
+    console.log('Running: ' + cmd);
+    shell.cd(APP_DIR);
+    shell.exec(cmd);
+  });
+
+  grunt.registerTask('deploy', 'Deploys the built app.', function(arg1) {
+    var config;
+    // All fs, process, shell methods are relative to this directory now.
+    var result = shell.cd(DIST_DIR);
+    if (result === null) {
+      return;
+    }
+    var done = this.async();
+
+    if (arg1 === 'heroku') {
+      config = DEPLOY_CONFIGS.HEROKU;
+      console.log('Deploying on Heroku...');
+      if (!fs.existsSync('.git')) {
+        throw new Error('Must set up Heroku git repository manually.');
+        // TODO(aramk) Support initialising from empty Heroku project once we need to set another
+        // one up.
+//        console.log('Setting up git repo...');
+//        var herukoGitRepo = 'git@heroku.com:' + config.APP_NAME + '.git';
+//        execAll(['git clone ' + herukoGitRepo, 'git pull heroku master']);
+//        'heroku git:remote -a' + config.APP_NAME;
+      } else {
+        console.log('Using existing git repo...');
+      }
+      execAll(['git pull', 'git add -A', 'git commit -am "Deployment."', 'git push heroku master',
+        'heroku restart']);
+    } else {
+      console.log('Deploying locally...');
+      shell.cd(path.join('programs', 'server'));
+      shell.rm('-rf', 'node_modules/fibers');
+      shell.rm('-rf', 'node_modules/bcrypt');
+      shell.exec('npm install fibers@1.0.1');
+      shell.exec('npm install bcrypt@0.7.7');
+      shell.cd('../..');
+      config = DEPLOY_CONFIGS.LOCAL;
+      var MONGO_URL = 'mongodb://' + urlAuth(config.MONGO_USER, config.MONGO_PASSWORD) +
+          config.MONGO_HOST + ':' + config.MONGO_PORT + '/' +
+          config.MONGO_DB_NAME;
+      var env = {
+        MONGO_URL: MONGO_URL,
+        ROOT_URL: config.DEPLOY_URL,
+        PORT: config.DEPLOY_PORT
+      };
+      for (var name in env) {
+        shell.env[name] = env[name];
+      }
+      var proc = runProcess('node', ['main.js']);
+      proc.on('exit', function() {
+        done();
+      });
+    }
+  });
+  grunt.registerTask('meteor', function() {
+    var done = this.async();
+    process.chdir(APP_DIR);
+    var proc = runProcess('meteor');
+    proc.on('exit', function() {
+      done();
+    });
   });
 
   grunt.registerTask('default', ['install']);
@@ -131,6 +224,35 @@ module.exports = function(grunt) {
   //////////////////////////////////////////////////////////////////////////////////////////////////
   // AUXILIARY
   //////////////////////////////////////////////////////////////////////////////////////////////////
+
+  // PROCESSES
+
+  /**
+   * Runs a child process; prints stdout and stderr. Arguments match child_process.spawn().
+   * @param cmd
+   * @param args
+   * @param options
+   * @returns {*}
+   */
+  function runProcess(cmd, args, options) {
+    console.log('Running process: ', cmd, args, options);
+    var proc = child_process.spawn(cmd, args, options);
+    proc.stdout.on('data', function(data) {
+      process.stdout.write(data.toString('utf8'));
+    });
+    proc.stderr.on('data', function(data) {
+      process.stdout.write(data.toString('utf8'));
+    });
+    return proc;
+  }
+
+  function execAll(cmds, log) {
+    log = log === undefined ? true : log;
+    return cmds.forEach(function(cmd) {
+      log && console.log(cmd);
+      shell.exec(cmd);
+    });
+  }
 
   // FILES
 
@@ -163,6 +285,22 @@ module.exports = function(grunt) {
 
   function publicPath() {
     return _prefixPath(PUBLIC_DIR, arguments);
+  }
+
+  // STRINGS
+
+  function urlAuth(username, password) {
+    var auth = '';
+    if (username) {
+      auth += username;
+    }
+    if (password) {
+      auth += ':' + password;
+    }
+    if (auth) {
+      auth += auth + '@';
+    }
+    return auth;
   }
 
 };

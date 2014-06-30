@@ -4,8 +4,9 @@
     "handlebar-helpers": {},
     "semantic-ui": {},
     "collection2": {},
+    "autoform": {},
     "requirejs": {
-      "path": "https://github.com/aramk/requirejs"
+      "git": "https://github.com/aramk/requirejs"
     },
     "atlas": {
       "path": "../bower_components/atlas"

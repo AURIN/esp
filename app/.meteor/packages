@@ -14,6 +14,7 @@ accounts-ui
 semantic-ui
 coffeescript
 collection2
+autoform
 requirejs
 atlas
 atlas-cesium

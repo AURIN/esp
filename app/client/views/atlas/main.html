@@ -16,7 +16,11 @@
               <i class="add icon"></i>
             </a>
           </div>
-          <table class="ui table segment"></table>
+          <table class="ui table segment">
+            {{#each typologies}}
+              <tr><td>{{name}}</td></tr>
+            {{/each}}
+          </table>
         </div>
       </div>
       {{/if}}
