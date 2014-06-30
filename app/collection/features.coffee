@@ -1,5 +1,6 @@
-Features = new Meteor.Collection('features')
-allow () ->
+@Features = new Meteor.Collection('features')
+
+allow = ->
   true
 
 Features.allow

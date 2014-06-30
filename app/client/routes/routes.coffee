@@ -1,5 +1,4 @@
-MainController ->
-  RouteController.extend
+@MainController = RouteController.extend
     template: 'main'
 
 Router.map ->

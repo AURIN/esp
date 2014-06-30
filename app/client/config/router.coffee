@@ -1,4 +1,4 @@
-Router.configure(
+@Router.configure(
   layoutTemplate: 'mainLayout'
   notFoundTemplate: 'notFound'
   yieldTemplates:

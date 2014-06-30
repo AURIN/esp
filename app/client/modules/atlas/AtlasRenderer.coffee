@@ -26,7 +26,7 @@ class @AtlasRenderer
     @assets[id] = asset
     entities = asset.entities
     addedEntities = []
-    entities && _.each(entities, (entity, i) ->
+    entities && _.each(entities, (entity, i) =>
       if typeof entity == 'string' then entity = asset.entities[i] = {vertices: entity}
       entity.id = id + '-' + (i + 1)
       entity._asset = asset
@@ -45,16 +45,13 @@ class @AtlasRenderer
     asset = @assets[id]
     @_showAsset(asset)
 
-
   _showAsset: (asset) ->
     if asset.entities
       @_forEachEntity(asset, @showEntity)
     else if @isLayer asset
       @_showLayer asset
-
     # TODO(aramk) Only use camera of asset for assets, just zoom into entity otherwise.
     @zoomAsset asset.id
-
 
   zoomAsset: (id) ->
     asset = @assets[id]
@@ -73,7 +70,6 @@ class @AtlasRenderer
     else if @isLayer(asset)
       @_hideLayer(asset)
 
-
   # ENTITIES
 
   showEntity: (id) ->
@@ -84,9 +80,11 @@ class @AtlasRenderer
 
   _showEntity: (entity) ->
     id = entity.id
-    publish = (showArg) => @atlas.publish 'entity/show', showArg
+    publish = (showArg) =>
+      @atlas.publish 'entity/show', showArg
     if !@atlas._managers.entity.getById id
-      AtlasConverter.ready => publish @converter.toGeoEntityArgs(entity)
+      AtlasConverter.ready =>
+        publish @converter.toGeoEntityArgs(entity)
     else
       publish({id: id})
 
@@ -94,7 +92,8 @@ class @AtlasRenderer
     @atlas.publish('entity/hide', {id: id})
 
   _forEachEntity: (asset, cb) ->
-    _.each(asset.entities, (entity) => cb.call(this, entity.id, entity))
+    _.each(asset.entities, (entity) =>
+      cb.call(this, entity.id, entity))
 
   # LAYERS
 
@@ -125,7 +124,8 @@ class @AtlasRenderer
         ids: czml.ids
       })
 
-  isLayer: (asset) -> asset.czmlUrl != undefined || asset.czml != undefined
+  isLayer: (asset) ->
+    asset.czmlUrl != undefined || asset.czml != undefined
 
   # CZML
 
@@ -141,9 +141,11 @@ class @AtlasRenderer
     else
       @atlas.publish('entity/show/bulk', {
         features: content,
-        callback: (ids) -> czml.ids = ids
+        callback: (ids) ->
+          czml.ids = ids
       })
 
   # CAMERA
 
-  _zoomTo: (args) -> @atlas.publish('camera/zoomTo', args)
+  _zoomTo: (args) ->
+    @atlas.publish('camera/zoomTo', args)

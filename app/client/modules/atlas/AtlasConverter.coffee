@@ -46,9 +46,7 @@ class @AtlasConverter
       styleArgs[prefix + 'Colour'].alpha = opacity
     styleArgs
 
-console.log @AtlasConverter
-
-_.extend(@AtlasConverter, {
+_.extend(AtlasConverter, {
 
   ready: (callback) ->
     require([
@@ -64,7 +62,7 @@ _.extend(@AtlasConverter, {
 
   newInstance: (callback) ->
     this.ready(->
-      callback(new @AtlasConverter())
+      callback(new AtlasConverter())
     )
 
 })
