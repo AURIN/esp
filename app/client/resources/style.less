@@ -13,8 +13,18 @@ html, body {
   display: flex;
   flex-direction: row;
 
-  > .left.sidebar {
+  .sidebar {
     position: relative;
+    width: 300px;
+    .header {
+      padding: 10px;
+      font-size: 14px;
+    }
+    .icon.menu {
+      .item {
+        padding: 0.5rem;
+      }
+    }
   }
 
   > .atlas {

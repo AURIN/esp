@@ -1,27 +1,30 @@
 <template name="main">
   <div class="ui main container">
-    <div class="ui left sidebar vertical menu active">
-      <!-- TODO(aramk) Use accordions. -->
-      <div class="header item">Entities</div>
-      <div class="item entities">
-        <table class="ui table segment">
-          <!--{{#each features}}-->
-          <!--<tr class="heading">-->
-            <!--<td class="ui checkbox"><input type="checkbox"><label>{{name}}</label></td>-->
-          <!--</tr>-->
-          <!--{{#each this.entities}}-->
-          <!---->
-          <!--{{/each}}-->
-          <!--{{/each}}-->
-        </table>
+    <div class="sidebar">
+
+      {{#if isDefaultPanel}}
+      <div class="default panel">
+        <!-- TODO(aramk) Use accordions. -->
+        <div class="header">Entities</div>
+        <div class="item entities">
+          <table class="ui table segment"></table>
+        </div>
+        <div class="header">Typologies</div>
+        <div class="item types">
+          <div class="ui icon menu">
+            <a class="add item">
+              <i class="add icon"></i>
+            </a>
+          </div>
+          <table class="ui table segment"></table>
+        </div>
       </div>
-      <div class="header item">Layers</div>
-      <div class="item layers">
-        <table class="ui table segment">
-          <tbody>
-          </tbody>
-        </table>
-      </div>
+      {{/if}}
+
+      {{#if isTypologyPanel}}
+      {{> typologyPanel}}
+      {{/if}}
+
     </div>
     <div class="atlas"></div>
   </div>

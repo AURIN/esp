@@ -1,5 +1,5 @@
 @MainController = RouteController.extend
-    template: 'main'
+  template: 'main'
 
 Router.map ->
   this.route 'main', {

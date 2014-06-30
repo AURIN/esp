@@ -1,8 +1,12 @@
+Template.main.created = ->
+  Session.set 'currentPanel', 'default'
+
 Template.main.rendered = ->
 
   # TODO(aramk) Make Renderer a Meteor module.
-  @data = {}
   atlasNode = @find('.atlas')
+
+  @data = @data || {}
 
   require([
       'atlas-cesium/core/CesiumAtlas'
@@ -20,9 +24,9 @@ Template.main.rendered = ->
       atlas: cesiumAtlas,
       assets: Features.find({}).fetch()
     })
-    this.data.renderer = renderer
+    @data.renderer = renderer
 
-    $table = $(this.find('.ui.table'))
+    $table = $(@find('.ui.table'))
 
     addRow = (data, args) ->
       id = data.id
@@ -61,6 +65,15 @@ Template.main.rendered = ->
   )
 
 Template.main.helpers(
-  features: ->
-    Features.find({})
+  features: -> Features.find({})
+  isDefaultPanel: ->
+    Session.get('currentPanel') == 'default'
+  isTypologyPanel: ->
+    Session.get('currentPanel') == 'typologies'
+)
+
+Template.main.events(
+  'click .add.item': ->
+    Session.set 'currentPanel', 'typologies'
+    console.log('Panel changed', Session.get 'currentPanel')
 )
