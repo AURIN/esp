@@ -12,6 +12,7 @@ iron-router
 accounts-password
 accounts-ui
 semantic-ui
+coffeescript
 collection2
 requirejs
 atlas
