@@ -3,12 +3,15 @@ module.exports = function(grunt) {
   require('load-grunt-tasks')(grunt, ['grunt-*']);
   var path = require('path'),
       fs = require('fs'),
+      nodeFs = require('node-fs'),
       shell = require('shelljs'),
       child_process = require('child_process');
 
   var BOWER_DIR = 'bower_components';
   var APP_DIR = 'app';
   var DIST_DIR = 'dist';
+  // The directory to build into before merging with the existing distribution.
+  var DIST_TEMP_DIR = 'dist_tmp';
   var PUBLIC_DIR = appPath('public');
 
   var DEPLOY_CONFIGS = {
@@ -17,7 +20,7 @@ module.exports = function(grunt) {
       MONGO_PASSWORD: null,
       MONGO_HOST: 'localhost',
       MONGO_PORT: '27017',
-      MONGO_DB_NAME: 'aurin-vre',
+      MONGO_DB_NAME: 'aurin-esp',
       DEPLOY_URL: 'http://localhost',
       DEPLOY_PORT: '3000'
     },
@@ -69,7 +72,7 @@ module.exports = function(grunt) {
         files: [
           {
             expand: true,
-            cwd: DIST_DIR,
+            cwd: DIST_TEMP_DIR,
             src: [
               path.join('**', '*')
             ]
@@ -153,10 +156,13 @@ module.exports = function(grunt) {
   });
 
   grunt.registerTask('build', 'Builds the app.', function() {
-    var cmd = 'meteor bundle --debug --directory ' + path.join('..', DIST_DIR);
-    console.log('Running: ' + cmd);
+    mkdir(DIST_DIR);
+    var cmd = 'meteor bundle --debug --directory ' + path.join('..', DIST_TEMP_DIR);
     shell.cd(APP_DIR);
     shell.exec(cmd);
+    shell.cd('..');
+    shell.cp('-R', path.join(DIST_TEMP_DIR, '*'), DIST_DIR);
+    shell.rm('-rf', DIST_TEMP_DIR);
   });
 
   grunt.registerTask('deploy', 'Deploys the built app.', function(arg1) {
@@ -164,26 +170,38 @@ module.exports = function(grunt) {
     // All fs, process, shell methods are relative to this directory now.
     var result = shell.cd(DIST_DIR);
     if (result === null) {
+      console.log('Run `grunt build` before deploy.');
       return;
     }
     var done = this.async();
-
     if (arg1 === 'heroku') {
       config = DEPLOY_CONFIGS.HEROKU;
+      function updateHeroku() {
+        execAll(['git pull heroku master', 'git add -A', 'git commit -am "Deployment."',
+          'git push heroku master', 'heroku restart']);
+        done();
+      }
       console.log('Deploying on Heroku...');
       if (!fs.existsSync('.git')) {
-        throw new Error('Must set up Heroku git repository manually.');
-        // TODO(aramk) Support initialising from empty Heroku project once we need to set another
-        // one up.
-//        console.log('Setting up git repo...');
-//        var herukoGitRepo = 'git@heroku.com:' + config.APP_NAME + '.git';
-//        execAll(['git clone ' + herukoGitRepo, 'git pull heroku master']);
-//        'heroku git:remote -a' + config.APP_NAME;
+        console.log('Setting up git repo...');
+        shell.cd('..');
+        shell.rm('-rf', DIST_TEMP_DIR);
+        shell.mv(DIST_DIR, DIST_TEMP_DIR);
+        var herukoGitRepo = 'git@heroku.com:' + config.APP_NAME + '.git';
+        var runClone = runProcess('git', ['clone ' + herukoGitRepo + ' ' + DIST_DIR]);
+        runClone.on('exit', function() {
+          exec('git clone ' + herukoGitRepo + ' ' + DIST_DIR);
+          shell.cd(DIST_DIR);
+          execAll(['heroku git:remote -a ' + config.APP_NAME, 'git pull heroku master']);
+          var tmpDistDir = path.join('..', DIST_TEMP_DIR);
+          shell.cp('-R', path.join(tmpDistDir, '*'), '.');
+          shell.rm('-rf', tmpDistDir);
+          updateHeroku();
+        });
       } else {
         console.log('Using existing git repo...');
+        updateHeroku();
       }
-      execAll(['git pull', 'git add -A', 'git commit -am "Deployment."', 'git push heroku master',
-        'heroku restart']);
     } else {
       console.log('Deploying locally...');
       shell.cd(path.join('programs', 'server'));
@@ -204,8 +222,8 @@ module.exports = function(grunt) {
       for (var name in env) {
         shell.env[name] = env[name];
       }
-      var proc = runProcess('node', ['main.js']);
-      proc.on('exit', function() {
+      var runNode = runProcess('node', ['main.js']);
+      runNode.on('exit', function() {
         done();
       });
     }
@@ -249,9 +267,14 @@ module.exports = function(grunt) {
   function execAll(cmds, log) {
     log = log === undefined ? true : log;
     return cmds.forEach(function(cmd) {
-      log && console.log(cmd);
-      shell.exec(cmd);
+      exec(cmd, log);
     });
+  }
+
+  function exec(cmd, log) {
+    log = log === undefined ? true : log;
+    log && console.log(cmd);
+    shell.exec(cmd);
   }
 
   // FILES
@@ -265,6 +288,10 @@ module.exports = function(grunt) {
       data = data(readFile(file));
     }
     fs.writeFileSync(file, data);
+  }
+
+  function mkdir(dir, callback) {
+    nodeFs.mkdirSync(dir, 0777, true, callback);
   }
 
   // PATHS
