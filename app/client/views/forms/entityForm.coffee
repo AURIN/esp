@@ -1,7 +1,7 @@
-formName = 'typologyItem'
+formName = 'entityForm'
 collection = null
 collectionName = null
-TypologyTemplate = Template[formName]
+EntityTemplate = Template[formName]
 
 # TODO(aramk) Provide callback in settings
 onSuccess = ->
@@ -9,27 +9,32 @@ onSuccess = ->
 onCancel = ->
   Session.set('currentPanel', 'default')
 
-TypologyTemplate.created = ->
+EntityTemplate.created = ->
   @data ?= {}
-  collection = Typologies
+  collection = Entities
   collectionName = collection._name
 
-TypologyTemplate.rendered = ->
+EntityTemplate.rendered = ->
   AutoForm.resetForm(formName)
   @data ?= {}
 
 AutoForm.addHooks formName,
+  onSubmit: (insertDoc, updateDoc, currentDoc) ->
+    $typology = $(@template.find('[name="typology"]'))
+    insertDoc.typology = $typology.val()
+    updateDoc.$set = insertDoc
   onSuccess: (operation, result) ->
     AutoForm.resetForm(formName)
     onSuccess()
 
-TypologyTemplate.helpers
+EntityTemplate.helpers
   collection: -> collection
   formName: -> formName
   formType: -> if @doc then 'update' else 'insert'
   submitText: -> if @doc then 'Save' else 'Create'
+  typology: -> if @doc then @doc.typology else null
 
-TypologyTemplate.events
+EntityTemplate.events
   'click button.cancel': (e) ->
     e.preventDefault();
     onCancel()

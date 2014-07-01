@@ -1,0 +1,14 @@
+<template name="entityForm">
+  <div class="ui error form segment">
+    {{#autoForm collection=collection id=formName doc=doc type=formType}}
+    {{> afQuickField name="name"}}
+    {{> afQuickField name="desc"}}
+    {{> dropdown name="typology" items="Typologies" value=typology}}
+    <!-- TODO(aramk) Add typologies -->
+    <div class="buttons">
+      <button type="button" class="ui red cancel button">Cancel</button>
+      <button type="submit" class="ui button submit green">{{submitText}}</button>
+    </div>
+    {{/autoForm}}
+  </div>
+</template>

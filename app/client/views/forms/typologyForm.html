@@ -1,9 +1,9 @@
-<template name="typologyItem">
+<template name="typologyForm">
   <div class="ui error form segment">
     {{#autoForm collection=collection id=formName doc=doc type=formType}}
     {{> afQuickField name="name"}}
     {{> afQuickField name="desc"}}
-    {{> afQuickField name="geom"}}
+    <!-- TODO(aramk) Add geometry as a separate field showing edit and delete buttons -->
     {{> afQuickField name="state"}}
     {{> afQuickField name="code"}}
     {{> afQuickField name="class"}}

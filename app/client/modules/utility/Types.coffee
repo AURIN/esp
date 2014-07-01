@@ -12,5 +12,8 @@
   isFunction: (object) ->
     typeof object == 'function'
 
-  isArrayLiteral: (object) ->
+  isArray: (object) ->
     this.isType(object, 'Array')
+
+  isString: (object) ->
+    this.isType(object, 'String')

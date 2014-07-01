@@ -3,13 +3,16 @@
 schema = new SimpleSchema
   name:
     label: 'Name'
-    type: String
+    type: String,
+    index: true,
+    unique: true
   desc:
     label: 'Description'
     type: String
   geom:
     label: 'Geometry'
     type: Object,
+    # Not all typologies will have default geometries - some will only contain parameters.
     optional: true
   state:
     label: 'State'
@@ -26,8 +29,12 @@ schema = new SimpleSchema
   type:
     label: 'Type'
     type: String
+  parameters:
+    label: 'Parameters'
+    type: Object
+    optional: true,
+    defaultValue: {}
 
 @Typologies = new Meteor.Collection 'typologies', schema: schema
 Typologies.schema = schema
-
 Typologies.allow(Collections.allowAll())
