@@ -2,7 +2,7 @@
   <div class="ui main container">
     <div class="sidebar">
 
-      {{#if isDefaultPanel}}
+      <!--{{#if isDefaultPanel}}-->
       <div class="default panel">
 
         <!-- TODO(aramk) Remove? -->
@@ -20,7 +20,7 @@
           </div>
           <table class="ui table segment">
             {{#each entities}}
-            <tr><td>{{name}}</td></tr>
+            <tr><td><a class="edit">{{name}}</a></td></tr>
             {{/each}}
           </table>
         </div>
@@ -40,15 +40,15 @@
         </div>
 
       </div>
-      {{/if}}
+      <!--{{/if}}-->
 
-      {{#if isEntityPanel}}
-      {{> entityPanel}}
-      {{/if}}
+      <!--{{#if isEntityPanel}}-->
+      <!--{{> entityPanel}}-->
+      <!--{{/if}}-->
 
-      {{#if isTypologyPanel}}
-      {{> typologyPanel}}
-      {{/if}}
+      <!--{{#if isTypologyPanel}}-->
+      <!--{{> typologyPanel}}-->
+      <!--{{/if}}-->
 
     </div>
     <div class="atlas"></div>

@@ -3,38 +3,39 @@ collection = null
 collectionName = null
 EntityTemplate = Template[formName]
 
-# TODO(aramk) Provide callback in settings
-onSuccess = ->
-  Session.set('currentPanel', 'default')
-onCancel = ->
-  Session.set('currentPanel', 'default')
-
 EntityTemplate.created = ->
-  @data ?= {}
   collection = Entities
   collectionName = collection._name
+  @data ?= {}
+  @data.settings ?= {}
+#  settings = @data.settings
+#  console.log '>>', settings, @data.settings, settings == @data.settings
+#  Forms.preventText(settings)
+#  console.log 'data', JSON.stringify(@data), @data, settings
 
 EntityTemplate.rendered = ->
-  AutoForm.resetForm(formName)
   @data ?= {}
+  console.log 'data', JSON.stringify(@data), @data
 
 AutoForm.addHooks formName,
   onSubmit: (insertDoc, updateDoc, currentDoc) ->
     $typology = $(@template.find('[name="typology"]'))
     insertDoc.typology = $typology.val()
     updateDoc.$set = insertDoc
-  onSuccess: (operation, result) ->
+  onSuccess: (operation, result, template) ->
+    console.log 'onSuccess', template.data
     AutoForm.resetForm(formName)
-    onSuccess()
+    template.data?.settings?.onSuccess?()
 
 EntityTemplate.helpers
   collection: -> collection
   formName: -> formName
   formType: -> if @doc then 'update' else 'insert'
   submitText: -> if @doc then 'Save' else 'Create'
-  typology: -> if @doc then @doc.typology else null
+  typology: -> @doc?.typology
+#  settings: -> {}
 
 EntityTemplate.events
-  'click button.cancel': (e) ->
+  'click button.cancel': (e, template) ->
     e.preventDefault();
-    onCancel()
+    template.data?.settings?.onCancel?()

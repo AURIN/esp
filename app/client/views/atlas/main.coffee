@@ -90,6 +90,30 @@ Template.main.helpers
   entities: -> Entities.find()
   typologies: -> Typologies.find()
 
+Template.main.addPanel = (template, component) ->
+  console.log 'addPanel'
+  console.log this, template, component
+  $container = $(template.find('.sidebar'))
+  $panel = $('<div class="panel"></div>')
+  $container.append $panel
+  console.log $container, $panel
+  UI.insert component, $panel[0]
+
+Template.main.removePanel = (template, component) ->
+  console.log this, template, component
+  console.log component.dom
+  $(component.dom.getNodes()).parent().remove()
+  component.dom.remove()
+
 Template.main.events
   'click .entities .add.item': -> setPanel 'entities'
   'click .typologies .add.item': -> setPanel 'typologies'
+  'click .entities .edit': (e, template) ->
+    settings = {}
+    data = doc: @, settings: settings
+    panel = UI.renderWithData Template.entityForm, data
+    callback = Template.main.removePanel template, panel
+    settings.onCancel = settings.onSuccess = callback
+    Template.main.addPanel template, panel
+#    Session.set 'entityFormDoc', @
+#    setPanel 'entities'
