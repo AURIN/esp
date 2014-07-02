@@ -8,14 +8,11 @@ EntityTemplate.created = ->
   collectionName = collection._name
   @data ?= {}
   @data.settings ?= {}
-#  settings = @data.settings
-#  console.log '>>', settings, @data.settings, settings == @data.settings
-#  Forms.preventText(settings)
-#  console.log 'data', JSON.stringify(@data), @data, settings
+  settings = @data.settings
+  Forms.preventText(settings)
 
 EntityTemplate.rendered = ->
   @data ?= {}
-  console.log 'data', JSON.stringify(@data), @data
 
 AutoForm.addHooks formName,
   onSubmit: (insertDoc, updateDoc, currentDoc) ->
@@ -33,7 +30,6 @@ EntityTemplate.helpers
   formType: -> if @doc then 'update' else 'insert'
   submitText: -> if @doc then 'Save' else 'Create'
   typology: -> @doc?.typology
-#  settings: -> {}
 
 EntityTemplate.events
   'click button.cancel': (e, template) ->

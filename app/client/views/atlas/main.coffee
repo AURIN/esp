@@ -112,7 +112,7 @@ Template.main.events
     settings = {}
     data = doc: @, settings: settings
     panel = UI.renderWithData Template.entityForm, data
-    callback = Template.main.removePanel template, panel
+    callback = -> Template.main.removePanel template, panel
     settings.onCancel = settings.onSuccess = callback
     Template.main.addPanel template, panel
 #    Session.set 'entityFormDoc', @
