@@ -77,6 +77,10 @@ Template.collectionTable.rendered = function() {
   function bindRow(row) {
     var $row = $(row);
     var id = $row.attr('data-id');
+    if (!id) {
+      console.warn('Could not bind row', id);
+      return;
+    }
     if (boundRows[id]) {
       return;
     }

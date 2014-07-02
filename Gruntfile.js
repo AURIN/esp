@@ -161,6 +161,8 @@ module.exports = function(grunt) {
     shell.cd(APP_DIR);
     shell.exec(cmd);
     shell.cd('..');
+    // Remove existing files in app directories to prevent conflicts or old files remaining.
+    shell.rm('-rf', path.join(DIST_DIR, 'programs'));
     shell.cp('-Rf', path.join(DIST_TEMP_DIR, '*'), DIST_DIR);
     shell.rm('-rf', DIST_TEMP_DIR);
   });
