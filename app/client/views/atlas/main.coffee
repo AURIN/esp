@@ -2,6 +2,10 @@
 # methods.
 templateInstance = null
 
+collectionToForm =
+  'entities': 'entityForm'
+  'typologies': 'typologyForm'
+
 Template.main.created = ->
   templateInstance = @
 
@@ -87,10 +91,16 @@ Template.main.helpers
     ]
     rowsPerPage: 100000
     showNavigation: 'never'
-    onCreate: ->
-      Template.main.setUpFormPanel templateInstance, Template.entityForm
-    onEdit: (doc) ->
-      Template.main.setUpFormPanel templateInstance, Template.entityForm, doc
+    onCreate: (data) ->
+      collectionName = Collections.getName(data.collection)
+      formName = collectionToForm[collectionName]
+      console.log 'onCreate', arguments, collectionName, formName
+      Template.main.setUpFormPanel templateInstance, Template[formName]
+    onEdit: (data, doc) ->
+      collectionName = Collections.getName(data.collection)
+      formName = collectionToForm[collectionName]
+      console.log 'onEdit', arguments, collectionName, formName
+      Template.main.setUpFormPanel templateInstance, Template[formName], doc
 
 Template.main.addPanel = (template, component) ->
   console.log 'addPanel', template, component

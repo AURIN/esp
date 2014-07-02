@@ -1,6 +1,33 @@
 # TODO(aramk) Add desc for each and read in a custom form input template if necessary.
 
-schema = new SimpleSchema
+#categories = ['General', ]
+
+GeneralSchema = new SimpleSchema
+  geom:
+    label: 'Geometry'
+    type: String
+    optional: true
+
+EnvironmentalSchema = new SimpleSchema
+  geom:
+    label: 'Geometry'
+    type: String
+    optional: true
+
+ParameterSchema = new SimpleSchema
+  street:
+    type: String
+    max: 100
+  general:
+    label: 'General'
+    type: GeneralSchema
+    optional: true
+  environmental:
+    label: 'Environmental'
+    type: EnvironmentalSchema
+    optional: true
+
+Schema = new SimpleSchema
   name:
     label: 'Name'
     type: String,
@@ -12,7 +39,7 @@ schema = new SimpleSchema
   geom:
     label: 'Geometry'
     type: Object,
-    # Not all typologies will have default geometries - some will only contain parameters.
+  # Not all typologies will have default geometries - some will only contain parameters.
     optional: true
   state:
     label: 'State'
@@ -31,10 +58,11 @@ schema = new SimpleSchema
     type: String
   parameters:
     label: 'Parameters'
-    type: Object
-    optional: true,
-    defaultValue: {}
+    type: ParameterSchema
+    # TODO(aramk) Descriptions cannot be given - considered invalid field.
+#    desc: 'This is a simple description'
+    optional: true
 
-@Typologies = new Meteor.Collection 'typologies', schema: schema
-Typologies.schema = schema
+@Typologies = new Meteor.Collection 'typologies', schema: Schema
+Typologies.schema = Schema
 Typologies.allow(Collections.allowAll())

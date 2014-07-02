@@ -16,15 +16,6 @@ Template.collectionTable.created = function() {
   this.data.collection = collection;
   if (!collection) {
     console.warn('No collection provided.', this.data);
-  } else {
-    var collectionName = this.data.collectionName || Collections.getName(collection);
-    if (collectionName) {
-      var collectionId = Strings.firstToLowerCase(Strings.singular(collectionName));
-      this.data.createRoute = this.data.createRoute || collectionId + 'Item';
-      this.data.editRoute = this.data.editRoute || collectionId + 'Edit';
-    } else {
-      console.warn('No collection name provided', this.data);
-    }
   }
 };
 
@@ -41,14 +32,15 @@ Template.collectionTable.rendered = function() {
   $('tr th', $footer).attr('colspan', colCount).append($nav);
   $('tbody', $table).after($footer);
 
+  var data = this.data;
   var $btnCreate = $(this.find('.create.item')).click(onCreate);
   var $btnEdit = $(this.find('.edit.item')).click(onEdit);
   var $btnDelete = $(this.find('.delete.item')).click(onDelete);
   var $selectedRow;
-  var selectedClass = this.data.selectedClass || 'selected';
+  var selectedClass = data.selectedClass || 'selected';
 
-  var collection = this.data.collection;
-  var settings = this.data.settings;
+  var collection = data.collection;
+  var settings = data.settings;
 
   function getSelectedId() {
     return $selectedRow.attr('data-id');
@@ -59,11 +51,11 @@ Template.collectionTable.rendered = function() {
   }
 
   function onCreate() {
-    settings.onCreate && settings.onCreate(this);
+    settings.onCreate && settings.onCreate(data, this);
   }
 
   function onEdit() {
-    settings.onEdit && settings.onEdit(getSelectedModel());
+    settings.onEdit && settings.onEdit(data, getSelectedModel(), this);
   }
 
   function onDelete() {

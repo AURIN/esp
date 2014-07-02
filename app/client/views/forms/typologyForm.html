@@ -4,12 +4,13 @@
     {{#autoForm collection=collection id=formName doc=doc type=formType settings=settings}}
     {{> afQuickField name="name"}}
     {{> afQuickField name="desc"}}
-    <!-- TODO(aramk) Add geometry as a separate field showing edit and delete buttons -->
     {{> afQuickField name="state"}}
     {{> afQuickField name="code"}}
     {{> afQuickField name="class"}}
     {{> afQuickField name="subclass"}}
     {{> afQuickField name="type"}}
+    <!-- TODO(aramk) Arrange these in categories -->
+    {{> afQuickField name="parameters.general.geom"}}
     <div class="buttons">
       <button type="button" class="ui red cancel button">Cancel</button>
       <button type="submit" class="ui button submit green">{{submitText}}</button>
