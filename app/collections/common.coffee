@@ -8,13 +8,16 @@ global = @
 
   # @param {Meteor.Collection|Cursor|String} arg
   # @returns {String}
-  getCollectionName: (arg) ->
-    collection = @getCollection(arg)
+  getName: (arg) ->
+    collection = @get(arg)
     # Meteor.Collection or LocalCollection.
     if collection then collection._name else arg.name
 
+  getTitle: (arg) ->
+    Strings.toTitleCase(@getName(arg))
+
   # @param {String|Meteor.Collection|Cursor} arg
-  getCollection: (arg) ->
+  get: (arg) ->
     if Types.isString(arg)
       # Collection name.
       return global[arg]
@@ -37,11 +40,11 @@ global = @
 
   # @param {Meteor.Collection|Cursor|Array} arg
   # @returns {Array} The items in the collection, or the cursor, or the original array passed.
-  getCollectionItems: (arg) ->
+  getItems: (arg) ->
     if Types.isArray(arg)
       return arg
     if Types.isString(arg)
-      arg = @getCollection(arg)
+      arg = @get(arg)
     if @isCollection(arg)
       arg = arg.find({})
     if @isCursor(arg)

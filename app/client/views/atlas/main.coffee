@@ -75,30 +75,32 @@ Template.main.helpers
   typologies: -> Typologies.find()
 
 Template.main.addPanel = (template, component) ->
-  console.log 'addPanel'
-  console.log this, template, component
+  console.log 'addPanel', template, component
   $container = $(template.find('.sidebar'))
   $panel = $('<div class="panel"></div>')
   $container.append $panel
-  console.log $container, $panel
   UI.insert component, $panel[0]
 
 Template.main.removePanel = (template, component) ->
-  console.log this, template, component
-  console.log component.dom
+  console.log 'Removing panel', this, template, component
   $(component.dom.getNodes()).parent().remove()
   component.dom.remove()
 
-Template.main.setUpPanel = (template, panelTemplate, doc) ->
-  settings = {}
-  data = doc: doc, settings: settings
+Template.main.setUpPanel = (template, panelTemplate, data) ->
   panel = UI.renderWithData panelTemplate, data
+  Template.main.addPanel template, panel
+  panel
+
+Template.main.setUpFormPanel = (template, formTemplate, doc, settings) ->
+  settings ?= {}
+  data = doc: doc, settings: settings
+  panel = Template.main.setUpPanel template, formTemplate, data
   callback = -> Template.main.removePanel template, panel
   settings.onCancel = settings.onSuccess = callback
-  Template.main.addPanel template, panel
+  panel
 
 Template.main.events
   'click .entities .edit': (e, template) ->
-    Template.main.setUpPanel template, Template.entityForm, @
+    Template.main.setUpFormPanel template, Template.entityForm, @
   'click .typologies .edit': (e, template) ->
-    Template.main.setUpPanel template, Template.typologyForm, @
+    Template.main.setUpFormPanel template, Template.typologyForm, @

@@ -1,5 +1,5 @@
 Template.dropdown.rendered = function() {
-  var items = Collections.getCollectionItems(this.data.items);
+  var items = Collections.getItems(this.data.items);
   var labelAttr = this.data.labelAttr || 'name';
 
   var $dropdown = $(this.find('.dropdown'));
