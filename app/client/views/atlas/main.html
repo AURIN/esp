@@ -1,35 +1,20 @@
 <template name="main">
+  <div class="header">
+    <div class="logo">ESP</div>
+  </div>
   <div class="ui main container">
     <div class="sidebar">
 
       <div class="default panel">
 
-        <div class="header">Entities</div>
-        <div class="item entities">
-          <div class="ui icon menu">
-            <a class="add item">
-              <i class="add icon"></i>
-            </a>
-          </div>
-          <table class="ui table segment">
-            {{#each entities}}
-            <tr><td class="edit">{{name}}</td></tr>
-            {{/each}}
-          </table>
+        <div class="title">Entities</div>
+        <div class="items entities">
+          {{> collectionTable collection="Entities" settings=tableSettings}}
         </div>
 
-        <div class="header">Typologies</div>
-        <div class="item typologies">
-          <div class="ui icon menu">
-            <a class="add item">
-              <i class="add icon"></i>
-            </a>
-          </div>
-          <table class="ui table segment">
-            {{#each typologies}}
-              <tr><td class="edit">{{name}}</td></tr>
-            {{/each}}
-          </table>
+        <div class="title">Typologies</div>
+        <div class="items typologies">
+          {{> collectionTable collection="Typologies" settings=tableSettings}}
         </div>
 
       </div>

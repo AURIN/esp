@@ -73,6 +73,13 @@ Template.main.rendered = ->
 Template.main.helpers
   entities: -> Entities.find()
   typologies: -> Typologies.find()
+  tableSettings: ->
+    fields: [
+      key: 'name'
+      label: 'Name'
+    ]
+    rowsPerPage: 100000
+    showNavigation: 'never'
 
 Template.main.addPanel = (template, component) ->
   console.log 'addPanel', template, component
@@ -93,14 +100,18 @@ Template.main.setUpPanel = (template, panelTemplate, data) ->
 
 Template.main.setUpFormPanel = (template, formTemplate, doc, settings) ->
   settings ?= {}
-  data = doc: doc, settings: settings
+  data =
+    doc: doc, settings: settings
   panel = Template.main.setUpPanel template, formTemplate, data
   callback = -> Template.main.removePanel template, panel
   settings.onCancel = settings.onSuccess = callback
   panel
 
 Template.main.events
-  'click .entities .edit': (e, template) ->
-    Template.main.setUpFormPanel template, Template.entityForm, @
-  'click .typologies .edit': (e, template) ->
+  'click .entities .add.item': (e, template) ->
+    Template.main.setUpFormPanel template, Template.entityForm
+  'dblclick .entities .edit': (e, template) ->
+    # TODO(aramk)
+    null
+  'dblclick .typologies .edit': (e, template) ->
     Template.main.setUpFormPanel template, Template.typologyForm, @

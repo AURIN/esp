@@ -8,6 +8,10 @@
     "requirejs": {
       "git": "https://github.com/aramk/requirejs"
     },
+    "reactive-table": {
+      "git": "https://github.com/aramk/reactive-table",
+      "branch": "feature/selectable"
+    },
     "atlas": {
       "path": "../bower_components/atlas"
     },

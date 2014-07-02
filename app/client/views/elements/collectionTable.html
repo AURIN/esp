@@ -1,0 +1,11 @@
+<template name="collectionTable">
+  <div class="ui menu toolbar">
+    <a class="create item"><i class="add icon"></i></a>
+    <a class="edit item"><i class="pencil icon"></i></a>
+    <a class="delete item"><i class="delete icon"></i></a>
+
+    <div class="right menu">
+    </div>
+  </div>
+  {{> reactiveTable collection=items settings=tableSettings}}
+</template>

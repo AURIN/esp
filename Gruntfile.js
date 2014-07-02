@@ -228,6 +228,7 @@ module.exports = function(grunt) {
       });
     }
   });
+
   grunt.registerTask('meteor', function() {
     var done = this.async();
     process.chdir(APP_DIR);

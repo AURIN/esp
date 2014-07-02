@@ -12,6 +12,7 @@ iron-router
 accounts-password
 accounts-ui
 semantic-ui
+reactive-table
 coffeescript
 collection2
 autoform

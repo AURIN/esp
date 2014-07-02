@@ -1,3 +1,5 @@
+@import 'color';
+
 html, body {
   padding: 0;
   margin: 0;
@@ -22,17 +24,19 @@ html, body {
       width: 100%;
       background: white;
       .ui.table {
+        border-radius: 0;
+      }
+      .icon.menu {
         margin: 0;
+        .item {
+          padding: 0.5rem;
+        }
       }
     }
-    .header {
+    .title {
       padding: 10px;
       font-size: 14px;
-    }
-    .icon.menu {
-      .item {
-        padding: 0.5rem;
-      }
+      background: #ddd;
     }
   }
 
@@ -68,4 +72,49 @@ html, body {
     }
   }
 
+  .reactive-table-filter {
+    padding: 4px;
+    .reactive-table-input {
+      padding: 0.3rem;
+    }
+  }
+
+  .reactive-table {
+    margin: 0;
+    margin-bottom: 10px;
+    box-shadow: 0 -1px 0 rgba(0, 0, 0, 0.1);
+    tfoot {
+      display: none;
+    }
+  }
+
+  table.selectable {
+    tbody tr {
+      &:hover td {
+        background: @color-highlight-lighter !important;
+      }
+      &.selected td {
+        background: @color-highlight-light !important;
+      }
+    }
+  }
+
+  .ui.menu.toolbar {
+    margin: 0;
+  }
+
+}
+
+.header {
+  height: 40px;
+  border-bottom: 1px solid #999;
+  .logo {
+    color: @color-orange;
+    display: inline-block;
+    vertical-align: middle;
+    font-size: 20px;
+    font-weight: bold;
+    line-height: 40px;
+    margin: 0 10px;
+  }
 }
