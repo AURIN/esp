@@ -104,7 +104,7 @@ Template.main.helpers
 
 Template.main.addPanel = (template, component) ->
   console.log 'addPanel', template, component
-  $container = $(template.find('.sidebar'))
+  $container = $(template.find('.main.container > .content > .sidebar'))
   $panel = $('<div class="panel"></div>')
   $container.append $panel
   UI.insert component, $panel[0]

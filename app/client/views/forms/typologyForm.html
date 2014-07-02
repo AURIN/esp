@@ -1,16 +1,30 @@
 <template name="typologyForm">
-  <h2>Typology</h2>
-  <div class="ui error form segment">
+  <div class="title">Typology</div>
+
+  <div class="ui form segment">
     {{#autoForm collection=collection id=formName doc=doc type=formType settings=settings}}
     {{> afQuickField name="name"}}
     {{> afQuickField name="desc"}}
-    {{> afQuickField name="state"}}
-    {{> afQuickField name="code"}}
-    {{> afQuickField name="class"}}
-    {{> afQuickField name="subclass"}}
-    {{> afQuickField name="type"}}
-    <!-- TODO(aramk) Arrange these in categories -->
+
+    <div class="category">General</div>
     {{> afQuickField name="parameters.general.geom"}}
+    {{> afQuickField name="parameters.general.state"}}
+    {{> afQuickField name="parameters.general.code"}}
+    {{> afQuickField name="parameters.general.class"}}
+    {{> afQuickField name="parameters.general.subclass"}}
+    {{> afQuickField name="parameters.general.type"}}
+    {{> afQuickField name="parameters.general.tot_area"}}
+
+    <div class="category">Environmental</div>
+    {{> afQuickField name="parameters.environmental.pav_prpn"}}
+    {{> afQuickField name="parameters.environmental.pav_area"}}
+    {{> afQuickField name="parameters.environmental.nat_prpn"}}
+    {{> afQuickField name="parameters.environmental.nat_area"}}
+    {{> afQuickField name="parameters.environmental.exo_prpn"}}
+    {{> afQuickField name="parameters.environmental.exo_area"}}
+    {{> afQuickField name="parameters.environmental.lawn_prpn"}}
+    {{> afQuickField name="parameters.environmental.lawn_area"}}
+
     <div class="buttons">
       <button type="button" class="ui red cancel button">Cancel</button>
       <button type="submit" class="ui button submit green">{{submitText}}</button>

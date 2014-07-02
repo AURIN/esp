@@ -1,9 +1,10 @@
 <template name="entityForm">
-  <h2>Entity</h2>
-  <div class="ui error form segment">
+  <div class="title">Entity</div>
+  <div class="ui form segment">
     {{#autoForm collection=collection id=formName doc=doc type=formType settings=settings}}
     {{> afQuickField name="name"}}
     {{> afQuickField name="desc"}}
+    {{> afFieldLabel name="typology"}}
     {{> dropdown name="typology" items="Typologies" value=typology}}
     <div class="buttons">
       <button type="button" class="ui red cancel button">Cancel</button>
