@@ -161,7 +161,7 @@ module.exports = function(grunt) {
     shell.cd(APP_DIR);
     shell.exec(cmd);
     shell.cd('..');
-    shell.cp('-R', path.join(DIST_TEMP_DIR, '*'), DIST_DIR);
+    shell.cp('-Rf', path.join(DIST_TEMP_DIR, '*'), DIST_DIR);
     shell.rm('-rf', DIST_TEMP_DIR);
   });
 
@@ -194,7 +194,7 @@ module.exports = function(grunt) {
           shell.cd(DIST_DIR);
           execAll(['heroku git:remote -a ' + config.APP_NAME, 'git pull heroku master']);
           var tmpDistDir = path.join('..', DIST_TEMP_DIR);
-          shell.cp('-R', path.join(tmpDistDir, '*'), '.');
+          shell.cp('-Rf', path.join(tmpDistDir, '*'), '.');
           shell.rm('-rf', tmpDistDir);
           updateHeroku();
         });

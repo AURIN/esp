@@ -39,10 +39,12 @@
         template.data?.settings?.onCancel?()
 
     Form.rendered = ->
-        # Move the buttons to the same level as the title and content to allow using flex-layout.
+      # Move the buttons to the same level as the title and content to allow using flex-layout.
       $buttons = $(@find('.buttons'))
       $crudForm = $(@find('.flex-panel'))
       if $buttons.length > 0 && $crudForm.length > 0
         $crudForm.append($buttons)
+      $('[type="submit"]', $buttons).click ->
+        $('form', $crudForm).submit();
 
     Form

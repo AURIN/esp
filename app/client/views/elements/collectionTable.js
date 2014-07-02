@@ -72,24 +72,50 @@ Template.collectionTable.rendered = function() {
   }
 
   onSelectionChange();
-  var $rows = $(this.findAll('table.selectable tbody tr'));
-  $rows.click(function() {
-    if ($selectedRow) {
-      $selectedRow.removeClass(selectedClass);
-      if ($selectedRow.is($(this))) {
-        $selectedRow = null;
-        // Deselection.
-        onSelectionChange($selectedRow);
-        return;
-      }
+
+  var boundRows = {};
+  function bindRow(row) {
+    var $row = $(row);
+    var id = $row.attr('data-id');
+    if (boundRows[id]) {
+      return;
     }
-    // Selection.
-    $selectedRow = $(this);
-    $selectedRow.addClass(selectedClass);
-    onSelectionChange($selectedRow);
-  }).dblclick(function() {
-    $selectedRow = $(this);
-    onEdit();
+    boundRows[id] = true;
+    console.log('row bound', id);
+    $row.click(function() {
+      if ($selectedRow) {
+        $selectedRow.removeClass(selectedClass);
+        if ($selectedRow.is($(this))) {
+          $selectedRow = null;
+          // Deselection.
+          onSelectionChange($selectedRow);
+          return;
+        }
+      }
+      // Selection.
+      $selectedRow = $(this);
+      $selectedRow.addClass(selectedClass);
+      onSelectionChange($selectedRow);
+    }).dblclick(function() {
+      $selectedRow = $(this);
+      onEdit();
+    });
+  }
+
+  _.each($('tr[data-id]', $table), bindRow);
+
+  collection.find({}).observe({
+    added: function(doc) {
+      // TODO(aramk) Temporary solution - observe changes in the table's template, or
+      // provide a callback from within the library. We need to wait for the DOM element
+      // to be constructed first.
+      setTimeout(function() {
+        var id = doc._id;
+        console.log('row added', id);
+        var $td = $('[data-id="' + id + '"]', $table);
+        bindRow($td.closest('tr'));
+      }, 300);
+    }
   });
 };
 
@@ -98,12 +124,10 @@ Template.collectionTable.helpers({
     return this.items || this.collection;
   },
   tableSettings: function() {
-    var settings = _.defaults(this.settings || {}, {
+    return _.defaults(this.settings || {}, {
       rowsPerPage: 5,
       showFilter: true,
       useFontAwesome: true
     });
-    console.log('settings', settings);
-    return settings;
   }
 });
