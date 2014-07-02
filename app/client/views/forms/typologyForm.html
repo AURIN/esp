@@ -1,34 +1,36 @@
 <template name="typologyForm">
-  <div class="title">Typology</div>
+  <div class="flex-panel crud form">
+    <div class="title">Typology</div>
+    <div class="ui form segment content">
+      {{#autoForm collection=collection id=formName doc=doc type=formType settings=settings}}
+      {{> afQuickField name="name"}}
+      {{> afQuickField name="desc"}}
 
-  <div class="ui form segment">
-    {{#autoForm collection=collection id=formName doc=doc type=formType settings=settings}}
-    {{> afQuickField name="name"}}
-    {{> afQuickField name="desc"}}
+      <div class="subtitle">General</div>
+      {{> afQuickField name="parameters.general.geom"}}
+      {{> afQuickField name="parameters.general.state"}}
+      {{> afQuickField name="parameters.general.code"}}
+      {{> afQuickField name="parameters.general.class"}}
+      {{> afQuickField name="parameters.general.subclass"}}
+      {{> afQuickField name="parameters.general.type"}}
+      {{> afQuickField name="parameters.general.tot_area"}}
 
-    <div class="category">General</div>
-    {{> afQuickField name="parameters.general.geom"}}
-    {{> afQuickField name="parameters.general.state"}}
-    {{> afQuickField name="parameters.general.code"}}
-    {{> afQuickField name="parameters.general.class"}}
-    {{> afQuickField name="parameters.general.subclass"}}
-    {{> afQuickField name="parameters.general.type"}}
-    {{> afQuickField name="parameters.general.tot_area"}}
+      <div class="subtitle">Environmental</div>
+      {{> afQuickField name="parameters.environmental.pav_prpn"}}
+      {{> afQuickField name="parameters.environmental.pav_area"}}
+      {{> afQuickField name="parameters.environmental.nat_prpn"}}
+      {{> afQuickField name="parameters.environmental.nat_area"}}
+      {{> afQuickField name="parameters.environmental.exo_prpn"}}
+      {{> afQuickField name="parameters.environmental.exo_area"}}
+      {{> afQuickField name="parameters.environmental.lawn_prpn"}}
+      {{> afQuickField name="parameters.environmental.lawn_area"}}
 
-    <div class="category">Environmental</div>
-    {{> afQuickField name="parameters.environmental.pav_prpn"}}
-    {{> afQuickField name="parameters.environmental.pav_area"}}
-    {{> afQuickField name="parameters.environmental.nat_prpn"}}
-    {{> afQuickField name="parameters.environmental.nat_area"}}
-    {{> afQuickField name="parameters.environmental.exo_prpn"}}
-    {{> afQuickField name="parameters.environmental.exo_area"}}
-    {{> afQuickField name="parameters.environmental.lawn_prpn"}}
-    {{> afQuickField name="parameters.environmental.lawn_area"}}
-
-    <div class="buttons">
-      <button type="button" class="ui red cancel button">Cancel</button>
-      <button type="submit" class="ui button submit green">{{submitText}}</button>
+      <div class="buttons">
+        <button type="button" class="ui red cancel button">Cancel</button>
+        <div class="spacer"></div>
+        <button type="submit" class="ui button submit green">{{submitText}}</button>
+      </div>
+      {{/autoForm}}
     </div>
-    {{/autoForm}}
   </div>
 </template>

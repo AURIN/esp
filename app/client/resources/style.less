@@ -1,4 +1,5 @@
 @import 'color';
+@import 'layout';
 
 html, body {
   padding: 0;
@@ -13,6 +14,7 @@ html, body {
 html {
   overflow: hidden;
 }
+
 body {
   overflow: auto;
   // Allow elastic scrolling in iOS.
@@ -44,7 +46,7 @@ body {
       position: relative;
       width: 300px;
       flex-shrink: 0;
-      overflow: auto;
+      overflow: hidden;
       .panel {
         position: absolute;
         height: 100%;
@@ -63,6 +65,11 @@ body {
           box-shadow: none;
           -webkit-box-shadow: none;
           border-radius: 0;
+          // TODO(aramk) Remove when migrating from bootstrap.
+          .form-group {
+            padding: 0 10px;
+            margin-bottom: 10px;
+          }
         }
       }
       .title {
@@ -70,6 +77,12 @@ body {
         font-size: 14px;
         background: #ddd;
         box-shadow: 0 0 0 1px @color-line-1;
+      }
+      .subtitle {
+        padding: 8px;
+        background: #eee;
+        font-size: 13px;
+        margin-bottom: 10px;
       }
       .table {
         tr {
@@ -111,6 +124,8 @@ body {
       }
       table.selectable {
         tbody tr {
+          .unselectable;
+          cursor: pointer;
           &:hover td {
             background: @color-highlight-lighter !important;
           }
@@ -128,13 +143,43 @@ body {
       height: auto;
       background: black;
       color: white;
-      > .atlas {
-//        position: absolute;
-//        height: 100%;
-//        width: 100%;
-//        top: 0;
-//        left: 0;
-      }
     }
+  }
+}
+
+.flex-panel {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  height: 100%;
+  .title {
+    flex-shrink: 0;
+  }
+  .content {
+    flex-grow: 1;
+    overflow: auto;
+    margin: 0;
+    padding: 0;
+  }
+  .buttons {
+    display: flex;
+    flex-direction: row;
+    flex-shrink: 0;
+    padding: 5px;
+    border: 1px solid #ccc;
+    .button {
+      padding: 8px;
+    }
+    .spacer {
+      flex-grow: 1;
+    }
+  }
+}
+
+.crud.form {
+  form {
+    width: 100%;
+    padding: 0;
+    padding-top: 10px;
   }
 }

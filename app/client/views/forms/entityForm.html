@@ -1,15 +1,18 @@
 <template name="entityForm">
-  <div class="title">Entity</div>
-  <div class="ui form segment">
-    {{#autoForm collection=collection id=formName doc=doc type=formType settings=settings}}
-    {{> afQuickField name="name"}}
-    {{> afQuickField name="desc"}}
-    {{> afFieldLabel name="typology"}}
-    {{> dropdown name="typology" items="Typologies" value=typology}}
-    <div class="buttons">
-      <button type="button" class="ui red cancel button">Cancel</button>
-      <button type="submit" class="ui button submit green">{{submitText}}</button>
+  <div class="flex-panel crud form">
+    <div class="title">Entity</div>
+    <div class="ui form segment content">
+      {{#autoForm collection=collection id=formName doc=doc type=formType settings=settings}}
+      {{> afQuickField name="name"}}
+      {{> afQuickField name="desc"}}
+      {{> afFieldLabel name="typology"}}
+      {{> dropdown name="typology" items="Typologies" value=typology}}
+      <div class="buttons">
+        <button type="button" class="ui red cancel button">Cancel</button>
+        <div class="spacer"></div>
+        <button type="submit" class="ui button submit green">{{submitText}}</button>
+      </div>
+      {{/autoForm}}
     </div>
-    {{/autoForm}}
   </div>
 </template>

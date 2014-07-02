@@ -8,8 +8,8 @@
 
   defineModelForm: (args) ->
     name = args.name
-    TemplateClass = Template[name]
-    unless TemplateClass
+    Form = Template[name]
+    unless Form
       throw new Error 'No template defined with name ' + name
 
     AutoForm.addHooks name,
@@ -25,17 +25,24 @@
         args.onSuccess?.apply(@, arguments)
         template.data?.settings?.onSuccess?.apply(@, arguments)
 
-    TemplateClass.helpers
+    Form.helpers
       collection: -> Collections.get(args.collection)
       formName: -> name
       formType: -> if @doc then 'update' else 'insert'
       submitText: -> if @doc then 'Save' else 'Create'
       settings: -> Forms.preventText(@settings) if @settings?
 
-    TemplateClass.events
+    Form.events
       'click button.cancel': (e, template) ->
         e.preventDefault();
         args.onCancel?()
         template.data?.settings?.onCancel?()
 
-    TemplateClass
+    Form.rendered = ->
+        # Move the buttons to the same level as the title and content to allow using flex-layout.
+      $buttons = $(@find('.buttons'))
+      $crudForm = $(@find('.flex-panel'))
+      if $buttons.length > 0 && $crudForm.length > 0
+        $crudForm.append($buttons)
+
+    Form
