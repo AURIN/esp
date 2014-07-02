@@ -1,16 +1,3 @@
-getPanel = ->
-  Session.get 'currentPanel'
-
-setPanel = (id) ->
-  Session.set 'currentPanel', id
-  console.log('Panel changed', Session.get 'currentPanel')
-
-assertPanel = (id) ->
-  getPanel() == id
-
-Template.main.created = ->
-  setPanel 'default'
-
 Template.main.rendered = ->
   @data ?= {}
 
@@ -84,9 +71,6 @@ Template.main.rendered = ->
     )
 
 Template.main.helpers
-  isDefaultPanel: -> assertPanel 'default'
-  isEntityPanel: -> assertPanel 'entities'
-  isTypologyPanel: -> assertPanel 'typologies'
   entities: -> Entities.find()
   typologies: -> Typologies.find()
 
@@ -105,15 +89,16 @@ Template.main.removePanel = (template, component) ->
   $(component.dom.getNodes()).parent().remove()
   component.dom.remove()
 
+Template.main.setUpPanel = (template, panelTemplate, doc) ->
+  settings = {}
+  data = doc: doc, settings: settings
+  panel = UI.renderWithData panelTemplate, data
+  callback = -> Template.main.removePanel template, panel
+  settings.onCancel = settings.onSuccess = callback
+  Template.main.addPanel template, panel
+
 Template.main.events
-  'click .entities .add.item': -> setPanel 'entities'
-  'click .typologies .add.item': -> setPanel 'typologies'
   'click .entities .edit': (e, template) ->
-    settings = {}
-    data = doc: @, settings: settings
-    panel = UI.renderWithData Template.entityForm, data
-    callback = -> Template.main.removePanel template, panel
-    settings.onCancel = settings.onSuccess = callback
-    Template.main.addPanel template, panel
-#    Session.set 'entityFormDoc', @
-#    setPanel 'entities'
+    Template.main.setUpPanel template, Template.entityForm, @
+  'click .typologies .edit': (e, template) ->
+    Template.main.setUpPanel template, Template.typologyForm, @

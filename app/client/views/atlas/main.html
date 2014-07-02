@@ -2,14 +2,7 @@
   <div class="ui main container">
     <div class="sidebar">
 
-      <!--{{#if isDefaultPanel}}-->
       <div class="default panel">
-
-        <!-- TODO(aramk) Remove? -->
-        <div class="header">Static Features</div>
-        <div class="item entities">
-          <table class="ui table segment"></table>
-        </div>
 
         <div class="header">Entities</div>
         <div class="item entities">
@@ -20,7 +13,7 @@
           </div>
           <table class="ui table segment">
             {{#each entities}}
-            <tr><td><a class="edit">{{name}}</a></td></tr>
+            <tr><td class="edit">{{name}}</td></tr>
             {{/each}}
           </table>
         </div>
@@ -34,21 +27,12 @@
           </div>
           <table class="ui table segment">
             {{#each typologies}}
-              <tr><td>{{name}}</td></tr>
+              <tr><td class="edit">{{name}}</td></tr>
             {{/each}}
           </table>
         </div>
 
       </div>
-      <!--{{/if}}-->
-
-      <!--{{#if isEntityPanel}}-->
-      <!--{{> entityPanel}}-->
-      <!--{{/if}}-->
-
-      <!--{{#if isTypologyPanel}}-->
-      <!--{{> typologyPanel}}-->
-      <!--{{/if}}-->
 
     </div>
     <div class="atlas"></div>
