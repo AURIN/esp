@@ -1,3 +1,10 @@
+# The template is limited to a single instance, so we can store it and reference it in helper
+# methods.
+templateInstance = null
+
+Template.main.created = ->
+  templateInstance = @
+
 Template.main.rendered = ->
   @data ?= {}
 
@@ -80,6 +87,10 @@ Template.main.helpers
     ]
     rowsPerPage: 100000
     showNavigation: 'never'
+    onCreate: ->
+      Template.main.setUpFormPanel templateInstance, Template.entityForm
+    onEdit: (doc) ->
+      Template.main.setUpFormPanel templateInstance, Template.entityForm, doc
 
 Template.main.addPanel = (template, component) ->
   console.log 'addPanel', template, component
@@ -107,11 +118,11 @@ Template.main.setUpFormPanel = (template, formTemplate, doc, settings) ->
   settings.onCancel = settings.onSuccess = callback
   panel
 
-Template.main.events
-  'click .entities .add.item': (e, template) ->
-    Template.main.setUpFormPanel template, Template.entityForm
-  'dblclick .entities .edit': (e, template) ->
-    # TODO(aramk)
-    null
-  'dblclick .typologies .edit': (e, template) ->
-    Template.main.setUpFormPanel template, Template.typologyForm, @
+#Template.main.events
+#  'click .entities .add.item': (e, template) ->
+#    Template.main.setUpFormPanel template, Template.entityForm
+#  'dblclick .entities .edit': (e, template) ->
+#    # TODO(aramk)
+#    null
+#  'dblclick .typologies .edit': (e, template) ->
+#    Template.main.setUpFormPanel template, Template.typologyForm, @

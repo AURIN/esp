@@ -41,36 +41,42 @@ Template.collectionTable.rendered = function() {
   $('tr th', $footer).attr('colspan', colCount).append($nav);
   $('tbody', $table).after($footer);
 
-  var $btnCreate = $(this.find('.create.item')).click(createItem);
-  var $btnEdit = $(this.find('.edit.item')).click(editSelectedRow);
-  var $btnDelete = $(this.find('.delete.item')).click(deleteSelectedRow);
+  var $btnCreate = $(this.find('.create.item')).click(onCreate);
+  var $btnEdit = $(this.find('.edit.item')).click(onEdit);
+  var $btnDelete = $(this.find('.delete.item')).click(onDelete);
   var $selectedRow;
   var selectedClass = this.data.selectedClass || 'selected';
 
   var collection = this.data.collection;
-  var createRoute = this.data.createRoute;
-  var editRoute = this.data.editRoute;
-
-  function createItem() {
-    Router.go(createRoute);
-  }
-
-  function onSelectionChange(item) {
-    $btnEdit.add($btnDelete)[item ? 'show' : 'hide']();
-  }
+  var settings = this.data.settings;
 
   function getSelectedId() {
     return $selectedRow.attr('data-id');
   }
 
-  function editSelectedRow() {
-    Router.go(editRoute, {_id: getSelectedId()});
+  function getSelectedModel() {
+    return collection.findOne(getSelectedId());
   }
 
-  function deleteSelectedRow() {
+  function onCreate() {
+    settings.onCreate && settings.onCreate(this);
+  }
+
+  function onEdit() {
+    settings.onEdit && settings.onEdit(getSelectedModel());
+  }
+
+  function onDelete() {
+    settings.onDelete && settings.onDelete(this);
     if (confirm('Delete item?')) {
       collection.remove(getSelectedId());
+      settings.onDeleted && settings.onDeleted(this);
     }
+  }
+
+  function onSelectionChange(item) {
+    $btnEdit.add($btnDelete)[item ? 'show' : 'hide']();
+    settings.onSelectionChange && settings.onSelectionChange(this);
   }
 
   onSelectionChange();
@@ -91,7 +97,7 @@ Template.collectionTable.rendered = function() {
     onSelectionChange($selectedRow);
   }).dblclick(function() {
     $selectedRow = $(this);
-    editSelectedRow();
+    onEdit();
   });
 };
 

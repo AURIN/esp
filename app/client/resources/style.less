@@ -9,112 +9,126 @@ html, body {
   height: 100%;
 }
 
-.main.container {
-
-  height: 100%;
-  display: flex;
-  flex-direction: row;
-
-  .sidebar {
-    position: relative;
-    width: 300px;
-    .panel {
-      position: absolute;
-      height: 100%;
-      width: 100%;
-      background: white;
-      .ui.table {
-        border-radius: 0;
-      }
-      .icon.menu {
-        margin: 0;
-        .item {
-          padding: 0.5rem;
-        }
-      }
-    }
-    .title {
-      padding: 10px;
-      font-size: 14px;
-      background: #ddd;
-    }
-  }
-
-  > .atlas {
-    flex-grow: 1;
-    background: black;
-    color: white;
-    height: 100%;
-  }
-
-  .table {
-    tr {
-      td:first-child {
-        .ui.checkbox {
-          width: 15px;
-        }
-        width: 15px;
-      }
-      &.heading td {
-        background: #ccc;
-      }
-    }
-    .extra.buttons {
-      > * {
-        float: right;
-      }
-      .ui.button {
-        padding: 0 3px;
-        background: none;
-        border: none;
-        box-shadow: none;
-      }
-    }
-  }
-
-  .reactive-table-filter {
-    padding: 4px;
-    .reactive-table-input {
-      padding: 0.3rem;
-    }
-  }
-
-  .reactive-table {
-    margin: 0;
-    margin-bottom: 10px;
-    box-shadow: 0 -1px 0 rgba(0, 0, 0, 0.1);
-    tfoot {
-      display: none;
-    }
-  }
-
-  table.selectable {
-    tbody tr {
-      &:hover td {
-        background: @color-highlight-lighter !important;
-      }
-      &.selected td {
-        background: @color-highlight-light !important;
-      }
-    }
-  }
-
-  .ui.menu.toolbar {
-    margin: 0;
-  }
-
+// Disable elastic scrolling for the desktop.
+html {
+  overflow: hidden;
+}
+body {
+  overflow: auto;
+  // Allow elastic scrolling in iOS.
+  -webkit-overflow-scrolling: touch;
 }
 
-.header {
-  height: 40px;
-  border-bottom: 1px solid #999;
-  .logo {
-    color: @color-orange;
-    display: inline-block;
-    vertical-align: middle;
-    font-size: 20px;
-    font-weight: bold;
-    line-height: 40px;
-    margin: 0 10px;
+.main.container {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  .header {
+    height: 40px;
+    border-bottom: 1px solid #ccc;
+    .logo {
+      color: @color-orange;
+      display: inline-block;
+      vertical-align: middle;
+      font-size: 20px;
+      font-weight: bold;
+      line-height: 40px;
+      margin: 0 10px;
+    }
+  }
+  .content {
+    flex-grow: 1;
+    display: flex;
+    flex-direction: row;
+    .sidebar {
+      position: relative;
+      width: 300px;
+      flex-shrink: 0;
+      .panel {
+        position: absolute;
+        height: 100%;
+        width: 100%;
+        background: white;
+        .ui.table {
+          border-radius: 0;
+        }
+        .icon.menu {
+          margin: 0;
+          .item {
+            padding: 0.5rem;
+          }
+        }
+      }
+      .title {
+        padding: 10px;
+        font-size: 14px;
+        background: #ddd;
+        box-shadow: 0 0 1px @color-line-1;
+      }
+      .table {
+        tr {
+          td:first-child {
+            .ui.checkbox {
+              width: 15px;
+            }
+            width: 15px;
+          }
+          &.heading td {
+            background: #ccc;
+          }
+        }
+        .extra.buttons {
+          > * {
+            float: right;
+          }
+          .ui.button {
+            padding: 0 3px;
+            background: none;
+            border: none;
+            box-shadow: none;
+          }
+        }
+      }
+      .reactive-table-filter {
+        padding: 4px;
+        .reactive-table-input {
+          padding: 0.3rem;
+        }
+      }
+      .reactive-table {
+        margin: 0;
+        margin-bottom: 10px;
+        box-shadow: 0 -1px 0 @color-line-1;
+        tfoot {
+          display: none;
+        }
+      }
+      table.selectable {
+        tbody tr {
+          &:hover td {
+            background: @color-highlight-lighter !important;
+          }
+          &.selected td {
+            background: @color-highlight-light !important;
+          }
+        }
+      }
+      .ui.menu.toolbar {
+        margin: 0;
+      }
+    }
+    .viewer {
+      flex-grow: 1;
+      height: auto;
+      background: black;
+      color: white;
+      > .atlas {
+//        position: absolute;
+//        height: 100%;
+//        width: 100%;
+//        top: 0;
+//        left: 0;
+      }
+    }
   }
 }

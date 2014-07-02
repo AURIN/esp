@@ -1,25 +1,31 @@
 <template name="main">
-  <div class="header">
-    <div class="logo">ESP</div>
-  </div>
   <div class="ui main container">
-    <div class="sidebar">
-
-      <div class="default panel">
-
-        <div class="title">Entities</div>
-        <div class="items entities">
-          {{> collectionTable collection="Entities" settings=tableSettings}}
-        </div>
-
-        <div class="title">Typologies</div>
-        <div class="items typologies">
-          {{> collectionTable collection="Typologies" settings=tableSettings}}
-        </div>
-
-      </div>
-
+    <div class="header">
+      <div class="logo">ESP</div>
     </div>
-    <div class="atlas"></div>
+    <div class="content">
+      <div class="sidebar">
+        <div class="default panel">
+          <div class="title">Entities</div>
+          <div class="items entities">
+            {{> collectionTable collection="Entities" settings=tableSettings}}
+          </div>
+          <div class="title">Typologies</div>
+          <div class="items typologies">
+            {{> collectionTable collection="Typologies" settings=tableSettings}}
+          </div>
+        </div>
+      </div>
+      <div class="viewer">
+        <div class="atlas"></div>
+      </div>
+      <div class="sidebar">
+        <div class="reports panel">
+          <div class="title">Reports</div>
+          <div class="items reports">
+          </div>
+        </div>
+      </div>
+    </div>
   </div>
 </template>
