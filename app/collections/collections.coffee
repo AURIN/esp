@@ -1,4 +1,8 @@
 SimpleSchema.debug = true
+SimpleSchema.extendOptions
+# Optional description of the field.
+  desc: Match.Optional(String)
+
 global = @
 
 @Collections =
@@ -6,8 +10,8 @@ global = @
   allow: -> true
   allowAll: -> insert: @allow, update: @allow, remove: @allow
 
-  # @param {Meteor.Collection|Cursor|String} arg
-  # @returns {String}
+# @param {Meteor.Collection|Cursor|String} arg
+# @returns {String}
   getName: (arg) ->
     collection = @get(arg)
     # Meteor.Collection or LocalCollection.
@@ -16,7 +20,7 @@ global = @
   getTitle: (arg) ->
     Strings.toTitleCase(@getName(arg))
 
-  # @param {String|Meteor.Collection|Cursor} arg
+# @param {String|Meteor.Collection|Cursor} arg
   get: (arg) ->
     if Types.isString(arg)
       # Collection name.
@@ -28,18 +32,18 @@ global = @
     else
       return null
 
-  # @param obj
-  # @returns {Boolean} Whether the given object is a collection.
+# @param obj
+# @returns {Boolean} Whether the given object is a collection.
   isCollection: (obj) ->
     obj instanceof Meteor.Collection
 
-  # @param obj
-  # @returns {Boolean} Whether the given object is a collection cursor.
+# @param obj
+# @returns {Boolean} Whether the given object is a collection cursor.
   isCursor: (obj) ->
     obj.fetch != undefined
 
-  # @param {Meteor.Collection|Cursor|Array} arg
-  # @returns {Array} The items in the collection, or the cursor, or the original array passed.
+# @param {Meteor.Collection|Cursor|Array} arg
+# @returns {Array} The items in the collection, or the cursor, or the original array passed.
   getItems: (arg) ->
     if Types.isArray(arg)
       return arg

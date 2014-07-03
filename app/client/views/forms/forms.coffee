@@ -47,4 +47,31 @@
       $('[type="submit"]', $buttons).click ->
         $('form', $crudForm).submit();
 
+      collection = Collections.get(args.collection)
+      schema = collection._c2._simpleSchema;
+      $schemaInputs = $('[data-schema-key]');
+      console.log(collection, schema, $schemaInputs)
+
+      popupInputs = []
+      addPopups = ->
+        console.log('adding popups')
+        $schemaInputs.each ->
+          $input = $(@)
+          key = $input.attr('data-schema-key')
+          field = schema.schema(key)
+          desc = field.desc
+          if desc
+            $input.popup('setting', delay: 500, content: desc)
+            popupInputs.push($input)
+        console.log('popups', popupInputs)
+
+      removePopups = ->
+        console.log('removing popups', popupInputs)
+        $(popupInputs).popup('destroy')
+        popupInputs = []
+
+      Deps.autorun ->
+        helpMode = Session.get 'helpMode'
+        if helpMode then addPopups() else removePopups()
+
     Form
