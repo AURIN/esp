@@ -50,23 +50,31 @@
       collection = Collections.get(args.collection)
       schema = collection._c2._simpleSchema;
       $schemaInputs = $('[data-schema-key]');
-      console.log(collection, schema, $schemaInputs)
 
       popupInputs = []
+      $schemaInputs.each ->
+        $input = $(@)
+        key = $input.attr('data-schema-key')
+        field = schema.schema(key)
+        desc = field.desc
+        # Add popups to the inputs contain definitions from the schema.
+        if desc?
+          popupInputs.push($input)
+        # Add units into labels
+        $label = $input.siblings('label')
+        units = field.units
+        console.log('unit', $label, units, field)
+        if units?
+          formattedUnits = Strings.format.scripts(units)
+          $units = $('<div class="units">' + formattedUnits + '</div>');
+          $labelContent = $('<div class="value">' + $label.html() + '</div>')
+          $label.empty()
+          $label.append($labelContent).append($units)
+
       addPopups = ->
-        console.log('adding popups')
-        $schemaInputs.each ->
-          $input = $(@)
-          key = $input.attr('data-schema-key')
-          field = schema.schema(key)
-          desc = field.desc
-          if desc
-            $input.popup('setting', delay: 500, content: desc)
-            popupInputs.push($input)
-        console.log('popups', popupInputs)
+        $(popupInputs).popup('setting', delay: 500, content: desc)
 
       removePopups = ->
-        console.log('removing popups', popupInputs)
         $(popupInputs).popup('destroy')
         popupInputs = []
 

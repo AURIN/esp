@@ -24,3 +24,10 @@
 
   plural: (singular) ->
     singular + 's'
+
+  format:
+
+    sup: (str) -> str.replace(/\^(\w+)/g, '<sup>$1</sup>')
+    sub: (str) -> str.replace(/_(\w+)/g, '<sub>$1</sub>')
+    scripts: (str) -> @.sup(@.sub(str))
+

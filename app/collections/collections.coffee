@@ -1,7 +1,8 @@
 SimpleSchema.debug = true
 SimpleSchema.extendOptions
-# Optional description of the field.
+# Optional extra fields.
   desc: Match.Optional(String)
+  units: Match.Optional(String)
 
 global = @
 

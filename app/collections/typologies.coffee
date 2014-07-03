@@ -4,6 +4,16 @@
 classes = ['Residential', 'Commercial', 'Mixed Use', 'Institutional', 'Road', 'Public Open Space']
 types = ['Basic', 'Energy Efficient']
 
+stringAllowedValues = (allowed) -> '(' + allowed.join(', ') + ')'
+
+Units =
+  m2: 'm^2'
+  $m2: '$/m^2'
+  $: '$'
+  kgco2: 'kg CO_2-e'
+  Lyear: 'L/year'
+  MLyear: 'ML/year'
+
 categories =
   general:
     label: 'General'
@@ -23,6 +33,7 @@ categories =
       'class':
         label: 'Class'
         type: String
+        desc: stringAllowedValues(classes)
         allowedValues: classes
       subclass:
         label: 'Subclass'
@@ -31,12 +42,13 @@ categories =
       type:
         label: 'Type'
         type: String
-        desc: 'Version of the subclass.'
+        desc: 'Version of the subclass. ' + stringAllowedValues(types)
         allowedValues: types
       tot_area:
         label: 'Total Area'
         type: Number
         desc: 'Total area of the drawn public open space.'
+        units: Units.m2
   environmental:
     label: 'Environmental'
     items:
@@ -48,14 +60,17 @@ categories =
         label: 'Area Paved'
         desc: 'Area of the drawn public open space covered by pavement.'
         type: Number
+        units: Units.m2
       nat_prpn:
         label: 'Proportion Native Plants'
         desc: 'Proportion of the public open space typology covered by native plants.'
         type: Number
+        units: Units.m2
       nat_area:
         label: 'Area of Native Plants'
         desc: 'Area of the drawn public open space covered by native plants.'
         type: Number
+        units: Units.m2
       exo_prpn:
         label: 'Proportion Exotic Plants'
         desc: 'Proportion of the public open space covered by exotic plants.'
@@ -64,6 +79,7 @@ categories =
         label: 'Area of Exotic Plants'
         desc: 'Area of the drawn public open space covered by exotic plants.'
         type: Number
+        units: Units.m2
       lawn_prpn:
         label: 'Proportion Lawn'
         desc: 'Proportion of the public open space covered by lawn.'
@@ -72,6 +88,7 @@ categories =
         label: 'Area of Lawn'
         desc: 'Area of the drawn public open space covered by lawn.'
         type: Number
+        units: Units.m2
 
 # Constructs SimpleSchema for the categories and their items specified above.
 createCategoriesSchema = (args) ->
