@@ -10,6 +10,7 @@ Template.main.created = ->
   templateInstance = @
 
 Template.main.rendered = ->
+  # TODO(aramk) Data is what is passed to the template, not the data on the instance.
   @data ?= {}
 
   # TODO(aramk) Make Renderer a Meteor module.

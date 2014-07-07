@@ -4,6 +4,7 @@
     name = args.name
     title = args.title
     Report = Template[name]
+    Report.title = title
     unless Report
       throw new Error 'No template defined with name ' + name
 

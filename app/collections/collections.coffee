@@ -67,3 +67,6 @@ global = @
     if @isCursor(arg)
       return arg.fetch()
     return []
+
+  createTemporary: ->
+    new Meteor.Collection(null)
