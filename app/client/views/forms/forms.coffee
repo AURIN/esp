@@ -63,7 +63,6 @@
         # Add units into labels
         $label = $input.siblings('label')
         units = field.units
-        console.log('unit', $label, units, field)
         if units?
           formattedUnits = Strings.format.scripts(units)
           $units = $('<div class="units">' + formattedUnits + '</div>');

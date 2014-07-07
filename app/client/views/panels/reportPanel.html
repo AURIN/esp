@@ -1,12 +1,14 @@
 <template name="reportPanel">
   <div class="reports panel">
     <div class="title">Reports</div>
-    <div>
+    <div class="ui menu">
       <!--{{#each reports}}-->
       <!--{{template}}-->
       <!--{{/each}}-->
-      {{> dropdown name="report" items=reports}}
-      <div class="ui refresh button icon">
+      <div class="item dropdown-container no-padding">
+        {{> dropdown name="report" items=reports}}
+      </div>
+      <div class="ui refresh button icon basic item">
         <i class="refresh icon"></i>
       </div>
     </div>

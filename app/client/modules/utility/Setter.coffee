@@ -1,7 +1,7 @@
 @Setter =
 
   merge: (args...) ->
-    dest = @clone(args[0])
+    dest = args[0]
     args.shift()
     for arg in args
       lodash.merge(dest, arg)
