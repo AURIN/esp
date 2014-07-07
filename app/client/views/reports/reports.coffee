@@ -62,7 +62,7 @@
       $field = $('<div class="field"></div>')
       $label = $('<div class="label"><div class="content">' + label + '</div></div>')
       if units?
-        $label.append('<div class="units">' + units + '</div>')
+        $label.append('<div class="units">' + Strings.format.scripts(units) + '</div>')
       $value = $('<div class="value">' + data[field.id] + '</div>')
       $field.append($label, $value)
       $field
