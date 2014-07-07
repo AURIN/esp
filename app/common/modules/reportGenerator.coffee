@@ -8,7 +8,7 @@ Aggregator =
     total
 
   average: (values) ->
-    len = values.length
+    len = (values.filter (value) -> value?).length
     if len > 0 then @total(values) / len else 0
 
 class @ReportGenerator
@@ -18,14 +18,39 @@ class @ReportGenerator
 
   generate: (args) ->
     models = args.models
-    paramIds = args.paramIds ?= Object.keys(@evalEngine.getOutputParamSchemas())
+    fields = args.fields
     aggregate = args.aggregate ? 'total'
-    evalResults = []
+    paramMap = {}
+#    inputParamMap = {}
+#    outputParamMap = {}
+    for field in fields
+      param = field.param
+      if param?
+        paramMap[param] = true
+#        map = if field.expr then outputParamMap else inputParamMap
+#        map[param] = true
+#    inputParamIds = Object.keys(inputParamMap)
+#    outputParamIds = Object.keys(outputParamMap)
+    paramIds = Object.keys(paramMap)
+    console.log('Generating report:')
+    console.log('models', args.models)
+#    console.log('parameters', outputParamIds)
+#    evalResults = {}
     for model in models
-      result = @evalEngine.evaluate(model: model, paramIds: paramIds)
-      evalResults.push result
-    results = {}
-    for paramId in paramIds
-      paramResults = _.map evalResults, (result) -> result[paramId]
-      results[paramId] = Aggregator[aggregate](paramResults)
-    results
+      results = @evalEngine.evaluate(model: model, paramIds: paramIds)
+#      for paramId in results
+#        Entities.setParameter(model, paramId, results[paramId])
+#      for paramId in inputParamIds
+#        result[paramId] = Entities.getParameter(model, paramId)
+#      evalResults[model._id] = result
+    reportResults = {}
+    for field in fields
+      # Aggregate values for evaluated parameters across all models.
+      paramId = field.param
+      # TODO(aramk) Ignore header fields earlier.
+      unless paramId?
+        continue
+#      paramResults = _.map evalResults, (result) -> result[paramId]
+      paramResults = _.map models, (model) -> Entities.getParameter(model, paramId)
+      reportResults[field.id] = Aggregator[aggregate](paramResults)
+    reportResults

@@ -7,6 +7,9 @@
     unless Report
       throw new Error 'No template defined with name ' + name
 
+    evalEngine = new EvaluationEngine(schema: ParametersSchema)
+    reportGenerator = new ReportGenerator(evalEngine: evalEngine)
+
     # Flatten the list of fields, which may contain arrays of fields as items
     fields = []
     for field in args.fields
@@ -18,12 +21,22 @@
       else
         throw new Error('Invalid argument type for field: ' + field)
 
+    # Assign temporary IDs to the fields.
+    for field, i in fields
+      field.id = i + 1
+
     Report.rendered = ->
       # TODO(aramk) Invoke generator first, then pass data to renderField
 
+      # TODO(aramk) Filter based on selected entities/typologies with Session.get
+      entities = Entities.getWithTypology()
+      console.log('Evaluating entities', entities)
+      results = reportGenerator.generate(models: entities, fields: fields)
+      console.log('results', results)
+
       $fields = $(@find('.fields'))
       for field in fields
-        $field = Reports.renderField(field)
+        $field = Reports.renderField(field, results)
         $fields.append($field)
 
     Report.helpers
@@ -38,9 +51,19 @@
       fields = {param: args.category + '.' + paramId}
     fields
 
-  renderField: (field) ->
-    if field.param?
-      # TODO(aramk) Actually generate the field
-      return $('<div class="field">' + field.param + '</div>')
+  renderField: (field, data) ->
+    param = field.param
+    if param?
+      # TODO(aramk) Actually output the field value
+      paramSchema = ParametersSchema.schema(param)
+      label = paramSchema.label ? Strings.toTitleCase(param)
+      units = paramSchema.units
+      $field = $('<div class="field"></div>')
+      $label = $('<div class="label"><div class="content">' + label + '</div></div>')
+      if units?
+        $label.append('<div class="units">' + units + '</div>')
+      $value = $('<div class="value">' + data[field.id] + '</div>')
+      $field.append($label, $value)
+      $field
     else if field.title?
       return $('<div class="subtitle">' + field.title + '</div>')

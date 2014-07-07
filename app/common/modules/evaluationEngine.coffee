@@ -12,8 +12,11 @@ class @EvaluationEngine
     schemas = @getOutputParamSchemas(args.paramIds)
     console.log('param schemas', schemas)
     for paramId, schema of schemas
-      result = schema.expr model.parameters, paramId, model, schema
-      unless result == null
+      try
+        result = schema.expr(model.parameters ? {}, paramId, model, schema)
+      catch e
+        console.error('Failed to evaluate parameter', paramId, e)
+      if result?
         changes[paramId] = result
         @setResult(model, paramId, result)
     changes
@@ -21,13 +24,21 @@ class @EvaluationEngine
   getOutputParamSchemas: (paramIds) ->
     paramIds ?= @schema._schemaKeys
     schemas = {}
-    _.each paramIds, (key) =>
+    for key in paramIds
       schema = @getParamSchema(key)
-      schemas[key] = schema if schema.expr?
+      if schema?
+        if schema.expr?
+          # Skip input fields which never need to be evaluated.
+          schemas[key] = schema
+      else
+        console.error('Skipping unknown parameter', key, 'not found in schema', schema)
     schemas
 
   setResult: (model, paramId, value) ->
-    model.parameters[paramId] = value
+    Entities.setParameter(model, paramId, value)
 
   getParamSchema: (paramId) ->
     @schema.schema(paramId)
+
+  isOutputParam: (paramId) ->
+    @getParamSchema(paramId).expr?

@@ -86,9 +86,9 @@ categories =
         units: Units.kgco2
         desc: 'CO2 emissions due to heating the typology'
         # TODO(aramk) Provide an expression with context and variables instead.
-        expr: (params) ->
-          src = params.energy.src_heat
-          en = params.energy.en_heat
+        expr: (params, paramId, model) ->
+          src = Entities.getParameter(model, 'energy.src_heat') # params.energy.src_heat
+          en = Entities.getParameter(model, 'energy.en_heat') # params.energy.en_heat
           return null unless src? and en?
           energySource = energySources[params.energy.src_heat]
           if energySource then energySource.kgCO2 * en else null
@@ -108,8 +108,8 @@ categories =
         units: Units.kgco2
         desc: 'CO2 emissions due to cooling the typology'
         expr: (params) ->
-          src = params.energy.src_cool
-          en = params.energy.en_cool
+          src = Entities.getParameter(model, 'energy.src_cool') # params.energy.src_cool
+          en = Entities.getParameter(model, 'energy.en_cool') # params.energy.en_cool
           return null unless src? and en?
           energySource = energySources[params.energy.src_cool]
           if energySource then energySource.kgCO2 * en else null
@@ -210,7 +210,33 @@ Schema = new SimpleSchema
     label: 'Parameters'
     type: ParametersSchema
     optional: true
+    defaultValue: {}
 
 @Typologies = new Meteor.Collection 'typologies', schema: Schema
 Typologies.schema = Schema
 Typologies.allow(Collections.allowAll())
+
+Typologies.getParameter = (model, paramId) ->
+  target = model.parameters ?= {}
+  segments = paramId.split('.')
+  unless segments.length > 0
+    return undefined
+  for key in segments
+    target = target[key]
+    unless target?
+      return undefined
+  target
+
+Typologies.setParameter = (model, paramId, value) ->
+  target = model.parameters ?= {}
+  segments = paramId.split('.')
+  unless segments.length > 0
+    return false
+  lastSegment = segments.pop()
+  for key in segments
+    target = target[key] ?= {}
+  target[lastSegment] = value
+  true
+
+#Typologies.getParameterLabel = (paramId) ->
+

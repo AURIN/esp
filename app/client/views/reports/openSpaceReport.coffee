@@ -9,13 +9,15 @@ Meteor.startup ->
 #      carbon: ['co2_total']
 #      water: ['wd_total']
     fields: [
-      {title: 'General'},
-      {param: 'general.tot_area'},
-      {title: 'Environmental'},
+      {title: 'General'}
+      {param: 'general.occupants'}
+      {title: 'Energy'}
+      {param: 'energy.en_heat'}
+      {param: 'energy.co2_heat'}
       # TODO(aramk) Parse issues in CS
-#      Reports.defineParamFields({category: 'environmental',
-#        params: ['pav_area', 'nat_area', 'exo_area', 'lawn_area']}),
-      {param: 'economic.cost_total'},
-      {param: 'carbon.co2_total'},
-      {param: 'water.wd_total'}
+#      Reports.defineParamFields({category: 'environmental'
+#        params: ['pav_area', 'nat_area', 'exo_area', 'lawn_area']})
+#      {param: 'economic.cost_total'}
+#      {param: 'carbon.co2_total'}
+#      {param: 'water.wd_total'}
     ]
