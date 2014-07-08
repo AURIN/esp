@@ -25,6 +25,9 @@
         args.onSuccess?.apply(@, arguments)
         template.data?.settings?.onSuccess?.apply(@, arguments)
 
+    if args.hooks?
+      AutoForm.addHooks name, args.hooks
+
     Form.helpers
       collection: -> Collections.get(args.collection)
       formName: -> name
@@ -39,6 +42,7 @@
         template.data?.settings?.onCancel?()
 
     Form.rendered = ->
+      console.debug 'Rendered form', @, arguments
       # Move the buttons to the same level as the title and content to allow using flex-layout.
       $buttons = $(@find('.buttons'))
       $crudForm = $(@find('.flex-panel'))

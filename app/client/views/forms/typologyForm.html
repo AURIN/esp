@@ -7,7 +7,10 @@
       {{> afQuickField name="desc"}}
 
       <div class="subtitle">General</div>
-      {{> afQuickField name="parameters.general.class"}}
+      {{> afFieldLabel name="parameters.general.class"}}
+      <!-- TODO(aramk) Refactor to use autoform field -->
+      {{> dropdown name="typology-class" items=classes value=classValue}}
+      <!--{{> afQuickField name="parameters.general.class"}}-->
       {{> afQuickField name="parameters.general.state"}}
       {{> afQuickField name="parameters.general.code"}}
       {{> afQuickField name="parameters.general.subclass"}}

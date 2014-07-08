@@ -95,23 +95,23 @@ Template.main.helpers
     onCreate: (data) ->
       collectionName = Collections.getName(data.collection)
       formName = collectionToForm[collectionName]
-      console.log 'onCreate', arguments, collectionName, formName
+      console.debug 'onCreate', arguments, collectionName, formName
       Template.main.setUpFormPanel templateInstance, Template[formName]
     onEdit: (data, doc) ->
       collectionName = Collections.getName(data.collection)
       formName = collectionToForm[collectionName]
-      console.log 'onEdit', arguments, collectionName, formName
+      console.debug 'onEdit', arguments, collectionName, formName
       Template.main.setUpFormPanel templateInstance, Template[formName], doc
 
 Template.main.addPanel = (template, component) ->
-  console.log 'addPanel', template, component
+  console.debug 'addPanel', template, component
   $container = $(template.find('.main.container > .content > .sidebar'))
   $panel = $('<div class="panel"></div>')
   $container.append $panel
   UI.insert component, $panel[0]
 
 Template.main.removePanel = (template, component) ->
-  console.log 'Removing panel', this, template, component
+  console.debug 'Removing panel', this, template, component
   $(component.dom.getNodes()).parent().remove()
   component.dom.remove()
 

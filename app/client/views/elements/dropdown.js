@@ -1,13 +1,14 @@
 Template.dropdown.rendered = function() {
   var items = Collections.getItems(this.data.items);
   var labelAttr = this.data.labelAttr || 'name';
+  var valueAttr = this.data.valueAttr || '_id';
 
   var $dropdown = $(this.find('.dropdown'));
   this.data.$dropdown = $dropdown;
 
   var $menu = $(this.find('.menu'));
   _.each(items, function(item) {
-    var $item = $('<div class="item" data-value="' + item._id + '">' + item[labelAttr] + '</div>');
+    var $item = $('<div class="item" data-value="' + item[valueAttr] + '">' + item[labelAttr] + '</div>');
     $menu.append($item);
   });
 

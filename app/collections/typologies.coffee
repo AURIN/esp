@@ -257,6 +257,7 @@ Schema = new SimpleSchema
 
 @Typologies = new Meteor.Collection 'typologies', schema: Schema
 Typologies.schema = Schema
+Typologies.classes = Classes
 Typologies.allow(Collections.allowAll())
 
 Typologies.getParameter = (model, paramId) ->
