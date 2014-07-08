@@ -7,6 +7,7 @@ standard-app-packages
 less
 jquery
 underscore
+lodash
 handlebar-helpers
 iron-router
 accounts-password

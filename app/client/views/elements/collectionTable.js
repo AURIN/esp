@@ -85,7 +85,6 @@ Template.collectionTable.rendered = function() {
       return;
     }
     boundRows[id] = true;
-    console.log('row bound', id);
     $row.click(function() {
       if ($selectedRow) {
         $selectedRow.removeClass(selectedClass);
@@ -115,7 +114,6 @@ Template.collectionTable.rendered = function() {
       // to be constructed first.
       setTimeout(function() {
         var id = doc._id;
-        console.log('row added', id);
         var $td = $('[data-id="' + id + '"]', $table);
         bindRow($td.closest('tr'));
       }, 300);

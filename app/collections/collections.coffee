@@ -1,8 +1,20 @@
 SimpleSchema.debug = true
 SimpleSchema.extendOptions
 # Optional extra fields.
+# TODO(aramk) These are added globally, not just for typologies.
   desc: Match.Optional(String)
   units: Match.Optional(String)
+# TODO(aramk) There's no need to use serialized formulas, since functions are first-class objects
+# and we don't need to persist or change them outside of source code.
+
+# An expression for calculating the value of the given field for the given model. These are output
+# fields and do not appear in forms. The formula can be a string containing other field IDs prefixed
+# with '$' (e.g. $occupants) which are resolved to the local value per model, or global parameters
+# if no local equivalent is found.
+
+# If the expression is a function, it is passed the current model
+# and the field and should return the result.
+  expr: Match.Optional(Match.Any)
 
 global = @
 
@@ -55,3 +67,6 @@ global = @
     if @isCursor(arg)
       return arg.fetch()
     return []
+
+  createTemporary: ->
+    new Meteor.Collection(null)

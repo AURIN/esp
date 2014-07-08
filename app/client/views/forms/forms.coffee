@@ -59,11 +59,10 @@
         desc = field.desc
         # Add popups to the inputs contain definitions from the schema.
         if desc?
-          popupInputs.push($input)
+          popupInputs.push($input.data('desc', desc))
         # Add units into labels
         $label = $input.siblings('label')
         units = field.units
-        console.log('unit', $label, units, field)
         if units?
           formattedUnits = Strings.format.scripts(units)
           $units = $('<div class="units">' + formattedUnits + '</div>');
@@ -72,7 +71,11 @@
           $label.append($labelContent).append($units)
 
       addPopups = ->
-        $(popupInputs).popup('setting', delay: 500, content: desc)
+        $(popupInputs).each ->
+          $input = $(@)
+          $input.data('desc')
+          console.log('$input')
+          $input.popup('setting', delay: 500, content: $input.data('desc'))
 
       removePopups = ->
         $(popupInputs).popup('destroy')

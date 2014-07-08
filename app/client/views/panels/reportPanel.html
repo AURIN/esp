@@ -1,0 +1,23 @@
+<template name="reportPanel">
+  <div class="reports panel">
+    <div class="title">Reports</div>
+    <div class="ui menu">
+      <!--{{#each reports}}-->
+      <!--{{template}}-->
+      <!--{{/each}}-->
+      <div class="item dropdown-container no-padding">
+        {{> dropdown name="report" items=reports}}
+      </div>
+      <div class="ui refresh button icon basic item">
+        <i class="refresh icon"></i>
+      </div>
+    </div>
+    <div class="items reports">
+      <!-- TODO(aramk) Temporary - remove. -->
+      <!--<div class="ui button blue evaluate">Evaluate</div>-->
+
+      <!--{{> openSpaceReport}}-->
+
+    </div>
+  </div>
+</template>
