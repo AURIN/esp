@@ -1,20 +1,32 @@
-# TODO(aramk) Add desc for each and show as tooltips in the inputs
-# TODO(aramk) Added units for each and show in labels - or just add them into the labels below.
+####################################################################################################
+# SCHEMA DECLARATION
+####################################################################################################
 
-classes = ['Residential', 'Commercial', 'Mixed Use', 'Institutional', 'Road', 'Public Open Space']
-types = ['Basic', 'Energy Efficient']
+Classes = {
+  RESIDENTIAL: 'Residential',
+  COMMERCIAL: 'Commercial',
+  OPEN_SPACE: 'Open Space',
+  PATHWAYS: 'Pathways',
+}
+ClassNames = Object.keys(Classes)
+
+Types = ['Basic', 'Energy Efficient']
+
+# TODO(aramk) Convert to using global parameters.
 # Energy sources and their kg of CO2 usage
-energySources =
+EnergySources =
   Electricity:
     units: 'kWh'
     kgCO2: 1.31
   Gas:
     units: 'MJ'
     kgCO2: 0.05583
-energySourceTypes = Object.keys(energySources)
+
+EnergySourceTypes = Object.keys(EnergySources)
 
 stringAllowedValues = (allowed) -> '(' + allowed.join(', ') + ')'
 
+# ^ and _ are converted to superscript and subscript in forms and reports.
 Units =
   m2: 'm^2'
   $m2: '$/m^2'
@@ -27,6 +39,7 @@ Units =
 categories =
   general:
     items:
+    # Generic fields
       geom:
         label: 'Geometry'
         type: String,
@@ -37,37 +50,63 @@ categories =
       code:
         type: String
         desc: 'A unique code derived from the state abbreviation, typology type abbreviation and version number. Ex. VIC-CG-001 for Community Garden version 1.'
-    # TODO(aramk) Missing from the spec.
       'class':
         type: String
-        desc: stringAllowedValues(classes)
-        allowedValues: classes
+        desc: stringAllowedValues(ClassNames)
+        optional: false
+        allowedValues: ClassNames
       subclass:
         type: String
         desc: 'Typology within a class. Ex. "Community Garden", "Park" or "Public Plaza".'
       type:
         type: String
-        desc: 'Version of the subclass. ' + stringAllowedValues(types)
-        allowedValues: types
-      lotsize:
-        label: 'Lot Size'
-        type: Number
-        desc: 'Area of the land parcel.'
-        units: Units.m2
-      # TODO(aramk) Remove once we support an AREA() function using the geom. Define a function
-      # for the "expr" field to return the calculated area.
-        defaultValue: 500
-      extland:
-        label: 'Extra Land'
-        type: Number
-        desc: 'Area of the land parcel not covered by the structural improvement.'
-        units: Units.m2
-        defaultValue: 300
+        desc: 'Version of the subclass. ' + stringAllowedValues(Types)
+        allowedValues: Types
       occupants:
         label: 'No. Occupants'
         type: Number
         decimal: false
         desc: 'Number of occupants in the typology.'
+        classes:
+          RESIDENTIAL:
+            defaultValue: 300
+          COMMERCIAL:
+            defaultValue: 400
+
+  geometry:
+    items:
+      lotsize:
+      # TODO(aramk) This should eventually be an output parameter calculated from AREA(lot).
+        label: 'Lot Size'
+        type: Number
+        desc: 'Area of the land parcel.'
+        units: Units.m2
+        classes:
+          RESIDENTIAL:
+            defaultValue: 500
+          COMMERCIAL:
+            defaultValue: 300
+      extland:
+        label: 'Extra Land'
+        type: Number
+        desc: 'Area of the land parcel not covered by the structural improvement.'
+        units: Units.m2
+        calc: (params, paramId, model) ->
+          lotsize = Entities.getParameter(model, 'geometry.lotsize')
+          fpa = Entities.getParameter(model, 'geometry.fpa')
+          lotsize - fpa
+      fpa:
+      # TODO(aramk) This should eventually be an output parameter calculated from AREA(geom).
+        label: 'Footprint Area'
+        type: Number
+        desc: 'Area of the building footprint.'
+        units: Units.m2
+        classes:
+          RESIDENTIAL:
+            defaultValue: 133.6
+          COMMERCIAL:
+            defaultValue: 250
+
   energy:
     items:
       en_heat:
@@ -78,19 +117,19 @@ categories =
       src_heat:
         label: 'Energy Source – Heating'
         type: String
-        allowedValues: energySourceTypes
-        desc: 'Energy source in the typology used for heating. ' + stringAllowedValues(energySourceTypes)
+        allowedValues: EnergySourceTypes
+        desc: 'Energy source in the typology used for heating. ' + stringAllowedValues(EnergySourceTypes)
       co2_heat:
         label: 'CO2 – Heating'
         type: Number
         units: Units.kgco2
         desc: 'CO2 emissions due to heating the typology'
-        # TODO(aramk) Provide an expression with context and variables instead.
-        expr: (params, paramId, model) ->
-          src = Entities.getParameter(model, 'energy.src_heat') # params.energy.src_heat
-          en = Entities.getParameter(model, 'energy.en_heat') # params.energy.en_heat
+      # TODO(aramk) Provide an expression with context and variables instead.
+        calc: (params, paramId, model) ->
+          src = Entities.getParameter(model, 'energy.src_heat')
+          en = Entities.getParameter(model, 'energy.en_heat')
           return null unless src? and en?
-          energySource = energySources[params.energy.src_heat]
+          energySource = EnergySources[params.energy.src_heat]
           if energySource then energySource.kgCO2 * en else null
       en_cool:
         label: 'Energy – Cooling'
@@ -100,60 +139,62 @@ categories =
       src_cool:
         label: 'Energy Source – Cooling'
         type: String
-        allowedValues: energySourceTypes
-        desc: 'Energy source in the typology used for cooling. ' + stringAllowedValues(energySourceTypes)
+        allowedValues: EnergySourceTypes
+        desc: 'Energy source in the typology used for cooling. ' + stringAllowedValues(EnergySourceTypes)
       co2_cool:
         label: 'CO2 – Cooling'
         type: Number
         units: Units.kgco2
         desc: 'CO2 emissions due to cooling the typology'
-        expr: (params) ->
+        calc: (params) ->
           src = Entities.getParameter(model, 'energy.src_cool') # params.energy.src_cool
           en = Entities.getParameter(model, 'energy.en_cool') # params.energy.en_cool
           return null unless src? and en?
-          energySource = energySources[params.energy.src_cool]
+          energySource = EnergySources[params.energy.src_cool]
           if energySource then energySource.kgCO2 * en else null
-  environmental:
-    items:
-      pav_prpn:
-        label: 'Proportion Paved'
-        desc: 'Proportion of the public open space that is paved.'
-        type: Number
-      pav_area:
-        label: 'Area Paved'
-        desc: 'Area of the drawn public open space covered by pavement.'
-        type: Number
-        units: Units.m2
-      nat_prpn:
-        label: 'Proportion Native Plants'
-        desc: 'Proportion of the public open space typology covered by native plants.'
-        type: Number
-        units: Units.m2
-      nat_area:
-        label: 'Area of Native Plants'
-        desc: 'Area of the drawn public open space covered by native plants.'
-        type: Number
-        units: Units.m2
-      exo_prpn:
-        label: 'Proportion Exotic Plants'
-        desc: 'Proportion of the public open space covered by exotic plants.'
-        type: Number
-      exo_area:
-        label: 'Area of Exotic Plants'
-        desc: 'Area of the drawn public open space covered by exotic plants.'
-        type: Number
-        units: Units.m2
-      lawn_prpn:
-        label: 'Proportion Lawn'
-        desc: 'Proportion of the public open space covered by lawn.'
-        type: Number
-      lawn_area:
-        label: 'Area of Lawn'
-        desc: 'Area of the drawn public open space covered by lawn.'
-        type: Number
-        units: Units.m2
+#  environmental:
+#    items:
+#      pav_prpn:
+#        label: 'Proportion Paved'
+#        desc: 'Proportion of the public open space that is paved.'
+#        type: Number
+#      pav_area:
+#        label: 'Area Paved'
+#        desc: 'Area of the drawn public open space covered by pavement.'
+#        type: Number
+#        units: Units.m2
+#      nat_prpn:
+#        label: 'Proportion Native Plants'
+#        desc: 'Proportion of the public open space typology covered by native plants.'
+#        type: Number
+#        units: Units.m2
+#      nat_area:
+#        label: 'Area of Native Plants'
+#        desc: 'Area of the drawn public open space covered by native plants.'
+#        type: Number
+#        units: Units.m2
+#      exo_prpn:
+#        label: 'Proportion Exotic Plants'
+#        desc: 'Proportion of the public open space covered by exotic plants.'
+#        type: Number
+#      exo_area:
+#        label: 'Area of Exotic Plants'
+#        desc: 'Area of the drawn public open space covered by exotic plants.'
+#        type: Number
+#        units: Units.m2
+#      lawn_prpn:
+#        label: 'Proportion Lawn'
+#        desc: 'Proportion of the public open space covered by lawn.'
+#        type: Number
+#      lawn_area:
+#        label: 'Area of Lawn'
+#        desc: 'Area of the drawn public open space covered by lawn.'
+#        type: Number
+#        units: Units.m2
 
+####################################################################################################
 # AUXILIARY - MUST BE DEFINED BEFORE USE
+####################################################################################################
 
 autoLabel = (field, id) ->
   field.label ?= toTitleCase(id)
@@ -168,8 +209,6 @@ toTitleCase = (str) ->
       if i != parts.length - 1 and parts[i + 1] != ''
         title += ' '
   title
-
-# END AUXILIARY
 
 # Constructs SimpleSchema for the categories and their items specified above.
 createCategoriesSchema = (args) ->
@@ -191,6 +230,10 @@ createCategoriesSchema = (args) ->
     delete catFields.items
     catsFields[catId] = catFields
   new SimpleSchema(catsFields)
+
+####################################################################################################
+# SCHEMA DEFINITION
+####################################################################################################
 
 @ParametersSchema = createCategoriesSchema
   categories: categories
@@ -237,6 +280,3 @@ Typologies.setParameter = (model, paramId, value) ->
     target = target[key] ?= {}
   target[lastSegment] = value
   true
-
-#Typologies.getParameterLabel = (paramId) ->
-

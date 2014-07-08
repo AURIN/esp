@@ -27,7 +27,7 @@ class @ReportGenerator
       param = field.param
       if param?
         paramMap[param] = true
-#        map = if field.expr then outputParamMap else inputParamMap
+#        map = if field.calc then outputParamMap else inputParamMap
 #        map[param] = true
 #    inputParamIds = Object.keys(inputParamMap)
 #    outputParamIds = Object.keys(outputParamMap)

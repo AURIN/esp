@@ -189,12 +189,19 @@ body {
       .value {
         float: left;
       }
-      .units {
-        float: left;
-        margin-left: 5px;
-        color: #999;
-      }
     }
+  }
+}
+
+.units {
+  float: left;
+  margin-left: 5px;
+  color: #999;
+  &::before {
+    content: '(';
+  }
+  &::after {
+    content: ')';
   }
 }
 
@@ -243,19 +250,8 @@ body {
     display: inline-block;
     width: 100%;
     .label {
-      &, .content, .units {
+      &, .content {
         float: left;
-      }
-      .units {
-        float: left;
-        margin-left: 5px;
-        color: #999;
-        &::before {
-          content: '(';
-        }
-        &::after {
-          content: ')';
-        }
       }
     }
     .label, .value {

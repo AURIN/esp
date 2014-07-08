@@ -13,7 +13,7 @@ class @EvaluationEngine
     console.log('param schemas', schemas)
     for paramId, schema of schemas
       try
-        result = schema.expr(model.parameters ? {}, paramId, model, schema)
+        result = schema.calc(model.parameters ? {}, paramId, model, schema)
       catch e
         console.error('Failed to evaluate parameter', paramId, e)
       if result?
@@ -27,7 +27,7 @@ class @EvaluationEngine
     for key in paramIds
       schema = @getParamSchema(key)
       if schema?
-        if schema.expr?
+        if schema.calc?
           # Skip input fields which never need to be evaluated.
           schemas[key] = schema
       else
@@ -41,4 +41,4 @@ class @EvaluationEngine
     @schema.schema(paramId)
 
   isOutputParam: (paramId) ->
-    @getParamSchema(paramId).expr?
+    @getParamSchema(paramId).calc?

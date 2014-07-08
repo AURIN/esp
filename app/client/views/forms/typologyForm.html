@@ -7,13 +7,16 @@
       {{> afQuickField name="desc"}}
 
       <div class="subtitle">General</div>
-      {{> afQuickField name="parameters.general.geom"}}
+      {{> afQuickField name="parameters.general.class"}}
       {{> afQuickField name="parameters.general.state"}}
       {{> afQuickField name="parameters.general.code"}}
-      {{> afQuickField name="parameters.general.class"}}
       {{> afQuickField name="parameters.general.subclass"}}
       {{> afQuickField name="parameters.general.type"}}
-      {{> afQuickField name="parameters.general.occupants"}}
+
+      <div class="subtitle">Geometry</div>
+      {{> afQuickField name="parameters.geometry.lotsize"}}
+      {{> afQuickField name="parameters.geometry.fpa"}}
+      <!--{{> afQuickField name="parameters.general.geom"}}-->
 
       <div class="subtitle">Energy</div>
       {{> afQuickField name="parameters.energy.en_heat"}}
@@ -21,15 +24,15 @@
       {{> afQuickField name="parameters.energy.en_cool"}}
       {{> afQuickField name="parameters.energy.src_cool"}}
 
-      <div class="subtitle">Environmental</div>
-      {{> afQuickField name="parameters.environmental.pav_prpn"}}
-      {{> afQuickField name="parameters.environmental.pav_area"}}
-      {{> afQuickField name="parameters.environmental.nat_prpn"}}
-      {{> afQuickField name="parameters.environmental.nat_area"}}
-      {{> afQuickField name="parameters.environmental.exo_prpn"}}
-      {{> afQuickField name="parameters.environmental.exo_area"}}
-      {{> afQuickField name="parameters.environmental.lawn_prpn"}}
-      {{> afQuickField name="parameters.environmental.lawn_area"}}
+      <!--<div class="subtitle">Environmental</div>-->
+      <!--{{> afQuickField name="parameters.environmental.pav_prpn"}}-->
+      <!--{{> afQuickField name="parameters.environmental.pav_area"}}-->
+      <!--{{> afQuickField name="parameters.environmental.nat_prpn"}}-->
+      <!--{{> afQuickField name="parameters.environmental.nat_area"}}-->
+      <!--{{> afQuickField name="parameters.environmental.exo_prpn"}}-->
+      <!--{{> afQuickField name="parameters.environmental.exo_area"}}-->
+      <!--{{> afQuickField name="parameters.environmental.lawn_prpn"}}-->
+      <!--{{> afQuickField name="parameters.environmental.lawn_area"}}-->
 
       <div class="buttons">
         <button type="button" class="ui red cancel button">Cancel</button>

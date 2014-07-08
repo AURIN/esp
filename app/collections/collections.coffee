@@ -14,7 +14,10 @@ SimpleSchema.extendOptions
 
 # If the expression is a function, it is passed the current model
 # and the field and should return the result.
-  expr: Match.Optional(Match.Any)
+  calc: Match.Optional(Match.Any)
+# A map of class names to objects of properties. "defaultValues" specifies the default value for
+# the given class.
+  classes: Match.Optional(Object)
 
 global = @
 

@@ -40,13 +40,6 @@ Entities.mergeTypology = (entity) ->
 
 Entities.getParameter = (model, paramId) ->
   Typologies.getParameter(model, paramId)
-#  value = Typologies.getParameter(model, paramId)
-#  unless value == undefined
-#    # Check the typology for an inherited parameter
-#    unless Types.isObject(model.typology)
-#      throw new Error('Typology not merged')
-#    value = Typologies.getParameter(model.typology, paramId)
-#  value
 
 Entities.setParameter = (model, paramId, value) ->
   Typologies.setParameter(model, paramId, value)
