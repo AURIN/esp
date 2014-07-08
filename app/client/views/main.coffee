@@ -103,10 +103,14 @@ Template.main.helpers
       console.debug 'onEdit', arguments, collectionName, formName
       Template.main.setUpFormPanel templateInstance, Template[formName], doc
 
+getSidebar = (template) ->
+  $(template.find('.main.container > .content > .sidebar'))
+
 Template.main.addPanel = (template, component) ->
   console.debug 'addPanel', template, component
-  $container = $(template.find('.main.container > .content > .sidebar'))
+  $container = getSidebar(template)
   $panel = $('<div class="panel"></div>')
+  $('>.panel', $container).hide();
   $container.append $panel
   UI.insert component, $panel[0]
 
@@ -114,6 +118,8 @@ Template.main.removePanel = (template, component) ->
   console.debug 'Removing panel', this, template, component
   $(component.dom.getNodes()).parent().remove()
   component.dom.remove()
+  $container = getSidebar(template)
+  $('>.panel:last', $container).show()
 
 Template.main.setUpPanel = (template, panelTemplate, data) ->
   panel = UI.renderWithData panelTemplate, data

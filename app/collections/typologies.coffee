@@ -50,7 +50,7 @@ categories =
       code:
         type: String
         desc: 'A unique code derived from the state abbreviation, typology type abbreviation and version number. Ex. VIC-CG-001 for Community Garden version 1.'
-      'class':
+      class:
         type: String
         desc: stringAllowedValues(ClassNames)
         optional: false
@@ -70,8 +70,14 @@ categories =
         classes:
           RESIDENTIAL:
             defaultValue: 300
+      jobs:
+        label: 'No. Jobs'
+        type: Number
+        decimal: false
+        desc: 'Number of jobs in the typology.'
+        classes:
           COMMERCIAL:
-            defaultValue: 400
+            defaultValue: 200
 
   geometry:
     items:
@@ -281,3 +287,11 @@ Typologies.setParameter = (model, paramId, value) ->
     target = target[key] ?= {}
   target[lastSegment] = value
   true
+
+Typologies.unflattenParameters = (doc) ->
+  Objects.unflattenProperties doc, (key) ->
+    if /^parameters\./.test(key)
+      key.split('.')
+    else
+      null
+  doc
