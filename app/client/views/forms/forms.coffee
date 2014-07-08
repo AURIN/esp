@@ -49,13 +49,23 @@
 
       collection = Collections.get(args.collection)
       schema = collection._c2._simpleSchema;
-      $schemaInputs = $('[data-schema-key]');
+      $schemaInputs = $(@findAll('[data-schema-key]'));
 
-      popupInputs = []
+      schemaInputs = {}
       $schemaInputs.each ->
         $input = $(@)
         key = $input.attr('data-schema-key')
         field = schema.schema(key)
+        schemaInputs[key] =
+          node: @
+          key: key
+          field: field
+      @schemaInputs = schemaInputs
+
+      popupInputs = []
+      for key, input of schemaInputs
+        $input = $(input.node)
+        field = input.field
         desc = field.desc
         # Add popups to the inputs contain definitions from the schema.
         if desc?
@@ -84,5 +94,7 @@
       Deps.autorun ->
         helpMode = Session.get 'helpMode'
         if helpMode then addPopups() else removePopups()
+
+      args.onRender?.apply(this, arguments)
 
     Form
