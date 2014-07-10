@@ -11,9 +11,11 @@ class @EvaluationEngine
     changes = {}
     schemas = @getOutputParamSchemas(args.paramIds)
     console.log('param schemas', schemas)
+    paramGetter = (name) ->
+      Entities.getParameter(model, name)
     for paramId, schema of schemas
       try
-        result = schema.calc(model.parameters ? {}, paramId, model, schema)
+        result = schema.calc(paramGetter, paramId, model, schema)
       catch e
         console.error('Failed to evaluate parameter', paramId, e)
       if result?

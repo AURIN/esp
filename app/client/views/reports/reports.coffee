@@ -30,7 +30,7 @@
       # TODO(aramk) Invoke generator first, then pass data to renderField
 
       # TODO(aramk) Filter based on selected entities/typologies with Session.get
-      entities = Entities.getWithTypology()
+      entities = Entities.getFlattened()
       console.log('Evaluating entities', entities)
       results = reportGenerator.generate(models: entities, fields: fields)
       console.log('results', results)

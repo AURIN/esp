@@ -97,10 +97,8 @@ categories =
         type: Number
         desc: 'Area of the land parcel not covered by the structural improvement.'
         units: Units.m2
-        calc: (params, paramId, model) ->
-          lotsize = Entities.getParameter(model, 'geometry.lotsize')
-          fpa = Entities.getParameter(model, 'geometry.fpa')
-          lotsize - fpa
+        calc: (param) ->
+          param('geometry.lotsize') - param('geometry.fpa')
       fpa:
       # TODO(aramk) This should eventually be an output parameter calculated from AREA(geom).
         label: 'Footprint Area'
@@ -130,12 +128,11 @@ categories =
         type: Number
         units: Units.kgco2
         desc: 'CO2 emissions due to heating the typology'
-      # TODO(aramk) Provide an expression with context and variables instead.
-        calc: (params, paramId, model) ->
-          src = Entities.getParameter(model, 'energy.src_heat')
-          en = Entities.getParameter(model, 'energy.en_heat')
+        calc: (param) ->
+          src = param('energy.src_heat')
+          en = param('energy.en_heat')
           return null unless src? and en?
-          energySource = EnergySources[params.energy.src_heat]
+          energySource = EnergySources[src]
           if energySource then energySource.kgCO2 * en else null
       en_cool:
         label: 'Energy – Cooling'
@@ -152,11 +149,11 @@ categories =
         type: Number
         units: Units.kgco2
         desc: 'CO2 emissions due to cooling the typology'
-        calc: (params) ->
-          src = Entities.getParameter(model, 'energy.src_cool') # params.energy.src_cool
-          en = Entities.getParameter(model, 'energy.en_cool') # params.energy.en_cool
+        calc: (param) ->
+          src = param('energy.src_cool')
+          en = param('energy.en_cool')
           return null unless src? and en?
-          energySource = EnergySources[params.energy.src_cool]
+          energySource = EnergySources[src]
           if energySource then energySource.kgCO2 * en else null
 #  environmental:
 #    items:
@@ -289,9 +286,9 @@ Typologies.setParameter = (model, paramId, value) ->
   target[lastSegment] = value
   true
 
-Typologies.unflattenParameters = (doc) ->
+Typologies.unflattenParameters = (doc, hasParametersPrefix) ->
   Objects.unflattenProperties doc, (key) ->
-    if /^parameters\./.test(key)
+    if !hasParametersPrefix or /^parameters\./.test(key)
       key.split('.')
     else
       null
@@ -302,30 +299,30 @@ Typologies.unflattenParameters = (doc) ->
 ####################################################################################################
 
 EntitySchema = new SimpleSchema
-    name:
-      label: 'Name'
-      type: String
-      index: true,
-      unique: true
-    desc:
-      label: 'Description'
-      type: String
-      optional: true
-    typology:
-      label: 'Typology'
-      type: String
-      optional: true
-    parameters:
-      label: 'Parameters'
-      type: ParametersSchema
-      optional: true
-      defaultValue: {}
+  name:
+    label: 'Name'
+    type: String
+    index: true,
+    unique: true
+  desc:
+    label: 'Description'
+    type: String
+    optional: true
+  typology:
+    label: 'Typology'
+    type: String
+    optional: true
+  parameters:
+    label: 'Parameters'
+    type: ParametersSchema
+    optional: true
+    defaultValue: {}
 
 @Entities = new Meteor.Collection 'entities', schema: EntitySchema
 Entities.schema = EntitySchema
 Entities.allow(Collections.allowAll())
 
-Entities.getWithTypology = ->
+Entities.getFlattened = ->
   cursor = Entities.find.apply(Entities, arguments)
   entities = cursor.fetch()
   for entity in entities
@@ -337,9 +334,31 @@ Entities.mergeTypology = (entity) ->
   if typologyId?
     typology = entity.typology = Typologies.findOne(typologyId)
     if typology?
+      Typologies.mergeDefaults(typology)
       entity.parameters ?= {}
-      Setter.merge(entity.parameters, typology.parameters)
+      Setter.defaults(entity.parameters, typology.parameters)
   entity
+
+Typologies.getDefaultParameterValues = _.memoize (typologyClass) ->
+  schema = ParametersSchema
+  paramIds = schema._schemaKeys
+  values = {}
+  for paramId in paramIds
+    fieldSchema = schema.schema(paramId)
+    if fieldSchema?
+      classes = fieldSchema.classes
+      # NOTE: This does not look for official defaultValue in the schema, only in the class options.
+      defaultValue = if classes then classes[typologyClass]?.defaultValue else null
+      if defaultValue?
+        values[paramId] = defaultValue
+  Typologies.unflattenParameters(values, false)
+
+Typologies.mergeDefaults = (model) ->
+  model.parameters ?= {}
+  typologyClass = model.parameters.general?.class
+  defaults = if typologyClass then Typologies.getDefaultParameterValues(typologyClass) else null
+  _.defaults(model.parameters, defaults)
+  model
 
 Entities.getParameter = (model, paramId) ->
   Typologies.getParameter(model, paramId)
