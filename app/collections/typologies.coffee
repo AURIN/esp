@@ -238,13 +238,13 @@ createCategoriesSchema = (args) ->
   new SimpleSchema(catsFields)
 
 ####################################################################################################
-# SCHEMA DEFINITION
+# TYPOLOGIES SCHEMA DEFINITION
 ####################################################################################################
 
 @ParametersSchema = createCategoriesSchema
   categories: categories
 
-Schema = new SimpleSchema
+TypologySchema = new SimpleSchema
   name:
     label: 'Name'
     desc: 'The full name of the typology.'
@@ -255,14 +255,15 @@ Schema = new SimpleSchema
     label: 'Description'
     desc: 'A detailed description of the typology, including a summary of the materials and services provided.'
     type: String
+    optional: true
   parameters:
     label: 'Parameters'
     type: ParametersSchema
     optional: true
     defaultValue: {}
 
-@Typologies = new Meteor.Collection 'typologies', schema: Schema
-Typologies.schema = Schema
+@Typologies = new Meteor.Collection 'typologies', schema: TypologySchema
+Typologies.schema = TypologySchema
 Typologies.classes = Classes
 Typologies.allow(Collections.allowAll())
 
@@ -274,7 +275,7 @@ Typologies.getParameter = (model, paramId) ->
   for key in segments
     target = target[key]
     unless target?
-      return undefined
+      break
   target
 
 Typologies.setParameter = (model, paramId, value) ->
@@ -295,3 +296,53 @@ Typologies.unflattenParameters = (doc) ->
     else
       null
   doc
+
+####################################################################################################
+# ENTITIES SCHEMA DEFINITION
+####################################################################################################
+
+EntitySchema = new SimpleSchema
+    name:
+      label: 'Name'
+      type: String
+      index: true,
+      unique: true
+    desc:
+      label: 'Description'
+      type: String
+      optional: true
+    typology:
+      label: 'Typology'
+      type: String
+      optional: true
+    parameters:
+      label: 'Parameters'
+      type: ParametersSchema
+      optional: true
+      defaultValue: {}
+
+@Entities = new Meteor.Collection 'entities', schema: EntitySchema
+Entities.schema = EntitySchema
+Entities.allow(Collections.allowAll())
+
+Entities.getWithTypology = ->
+  cursor = Entities.find.apply(Entities, arguments)
+  entities = cursor.fetch()
+  for entity in entities
+    Entities.mergeTypology(entity)
+  entities
+
+Entities.mergeTypology = (entity) ->
+  typologyId = entity.typology
+  if typologyId?
+    typology = entity.typology = Typologies.findOne(typologyId)
+    if typology?
+      entity.parameters ?= {}
+      Setter.merge(entity.parameters, typology.parameters)
+  entity
+
+Entities.getParameter = (model, paramId) ->
+  Typologies.getParameter(model, paramId)
+
+Entities.setParameter = (model, paramId, value) ->
+  Typologies.setParameter(model, paramId, value)

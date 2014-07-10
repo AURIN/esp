@@ -1,51 +1,54 @@
 <template name="typologyForm">
   <div class="flex-panel crud form">
     <div class="title">Typology</div>
-    <div class="ui form segment content">
-      {{#autoForm collection=collection id=formName doc=doc type=formType settings=settings}}
-      {{> afQuickField name="name"}}
-      {{> afQuickField name="desc"}}
+    <div class="content">
+      <div class="inner">
+        <div class="ui form segment">
+          {{#autoForm collection=collection id=formName doc=doc type=formType settings=settings}}
+          {{> afQuickField name="name"}}
+          {{> afQuickField name="desc"}}
 
-      <div class="subtitle">General</div>
-      {{> afFieldLabel name="parameters.general.class"}}
-      <!-- TODO(aramk) Refactor to use autoform field -->
-      {{> dropdown name="typology-class" items=classes value=classValue}}
-      <!--{{> afQuickField name="parameters.general.class"}}-->
-      {{> afQuickField name="parameters.general.state"}}
-      {{> afQuickField name="parameters.general.code"}}
-      {{> afQuickField name="parameters.general.subclass"}}
-      {{> afQuickField name="parameters.general.type"}}
+          <div class="subtitle">General</div>
+          {{> afFieldLabel name="parameters.general.class"}}
+          <!-- TODO(aramk) Refactor to use autoform field -->
+          {{> dropdown name="parameters.general.class" items=classes value=classValue}}
+          {{> afQuickField name="parameters.general.state"}}
+          {{> afQuickField name="parameters.general.code"}}
+          {{> afQuickField name="parameters.general.subclass"}}
+          {{> afQuickField name="parameters.general.type"}}
 
-      {{> afQuickField name="parameters.general.occupants"}}
-      {{> afQuickField name="parameters.general.jobs"}}
+          {{> afQuickField name="parameters.general.occupants"}}
+          {{> afQuickField name="parameters.general.jobs"}}
 
-      <div class="subtitle">Geometry</div>
-      {{> afQuickField name="parameters.geometry.lotsize"}}
-      {{> afQuickField name="parameters.geometry.fpa"}}
-      <!--{{> afQuickField name="parameters.general.geom"}}-->
+          <div class="subtitle">Geometry</div>
+          {{> afQuickField name="parameters.geometry.lotsize"}}
+          {{> afQuickField name="parameters.geometry.fpa"}}
+          <!--{{> afQuickField name="parameters.general.geom"}}-->
 
-      <div class="subtitle">Energy</div>
-      {{> afQuickField name="parameters.energy.en_heat"}}
-      {{> afQuickField name="parameters.energy.src_heat"}}
-      {{> afQuickField name="parameters.energy.en_cool"}}
-      {{> afQuickField name="parameters.energy.src_cool"}}
+          <div class="subtitle">Energy</div>
+          {{> afQuickField name="parameters.energy.en_heat"}}
+          {{> afQuickField name="parameters.energy.src_heat" options="allowed"}}
+          {{> afQuickField name="parameters.energy.en_cool"}}
+          {{> afQuickField name="parameters.energy.src_cool" options="allowed"}}
 
-      <!--<div class="subtitle">Environmental</div>-->
-      <!--{{> afQuickField name="parameters.environmental.pav_prpn"}}-->
-      <!--{{> afQuickField name="parameters.environmental.pav_area"}}-->
-      <!--{{> afQuickField name="parameters.environmental.nat_prpn"}}-->
-      <!--{{> afQuickField name="parameters.environmental.nat_area"}}-->
-      <!--{{> afQuickField name="parameters.environmental.exo_prpn"}}-->
-      <!--{{> afQuickField name="parameters.environmental.exo_area"}}-->
-      <!--{{> afQuickField name="parameters.environmental.lawn_prpn"}}-->
-      <!--{{> afQuickField name="parameters.environmental.lawn_area"}}-->
+          <!--<div class="subtitle">Environmental</div>-->
+          <!--{{> afQuickField name="parameters.environmental.pav_prpn"}}-->
+          <!--{{> afQuickField name="parameters.environmental.pav_area"}}-->
+          <!--{{> afQuickField name="parameters.environmental.nat_prpn"}}-->
+          <!--{{> afQuickField name="parameters.environmental.nat_area"}}-->
+          <!--{{> afQuickField name="parameters.environmental.exo_prpn"}}-->
+          <!--{{> afQuickField name="parameters.environmental.exo_area"}}-->
+          <!--{{> afQuickField name="parameters.environmental.lawn_prpn"}}-->
+          <!--{{> afQuickField name="parameters.environmental.lawn_area"}}-->
 
-      <div class="buttons">
-        <button type="button" class="ui red cancel button">Cancel</button>
-        <div class="spacer"></div>
-        <button type="submit" class="ui button submit green">{{submitText}}</button>
+          <div class="buttons">
+            <button type="button" class="ui red cancel button">Cancel</button>
+            <div class="spacer"></div>
+            <button type="submit" class="ui button submit green">{{submitText}}</button>
+          </div>
+          {{/autoForm}}
+        </div>
       </div>
-      {{/autoForm}}
     </div>
   </div>
 </template>

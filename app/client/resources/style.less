@@ -68,6 +68,7 @@ body {
           border-radius: 0;
           input {
             padding: 0.3rem 0.4rem !important;
+            color: black !important;
           }
         }
       }
@@ -161,6 +162,8 @@ body {
     margin: 0;
     padding: 0;
   }
+  .inner {
+  }
   .buttons {
     display: flex;
     flex-direction: row;
@@ -177,10 +180,12 @@ body {
 }
 
 .crud.form {
+  .ui.form {
+    padding: 10px 0;
+  }
   form {
     width: 100%;
     padding: 0;
-    padding-top: 10px;
     > * {
       padding: 0 10px;
       margin-bottom: 10px;

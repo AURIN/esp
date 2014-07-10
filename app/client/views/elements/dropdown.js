@@ -1,3 +1,9 @@
+AutoForm.inputValueHandlers({
+  '.selection.dropdown': function () {
+    return $('input', this).val();
+  }
+});
+
 Template.dropdown.rendered = function() {
   var items = Collections.getItems(this.data.items);
   var labelAttr = this.data.labelAttr || 'name';
@@ -21,3 +27,11 @@ Template.dropdown.rendered = function() {
     $dropdown.dropdown('set value', value).dropdown('set selected', value);
   }
 };
+
+Template.dropdown.helpers({
+
+  cls: function () {
+    return this.name.replace('.', '-');
+  }
+
+});
