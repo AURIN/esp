@@ -1,5 +1,5 @@
 class @EvaluationEngine
-  
+
   constructor: (args) ->
     # {@type} SimpleSchema
     @schema = args.schema
@@ -15,13 +15,26 @@ class @EvaluationEngine
       Entities.getParameter(model, name)
     for paramId, schema of schemas
       try
-        result = schema.calc(paramGetter, paramId, model, schema)
+        calc = schema.calc
+        if Types.isString(calc)
+          calc = @buildEvalFunc(expr: calc)
+        if Types.isFunction(calc)
+          result = calc(paramGetter, paramId, model, schema)
+        else
+          throw new Error('Invalid calculation property - must be function, is of type ' +
+            Types.getTypeOf(calc))
       catch e
         console.error('Failed to evaluate parameter', paramId, e)
       if result?
         changes[paramId] = result
         @setResult(model, paramId, result)
     changes
+
+  buildEvalFunc: (args) ->
+    expr = args.expr
+    # Replace the $ in the expression with a function call to retrieve the value.
+    funcBody = 'return ' + expr.replace(/\$([\w.]+)/gi, 'param("$1")')
+    new Function('param', funcBody)
 
   getOutputParamSchemas: (paramIds) ->
     paramIds ?= @schema._schemaKeys

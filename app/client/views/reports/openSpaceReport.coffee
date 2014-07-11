@@ -11,6 +11,10 @@ Meteor.startup ->
     fields: [
       {title: 'General'}
       {param: 'general.occupants'}
+      {title: 'Geometry'}
+      {param: 'geometry.lotsize'}
+      {param: 'geometry.extland'}
+      {param: 'geometry.fpa'}
       {title: 'Energy'}
       {param: 'energy.en_heat'}
       {param: 'energy.co2_heat'}

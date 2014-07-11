@@ -97,8 +97,7 @@ categories =
         type: Number
         desc: 'Area of the land parcel not covered by the structural improvement.'
         units: Units.m2
-        calc: (param) ->
-          param('geometry.lotsize') - param('geometry.fpa')
+        calc: '$geometry.lotsize - $geometry.fpa'
       fpa:
       # TODO(aramk) This should eventually be an output parameter calculated from AREA(geom).
         label: 'Footprint Area'
@@ -110,6 +109,12 @@ categories =
             defaultValue: 133.6
           COMMERCIAL:
             defaultValue: 250
+        custom: ->
+          # Abstract these rules into a single string or function for evaluation.
+          lotsize = this.siblingField('lotsize')
+          console.log 'custom', lotsize, this
+          if lotsize.isSet && lotsize.operator != '$unset' && this.isSet && this.operator != '$unset' && this.value > lotsize.value
+            'Footprint Area must be less than or equal to the Lot Size'
 
   energy:
     items:
