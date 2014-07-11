@@ -7,14 +7,13 @@ Meteor.startup ->
     getClassInput.call(@).dropdown('get value')
 
   updateFields = ->
-    typologyClass = getClassInputValue.call(@)
     typology = @data.doc
+    typologyClass = getClassInputValue.call(@)
     console.debug 'updateFields', @, arguments, typologyClass
     for key, input of @schemaInputs
       classes = input.field.classes
       classOptions = if classes and typologyClass then classes[typologyClass] else null
       paramName = key.replace(/^parameters\./, '')
-      inputValue = Typologies.getParameter(typology, paramName)
       $input = $(input.node)
       $wrapper = $input.closest(Forms.FIELD_SELECTOR)
       if classOptions
@@ -27,6 +26,7 @@ Meteor.startup ->
         label = 'None'
         $option = $('<option value="">' + label + '</option>')
         $input.prepend($option)
+        inputValue = if typology then Typologies.getParameter(typology, paramName) else null
         unless inputValue?
           $input.val('')
 
