@@ -11,6 +11,7 @@ Meteor.startup ->
     fields: [
       {title: 'General'}
       {param: 'general.occupants'}
+      {param: 'general.jobs'}
       {title: 'Geometry'}
       {param: 'geometry.lotsize'}
       {param: 'geometry.extland'}

@@ -24,7 +24,7 @@
 
     # Assign temporary IDs to the fields.
     for field, i in fields
-      field.id = i + 1
+      field.id = 'field_' + (i + 1)
 
     Report.rendered = ->
       # TODO(aramk) Invoke generator first, then pass data to renderField
@@ -35,10 +35,13 @@
       results = reportGenerator.generate(models: entities, fields: fields)
       console.log('results', results)
 
-      $fields = $(@find('.fields'))
-      for field in fields
-        $field = Reports.renderField(field, results)
-        $fields.append($field)
+      require(['atlas/util/NumberFormatter'], (NumberFormatter) =>
+        formatter = new NumberFormatter();
+        $fields = $(@find('.fields'))
+        for field in fields
+          $field = Reports.renderField(field, results, formatter)
+          $fields.append($field)
+      )
 
     Report.helpers
       reportData: ->
@@ -52,7 +55,7 @@
       fields = {param: args.category + '.' + paramId}
     fields
 
-  renderField: (field, data) ->
+  renderField: (field, data, formatter) ->
     param = field.param
     if param?
       # TODO(aramk) Actually output the field value
@@ -63,7 +66,9 @@
       $label = $('<div class="label"><div class="content">' + label + '</div></div>')
       if units?
         $label.append('<div class="units">' + Strings.format.scripts(units) + '</div>')
-      $value = $('<div class="value">' + data[field.id] + '</div>')
+      value = data[field.id]
+      value = formatter.round(value, {minSigFigs: 0, maxSigFigs: 3})
+      $value = $('<div class="value">' + value + '</div>')
       $field.append($label, $value)
       $field
     else if field.title?

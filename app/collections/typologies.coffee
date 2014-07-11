@@ -2,15 +2,15 @@
 # SCHEMA DECLARATION
 ####################################################################################################
 
-Classes = {
+TypologyClasses = {
   RESIDENTIAL: 'Residential',
   COMMERCIAL: 'Commercial',
   OPEN_SPACE: 'Open Space',
   PATHWAYS: 'Pathways',
 }
-ClassNames = Object.keys(Classes)
+ClassNames = Object.keys(TypologyClasses)
 
-Types = ['Basic', 'Energy Efficient']
+TypologyTypes = ['Basic', 'Energy Efficient']
 
 # TODO(aramk) Convert to using global parameters.
 # Energy sources and their kg of CO2 usage
@@ -60,8 +60,8 @@ categories =
         desc: 'Typology within a class. Ex. "Community Garden", "Park" or "Public Plaza".'
       type:
         type: String
-        desc: 'Version of the subclass. ' + stringAllowedValues(Types)
-        allowedValues: Types
+        desc: 'Version of the subclass. ' + stringAllowedValues(TypologyTypes)
+        allowedValues: TypologyTypes
       occupants:
         label: 'No. Occupants'
         type: Number
@@ -268,7 +268,7 @@ TypologySchema = new SimpleSchema
 
 @Typologies = new Meteor.Collection 'typologies', schema: TypologySchema
 Typologies.schema = TypologySchema
-Typologies.classes = Classes
+Typologies.classes = TypologyClasses
 Typologies.allow(Collections.allowAll())
 
 Typologies.getParameter = (model, paramId) ->
@@ -301,25 +301,56 @@ Typologies.unflattenParameters = (doc, hasParametersPrefix) ->
       null
   doc
 
-Typologies.getDefaultParameterValues = _.memoize (typologyClass) ->
-  schema = ParametersSchema
-  paramIds = schema._schemaKeys
-  values = {}
-  for paramId in paramIds
-    fieldSchema = schema.schema(paramId)
+# Traverse the given schema and call the given callback with the field schema and ID.
+forEachFieldSchema = (schema, callback) ->
+  fieldIds = schema._schemaKeys
+  for fieldId in fieldIds
+    fieldSchema = schema.schema(fieldId)
     if fieldSchema?
-      classes = fieldSchema.classes
-      # NOTE: This does not look for official defaultValue in the schema, only in the class options.
-      defaultValue = if classes then classes[typologyClass]?.defaultValue else null
-      if defaultValue?
-        values[paramId] = defaultValue
+      callback(fieldSchema, fieldId)
+
+Typologies.getDefaultParameterValues = _.memoize (typologyClass) ->
+  values = {}
+  forEachFieldSchema ParametersSchema, (fieldSchema, paramId) ->
+    classes = fieldSchema.classes
+    # NOTE: This does not look for official defaultValue in the schema, only in the class options.
+    defaultValue = if classes then classes[typologyClass]?.defaultValue else null
+    if defaultValue?
+      values[paramId] = defaultValue
   Typologies.unflattenParameters(values, false)
+
+# Get the parameters which have default values for other classes and should be excluded from models
+# of the class.
+Typologies.getExcludedDefaultParameters = _.memoize (typologyClass) ->
+  excluded = {}
+  forEachFieldSchema ParametersSchema, (fieldSchema, paramId) ->
+    classes = fieldSchema.classes
+    if classes and !classes[typologyClass]
+      excluded[paramId] = true
+  Typologies.unflattenParameters(excluded, false)
 
 Typologies.mergeDefaults = (model) ->
   model.parameters ?= {}
   typologyClass = model.parameters.general?.class
   defaults = if typologyClass then Typologies.getDefaultParameterValues(typologyClass) else null
   _.defaults(model.parameters, defaults)
+  model
+
+# Filters parameters which don't belong to the class assigned to the given model. This does not
+# affect reports since only fields matching the class should be included, but is a fail-safe for
+# when calculated expressions may conditionally reference fields outside their class, or when
+# reports accidentally include fields outside their class.
+Typologies.filterParameters = (model) ->
+  typologyClass = model.parameters.general?.class
+  unless typologyClass?
+    return
+  excluded = @getExcludedDefaultParameters(typologyClass)
+  for categoryName, category of excluded
+    modelCategory = model.parameters[categoryName]
+    unless modelCategory
+      continue
+    for paramName of category
+      delete modelCategory[paramName]
   model
 
 # Validate that the given model contains all required nested parameters. This is not supported by
@@ -331,6 +362,11 @@ Typologies.validateNestedProperties = -> null
 ####################################################################################################
 # ENTITIES SCHEMA DEFINITION
 ####################################################################################################
+
+entityCategories = lodash.cloneDeep(categories)
+delete entityCategories.general.items.class
+@EntityParametersSchema = createCategoriesSchema
+  categories: entityCategories
 
 EntitySchema = new SimpleSchema
   name:
@@ -348,7 +384,8 @@ EntitySchema = new SimpleSchema
     optional: true
   parameters:
     label: 'Parameters'
-    type: ParametersSchema
+#    type: ParametersSchema
+    type: EntityParametersSchema
   # Necessary to allow required fields within.
     optional: false
     defaultValue: {}
@@ -372,6 +409,7 @@ Entities.mergeTypology = (entity) ->
       Typologies.mergeDefaults(typology)
       entity.parameters ?= {}
       Setter.defaults(entity.parameters, typology.parameters)
+      Typologies.filterParameters(entity, typology)
   entity
 
 Entities.getParameter = (model, paramId) ->
