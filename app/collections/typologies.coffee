@@ -233,7 +233,8 @@ createCategoriesSchema = (args) ->
       autoLabel(itemFields, itemId)
       catSchemaFields[itemId] = itemFields
     catSchema = new SimpleSchema(catSchemaFields)
-    catFields = _.extend({optional: true}, args.categoryDefaults, cat, {type: catSchema})
+    catFields = _.extend({optional: false, defaultValue: {}}, args.categoryDefaults, cat,
+      {type: catSchema})
     autoLabel(catFields, catId)
     delete catFields.items
     catsFields[catId] = catFields
@@ -261,7 +262,8 @@ TypologySchema = new SimpleSchema
   parameters:
     label: 'Parameters'
     type: ParametersSchema
-    optional: true
+  # Necessary to allow required fields within.
+    optional: false
     defaultValue: {}
 
 @Typologies = new Meteor.Collection 'typologies', schema: TypologySchema
@@ -299,6 +301,33 @@ Typologies.unflattenParameters = (doc, hasParametersPrefix) ->
       null
   doc
 
+Typologies.getDefaultParameterValues = _.memoize (typologyClass) ->
+  schema = ParametersSchema
+  paramIds = schema._schemaKeys
+  values = {}
+  for paramId in paramIds
+    fieldSchema = schema.schema(paramId)
+    if fieldSchema?
+      classes = fieldSchema.classes
+      # NOTE: This does not look for official defaultValue in the schema, only in the class options.
+      defaultValue = if classes then classes[typologyClass]?.defaultValue else null
+      if defaultValue?
+        values[paramId] = defaultValue
+  Typologies.unflattenParameters(values, false)
+
+Typologies.mergeDefaults = (model) ->
+  model.parameters ?= {}
+  typologyClass = model.parameters.general?.class
+  defaults = if typologyClass then Typologies.getDefaultParameterValues(typologyClass) else null
+  _.defaults(model.parameters, defaults)
+  model
+
+# Validate that the given model contains all required nested parameters. This is not supported by
+# AutoForm, which only treats fields as required if their parents are also present (in this case,
+# the category
+# TODO(aramk)
+Typologies.validateNestedProperties = -> null
+
 ####################################################################################################
 # ENTITIES SCHEMA DEFINITION
 ####################################################################################################
@@ -320,7 +349,8 @@ EntitySchema = new SimpleSchema
   parameters:
     label: 'Parameters'
     type: ParametersSchema
-    optional: true
+  # Necessary to allow required fields within.
+    optional: false
     defaultValue: {}
 
 @Entities = new Meteor.Collection 'entities', schema: EntitySchema
@@ -343,27 +373,6 @@ Entities.mergeTypology = (entity) ->
       entity.parameters ?= {}
       Setter.defaults(entity.parameters, typology.parameters)
   entity
-
-Typologies.getDefaultParameterValues = _.memoize (typologyClass) ->
-  schema = ParametersSchema
-  paramIds = schema._schemaKeys
-  values = {}
-  for paramId in paramIds
-    fieldSchema = schema.schema(paramId)
-    if fieldSchema?
-      classes = fieldSchema.classes
-      # NOTE: This does not look for official defaultValue in the schema, only in the class options.
-      defaultValue = if classes then classes[typologyClass]?.defaultValue else null
-      if defaultValue?
-        values[paramId] = defaultValue
-  Typologies.unflattenParameters(values, false)
-
-Typologies.mergeDefaults = (model) ->
-  model.parameters ?= {}
-  typologyClass = model.parameters.general?.class
-  defaults = if typologyClass then Typologies.getDefaultParameterValues(typologyClass) else null
-  _.defaults(model.parameters, defaults)
-  model
 
 Entities.getParameter = (model, paramId) ->
   Typologies.getParameter(model, paramId)
