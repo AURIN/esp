@@ -10,6 +10,9 @@ collectionToForm =
 TemplateClass.created = ->
   templateInstance = @
 
+getPrecinctId = ->
+  Session.get('precinct')?._id
+
 TemplateClass.rendered = ->
   # TODO(aramk) Data is what is passed to the template, not the data on the instance.
   @data ?= {}
@@ -84,8 +87,8 @@ TemplateClass.rendered = ->
     )
 
 TemplateClass.helpers
-  entities: -> Entities.find()
-  typologies: -> Typologies.find()
+  entities: -> Entities.find({precinct: getPrecinctId()})
+  typologies: -> Typologies.find({precinct: getPrecinctId()})
   tableSettings: ->
     fields: [
       key: 'name'

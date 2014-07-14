@@ -3,7 +3,12 @@
     <div class="header">
       <div class="logo">ESP</div>
       <div class="state-name">{{stateName}}</div>
-      {{> helpButton}}
+      <div class="tools">
+        {{> helpButton}}
+        {{#if precinct}}
+        <div class="ui close button">Close</div>
+        {{/if}}
+      </div>
     </div>
     <div class="content">
       {{> yield}}

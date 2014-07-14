@@ -9,7 +9,7 @@ Template.collectionTable.created = function() {
       throw new Error('Either or both of "items" and "collection" attributes must be provided.');
     }
   } else {
-    collection = Collections.get(collection);
+    collection = Collections.resolve(collection);
   }
   // Store them for use in helpers.
   this.data.items = items;

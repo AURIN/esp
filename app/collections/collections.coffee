@@ -37,12 +37,27 @@ global = @
     Strings.toTitleCase(@getName(arg))
 
 # @param {String|Meteor.Collection|Cursor} arg
+# @returns The underlying collection or null if none is found.
   get: (arg) ->
     if Types.isString(arg)
       # Collection name.
       return global[arg]
     else if @isCursor(arg)
       return arg.collection
+    else if @isCollection(arg)
+      return arg
+    else
+      return null
+
+# @param {String|Meteor.Collection|Cursor} arg
+# @returns {Meteor.Collection|Cursor} Either a Meteor collection, a cursor, or null if none is
+# found.
+  resolve: (arg) ->
+    if Types.isString(arg)
+      # Collection name.
+      return global[arg]
+    else if @isCursor(arg)
+      return arg
     else if @isCollection(arg)
       return arg
     else

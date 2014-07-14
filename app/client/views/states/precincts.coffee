@@ -1,6 +1,8 @@
 TemplateClass = Template.precincts;
 
 TemplateClass.rendered = ->
+  # TODO(aramk) This is here since the router doesn't call hooks when revisting...
+#  Session.set('stateName', 'Precincts')
 
 TemplateClass.helpers
   tableSettings: -> {
