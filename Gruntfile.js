@@ -39,6 +39,7 @@ module.exports = function(grunt) {
   var ATLAS_CESIUM_BUILD_FILE = path.join(ATLAS_CESIUM_BUILD_PATH, 'atlas-cesium.min.js');
   var ATLAS_CESIUM_RESOURCES_PATH = path.join(ATLAS_CESIUM_PATH, 'dist', 'cesium');
   var ATLAS_CESIUM_STYLE_FILE = path.join(ATLAS_CESIUM_BUILD_PATH, 'atlas-cesium.min.css');
+  var ATLAS_ASSETS_PARENT_PATH = publicPath('design');
 
   var bowerPaths = [ATLAS_PATH, ATLAS_CESIUM_PATH];
   var npmPaths = [ATLAS_PATH, ATLAS_CESIUM_PATH];
@@ -56,13 +57,13 @@ module.exports = function(grunt) {
             expand: true,
             cwd: ATLAS_RESOURCES_PATH,
             src: '**/*',
-            dest: publicPath('atlas', 'assets')
+            dest: path.join(ATLAS_ASSETS_PARENT_PATH, 'atlas', 'assets')
           },
           {
             expand: true,
             cwd: ATLAS_CESIUM_RESOURCES_PATH,
             src: '**/*',
-            dest: publicPath('atlas-cesium', 'cesium')
+            dest: path.join(ATLAS_ASSETS_PARENT_PATH, 'atlas-cesium', 'cesium')
           }
         ]
       }
@@ -137,7 +138,8 @@ module.exports = function(grunt) {
   grunt.registerTask('fix-atlas-build', 'Fixes the Atlas build.', function(arg1) {
     // Replace the path to the cesium style which is now in the app's public folder.
     writeFile(ATLAS_CESIUM_STYLE_FILE, function(data) {
-      return data.replace(/(@import\s+["'])(cesium)/, '$1atlas-cesium/$2');
+      return data.replace(/(@import\s+["'])(cesium)/,
+              '$1' + path.join(ATLAS_ASSETS_PARENT_PATH, 'atlas-cesium') + '/$2');
     });
   });
 
@@ -183,6 +185,7 @@ module.exports = function(grunt) {
           'git push heroku master', 'heroku restart']);
         done();
       }
+
       console.log('Deploying on Heroku...');
       if (!fs.existsSync('.git')) {
         console.log('Setting up git repo...');

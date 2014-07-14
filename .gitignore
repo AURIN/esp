@@ -1,5 +1,5 @@
-app/public/atlas
-app/public/atlas-cesium
+app/public/design/atlas
+app/public/design/atlas-cesium
 app/.meteor/local
 app/tests/mongo
 
