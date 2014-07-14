@@ -268,6 +268,7 @@ TypologySchema = new SimpleSchema
   precinct:
     label: 'Precinct'
     type: String
+    index: true
 
 @Typologies = new Meteor.Collection 'typologies', schema: TypologySchema
 Typologies.schema = TypologySchema
@@ -395,6 +396,7 @@ EntitySchema = new SimpleSchema
   precinct:
     label: 'Precinct'
     type: String
+    index: true
 
 @Entities = new Meteor.Collection 'entities', schema: EntitySchema
 Entities.schema = EntitySchema

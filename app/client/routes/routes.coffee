@@ -49,8 +49,9 @@ Router.map ->
     controller: @PrecinctsController
   }
   this.route 'design', {
-    path: '/design'
+    path: '/design/:_id'
     controller: @DesignController
+
   }
 
 crudRoute('Precincts')

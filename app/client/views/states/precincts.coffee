@@ -4,19 +4,22 @@ TemplateClass.rendered = ->
 
 TemplateClass.helpers
   tableSettings: -> {
-    fields: [
-      key: 'name'
-      label: 'Name'
-    ]
+  fields: [
+    key: 'name'
+    label: 'Name'
+  ]
 #    onCreate: (data) ->
 #      collectionName = Collections.getName(data.collection)
 #      formName = collectionToForm[collectionName]
-      # TODO(aramk)
+  # TODO(aramk)
 #      console.debug 'onCreate', arguments
-#    onEdit: (data, doc) ->
-#      # TODO(aramk)
-#      console.debug 'onEdit', arguments
-    onDelete: (doc) ->
-      # TODO(aramk)
-      console.debug 'onDelete', arguments
+  onEdit: (args) ->
+    console.debug 'onEdit', arguments
+    if args.event?.type == 'dblclick'
+      Router.go('design', {_id: args.id})
+    else
+      args.defaultHandler()
+  onDelete: (doc) ->
+    # TODO(aramk)
+    console.debug 'onDelete', arguments
   }

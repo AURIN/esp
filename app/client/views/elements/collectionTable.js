@@ -72,12 +72,12 @@ Template.collectionTable.rendered = function() {
       collection: collection, createRoute: createRoute, editRoute: editRoute}, extraArgs);
   }
 
-  function editSelectedRow() {
+  function editSelectedRow(args) {
     var defaultHandler = function() {
       Router.go(editRoute, {_id: getSelectedId()});
     };
     if (settings.onEdit) {
-      settings.onEdit(createHandlerContext({defaultHandler: defaultHandler}));
+      settings.onEdit(createHandlerContext(_.extend({defaultHandler: defaultHandler}, args)));
     } else {
       defaultHandler();
     }
@@ -106,9 +106,9 @@ Template.collectionTable.rendered = function() {
     $selectedRow = $(this);
     $selectedRow.addClass(selectedClass);
     onSelectionChange($selectedRow);
-  }).dblclick(function() {
+  }).dblclick(function(e) {
     $selectedRow = $(this);
-    editSelectedRow();
+    editSelectedRow({event: e});
   });
 };
 
