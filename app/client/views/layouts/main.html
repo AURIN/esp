@@ -1,3 +1,12 @@
 <template name="mainLayout">
-  {{> yield}}
+  <div class="ui main container">
+    <div class="header">
+      <div class="logo">ESP</div>
+      <div class="state-name">{{stateName}}</div>
+      {{> helpButton}}
+    </div>
+    <div class="content">
+      {{> yield}}
+    </div>
+  </div>
 </template>

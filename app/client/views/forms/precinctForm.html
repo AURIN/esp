@@ -1,0 +1,16 @@
+<template name="precinctForm">
+  <div class="ui precincts crud form segment">
+    <div class="title">{{formTitle}}</div>
+    {{#autoForm collection=collection id=formName doc=doc type=formType settings=settings}}
+    {{> afQuickField name="name"}}
+    {{> afQuickField name="desc"}}
+    {{> afQuickField name="location"}}
+
+    <div class="buttons">
+      <button type="button" class="ui red cancel button">Cancel</button>
+      <div class="spacer"></div>
+      <button type="submit" class="ui button submit green">{{submitText}}</button>
+    </div>
+    {{/autoForm}}
+  </div>
+</template>

@@ -262,9 +262,12 @@ TypologySchema = new SimpleSchema
   parameters:
     label: 'Parameters'
     type: ParametersSchema
-  # Necessary to allow required fields within.
+  # Necessary to allow fields within to be required.
     optional: false
     defaultValue: {}
+  precinct:
+    label: 'Precinct'
+    type: String
 
 @Typologies = new Meteor.Collection 'typologies', schema: TypologySchema
 Typologies.schema = TypologySchema
@@ -389,6 +392,9 @@ EntitySchema = new SimpleSchema
   # Necessary to allow required fields within.
     optional: false
     defaultValue: {}
+  precinct:
+    label: 'Precinct'
+    type: String
 
 @Entities = new Meteor.Collection 'entities', schema: EntitySchema
 Entities.schema = EntitySchema

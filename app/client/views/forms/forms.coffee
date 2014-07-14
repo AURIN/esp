@@ -33,6 +33,9 @@
     Form.helpers
       collection: -> Collections.get(args.collection)
       formName: -> name
+      formTitle: ->
+        collectionName = Collections.getTitle(args.collection)
+        (if @doc then 'Edit' else 'Create') + ' ' + Strings.singular(collectionName)
       formType: -> if @doc then 'update' else 'insert'
       submitText: -> if @doc then 'Save' else 'Create'
       settings: -> Forms.preventText(@settings) if @settings?
@@ -40,6 +43,7 @@
     Form.events
       'click button.cancel': (e, template) ->
         e.preventDefault();
+        console.log 'onCancel', arguments, @
         args.onCancel?()
         template.data?.settings?.onCancel?()
 

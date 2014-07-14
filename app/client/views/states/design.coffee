@@ -1,15 +1,16 @@
 # The template is limited to a single instance, so we can store it and reference it in helper
 # methods.
 templateInstance = null
+TemplateClass = Template.design;
 
 collectionToForm =
   'entities': 'entityForm'
   'typologies': 'typologyForm'
 
-Template.main.created = ->
+TemplateClass.created = ->
   templateInstance = @
 
-Template.main.rendered = ->
+TemplateClass.rendered = ->
   # TODO(aramk) Data is what is passed to the template, not the data on the instance.
   @data ?= {}
 
@@ -82,7 +83,7 @@ Template.main.rendered = ->
       populateTable
     )
 
-Template.main.helpers
+TemplateClass.helpers
   entities: -> Entities.find()
   typologies: -> Typologies.find()
   tableSettings: ->
@@ -96,17 +97,17 @@ Template.main.helpers
       collectionName = Collections.getName(data.collection)
       formName = collectionToForm[collectionName]
       console.debug 'onCreate', arguments, collectionName, formName
-      Template.main.setUpFormPanel templateInstance, Template[formName]
+      TemplateClass.setUpFormPanel templateInstance, Template[formName]
     onEdit: (data, doc) ->
       collectionName = Collections.getName(data.collection)
       formName = collectionToForm[collectionName]
       console.debug 'onEdit', arguments, collectionName, formName
-      Template.main.setUpFormPanel templateInstance, Template[formName], doc
+      TemplateClass.setUpFormPanel templateInstance, Template[formName], doc
 
 getSidebar = (template) ->
   $(template.find('.main.container > .content > .sidebar'))
 
-Template.main.addPanel = (template, component) ->
+TemplateClass.addPanel = (template, component) ->
   console.debug 'addPanel', template, component
   $container = getSidebar(template)
   $panel = $('<div class="panel"></div>')
@@ -114,32 +115,32 @@ Template.main.addPanel = (template, component) ->
   $container.append $panel
   UI.insert component, $panel[0]
 
-Template.main.removePanel = (template, component) ->
+TemplateClass.removePanel = (template, component) ->
   console.debug 'Removing panel', this, template, component
   $(component.dom.getNodes()).parent().remove()
   component.dom.remove()
   $container = getSidebar(template)
   $('>.panel:last', $container).show()
 
-Template.main.setUpPanel = (template, panelTemplate, data) ->
+TemplateClass.setUpPanel = (template, panelTemplate, data) ->
   panel = UI.renderWithData panelTemplate, data
-  Template.main.addPanel template, panel
+  TemplateClass.addPanel template, panel
   panel
 
-Template.main.setUpFormPanel = (template, formTemplate, doc, settings) ->
+TemplateClass.setUpFormPanel = (template, formTemplate, doc, settings) ->
   settings ?= {}
   data =
     doc: doc, settings: settings
-  panel = Template.main.setUpPanel template, formTemplate, data
-  callback = -> Template.main.removePanel template, panel
+  panel = TemplateClass.setUpPanel template, formTemplate, data
+  callback = -> TemplateClass.removePanel template, panel
   settings.onCancel = settings.onSuccess = callback
   panel
 
-#Template.main.events
+#TemplateClass.events
 #  'click .entities .add.item': (e, template) ->
-#    Template.main.setUpFormPanel template, Template.entityForm
+#    TemplateClass.setUpFormPanel template, Template.entityForm
 #  'dblclick .entities .edit': (e, template) ->
 #    # TODO(aramk)
 #    null
 #  'dblclick .typologies .edit': (e, template) ->
-#    Template.main.setUpFormPanel template, Template.typologyForm, @
+#    TemplateClass.setUpFormPanel template, Template.typologyForm, @

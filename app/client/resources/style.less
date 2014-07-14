@@ -34,11 +34,26 @@ body {
       font-size: 20px;
       font-weight: bold;
     }
+    .state-name {
+      display: inline-block;
+      line-height: 15px;
+      vertical-align: middle;
+      color: #999;
+      text-transform: uppercase;
+      width: 100%;
+      position: absolute;
+      top: 15px;
+      left: 0;
+      text-align: center;
+    }
     .help.button {
       float: right;
       padding: 0.4rem;
     }
   }
+}
+
+.design.container {
   .content {
     flex-grow: 1;
     display: flex;
@@ -72,6 +87,14 @@ body {
           }
         }
       }
+      .reactive-table {
+        margin: 0;
+        margin-bottom: 10px;
+        box-shadow: 0 -1px 0 0 @color-line-1;
+        tfoot {
+          display: none;
+        }
+      }
       .title {
         padding: 10px;
         font-size: 14px;
@@ -83,59 +106,6 @@ body {
         background: #eee;
         font-size: 13px;
         margin-bottom: 10px;
-      }
-      .table {
-        tr {
-          td:first-child {
-            .ui.checkbox {
-              width: 15px;
-            }
-            width: 15px;
-          }
-          &.heading td {
-            background: #ccc;
-          }
-        }
-        .extra.buttons {
-          > * {
-            float: right;
-          }
-          .ui.button {
-            padding: 0 3px;
-            background: none;
-            border: none;
-            box-shadow: none;
-          }
-        }
-      }
-      .reactive-table-filter {
-        padding: 4px;
-        .reactive-table-input {
-          padding: 0.3rem;
-        }
-      }
-      .reactive-table {
-        margin: 0;
-        margin-bottom: 10px;
-        box-shadow: 0 -1px 0 0 @color-line-1;
-        tfoot {
-          display: none;
-        }
-      }
-      table.selectable {
-        tbody tr {
-          .unselectable;
-          cursor: pointer;
-          &:hover td {
-            background: @color-highlight-lighter !important;
-          }
-          &.selected td {
-            background: @color-highlight-light !important;
-          }
-        }
-      }
-      .ui.menu.toolbar {
-        margin: 0;
       }
     }
     .viewer {
@@ -166,17 +136,8 @@ body {
     width: 100%;
   }
   .buttons {
-    display: flex;
-    flex-direction: row;
-    flex-shrink: 0;
     padding: 5px;
     border: 1px solid #ccc;
-    .button {
-      padding: 8px;
-    }
-    .spacer {
-      flex-grow: 1;
-    }
   }
 }
 
@@ -206,6 +167,21 @@ body {
         display: block;
       }
     }
+  }
+  .buttons {
+    display: flex;
+    flex-direction: row;
+    flex-shrink: 0;
+    .button {
+      padding: 8px;
+    }
+    .spacer {
+      flex-grow: 1;
+    }
+  }
+  .title {
+    font-size: 20px;
+    padding-bottom: 10px;
   }
 }
 
@@ -281,4 +257,26 @@ body {
   .subtitle {
     margin-bottom: 0 !important;
   }
+}
+
+.precinct-size {
+  min-width: 400px;
+  max-width: 60%;
+  width: 100%;
+  margin: 0 auto;
+  margin-top: 30px;
+}
+
+.precincts.container {
+  .precinct-size;
+  .reactive-table-filter {
+    display: none !important;
+  }
+  tfoot {
+    font-size: 11px;
+  }
+}
+
+.precincts.crud.form {
+  .precinct-size;
 }

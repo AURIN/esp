@@ -16,6 +16,15 @@ Template.collectionTable.created = function() {
   this.data.collection = collection;
   if (!collection) {
     console.warn('No collection provided.', this.data);
+  } else {
+    var collectionName = this.data.collectionName || Collections.getName(collection);
+    if (collectionName) {
+      var collectionId = Strings.firstToLowerCase(Strings.singular(collectionName));
+      this.data.createRoute = this.data.createRoute || collectionId + 'Item';
+      this.data.editRoute = this.data.editRoute || collectionId + 'Edit';
+    } else {
+      console.warn('No collection name provided', this.data);
+    }
   }
 };
 
@@ -33,91 +42,73 @@ Template.collectionTable.rendered = function() {
   $('tbody', $table).after($footer);
 
   var data = this.data;
-  var $btnCreate = $(this.find('.create.item')).click(onCreate);
-  var $btnEdit = $(this.find('.edit.item')).click(onEdit);
-  var $btnDelete = $(this.find('.delete.item')).click(onDelete);
+  var settings = data.settings;
+
+  var $btnCreate = $(this.find('.create.item')).click(createItem);
+  var $btnEdit = $(this.find('.edit.item')).click(editSelectedRow);
+  var $btnDelete = $(this.find('.delete.item')).click(deleteSelectedRow);
   var $selectedRow;
   var selectedClass = data.selectedClass || 'selected';
 
   var collection = data.collection;
-  var settings = data.settings;
+  var createRoute = data.createRoute;
+  var editRoute = data.editRoute;
+
+  function onSelectionChange(item) {
+    $btnEdit.add($btnDelete)[item ? 'show' : 'hide']();
+  }
 
   function getSelectedId() {
     return $selectedRow.attr('data-id');
   }
 
-  function getSelectedModel() {
-    return collection.findOne(getSelectedId());
+  function createItem() {
+    settings.onCreate ? settings.onCreate(createHandlerContext()) : Router.go(createRoute);
   }
 
-  function onCreate() {
-    settings.onCreate && settings.onCreate(data, this);
+  function createHandlerContext(extraArgs) {
+    var selectedItem = $selectedRow ? $selectedRow.data('model') : null;
+    return _.extend({id: getSelectedId(), selectedRow: $selectedRow, selectedItem: selectedItem,
+      collection: collection, createRoute: createRoute, editRoute: editRoute}, extraArgs);
   }
 
-  function onEdit() {
-    settings.onEdit && settings.onEdit(data, getSelectedModel(), this);
-  }
-
-  function onDelete() {
-    settings.onDelete && settings.onDelete(this);
-    if (confirm('Delete item?')) {
-      collection.remove(getSelectedId());
-      settings.onDeleted && settings.onDeleted(this);
+  function editSelectedRow() {
+    var defaultHandler = function() {
+      Router.go(editRoute, {_id: getSelectedId()});
+    };
+    if (settings.onEdit) {
+      settings.onEdit(createHandlerContext({defaultHandler: defaultHandler}));
+    } else {
+      defaultHandler();
     }
   }
 
-  function onSelectionChange(item) {
-    $btnEdit.add($btnDelete)[item ? 'show' : 'hide']();
-    settings.onSelectionChange && settings.onSelectionChange(this);
+  function deleteSelectedRow() {
+    if (confirm('Delete item?')) {
+      settings.onDelete ? settings.onDelete(createHandlerContext()) :
+          collection.remove(getSelectedId());
+    }
   }
 
   onSelectionChange();
-
-  var boundRows = {};
-  function bindRow(row) {
-    var $row = $(row);
-    var id = $row.attr('data-id');
-    if (!id) {
-      console.warn('Could not bind row', id);
-      return;
-    }
-    if (boundRows[id]) {
-      return;
-    }
-    boundRows[id] = true;
-    $row.click(function() {
-      if ($selectedRow) {
-        $selectedRow.removeClass(selectedClass);
-        if ($selectedRow.is($(this))) {
-          $selectedRow = null;
-          // Deselection.
-          onSelectionChange($selectedRow);
-          return;
-        }
+  var $rows = $(this.findAll('table.selectable tbody tr'));
+  $rows.click(function() {
+    if ($selectedRow) {
+      $selectedRow.removeClass(selectedClass);
+      if ($selectedRow.is($(this))) {
+        $selectedRow = null;
+        // Deselection.
+        onSelectionChange($selectedRow);
+        return;
       }
-      // Selection.
-      $selectedRow = $(this);
-      $selectedRow.addClass(selectedClass);
-      onSelectionChange($selectedRow);
-    }).dblclick(function() {
-      $selectedRow = $(this);
-      onEdit();
-    });
-  }
-
-  _.each($('tr[data-id]', $table), bindRow);
-
-  collection.find({}).observe({
-    added: function(doc) {
-      // TODO(aramk) Temporary solution - observe changes in the table's template, or
-      // provide a callback from within the library. We need to wait for the DOM element
-      // to be constructed first.
-      setTimeout(function() {
-        var id = doc._id;
-        var $td = $('[data-id="' + id + '"]', $table);
-        bindRow($td.closest('tr'));
-      }, 300);
     }
+    // Selection.
+    $selectedRow = $(this);
+    $selectedRow.addClass(selectedClass);
+    onSelectionChange($selectedRow);
+  }).dblclick(function() {
+    $selectedRow = $(this);
+    editSelectedRow();
   });
 };
 
@@ -126,8 +117,8 @@ Template.collectionTable.helpers({
     return this.items || this.collection;
   },
   tableSettings: function() {
-    return _.defaults(this.settings || {}, {
-      rowsPerPage: 5,
+    return _.defaults(this.settings, {
+      rowsPerPage: 10,
       showFilter: true,
       useFontAwesome: true
     });

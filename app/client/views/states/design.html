@@ -1,0 +1,22 @@
+<template name="design">
+  <div class="design container">
+    <div class="sidebar">
+      <div class="default panel">
+        <div class="title">Entities</div>
+        <div class="items entities">
+          {{> collectionTable collection="Entities" settings=tableSettings}}
+        </div>
+        <div class="title">Typologies</div>
+        <div class="items typologies">
+          {{> collectionTable collection="Typologies" settings=tableSettings}}
+        </div>
+      </div>
+    </div>
+    <div class="viewer">
+      <div class="atlas"></div>
+    </div>
+    <div class="sidebar">
+      {{> reportPanel}}
+    </div>
+  </div>
+</template>
