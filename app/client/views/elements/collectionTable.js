@@ -67,8 +67,8 @@ Template.collectionTable.rendered = function() {
   }
 
   function createHandlerContext(extraArgs) {
-    var selectedItem = $selectedRow ? $selectedRow.data('model') : null;
-    return _.extend({id: getSelectedId(), selectedRow: $selectedRow, selectedItem: selectedItem,
+    var model = $selectedRow ? $selectedRow.data('model') : null;
+    return _.extend({id: getSelectedId(), selectedRow: $selectedRow, model: model,
       collection: collection, createRoute: createRoute, editRoute: editRoute}, extraArgs);
   }
 

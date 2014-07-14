@@ -93,19 +93,19 @@ TemplateClass.helpers
     ]
     rowsPerPage: 100000
     showNavigation: 'never'
-    onCreate: (data) ->
-      collectionName = Collections.getName(data.collection)
+    onCreate: (args) ->
+      collectionName = Collections.getName(args.collection)
       formName = collectionToForm[collectionName]
       console.debug 'onCreate', arguments, collectionName, formName
       TemplateClass.setUpFormPanel templateInstance, Template[formName]
-    onEdit: (data, doc) ->
-      collectionName = Collections.getName(data.collection)
+    onEdit: (args) ->
+      collectionName = Collections.getName(args.collection)
       formName = collectionToForm[collectionName]
       console.debug 'onEdit', arguments, collectionName, formName
-      TemplateClass.setUpFormPanel templateInstance, Template[formName], doc
+      TemplateClass.setUpFormPanel templateInstance, Template[formName], args.model
 
 getSidebar = (template) ->
-  $(template.find('.main.container > .content > .sidebar'))
+  $(template.find('.design.container > .sidebar'))
 
 TemplateClass.addPanel = (template, component) ->
   console.debug 'addPanel', template, component

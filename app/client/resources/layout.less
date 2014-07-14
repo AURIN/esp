@@ -24,7 +24,7 @@ body {
   height: 100%;
   display: flex;
   flex-direction: column;
-  .header {
+  > .header {
     padding: 10px;
     border-bottom: 1px solid #ccc;
     .logo {
@@ -50,8 +50,9 @@ body {
       padding: 0.4rem;
     }
   }
-  .content {
+  > .content {
     height: 100%;
+    display: flex;
   }
 }
 
