@@ -22,7 +22,7 @@ TemplateClass.helpers
       Router.go('design', {_id: args.id})
     else
       args.defaultHandler()
-  onDelete: (doc) ->
-    # TODO(aramk)
-    console.debug 'onDelete', arguments
+  onDelete: (args) ->
+    id = args.id
+    Meteor.call('precincts/remove', id);
   }

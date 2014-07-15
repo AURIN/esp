@@ -10,6 +10,7 @@ crudRoute = (collectionName, controller) ->
   itemRoute = singularName + 'Item'
   editRoute = singularName + 'Edit'
   formName = singularName + 'Form'
+  console.log('crud routes', itemRoute, editRoute, formName);
   Router.map ->
     this.route collectionId, {path: '/' + collectionId, controller: controller, template: collectionId}
     this.route itemRoute,
@@ -32,9 +33,10 @@ DesignController = RouteController.extend
     Meteor.subscribe('precincts')
     # TODO(aramk) Waiting on more than one doesn't work.
 #    _.map(['precincts', 'entities', 'typologies'], (name) -> Meteor.subscribe(name))
-#  onBeforeAction: ->
+  onBeforeAction: ->
 #    console.log('onBeforeAction')
-#    id = @.params._id
+    id = @.params._id
+    Precincts.setCurrentId(id)
 #    Session.set('precinctId', id)
 #    precinct = Precincts.findOne(id)
 #    setStateName(precinct.name)
@@ -47,7 +49,7 @@ PrecinctsController = RouteController.extend
 #    console.log('onBeforeAction');
 #    setStateName('Precincts')
 
-crudRoute('Precincts', PrecinctsController)
+crudRoute('Precincts')
 
 Router.onBeforeAction (pause) ->
 #  TODO(aramk) Add back when we have auth.

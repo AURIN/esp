@@ -23,8 +23,7 @@ Meteor.startup ->
       $wrapper[if classes and not classOptions then 'hide' else 'show']()
       # Add a "none" option to select fields.
       if $input.is('select')
-        label = 'None'
-        $option = $('<option value="">' + label + '</option>')
+        $option = $('<option value="">None</option>')
         $input.prepend($option)
         inputValue = if typology then Typologies.getParameter(typology, paramName) else null
         unless inputValue?
