@@ -1,13 +1,18 @@
 <template name="collectionTable">
-  <div class="collection-table">
+  {{#with _settings}}
+  <div id="{{tableId}}" class="collection-table">
     <div class="ui menu toolbar">
       <a class="create item"><i class="add icon"></i></a>
+      {{#with ..}}
+      {{#if selectedItem}}
       <a class="edit item"><i class="pencil icon"></i></a>
       <a class="delete item"><i class="delete icon"></i></a>
-
+      {{/if}}
+      {{/with}}
       <div class="right menu">
       </div>
     </div>
     {{> reactiveTable collection=items settings=tableSettings}}
   </div>
+  {{/with}}
 </template>

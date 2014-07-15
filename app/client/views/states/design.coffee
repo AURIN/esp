@@ -9,9 +9,9 @@ collectionToForm =
 
 TemplateClass.created = ->
   console.log('TemplateClass')
-  precinctId = Session.get('precinctId')
-  console.log('precincts', Precincts.find().fetch())
-  Precincts.setCurrentId(precinctId)
+#  precinctId = Session.get('precinctId')
+#  console.log('precincts', Precincts.find().fetch())
+#  Precincts.setCurrentId(precinctId)
   precinct = Precincts.getCurrent()
   unless precinct
     Router.go('precincts')

@@ -1,4 +1,27 @@
-function resolveSettings(data) {
+var nextId = 1;
+function getNextId() {
+  return nextId++;
+}
+var sessionId = '_collectionTable_';
+var selectedClass = 'selected';
+
+function setReactiveVar(tableId, name, value) {
+  console.log('setting reactive variable', value);
+//  Session.set('_collectionTable_1:selectedItem', value);
+  Session.set(getSessionVarName(tableId, name), value);
+}
+
+function getSessionVarName(tableId, name) {
+  var value = sessionId + tableId + ':' + name;
+  console.log('getSessionVarName', value);
+  return sessionId + tableId + ':' + name;
+}
+
+function getReactiveVar(tableId, name) {
+  return Session.get(getSessionVarName(tableId, name));
+}
+
+function configureSettings(data) {
   var items = data.items;
   var collection = data.collection;
 
@@ -27,21 +50,12 @@ function resolveSettings(data) {
       console.warn('No collection name provided', data);
     }
   }
+  data._tableId = getNextId();
 }
 
-Template.collectionTable.created = function() {
-//  this.data = this.data || {};
-//  this.data.test = 123;
-//  this.data.in = 0;
-//  this.data.settings.test = 123;
-//  console.log('created', this.data);
-//  resolveSettings.call(this.data);
-  console.log('created', this.data);
-};
-
 Template.collectionTable.rendered = function() {
-  resolveSettings(this.data);
-  console.log('rendered', this.data);
+//  configureSettings(this.data);
+//  console.log('rendered', this.data);
 
   // TODO(aramk) Refactor into a table.
   var $table = $(this.findAll('.reactive-table')).addClass('ui selectable table segment');
@@ -54,6 +68,8 @@ Template.collectionTable.rendered = function() {
   var colCount = $('tr:first th', $table).length;
   $('tr th', $footer).attr('colspan', colCount).append($nav);
   $('tbody', $table).after($footer);
+
+  return;
 
   var data = this.data;
   var settings = data.settings;
@@ -73,6 +89,7 @@ Template.collectionTable.rendered = function() {
   }
 
   function getSelectedId() {
+    console.log('$selectedRow', $selectedRow);
     return $selectedRow ? $selectedRow.attr('data-id') : null;
   }
 
@@ -92,6 +109,7 @@ Template.collectionTable.rendered = function() {
       Router.go(editRoute, {_id: getSelectedId()});
     };
     console.log('editRoute', editRoute);
+    console.log('settings', settings);
     if (settings.onEdit) {
       settings.onEdit(createHandlerContext(_.extend({defaultHandler: defaultHandler}, args)));
     } else {
@@ -128,21 +146,85 @@ Template.collectionTable.rendered = function() {
   });
 };
 
-Template.collectionTable.helpers({
-  items: function() {
-    console.log('items', this);
-//    console.log('items', this, this.items, this.collection);
+Template.collectionTable.events({
+  'click table.selectable tbody tr': function(e, template) {
+    function getRow(id) {
+      return $(template.find('[data-id="' + id + '"]'))
+    }
 
+    var data = template.data;
+    var model = this;
+    var $row = $(e.target).closest('tr');
+    console.log('click', this, arguments);
 
-    resolveSettings(this);
-    return this.items || this.collection;
+    var selectedItem = getReactiveVar(data._tableId, 'selectedItem');
+    if (selectedItem) {
+      var $selectedRow = getRow(selectedItem.model._id);
+      console.log('$selectedRow', $selectedRow);
+      $selectedRow.removeClass(selectedClass);
+      if ($selectedRow.is($row)) {
+        // Deselection.
+        setReactiveVar(data._tableId, 'selectedItem', null);
+        return;
+      }
+    }
+    var item = {
+      model: model,
+//      row: $row[0]
+    };
+    console.log('item', item);
+    $row.addClass(selectedClass);
+//    var $selectedItem = template.data.$selectedItem;
+//    if ($selectedItem) {
+//
+//    }
+    setReactiveVar(data._tableId, 'selectedItem', item);
   },
-  tableSettings: function() {
-    console.log('tableSettings', this);
-    return _.defaults(this.settings, {
-      rowsPerPage: 10,
-      showFilter: true,
-      useFontAwesome: true
-    });
+  'dblclick table.selectable tbody tr': function(e, template) {
+    // TODO(aramk)
   }
+});
+
+Template.collectionTable.helpers({
+  _settings: function() {
+    var data = this;
+    configureSettings(data);
+    setReactiveVar(data._tableId, 'selectedItem', null);
+    return {
+      items: data.items || data.collection,
+      tableSettings: _.defaults(data.settings, {
+        rowsPerPage: 10,
+        showFilter: true,
+        useFontAwesome: true
+      }),
+      tableId: data._tableId
+    };
+  },
+  selectedItem: function() {
+    var data = this;
+    var value = getReactiveVar(data._tableId, 'selectedItem');
+//    var value = Session.get(getSessionVarName(data._tableId, 'selectedItem'));
+//    var value = Session.get('_collectionTable_1:selectedItem');
+    console.error('selectedItem', value);
+    return value;
+  }
+//  items: function() {
+//    console.log('items', this);
+////    console.log('items', this, this.items, this.collection);
+//
+//
+//    configureSettings(this);
+//    return this.items || this.collection;
+//  },
+//  tableSettings: function() {
+//    console.log('tableSettings', this);
+//    return _.defaults(this.settings, {
+//      rowsPerPage: 10,
+//      showFilter: true,
+//      useFontAwesome: true
+//    });
+//  },
+//  selectedItem: function () {
+//    Session.get('collectionTable_selectedItem_' + getNextId());
+//  }
 });
