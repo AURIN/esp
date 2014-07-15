@@ -160,7 +160,8 @@ Template.collectionTable.events({
     setReactiveVar(data._tableId, 'selectedItem', item);
   },
   'dblclick table.selectable tbody tr': function(e, template) {
-    template.editItem({event: e});
+    var id = $(e.target).closest('tr').data('id');
+    template.editItem({event: e, id: id, model: this});
   },
   'click .create.item': function(e, template) {
     template.createItem();
