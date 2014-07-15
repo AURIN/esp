@@ -18,8 +18,10 @@ TemplateClass.helpers
 #      console.debug 'onCreate', arguments
   onEdit: (args) ->
     console.debug 'onEdit', arguments
-    if args.event?.type == 'dblclick'
-      Router.go('design', {_id: args.id})
+    event = args.event
+    if event?.type == 'dblclick'
+      id = $(event.target).closest('tr').data('id');
+      Router.go('design', {_id: id})
     else
       args.defaultHandler()
   onDelete: (args) ->
