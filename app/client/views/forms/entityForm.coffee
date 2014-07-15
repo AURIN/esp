@@ -9,17 +9,14 @@ Meteor.startup ->
   updateFields = ->
     typologyId = getTypologyInputValue.call(@)
     typology = Typologies.findOne(typologyId)
-    typologyClass = typology.parameters?.general?.class
-    unless typologyClass
-      console.warn('No typology class found.')
-      return
+    typologyClass = typology?.parameters?.general?.class
     console.debug 'updateFields', @, arguments, typologyId, typology, typologyClass
     for key, input of @schemaInputs
       console.debug 'input', key, input
       paramName = key.replace(/^parameters\./, '')
       classes = input.field.classes
       classOptions = if classes and typologyClass then classes[typologyClass] else null
-      typologyValue = Typologies.getParameter(typology, paramName)
+      typologyValue = if typology then Typologies.getParameter(typology, paramName) else null
       console.debug 'typologyValue', typologyValue, classOptions
       $input = $(input.node)
       $wrapper = $input.closest(Forms.FIELD_SELECTOR)
@@ -46,7 +43,7 @@ Meteor.startup ->
         # If the currently selected value is not actually present in the data, select the new first
         # option.
         entity = @data.doc
-        entityValue = Entities.getParameter(entity, paramName)
+        entityValue = if entity then Entities.getParameter(entity, paramName) else
         unless entityValue?
           $input.val('')
 
@@ -60,6 +57,11 @@ Meteor.startup ->
       updateFields.call(@)
       $typologyInput = getTypologyInput.call(@)
       $typologyInput.on 'change', => updateFields.call(@)
+    hooks:
+      formToDoc: (doc) ->
+        doc.precinct = Precincts.getCurrentId()
+        doc
 
   Form.helpers
     typology: -> @doc?.typology
+    typologies: -> Typologies.findForPrecinct()

@@ -1,6 +1,6 @@
 Template.mainLayout.helpers
   stateName: -> Session.get('stateName')
-  precinct: -> Session.get('precinct')
+  precinct: -> Precincts.getCurrent()
 
 Template.mainLayout.events
   'click .close.button': ->

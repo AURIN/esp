@@ -8,10 +8,16 @@ collectionToForm =
   'typologies': 'typologyForm'
 
 TemplateClass.created = ->
+  console.log('TemplateClass')
+  precinctId = Session.get('precinctId')
+  console.log('precincts', Precincts.find().fetch())
+  Precincts.setCurrentId(precinctId)
+  precinct = Precincts.getCurrent()
+  unless precinct
+    Router.go('precincts')
+  else
+    Session.set('stateName', precinct.name)
   templateInstance = @
-
-getPrecinctId = ->
-  Session.get('precinct')?._id
 
 TemplateClass.rendered = ->
   # TODO(aramk) Data is what is passed to the template, not the data on the instance.
@@ -87,8 +93,8 @@ TemplateClass.rendered = ->
     )
 
 TemplateClass.helpers
-  entities: -> Entities.find({precinct: getPrecinctId()})
-  typologies: -> Typologies.find({precinct: getPrecinctId()})
+  entities: -> Entities.find({precinct: Precincts.getCurrentId()})
+  typologies: -> Typologies.find({precinct: Precincts.getCurrentId()})
   tableSettings: ->
     fields: [
       key: 'name'

@@ -31,7 +31,7 @@ global = @
   getName: (arg) ->
     collection = @get(arg)
     # Meteor.Collection or LocalCollection.
-    if collection then collection._name else arg.name
+    if collection then (collection._name || collection.name) else null
 
   getTitle: (arg) ->
     Strings.toTitleCase(@getName(arg))

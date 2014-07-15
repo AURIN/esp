@@ -37,6 +37,10 @@ Meteor.startup ->
       updateFields.call(@)
       $classInput = getClassInput.call(@)
       $classInput.on 'change', => updateFields.call(@)
+    hooks:
+      formToDoc: (doc) ->
+        doc.precinct = Precincts.getCurrentId()
+        doc
 
   Form.helpers
     classes: -> _.map Typologies.classes, (name, id) -> {_id: id, name: name}

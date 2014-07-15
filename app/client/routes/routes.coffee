@@ -1,5 +1,5 @@
-setStateName = (name) ->
-  Session.set('stateName', name)
+#setStateName = (name) ->
+#  Session.set('stateName', name)
 
 AuthController = RouteController.extend({})
 
@@ -11,7 +11,7 @@ crudRoute = (collectionName, controller) ->
   editRoute = singularName + 'Edit'
   formName = singularName + 'Form'
   Router.map ->
-    this.route collectionId, {path: '/' + collectionId, controller: controller, template: collectionId}
+    this.route collectionId, {path: '/' + collectionId, controller: controller, template: collectionId
     this.route itemRoute,
       path: '/' + collectionId + '/create', controller: controller, template: formName
       data: -> {}
@@ -27,15 +27,25 @@ crudRoute = (collectionName, controller) ->
 
 DesignController = RouteController.extend
   template: 'design'
-  onBeforeAction: ->
-    precinct = Precincts.findOne(@.params._id)
-    setStateName(precinct.name)
-    Session.set('precinct', precinct)
+  waitOn: ->
+    console.log('waitOn 1')
+    Meteor.subscribe('precincts')
+    # TODO(aramk) Waiting on more than one doesn't work.
+#    _.map(['precincts', 'entities', 'typologies'], (name) -> Meteor.subscribe(name))
+#  onBeforeAction: ->
+#    console.log('onBeforeAction')
+#    id = @.params._id
+#    Session.set('precinctId', id)
+#    precinct = Precincts.findOne(id)
+#    setStateName(precinct.name)
+#    Precincts.setCurrentId(id)
 
 PrecinctsController = RouteController.extend
   template: 'precincts'
+  waitOn: -> Meteor.subscribe('precincts')
   onBeforeAction: ->
-    setStateName('Precincts')
+#    console.log('onBeforeAction');
+#    setStateName('Precincts')
 
 crudRoute('Precincts', PrecinctsController)
 
@@ -54,5 +64,9 @@ Router.onBeforeAction (pause) ->
 Router.map ->
   this.route 'design', {
     path: '/design/:_id'
+    waitOn: ->
+      console.log('waitOn 2')
+      Meteor.subscribe('precincts')
+#      _.map(['precincts', 'entities', 'typologies'], (name) -> Meteor.subscribe(name))
     controller: DesignController
   }

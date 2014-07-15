@@ -251,9 +251,8 @@ TypologySchema = new SimpleSchema
   name:
     label: 'Name'
     desc: 'The full name of the typology.'
-    type: String,
-    index: true,
-    unique: true
+    type: String
+    index: true
   desc:
     label: 'Description'
     desc: 'A detailed description of the typology, including a summary of the materials and services provided.'
@@ -357,16 +356,17 @@ Typologies.filterParameters = (model) ->
       delete modelCategory[paramName]
   model
 
-# Validate that the given model contains all required nested parameters. This is not supported by
-# AutoForm, which only treats fields as required if their parents are also present (in this case,
-# the category
-# TODO(aramk)
-Typologies.validateNestedProperties = -> null
+findForPrecinct = (collection, precinctId) ->
+  precinctId ?= Precincts.getCurrentId()
+  if precinctId then collection.find({precinct: precinctId}) else []
+
+Typologies.findForPrecinct = (precinctId) -> findForPrecinct(Typologies, precinctId)
 
 ####################################################################################################
 # ENTITIES SCHEMA DEFINITION
 ####################################################################################################
 
+# Entities don't need the class parameter since they reference the typology.
 entityCategories = lodash.cloneDeep(categories)
 delete entityCategories.general.items.class
 @EntityParametersSchema = createCategoriesSchema
@@ -376,8 +376,7 @@ EntitySchema = new SimpleSchema
   name:
     label: 'Name'
     type: String
-    index: true,
-    unique: true
+    index: true
   desc:
     label: 'Description'
     type: String
@@ -425,3 +424,5 @@ Entities.getParameter = (model, paramId) ->
 
 Entities.setParameter = (model, paramId, value) ->
   Typologies.setParameter(model, paramId, value)
+
+Entities.findForPrecinct = (precinctId) -> findForPrecinct(Entities, precinctId)

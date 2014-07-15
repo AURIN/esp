@@ -1,6 +1,6 @@
-Template.collectionTable.created = function() {
-  var items = this.data.items;
-  var collection = this.data.collection;
+function resolveSettings(data) {
+  var items = data.items;
+  var collection = data.collection;
 
   if (!collection) {
     if (items) {
@@ -12,23 +12,37 @@ Template.collectionTable.created = function() {
     collection = Collections.resolve(collection);
   }
   // Store them for use in helpers.
-  this.data.items = items;
-  this.data.collection = collection;
+  data.items = items;
+  data.collection = collection;
+//  data.collection = "testing";
   if (!collection) {
-    console.warn('No collection provided.', this.data);
+    console.warn('No collection provided.', data);
   } else {
-    var collectionName = this.data.collectionName || Collections.getName(collection);
+    var collectionName = data.collectionName || Collections.getName(collection);
     if (collectionName) {
       var collectionId = Strings.firstToLowerCase(Strings.singular(collectionName));
-      this.data.createRoute = this.data.createRoute || collectionId + 'Item';
-      this.data.editRoute = this.data.editRoute || collectionId + 'Edit';
+      data.createRoute = data.createRoute || collectionId + 'Item';
+      data.editRoute = data.editRoute || collectionId + 'Edit';
     } else {
-      console.warn('No collection name provided', this.data);
+      console.warn('No collection name provided', data);
     }
   }
+}
+
+Template.collectionTable.created = function() {
+//  this.data = this.data || {};
+//  this.data.test = 123;
+//  this.data.in = 0;
+//  this.data.settings.test = 123;
+//  console.log('created', this.data);
+//  resolveSettings.call(this.data);
+  console.log('created', this.data);
 };
 
 Template.collectionTable.rendered = function() {
+  resolveSettings(this.data);
+  console.log('rendered', this.data);
+
   // TODO(aramk) Refactor into a table.
   var $table = $(this.findAll('.reactive-table')).addClass('ui selectable table segment');
   var $filter = $(this.findAll('.reactive-table-filter'));
@@ -59,10 +73,11 @@ Template.collectionTable.rendered = function() {
   }
 
   function getSelectedId() {
-    return $selectedRow.attr('data-id');
+    return $selectedRow ? $selectedRow.attr('data-id') : null;
   }
 
   function createItem() {
+    console.log('createRoute', createRoute, settings.onCreate);
     settings.onCreate ? settings.onCreate(createHandlerContext()) : Router.go(createRoute);
   }
 
@@ -76,6 +91,7 @@ Template.collectionTable.rendered = function() {
     var defaultHandler = function() {
       Router.go(editRoute, {_id: getSelectedId()});
     };
+    console.log('editRoute', editRoute);
     if (settings.onEdit) {
       settings.onEdit(createHandlerContext(_.extend({defaultHandler: defaultHandler}, args)));
     } else {
@@ -114,9 +130,15 @@ Template.collectionTable.rendered = function() {
 
 Template.collectionTable.helpers({
   items: function() {
+    console.log('items', this);
+//    console.log('items', this, this.items, this.collection);
+
+
+    resolveSettings(this);
     return this.items || this.collection;
   },
   tableSettings: function() {
+    console.log('tableSettings', this);
     return _.defaults(this.settings, {
       rowsPerPage: 10,
       showFilter: true,
