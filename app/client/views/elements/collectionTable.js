@@ -21,6 +21,12 @@ function getReactiveVar(tableId, name) {
   return Session.get(getSessionVarName(tableId, name));
 }
 
+function getRow(id, template) {
+  return $(template.find('[data-id="' + id + '"]'))
+}
+
+var tableSettings = {};
+
 function configureSettings(data) {
   var items = data.items;
   var collection = data.collection;
@@ -54,10 +60,6 @@ function configureSettings(data) {
 }
 
 Template.collectionTable.rendered = function() {
-//  configureSettings(this.data);
-//  console.log('rendered', this.data);
-
-  // TODO(aramk) Refactor into a table.
   var $table = $(this.findAll('.reactive-table')).addClass('ui selectable table segment');
   var $filter = $(this.findAll('.reactive-table-filter'));
   var $toolbar = $filter.prev('.toolbar');
@@ -69,28 +71,42 @@ Template.collectionTable.rendered = function() {
   $('tr th', $footer).attr('colspan', colCount).append($nav);
   $('tbody', $table).after($footer);
 
-  return;
-
+  var template = this;
   var data = this.data;
   var settings = data.settings;
-
-  var $btnCreate = $(this.find('.create.item')).click(createItem);
-  var $btnEdit = $(this.find('.edit.item')).click(editSelectedRow);
-  var $btnDelete = $(this.find('.delete.item')).click(deleteSelectedRow);
-  var $selectedRow;
-  var selectedClass = data.selectedClass || 'selected';
+  console.log('settings', data._tableId, settings);
+  tableSettings[data._tableId] = settings;
 
   var collection = data.collection;
   var createRoute = data.createRoute;
   var editRoute = data.editRoute;
 
-  function onSelectionChange(item) {
-    $btnEdit.add($btnDelete)[item ? 'show' : 'hide']();
+  template.createItem = createItem;
+  template.editItem = editItem;
+  template.deleteItem = deleteItem;
+
+  function getSelectedItem() {
+    return getReactiveVar(data._tableId, 'selectedItem');
+  }
+
+  function getSelectedRow() {
+    var id = getSelectedId();
+    return id && getRow(id, template);
   }
 
   function getSelectedId() {
-    console.log('$selectedRow', $selectedRow);
-    return $selectedRow ? $selectedRow.attr('data-id') : null;
+    var selectedItem = getSelectedItem();
+    return selectedItem && selectedItem.model._id;
+  }
+
+  function getSelectedModel() {
+    var selectedItem = getSelectedItem();
+    return selectedItem && selectedItem.model;
+  }
+
+  function createHandlerContext(extraArgs) {
+    return _.extend({id: getSelectedId(), selectedRow: getSelectedRow(), model: getSelectedModel(),
+      collection: collection, createRoute: createRoute, editRoute: editRoute}, extraArgs);
   }
 
   function createItem() {
@@ -98,13 +114,7 @@ Template.collectionTable.rendered = function() {
     settings.onCreate ? settings.onCreate(createHandlerContext()) : Router.go(createRoute);
   }
 
-  function createHandlerContext(extraArgs) {
-    var model = $selectedRow ? $selectedRow.data('model') : null;
-    return _.extend({id: getSelectedId(), selectedRow: $selectedRow, model: model,
-      collection: collection, createRoute: createRoute, editRoute: editRoute}, extraArgs);
-  }
-
-  function editSelectedRow(args) {
+  function editItem(args) {
     var defaultHandler = function() {
       Router.go(editRoute, {_id: getSelectedId()});
     };
@@ -117,49 +127,23 @@ Template.collectionTable.rendered = function() {
     }
   }
 
-  function deleteSelectedRow() {
+  function deleteItem() {
     if (confirm('Delete item?')) {
       settings.onDelete ? settings.onDelete(createHandlerContext()) :
           collection.remove(getSelectedId());
     }
   }
-
-  onSelectionChange();
-  var $rows = $(this.findAll('table.selectable tbody tr'));
-  $rows.click(function() {
-    if ($selectedRow) {
-      $selectedRow.removeClass(selectedClass);
-      if ($selectedRow.is($(this))) {
-        $selectedRow = null;
-        // Deselection.
-        onSelectionChange($selectedRow);
-        return;
-      }
-    }
-    // Selection.
-    $selectedRow = $(this);
-    $selectedRow.addClass(selectedClass);
-    onSelectionChange($selectedRow);
-  }).dblclick(function(e) {
-    $selectedRow = $(this);
-    editSelectedRow({event: e});
-  });
 };
 
 Template.collectionTable.events({
   'click table.selectable tbody tr': function(e, template) {
-    function getRow(id) {
-      return $(template.find('[data-id="' + id + '"]'))
-    }
-
     var data = template.data;
     var model = this;
     var $row = $(e.target).closest('tr');
     console.log('click', this, arguments);
-
     var selectedItem = getReactiveVar(data._tableId, 'selectedItem');
     if (selectedItem) {
-      var $selectedRow = getRow(selectedItem.model._id);
+      var $selectedRow = getRow(selectedItem.model._id, template);
       console.log('$selectedRow', $selectedRow);
       $selectedRow.removeClass(selectedClass);
       if ($selectedRow.is($row)) {
@@ -169,19 +153,23 @@ Template.collectionTable.events({
       }
     }
     var item = {
-      model: model,
-//      row: $row[0]
+      model: model
     };
     console.log('item', item);
     $row.addClass(selectedClass);
-//    var $selectedItem = template.data.$selectedItem;
-//    if ($selectedItem) {
-//
-//    }
     setReactiveVar(data._tableId, 'selectedItem', item);
   },
   'dblclick table.selectable tbody tr': function(e, template) {
-    // TODO(aramk)
+    template.editItem({event: e});
+  },
+  'click .create.item': function(e, template) {
+    template.createItem();
+  },
+  'click .edit.item': function(e, template) {
+    template.editItem();
+  },
+  'click .delete.item': function(e, template) {
+    template.deleteItem();
   }
 });
 
