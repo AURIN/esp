@@ -11,7 +11,7 @@ crudRoute = (collectionName, controller) ->
   editRoute = singularName + 'Edit'
   formName = singularName + 'Form'
   Router.map ->
-    this.route collectionId, {path: '/' + collectionId, controller: controller, template: collectionId
+    this.route collectionId, {path: '/' + collectionId, controller: controller, template: collectionId}
     this.route itemRoute,
       path: '/' + collectionId + '/create', controller: controller, template: formName
       data: -> {}
