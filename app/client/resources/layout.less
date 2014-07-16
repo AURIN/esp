@@ -29,7 +29,8 @@ body {
     border-bottom: 1px solid #ccc;
     .logo {
       color: @color-orange;
-      display: inline-block;
+      float: left;
+      margin-right: 20px;
       font-size: 20px;
       font-weight: bold;
     }
@@ -46,11 +47,16 @@ body {
       text-align: center;
     }
     .tools {
-      float: right;
       z-index: 1;
       position: relative;
       .button {
         padding: 0.4rem;
+      }
+      &.left {
+        float: left;
+      }
+      &.right {
+        float: right;
       }
     }
   }
@@ -144,10 +150,6 @@ body {
     .spacer {
       flex-grow: 1;
     }
-  }
-  .title {
-    font-size: 20px;
-    padding-bottom: 10px;
   }
 }
 

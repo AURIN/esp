@@ -3,12 +3,17 @@
     <div class="header">
       <div class="logo">ESP</div>
       <div class="state-name">{{stateName}}</div>
-      <div class="tools">
-        {{#if project}}
-        <div class="ui edit icon button"><i class="pencil icon"></i></div>
-        <div class="ui close icon button"><i class="remove icon"></i></div>
-        {{/if}}
+      {{#if project}}
+      <div class="tools left">
+        <div class="ui edit icon button" title="Edit Project"><i class="pencil icon"></i></div>
+        <div class="ui import icon button" title="Import Asset"><i class="down icon"></i></div>
+      </div>
+      {{/if}}
+      <div class="tools right">
         {{> helpButton}}
+        {{#if project}}
+        <div class="ui close icon button" title="Remove Project"><i class="remove icon"></i></div>
+        {{/if}}
       </div>
     </div>
     <div class="content">

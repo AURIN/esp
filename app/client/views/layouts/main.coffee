@@ -7,6 +7,7 @@ Template.mainLayout.events
     Router.go('projects')
     Projects.setCurrentId(null)
   'click .edit.button': ->
-    Router.go 'projectEdit', {_id: Projects.getCurrentId()}
-    # TODO(aramk) Give params form
-#    Template.setUpFormPanel null, paramsForm
+    Template.design.setUpFormPanel null, Template.projectForm, Projects.getCurrent()
+#    Router.go 'projectEdit', {_id: Projects.getCurrentId()}
+  'click .import.button': ->
+    Template.design.setUpFormPanel null, Template.importForm

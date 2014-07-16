@@ -18,7 +18,9 @@ TemplateClass.created = ->
     console.error('No project found', projectId);
     Router.go('projects')
   else
-    Session.set('stateName', project.name)
+    Deps.autorun ->
+      project = Projects.findOne(projectId)
+      Session.set('stateName', project.name)
   templateInstance = @
 
 TemplateClass.rendered = ->

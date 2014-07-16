@@ -58,52 +58,53 @@
         $('form', $crudForm).submit();
 
       collection = Collections.get(args.collection)
-      schema = collection._c2._simpleSchema;
+      schema = collection?._c2?._simpleSchema;
       $schemaInputs = $(@findAll('[data-schema-key]'));
 
-      schemaInputs = {}
-      $schemaInputs.each ->
-        $input = $(@)
-        key = $input.attr('data-schema-key')
-        field = schema.schema(key)
-        schemaInputs[key] =
-          node: @
-          key: key
-          field: field
-      @schemaInputs = schemaInputs
-
-      popupInputs = []
-      for key, input of schemaInputs
-        $input = $(input.node)
-        field = input.field
-        desc = field.desc
-        # Add popups to the inputs contain definitions from the schema.
-        if desc?
-          popupInputs.push($input.data('desc', desc))
-        # Add units into labels
-        $label = $input.siblings('label')
-        units = field.units
-        if units?
-          formattedUnits = Strings.format.scripts(units)
-          $units = $('<div class="units">' + formattedUnits + '</div>');
-          $labelContent = $('<div class="value">' + $label.html() + '</div>')
-          $label.empty()
-          $label.append($labelContent).append($units)
-
-      addPopups = ->
-        $(popupInputs).each ->
+      if schema?
+        schemaInputs = {}
+        $schemaInputs.each ->
           $input = $(@)
-          $input.data('desc')
-          console.log('$input')
-          $input.popup('setting', delay: 500, content: $input.data('desc'))
+          key = $input.attr('data-schema-key')
+          field = schema.schema(key)
+          schemaInputs[key] =
+            node: @
+            key: key
+            field: field
+        @schemaInputs = schemaInputs
 
-      removePopups = ->
-        $(popupInputs).popup('destroy')
         popupInputs = []
+        for key, input of schemaInputs
+          $input = $(input.node)
+          field = input.field
+          desc = field.desc
+          # Add popups to the inputs contain definitions from the schema.
+          if desc?
+            popupInputs.push($input.data('desc', desc))
+          # Add units into labels
+          $label = $input.siblings('label')
+          units = field.units
+          if units?
+            formattedUnits = Strings.format.scripts(units)
+            $units = $('<div class="units">' + formattedUnits + '</div>');
+            $labelContent = $('<div class="value">' + $label.html() + '</div>')
+            $label.empty()
+            $label.append($labelContent).append($units)
 
-      Deps.autorun ->
-        helpMode = Session.get 'helpMode'
-        if helpMode then addPopups() else removePopups()
+        addPopups = ->
+          $(popupInputs).each ->
+            $input = $(@)
+            $input.data('desc')
+            console.log('$input')
+            $input.popup('setting', delay: 500, content: $input.data('desc'))
+
+        removePopups = ->
+          $(popupInputs).popup('destroy')
+          popupInputs = []
+
+        Deps.autorun ->
+          helpMode = Session.get 'helpMode'
+          if helpMode then addPopups() else removePopups()
 
       args.onRender?.apply(this, arguments)
 

@@ -1,0 +1,17 @@
+<template name="importForm">
+  <div class="flex-panel panel asset crud form">
+    <div class="title">Import Asset</div>
+    <div class="content">
+      <div class="inner">
+        <div class="ui form segment">
+          <form class="ui form dropzone" action="/catalyst-server/assets/upload"></form>
+          <div class="buttons">
+            <button type="button" class="ui red cancel button">Cancel</button>
+            <div class="spacer"></div>
+            <button type="submit" class="ui button submit green">Import</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</template>
