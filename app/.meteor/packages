@@ -17,7 +17,12 @@ reactive-table
 coffeescript
 collection2
 autoform
-requirejs
-atlas
-atlas-cesium
-Dropzonejs
+collectionFS
+cfs-filesystem
+
+# Our custom packages come last so RequireJS doesn't cause issues.
+# requirejs
+# atlas
+# atlas-cesium
+# Dropzonejs
+# cfs-ejson-file

@@ -4,12 +4,22 @@
     <div class="content">
       <div class="inner">
         <div class="ui form segment">
-          <form class="ui form dropzone" action="/catalyst-server/assets/upload"></form>
-          <div class="buttons">
-            <button type="button" class="ui red cancel button">Cancel</button>
-            <div class="spacer"></div>
-            <button type="submit" class="ui button submit green">Import</button>
-          </div>
+
+          <!-- TODO(aramk) Integrate dropzone. -->
+          <!--<form class="ui form dropzone"-->
+          <!--action="http://localhost/catalyst-server/assets/upload"></form>-->
+
+          <form class="ui form">
+            <div class="field">
+              <input placeholder="Upload..." type="file">
+            </div>
+            <div class="buttons">
+              <button type="button" class="ui red cancel button">Cancel</button>
+              <div class="spacer"></div>
+              <button type="submit" class="ui button submit green">Import</button>
+            </div>
+          </form>
+
         </div>
       </div>
     </div>

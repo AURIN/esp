@@ -19,6 +19,7 @@
     "atlas-cesium": {
       "path": "../bower_components/atlas-cesium"
     },
-    "Dropzonejs": {}
+    "Dropzonejs": {},
+    "collectionFS": {}
   }
 }
