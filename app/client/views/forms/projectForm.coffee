@@ -4,6 +4,6 @@ Meteor.startup ->
     name: 'projectForm'
     collection: 'Projects'
     onSuccess: ->
-      Router.go('projects');
+      Router.goToLastPath() or Router.go('projects')
     onCancel: ->
-      Router.go('projects');
+      Router.goToLastPath() or Router.go('projects')

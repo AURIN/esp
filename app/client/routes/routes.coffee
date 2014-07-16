@@ -62,6 +62,7 @@ Router.onBeforeAction (pause) ->
 #  else
   if this.path == '/' || this.path == ''
     Router.go('projects')
+  Router.initLastPath()
 
 Router.map ->
   this.route 'design', {
@@ -72,3 +73,33 @@ Router.map ->
 #      _.map(['projects', 'entities', 'typologies'], (name) -> Meteor.subscribe(name))
     controller: DesignController
   }
+
+# Allow storing the last route visited and switching back.
+origGoFunc = Router.go
+_lastPath = null
+Router.setLastPath = (name, params) ->
+  _lastPath = {name: name, params: params}
+  console.debug('last router path', _lastPath)
+Router.getLastPath = -> _lastPath
+Router.goToLastPath = ->
+  name = _lastPath.name
+  current = Router.current()
+  if _lastPath? and current.route.name != name
+    origGoFunc.call(Router, name, _lastPath.params)
+    true
+  else
+    false
+
+Router.setLastPathAsCurrent = ->
+  current = Router.current()
+  if current
+    Router.setLastPath(current.route.name, current.params)
+
+# When switching, remember the last route.
+Router.go = ->
+  Router.setLastPathAsCurrent()
+  origGoFunc.apply(@, arguments)
+
+Router.initLastPath = ->
+  unless _lastPath?
+    Router.setLastPathAsCurrent()
