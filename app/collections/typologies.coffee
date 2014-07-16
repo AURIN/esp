@@ -356,7 +356,11 @@ Typologies.filterParameters = (model) ->
 
 findForProject = (collection, projectId) ->
   projectId ?= Projects.getCurrentId()
-  if projectId then collection.find({project: projectId}) else []
+  if projectId
+    collection.find({project: projectId})
+  else
+    console.error('Project ID not provided - cannot retrieve models.')
+    []
 
 Typologies.findForProject = (projectId) -> findForProject(Typologies, projectId)
 
@@ -400,7 +404,7 @@ Entities.schema = EntitySchema
 Entities.allow(Collections.allowAll())
 
 Entities.getFlattened = ->
-  cursor = Entities.find.apply(Entities, arguments)
+  cursor = Entities.findForProject()
   entities = cursor.fetch()
   for entity in entities
     Entities.mergeTypology(entity)
