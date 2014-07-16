@@ -78,8 +78,7 @@ categories =
         classes:
           COMMERCIAL:
             defaultValue: 200
-
-  geometry:
+  space:
     items:
       lotsize:
       # TODO(aramk) This should eventually be an output parameter calculated from AREA(lot).
@@ -97,7 +96,7 @@ categories =
         type: Number
         desc: 'Area of the land parcel not covered by the structural improvement.'
         units: Units.m2
-        calc: '$geometry.lotsize - $geometry.fpa'
+        calc: '$space.lotsize - $space.fpa'
       fpa:
       # TODO(aramk) This should eventually be an output parameter calculated from AREA(geom).
         label: 'Footprint Area'
@@ -115,7 +114,6 @@ categories =
           console.log 'custom', lotsize, this
           if lotsize.isSet && lotsize.operator != '$unset' && this.isSet && this.operator != '$unset' && this.value > lotsize.value
             'Footprint Area must be less than or equal to the Lot Size'
-
   energy:
     items:
       en_heat:
@@ -241,7 +239,7 @@ createCategoriesSchema = (args) ->
   new SimpleSchema(catsFields)
 
 ####################################################################################################
-# TYPOLOGIES SCHEMA DEFINITION
+# TYPOLOGY SCHEMA DEFINITION
 ####################################################################################################
 
 @ParametersSchema = createCategoriesSchema
@@ -363,13 +361,13 @@ findForPrecinct = (collection, precinctId) ->
 Typologies.findForPrecinct = (precinctId) -> findForPrecinct(Typologies, precinctId)
 
 ####################################################################################################
-# ENTITIES SCHEMA DEFINITION
+# ENTITY SCHEMA DEFINITION
 ####################################################################################################
 
 # Entities don't need the class parameter since they reference the typology.
 entityCategories = lodash.cloneDeep(categories)
 delete entityCategories.general.items.class
-@EntityParametersSchema = createCategoriesSchema
+EntityParametersSchema = createCategoriesSchema
   categories: entityCategories
 
 EntitySchema = new SimpleSchema
@@ -426,3 +424,111 @@ Entities.setParameter = (model, paramId, value) ->
   Typologies.setParameter(model, paramId, value)
 
 Entities.findForPrecinct = (precinctId) -> findForPrecinct(Entities, precinctId)
+
+####################################################################################################
+# PRECINCTS SCHEMA DEFINITION
+####################################################################################################
+
+precinctCategories =
+  general:
+    items:
+      creator:
+        # TODO(aramk) Integrate this with users.
+        type: String
+        desc: 'Creator of the project or precinct.'
+  location:
+    items:
+      country:
+        type: String
+        desc: 'Country of precinct: either Australia or New Zealand.'
+        optional: false
+      ste_reg:
+        label: 'State, Territory or Region'
+        type: String
+        desc: 'State, territory or region in which the precinct is situated.'
+        optional: false
+      loc_auth:
+        label: 'Local Government Authority'
+        type: String
+        desc: 'Local government authority in which this precinct predominantly or completely resides.'
+        optional: false
+      suburb:
+        label: 'Suburb'
+        type: String
+        desc: 'Suburb in which this precinct predominantly or completely resides.'
+      post_code:
+        label: 'Post Code'
+        type: Number
+        desc: 'Post code in which this precinct predominantly or completely resides.'
+      sa1_code:
+        label: 'SA1 Code'
+        type: Number
+        desc: 'SA1 in which this precinct predominantly or completely resides.'
+  space:
+    items:
+      geom:
+        label: 'Geometry'
+        type: String
+        desc: '3D Geometry of the precinct envelope.'
+      area:
+        label: 'Precinct Area'
+        type: Number
+        decimal: false
+        desc: 'Total land area of the precinct.'
+        units: Units.m2
+        # TODO(aramk) This would eventually be calculated using the area of geom.
+  environment:
+    items:
+      climate_zn:
+        label: 'Climate Zone'
+        type: Number
+        decimal: false
+        desc: 'BOM climate zone number to determine available typologies.'
+      vpsm:
+        label: 'Land Value per Square Metre'
+        type: Number
+        decimal: false
+        desc: 'Land value per square metre of the precinct.'
+  financial:
+    items:
+      land_value:
+        label: 'Land Value'
+        type: Number
+        desc: 'Total land value of the precinct.'
+        units: Units.$
+
+PrecinctParametersSchema = createCategoriesSchema
+  categories: precinctCategories
+
+PrecinctSchema = new SimpleSchema
+  name:
+    label: 'Name'
+    type: String,
+    index: true,
+    unique: true
+  desc:
+    label: 'Description'
+    type: String
+    optional: true
+  parameters:
+    label: 'Parameters'
+    type: PrecinctParametersSchema
+    optional: false
+    defaultValue: {}
+
+@Precincts = new Meteor.Collection 'precinct', schema: PrecinctSchema
+Precincts.allow(Collections.allowAll())
+
+Precincts.setCurrentId = (id) -> Session.set('precinctId', id)
+#  console.log('finding precinct')
+#  precinct = Precincts.findOne(id)
+#  unless precinct
+#    throw new Error('Cannot find precinct', id)
+#  Session.set('precinct', precinct)
+#  precinct
+Precincts.getCurrent = ->
+  id = Precincts.getCurrentId()
+  Precincts.findOne(id)
+#  Session.get('precinct')
+Precincts.getCurrentId = -> Session.get('precinctId')
+

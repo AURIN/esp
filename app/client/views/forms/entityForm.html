@@ -1,6 +1,6 @@
 <template name="entityForm">
   <div class="flex-panel crud form">
-    <div class="title">Entity</div>
+    <div class="title">{{formTitle}}</div>
     <div class="content">
       <div class="inner">
         <div class="ui form segment">
@@ -21,8 +21,8 @@
           {{> afQuickField name="parameters.general.jobs"}}
 
           <div class="subtitle">Geometry</div>
-          {{> afQuickField name="parameters.geometry.lotsize"}}
-          {{> afQuickField name="parameters.geometry.fpa"}}
+          {{> afQuickField name="parameters.space.lotsize"}}
+          {{> afQuickField name="parameters.space.fpa"}}
           <!--{{> afQuickField name="parameters.general.geom"}}-->
 
           <div class="subtitle">Energy</div>

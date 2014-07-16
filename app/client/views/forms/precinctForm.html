@@ -1,16 +1,43 @@
 <template name="precinctForm">
-  <div class="ui precincts crud form segment">
+  <div class="flex-panel panel crud form">
     <div class="title">{{formTitle}}</div>
-    {{#autoForm collection=collection id=formName doc=doc type=formType settings=settings}}
-    {{> afQuickField name="name"}}
-    {{> afQuickField name="desc"}}
-    {{> afQuickField name="location"}}
+    <div class="content">
+      <div class="inner">
+        <div class="ui form segment">
+          {{#autoForm collection=collection id=formName doc=doc type=formType settings=settings}}
+          {{> afQuickField name="name"}}
+          {{> afQuickField name="desc"}}
 
-    <div class="buttons">
-      <button type="button" class="ui red cancel button">Cancel</button>
-      <div class="spacer"></div>
-      <button type="submit" class="ui button submit green">{{submitText}}</button>
+          <div class="subtitle">General</div>
+          {{> afQuickField name="parameters.general.creator"}}
+
+          <div class="subtitle">Location</div>
+          {{> afQuickField name="parameters.location.country"}}
+          {{> afQuickField name="parameters.location.ste_reg"}}
+          {{> afQuickField name="parameters.location.loc_auth"}}
+          {{> afQuickField name="parameters.location.suburb"}}
+          {{> afQuickField name="parameters.location.post_code"}}
+          {{> afQuickField name="parameters.location.sa1_code"}}
+
+          <!--<div class="subtitle">Space</div>-->
+          <!--{{> afQuickField name="parameters.space.geom"}}-->
+          <!--{{> afQuickField name="parameters.space.area"}}-->
+
+          <div class="subtitle">Location</div>
+          {{> afQuickField name="parameters.environment.climate_zn"}}
+          {{> afQuickField name="parameters.environment.vpsm"}}
+
+          <div class="subtitle">Financial</div>
+          {{> afQuickField name="parameters.financial.land_value"}}
+
+          <div class="buttons">
+            <button type="button" class="ui red cancel button">Cancel</button>
+            <div class="spacer"></div>
+            <button type="submit" class="ui button submit green">{{submitText}}</button>
+          </div>
+          {{/autoForm}}
+        </div>
+      </div>
     </div>
-    {{/autoForm}}
   </div>
 </template>

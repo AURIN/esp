@@ -139,9 +139,9 @@ TemplateClass.setUpPanel = (template, panelTemplate, data) ->
   panel
 
 TemplateClass.setUpFormPanel = (template, formTemplate, doc, settings) ->
+  template ?= templateInstance
   settings ?= {}
-  data =
-    doc: doc, settings: settings
+  data = doc: doc, settings: settings
   panel = TemplateClass.setUpPanel template, formTemplate, data
   callback = -> TemplateClass.removePanel template, panel
   settings.onCancel = settings.onSuccess = callback

@@ -12,10 +12,10 @@ Meteor.startup ->
       {title: 'General'}
       {param: 'general.occupants'}
       {param: 'general.jobs'}
-      {title: 'Geometry'}
-      {param: 'geometry.lotsize'}
-      {param: 'geometry.extland'}
-      {param: 'geometry.fpa'}
+      {title: 'Space'}
+      {param: 'space.lotsize'}
+      {param: 'space.extland'}
+      {param: 'space.fpa'}
       {title: 'Energy'}
       {param: 'energy.en_heat'}
       {param: 'energy.co2_heat'}

@@ -57,7 +57,28 @@ body {
   > .content {
     height: 100%;
     display: flex;
+    // A full page crud form.
+    > .flex-panel.crud.form {
+      .full-screen-panel;
+      height: auto;
+      .content {
+        border: 1px solid #ccc;
+        border-bottom: none;
+      }
+      .ui.form {
+        box-shadow: none;
+      }
+    }
   }
+}
+
+.full-screen-panel {
+  min-width: 400px;
+  max-width: 60%;
+  width: 100%;
+  margin: 0px auto;
+  margin-top: 20px;
+  margin-bottom: 20px;
 }
 
 .flex-panel {
@@ -90,10 +111,6 @@ body {
   form {
     width: 100%;
     padding: 0;
-    > * {
-      padding: 0 10px;
-      margin-bottom: 10px;
-    }
     label {
       .value {
         float: left;
@@ -104,10 +121,17 @@ body {
       padding: 5px;
     }
     .form-group {
+      padding: 0 10px;
+      margin-bottom: 10px;
       .control-label {
         width: 100%;
         display: block;
       }
+    }
+    .help-block {
+      margin: 5px 0;
+      display: block;
+      color: blue;
     }
   }
   .buttons {
@@ -124,6 +148,21 @@ body {
   .title {
     font-size: 20px;
     padding-bottom: 10px;
+  }
+}
+
+.panel {
+  .title {
+    padding: 10px;
+    font-size: 14px;
+    background: #ddd;
+    box-shadow: 0 0 0 1px @color-line-3;
+  }
+  .subtitle {
+    padding: 8px;
+    background: #eee;
+    font-size: 13px;
+    margin-bottom: 10px;
   }
 }
 

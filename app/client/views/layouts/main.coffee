@@ -5,3 +5,6 @@ Template.mainLayout.helpers
 Template.mainLayout.events
   'click .close.button': ->
     Router.go('precincts')
+  'click .parameters.button': ->
+    # TODO(aramk) Give params form
+    Template.setUpFormPanel null, paramsForm

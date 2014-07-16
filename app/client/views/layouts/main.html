@@ -4,10 +4,11 @@
       <div class="logo">ESP</div>
       <div class="state-name">{{stateName}}</div>
       <div class="tools">
-        {{> helpButton}}
         {{#if precinct}}
+        <div class="ui parameters button">Parameters</div>
         <div class="ui close button">Close</div>
         {{/if}}
+        {{> helpButton}}
       </div>
     </div>
     <div class="content">
