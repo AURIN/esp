@@ -1,8 +1,8 @@
 Meteor.methods
 
-  'precincts/remove': (id) ->
-    Precincts.remove(id);
+  'projects/remove': (id) ->
+    Projects.remove(id);
     # Collections can only be removed by ID on the client, hence we need this method.
-    selector = {precinct: id}
+    selector = {project: id}
     Entities.remove(selector)
     Typologies.remove(selector)

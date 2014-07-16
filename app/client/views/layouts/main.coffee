@@ -1,10 +1,11 @@
 Template.mainLayout.helpers
   stateName: -> Session.get('stateName')
-  precinct: -> Precincts.getCurrent()
+  project: -> Projects.getCurrent()
 
 Template.mainLayout.events
   'click .close.button': ->
-    Router.go('precincts')
+    Router.go('projects')
+    Projects.setCurrentId(null)
   'click .parameters.button': ->
     # TODO(aramk) Give params form
     Template.setUpFormPanel null, paramsForm

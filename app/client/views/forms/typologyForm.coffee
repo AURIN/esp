@@ -38,7 +38,7 @@ Meteor.startup ->
       $classInput.on 'change', => updateFields.call(@)
     hooks:
       formToDoc: (doc) ->
-        doc.precinct = Precincts.getCurrentId()
+        doc.project = Projects.getCurrentId()
         doc
 
   Form.helpers

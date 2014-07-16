@@ -1,9 +1,9 @@
-TemplateClass = Template.precincts;
+TemplateClass = Template.projects;
 
 TemplateClass.rendered = ->
-  console.log('precincts rendered');
+  console.log('projects rendered');
   # TODO(aramk) This is here since the router doesn't call hooks when revisting...
-  Session.set('stateName', 'Precincts')
+  Session.set('stateName', 'Projects')
 
 TemplateClass.helpers
   tableSettings: -> {
@@ -24,5 +24,5 @@ TemplateClass.helpers
       args.defaultHandler()
   onDelete: (args) ->
     id = args.id
-    Meteor.call('precincts/remove', id);
+    Meteor.call('projects/remove', id);
   }

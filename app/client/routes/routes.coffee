@@ -30,26 +30,26 @@ DesignController = RouteController.extend
   template: 'design'
   waitOn: ->
     console.log('waitOn 1')
-    Meteor.subscribe('precincts')
+    Meteor.subscribe('projects')
     # TODO(aramk) Waiting on more than one doesn't work.
-#    _.map(['precincts', 'entities', 'typologies'], (name) -> Meteor.subscribe(name))
+#    _.map(['projects', 'entities', 'typologies'], (name) -> Meteor.subscribe(name))
   onBeforeAction: ->
 #    console.log('onBeforeAction')
     id = @.params._id
-    Precincts.setCurrentId(id)
-#    Session.set('precinctId', id)
-#    precinct = Precincts.findOne(id)
-#    setStateName(precinct.name)
-#    Precincts.setCurrentId(id)
+    Projects.setCurrentId(id)
+#    Session.set('projectId', id)
+#    project = Projects.findOne(id)
+#    setStateName(project.name)
+#    Projects.setCurrentId(id)
 
-PrecinctsController = RouteController.extend
-  template: 'precincts'
-  waitOn: -> Meteor.subscribe('precincts')
+ProjectsController = RouteController.extend
+  template: 'projects'
+  waitOn: -> Meteor.subscribe('projects')
   onBeforeAction: ->
 #    console.log('onBeforeAction');
-#    setStateName('Precincts')
+#    setStateName('Projects')
 
-crudRoute('Precincts')
+crudRoute('Projects')
 
 Router.onBeforeAction (pause) ->
 #  TODO(aramk) Add back when we have auth.
@@ -61,14 +61,14 @@ Router.onBeforeAction (pause) ->
 #    pause()
 #  else
   if this.path == '/' || this.path == ''
-    Router.go('precincts')
+    Router.go('projects')
 
 Router.map ->
   this.route 'design', {
     path: '/design/:_id'
     waitOn: ->
       console.log('waitOn 2')
-      Meteor.subscribe('precincts')
-#      _.map(['precincts', 'entities', 'typologies'], (name) -> Meteor.subscribe(name))
+      Meteor.subscribe('projects')
+#      _.map(['projects', 'entities', 'typologies'], (name) -> Meteor.subscribe(name))
     controller: DesignController
   }

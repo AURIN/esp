@@ -69,9 +69,9 @@ Meteor.startup ->
       $typologyInput.on 'change', => updateFields.call(@)
     hooks:
       formToDoc: (doc) ->
-        doc.precinct = Precincts.getCurrentId()
+        doc.project = Projects.getCurrentId()
         doc
 
   Form.helpers
     typology: -> @doc?.typology
-    typologies: -> Typologies.findForPrecinct()
+    typologies: -> Typologies.findForProject()

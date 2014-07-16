@@ -262,8 +262,8 @@ TypologySchema = new SimpleSchema
   # Necessary to allow fields within to be required.
     optional: false
     defaultValue: {}
-  precinct:
-    label: 'Precinct'
+  project:
+    label: 'Project'
     type: String
     index: true
 
@@ -354,11 +354,11 @@ Typologies.filterParameters = (model) ->
       delete modelCategory[paramName]
   model
 
-findForPrecinct = (collection, precinctId) ->
-  precinctId ?= Precincts.getCurrentId()
-  if precinctId then collection.find({precinct: precinctId}) else []
+findForProject = (collection, projectId) ->
+  projectId ?= Projects.getCurrentId()
+  if projectId then collection.find({project: projectId}) else []
 
-Typologies.findForPrecinct = (precinctId) -> findForPrecinct(Typologies, precinctId)
+Typologies.findForProject = (projectId) -> findForProject(Typologies, projectId)
 
 ####################################################################################################
 # ENTITY SCHEMA DEFINITION
@@ -390,8 +390,8 @@ EntitySchema = new SimpleSchema
   # Necessary to allow required fields within.
     optional: false
     defaultValue: {}
-  precinct:
-    label: 'Precinct'
+  project:
+    label: 'Project'
     type: String
     index: true
 
@@ -423,24 +423,26 @@ Entities.getParameter = (model, paramId) ->
 Entities.setParameter = (model, paramId, value) ->
   Typologies.setParameter(model, paramId, value)
 
-Entities.findForPrecinct = (precinctId) -> findForPrecinct(Entities, precinctId)
+Entities.findForProject = (projectId) -> findForProject(Entities, projectId)
 
 ####################################################################################################
-# PRECINCTS SCHEMA DEFINITION
+# PROJECTS SCHEMA DEFINITION
 ####################################################################################################
 
-precinctCategories =
+projectCategories =
   general:
     items:
       creator:
         # TODO(aramk) Integrate this with users.
         type: String
         desc: 'Creator of the project or precinct.'
+        optional: false
   location:
     items:
       country:
         type: String
         desc: 'Country of precinct: either Australia or New Zealand.'
+        allowedValues: ['Australia', 'New Zealand']
         optional: false
       ste_reg:
         label: 'State, Territory or Region'
@@ -497,10 +499,10 @@ precinctCategories =
         desc: 'Total land value of the precinct.'
         units: Units.$
 
-PrecinctParametersSchema = createCategoriesSchema
-  categories: precinctCategories
+ProjectParametersSchema = createCategoriesSchema
+  categories: projectCategories
 
-PrecinctSchema = new SimpleSchema
+Projectschema = new SimpleSchema
   name:
     label: 'Name'
     type: String,
@@ -512,23 +514,23 @@ PrecinctSchema = new SimpleSchema
     optional: true
   parameters:
     label: 'Parameters'
-    type: PrecinctParametersSchema
+    type: ProjectParametersSchema
     optional: false
     defaultValue: {}
 
-@Precincts = new Meteor.Collection 'precinct', schema: PrecinctSchema
-Precincts.allow(Collections.allowAll())
+@Projects = new Meteor.Collection 'project', schema: Projectschema
+Projects.allow(Collections.allowAll())
 
-Precincts.setCurrentId = (id) -> Session.set('precinctId', id)
-#  console.log('finding precinct')
-#  precinct = Precincts.findOne(id)
-#  unless precinct
-#    throw new Error('Cannot find precinct', id)
-#  Session.set('precinct', precinct)
-#  precinct
-Precincts.getCurrent = ->
-  id = Precincts.getCurrentId()
-  Precincts.findOne(id)
-#  Session.get('precinct')
-Precincts.getCurrentId = -> Session.get('precinctId')
+Projects.setCurrentId = (id) -> Session.set('projectId', id)
+#  console.log('finding project')
+#  project = Projects.findOne(id)
+#  unless project
+#    throw new Error('Cannot find project', id)
+#  Session.set('project', project)
+#  project
+Projects.getCurrent = ->
+  id = Projects.getCurrentId()
+  Projects.findOne(id)
+#  Session.get('project')
+Projects.getCurrentId = -> Session.get('projectId')
 

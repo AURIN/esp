@@ -9,16 +9,16 @@ collectionToForm =
 
 TemplateClass.created = ->
   console.log('TemplateClass')
-#  precinctId = Session.get('precinctId')
-#  console.log('precincts', Precincts.find().fetch())
-#  Precincts.setCurrentId(precinctId)
-  precinctId = Precincts.getCurrentId()
-  precinct = Precincts.getCurrent()
-  unless precinct
-    console.error('No precinct found', precinctId);
-    Router.go('precincts')
+#  projectId = Session.get('projectId')
+#  console.log('projects', Projects.find().fetch())
+#  Projects.setCurrentId(projectId)
+  projectId = Projects.getCurrentId()
+  project = Projects.getCurrent()
+  unless project
+    console.error('No project found', projectId);
+    Router.go('projects')
   else
-    Session.set('stateName', precinct.name)
+    Session.set('stateName', project.name)
   templateInstance = @
 
 TemplateClass.rendered = ->
@@ -95,8 +95,8 @@ TemplateClass.rendered = ->
     )
 
 TemplateClass.helpers
-  entities: -> Entities.find({precinct: Precincts.getCurrentId()})
-  typologies: -> Typologies.find({precinct: Precincts.getCurrentId()})
+  entities: -> Entities.find({project: Projects.getCurrentId()})
+  typologies: -> Typologies.find({project: Projects.getCurrentId()})
   tableSettings: ->
     fields: [
       key: 'name'
