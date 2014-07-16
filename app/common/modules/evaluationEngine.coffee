@@ -12,7 +12,11 @@ class @EvaluationEngine
     schemas = @getOutputParamSchemas(args.paramIds)
     console.log('param schemas', schemas)
     paramGetter = (name) ->
-      Entities.getParameter(model, name)
+      value = Entities.getParameter(model, name)
+      unless value?
+        project = Projects.getCurrent()
+        value = Entities.getParameter(project, name)
+      value
     for paramId, schema of schemas
       try
         calc = schema.calc

@@ -158,6 +158,16 @@ categories =
           return null unless src? and en?
           energySource = EnergySources[src]
           if energySource then energySource.kgCO2 * en else null
+  financial:
+    items:
+    # TODO(aramk) This was used as a demo of using global parameters in an expression.
+      local_land_value:
+        label: 'Land Value'
+        type: Number
+        desc: 'Total land value of the precinct.'
+        units: Units.$
+        calc: (param) ->
+          param('financial.land_value') * param('space.lotsize')
 #  environmental:
 #    items:
 #      pav_prpn:
@@ -334,7 +344,7 @@ Typologies.mergeDefaults = (model) ->
   model.parameters ?= {}
   typologyClass = model.parameters.general?.class
   defaults = if typologyClass then Typologies.getDefaultParameterValues(typologyClass) else null
-  _.defaults(model.parameters, defaults)
+  Setter.defaults(model.parameters, defaults)
   model
 
 # Filters parameters which don't belong to the class assigned to the given model. This does not
@@ -371,7 +381,7 @@ Typologies.findForProject = (projectId) -> findForProject(Typologies, projectId)
 # Entities don't need the class parameter since they reference the typology.
 entityCategories = lodash.cloneDeep(categories)
 delete entityCategories.general.items.class
-EntityParametersSchema = createCategoriesSchema
+@EntityParametersSchema = createCategoriesSchema
   categories: entityCategories
 
 EntitySchema = new SimpleSchema
@@ -413,7 +423,7 @@ Entities.getFlattened = ->
 Entities.mergeTypology = (entity) ->
   typologyId = entity.typology
   if typologyId?
-    typology = entity.typology = Typologies.findOne(typologyId)
+    typology = entity._typology = Typologies.findOne(typologyId)
     if typology?
       Typologies.mergeDefaults(typology)
       entity.parameters ?= {}
@@ -437,7 +447,7 @@ projectCategories =
   general:
     items:
       creator:
-        # TODO(aramk) Integrate this with users.
+      # TODO(aramk) Integrate this with users.
         type: String
         desc: 'Creator of the project or precinct.'
         optional: false
@@ -482,7 +492,7 @@ projectCategories =
         decimal: false
         desc: 'Total land area of the precinct.'
         units: Units.m2
-        # TODO(aramk) This would eventually be calculated using the area of geom.
+# TODO(aramk) This would eventually be calculated using the area of geom.
   environment:
     items:
       climate_zn:

@@ -29,6 +29,7 @@ class @ReportGenerator
     console.log('Generating report:')
     console.log('models', args.models)
     for model in models
+      # Evaluation result is stored in the model.
       @evalEngine.evaluate(model: model, paramIds: paramIds)
     reportResults = {}
     for field in fields

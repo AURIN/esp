@@ -19,6 +19,8 @@ Meteor.startup ->
       {title: 'Energy'}
       {param: 'energy.en_heat'}
       {param: 'energy.co2_heat'}
+      {title: 'Financial'}
+      {param: 'financial.local_land_value'}
       # TODO(aramk) Parse issues in CS
 #      Reports.defineParamFields({category: 'environmental'
 #        params: ['pav_area', 'nat_area', 'exo_area', 'lawn_area']})
