@@ -13,7 +13,7 @@ class @Poll
     pollFreq = @pollFreq
     console.log('Polling job', jobId, 'freq', pollFreq);
     pollJob = ->
-      Meteor.call 'catalyst/assets/poll', jobId, (err, job) ->
+      Meteor.call 'assets/poll', jobId, (err, job) ->
         if err
           console.error('Unable to get job.', err)
           df.reject(err)
