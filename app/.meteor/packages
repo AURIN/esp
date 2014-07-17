@@ -20,4 +20,5 @@ autoform
 requirejs
 atlas
 atlas-cesium
-Dropzonejs
+# Causes requirejs issues.
+# Dropzonejs
