@@ -11,7 +11,6 @@ Template.helpButton.rendered = ->
     # Must use Session directly to ensure reactivity
     isActive = Session.get('helpMode') ? false
     $button.toggleClass('active', isActive)
-    $button.text(if isActive then 'Help On' else 'Help Off')
 
   unless getHelpMode?
     setHelpMode true

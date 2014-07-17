@@ -11,8 +11,14 @@
 
           <form class="ui form">
             <div class="field">
+              <label>File</label>
               <input placeholder="Upload..." type="file">
             </div>
+            <div class="field">
+              <label>Format</label>
+              {{> dropdown name="format" items=formats valueAttr="extensions" labelAttr="label"}}
+            </div>
+
             <div class="buttons">
               <button type="button" class="ui red cancel button">Cancel</button>
               <div class="spacer"></div>

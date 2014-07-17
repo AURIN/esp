@@ -1,20 +1,34 @@
 Meteor.startup ->
 
+  Formats = Collections.createTemporary()
+
+  Meteor.call 'assets/formats', (err, result) ->
+    console.log('formats', err, result)
+    _.each result, (format) ->
+      format.label = format.extensions.toUpperCase()
+      Formats.insert(format)
+    console.log('formats', Formats.find().fetch())
+
   ImportedAssets = Collections.createTemporary()
 
   Form = Forms.defineModelForm
     name: 'importForm'
     collection: ImportedAssets
 
+  Form.helpers
+    formats: -> Formats.find()
+
   Form.events
     'submit form': (e, template) ->
       e.preventDefault()
       fileNode = template.find('form input[type="file"]');
       files = fileNode.files
-      console.debug 'files', files
+      format = $(template.find('.dropdown.format')).dropdown('get value')
+      console.debug 'files', files, 'format', format
       if files.length == 0
         console.log('Select a file to upload.')
       else
+        # TODO(aramk) handle multiple files?
         _.each files, (file) ->
           Files.insert file, (err, fileObj) ->
             console.debug 'Files.insert', arguments
@@ -29,11 +43,38 @@ Meteor.startup ->
                 if uploaded
                   clearTimeout(handle)
                   console.log('Upload complete')
-                  Meteor.call 'assets/import', fileObj._id, (error, result) ->
-                    if error
-                      console.error(error)
+                  Meteor.call 'assets/import', fileObj._id, (err, result) ->
+                    if err
+                      console.error(err)
                     else
-                      console.log 'asset import complete', result
+                      console.log 'result', result
+                      assets = [result];
+                      loadAssets = {}
+                      for asset in assets
+                        loadAssets[asset.id] = format
+                      request = {
+                        loadAsset: {
+                          isForSynthesis: true,
+                          assets: loadAssets
+                        }
+                      }
+                      console.log 'synthesize', request
+                      Meteor.call 'assets/synthesize', request, (err, result) ->
+                        if err
+                          console.error('Synthesize failed', err)
+                        else
+                          jobId = result.jobId
+                          console.debug('job id', jobId)
+                          new Poll().pollJob(jobId).then(
+                            (job) ->
+                              console.log 'job', job
+                              body = job.body
+                              body.c3mlId
+                            (err) ->
+                              console.error 'Job failed', err
+                          )
+
+
               handle = setInterval handler, 1000
 
 # TODO(aramk) Integrate dropzone.
