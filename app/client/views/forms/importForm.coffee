@@ -21,14 +21,6 @@ Meteor.startup ->
             if err
               console.error(err.toString())
             else
-
-              Files.on 'stored', (fileObj, storeName) ->
-                console.log('stored', arguments)
-              Files.on 'uploaded', (fileObj, storeName) ->
-                console.log('uploaded', arguments)
-
-#              fileObj.on 'stored', ->
-#                console.debug('stored', arguments)
               # TODO(aramk) Remove timeout and use an event callback.
               handler = ->
                 progress = fileObj.uploadProgress()
@@ -37,18 +29,14 @@ Meteor.startup ->
                 if uploaded
                   clearTimeout(handle)
                   console.log('Upload complete')
-#                  Meteor.call 'customers/from/csv/file', fileObj._id, (error, customers) ->
-#                    if error
-#                      console.error(error)
-#                    else
-#                      console.log('Adding', customers.length, 'customers...')
-#                    Meteor.call 'customers/import', customers, (error, result) ->
-#                      if error
-#                        console.error(error)
-#                      else
-#                        console.log('Imported', result, 'customers')
+                  Meteor.call 'assets/import', fileObj._id, (error, result) ->
+                    if error
+                      console.error(error)
+                    else
+                      console.log 'asset import complete', result
               handle = setInterval handler, 1000
 
+# TODO(aramk) Integrate dropzone.
 #    onRender: ->
 #      dropzoneNode = @.find('.dropzone')
 #      dropzone = new Dropzone(dropzoneNode, {
