@@ -29,3 +29,7 @@ Meteor.methods
   'assets/poll': (jobId) ->
     Catalyst.auth.login()
     Catalyst.assets.poll(jobId)
+
+  'assets/c3ml/download': (id) ->
+    Catalyst.auth.login()
+    Catalyst.assets.c3ml.download(id)
