@@ -4,6 +4,7 @@ function getNextId() {
 }
 var sessionId = '_collectionTable_';
 var selectedClass = 'selected';
+var TemplateClass = Template.collectionTable;
 
 function setReactiveVar(tableId, name, value) {
   console.log('setting reactive variable', value);
@@ -59,7 +60,7 @@ function configureSettings(data) {
   data._tableId = getNextId();
 }
 
-Template.collectionTable.rendered = function() {
+TemplateClass.rendered = function() {
   var $table = $(this.findAll('.reactive-table')).addClass('ui selectable table segment');
   var $filter = $(this.findAll('.reactive-table-filter'));
   var $toolbar = $filter.prev('.toolbar');
@@ -135,7 +136,7 @@ Template.collectionTable.rendered = function() {
   }
 };
 
-Template.collectionTable.events({
+TemplateClass.events({
   'click table.selectable tbody tr': function(e, template) {
     var data = template.data;
     var model = this;
@@ -174,7 +175,7 @@ Template.collectionTable.events({
   }
 });
 
-Template.collectionTable.helpers({
+TemplateClass.helpers({
   _settings: function() {
     var data = this;
     configureSettings(data);
@@ -192,28 +193,13 @@ Template.collectionTable.helpers({
   selectedItem: function() {
     var data = this;
     var value = getReactiveVar(data._tableId, 'selectedItem');
-//    var value = Session.get(getSessionVarName(data._tableId, 'selectedItem'));
-//    var value = Session.get('_collectionTable_1:selectedItem');
     console.error('selectedItem', value);
     return value;
+  },
+  selectionItemsStyle: function () {
+    var data = this;
+    var value = getReactiveVar(data._tableId, 'selectedItem');
+    console.log('value', value);
+    return value ? '' : 'display: none';
   }
-//  items: function() {
-//    console.log('items', this);
-////    console.log('items', this, this.items, this.collection);
-//
-//
-//    configureSettings(this);
-//    return this.items || this.collection;
-//  },
-//  tableSettings: function() {
-//    console.log('tableSettings', this);
-//    return _.defaults(this.settings, {
-//      rowsPerPage: 10,
-//      showFilter: true,
-//      useFontAwesome: true
-//    });
-//  },
-//  selectedItem: function () {
-//    Session.get('collectionTable_selectedItem_' + getNextId());
-//  }
 });
