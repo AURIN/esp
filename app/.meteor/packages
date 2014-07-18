@@ -20,11 +20,10 @@ cfs-ejson-file
 autoform
 collectionFS
 cfs-filesystem
+Dropzonejs
+npm
 
 # Our custom packages come last so RequireJS doesn't cause issues.
 requirejs
 atlas
 atlas-cesium
-
-# Dropzonejs
-npm
