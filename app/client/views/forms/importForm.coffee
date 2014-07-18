@@ -69,7 +69,11 @@ Meteor.startup ->
                             (job) ->
                               console.log 'job', job
                               body = job.body
-                              body.c3mlId
+                              Meteor.call 'assets/c3ml/download', body.c3mlId, (err, c3ml) ->
+                                console.log('c3ml', c3ml)
+                                atlas = AtlasManager.getInstance()
+                                console.log('atlas', atlas)
+                                atlas.publish('entity/show/bulk', {features: c3ml});
                             (err) ->
                               console.error 'Job failed', err
                           )

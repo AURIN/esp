@@ -25,6 +25,11 @@
   plural: (singular) ->
     singular + 's'
 
+  pluralize: (singular, count, plural) ->
+    count ?= 0
+    plural ?= @plural(singular)
+    if count == 1 then singular else plural
+
   format:
 
     sup: (str) -> str.replace(/\^(\w+)/g, '<sup>$1</sup>')

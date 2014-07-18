@@ -1,7 +1,7 @@
 # The template is limited to a single instance, so we can store it and reference it in helper
 # methods.
 templateInstance = null
-TemplateClass = Template.design;
+TemplateClass = Template.design
 
 collectionToForm =
   'entities': 'entityForm'
@@ -79,18 +79,16 @@ TemplateClass.rendered = ->
     require([
         'atlas-cesium/core/CesiumAtlas'
       ], (CesiumAtlas) =>
-      console.debug('Creating atlas-cesium')
+      console.debug('Creating Atlas...')
       cesiumAtlas = new CesiumAtlas()
-
-      console.debug('Attaching atlas-cesium')
+      AtlasManager.setInstance(cesiumAtlas)
+      console.debug('Created Atlas', cesiumAtlas)
+      console.debug('Attaching Atlas')
       cesiumAtlas.attachTo(atlasNode)
-
       cesiumAtlas.publish('debugMode', true)
-
       renderer = new AtlasRenderer()
       renderer.startup({
-        atlas: cesiumAtlas,
-        assets: Features.find({}).fetch()
+        atlas: cesiumAtlas
       })
       @data.renderer = renderer
       populateTable

@@ -41,6 +41,10 @@
         for field in fields
           $field = Reports.renderField(field, results, formatter)
           $fields.append($field)
+        $footer = $(@find('.footer'))
+        count = entities.length
+        plural = Strings.pluralize('entity', count, 'entities')
+        $footer.text("Assessed #{count} #{plural}")
       )
 
     Report.helpers
@@ -66,8 +70,12 @@
       $label = $('<div class="label"><div class="content">' + label + '</div></div>')
       if units?
         $label.append('<div class="units">' + Strings.format.scripts(units) + '</div>')
-      value = data[field.id]
-      value = formatter.round(value, {minSigFigs: 0, maxSigFigs: 3})
+      value = data[field.id] ? 'N/A'
+      if Number.isNaN(value) or !value?
+        value = '0'
+      else
+        if field.type == Number
+          value = formatter.round(value, {minSigFigs: 0, maxSigFigs: 3})
       $value = $('<div class="value">' + value + '</div>')
       $field.append($label, $value)
       $field
