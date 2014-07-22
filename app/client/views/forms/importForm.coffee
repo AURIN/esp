@@ -2,6 +2,7 @@ Meteor.startup ->
 
   Formats = Collections.createTemporary()
 
+  # TODO(aramk) Change this to assets/formats/inputs.
   Meteor.call 'assets/formats', (err, result) ->
     console.log('formats', err, result)
     _.each result, (format) ->
@@ -30,6 +31,7 @@ Meteor.startup ->
       else
         # TODO(aramk) handle multiple files?
         _.each files, (file) ->
+          # TODO(aramk) Abstract into Files.upload.
           Files.insert file, (err, fileObj) ->
             console.debug 'Files.insert', arguments
             if err
@@ -67,13 +69,18 @@ Meteor.startup ->
                           console.debug('job id', jobId)
                           new Poll().pollJob(jobId).then(
                             (job) ->
-                              console.log 'job', job
+                              console.debug 'job', job
                               body = job.body
-                              Meteor.call 'assets/c3ml/download', body.c3mlId, (err, c3ml) ->
-                                console.log('c3ml', c3ml)
-                                atlas = AtlasManager.getInstance()
-                                console.log('atlas', atlas)
-                                atlas.publish('entity/show/bulk', {features: c3ml});
+                              # TODO(aramk) Download meta-data to get the names of the entities.
+                              Meteor.call 'assets/c3ml/download', body.c3mlId, (err, c3mls) ->
+                                console.debug('c3ml', c3mls)
+                                Lots.fromC3ml c3mls, (lotIds) ->
+                                  console.debug('lotIds', lotIds)
+#                                atlas = AtlasManager.getInstance()
+#                                console.log('atlas', atlas)
+#                                Meteor.call 'lots/from/c3ml', c3ml, (err, lots) ->
+
+                                #atlas.publish('entity/show/bulk', {features: c3ml});
                             (err) ->
                               console.error 'Job failed', err
                           )

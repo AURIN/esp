@@ -8,7 +8,7 @@
     unless Report
       throw new Error 'No template defined with name ' + name
 
-    evalEngine = new EvaluationEngine(schema: EntityParametersSchema)
+    evalEngine = new EvaluationEngine(schema: Entities.schema)
     reportGenerator = new ReportGenerator(evalEngine: evalEngine)
 
     # Flatten the list of fields, which may contain arrays of fields as items

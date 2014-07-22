@@ -1,4 +1,5 @@
 Meteor.subscribe('projects')
+Meteor.subscribe('lots')
 Meteor.subscribe('entities')
 Meteor.subscribe('typologies')
 Meteor.subscribe('files')

@@ -28,6 +28,7 @@ stringAllowedValues = (allowed) -> '(' + allowed.join(', ') + ')'
 
 # ^ and _ are converted to superscript and subscript in forms and reports.
 Units =
+  m: 'm'
   m2: 'm^2'
   $m2: '$/m^2'
   $: '$'
@@ -35,6 +36,28 @@ Units =
   Lyear: 'L/year'
   MLyear: 'ML/year'
   kWyear: 'kWh/year'
+
+# Common field schemas shared across collection schemas.
+
+classSchema =
+  type: String
+  desc: stringAllowedValues(ClassNames)
+  optional: false
+  allowedValues: ClassNames
+
+heightSchema =
+  type: Number
+  decimal: true
+  desc: 'Height of the typology at its maximum point.'
+  units: Units.m
+
+projectSchema =
+  label: 'Project'
+  type: String
+  index: true
+
+extendSchema = (orig, changes) ->
+  _.extend({}, orig, changes)
 
 categories =
   general:
@@ -50,11 +73,7 @@ categories =
       code:
         type: String
         desc: 'A unique code derived from the state abbreviation, typology type abbreviation and version number. Ex. VIC-CG-001 for Community Garden version 1.'
-      class:
-        type: String
-        desc: stringAllowedValues(ClassNames)
-        optional: false
-        allowedValues: ClassNames
+      class: classSchema
       subclass:
         type: String
         desc: 'Typology within a class. Ex. "Community Garden", "Park" or "Public Plaza".'
@@ -115,6 +134,7 @@ categories =
           console.log 'custom', lotsize, this
           if lotsize.isSet && lotsize.operator != '$unset' && this.isSet && this.operator != '$unset' && this.value > lotsize.value
             'Footprint Area must be less than or equal to the Lot Size'
+      height: heightSchema
   energy:
     items:
       en_heat:
@@ -278,10 +298,7 @@ TypologySchema = new SimpleSchema
   # Necessary to allow fields within to be required.
     optional: false
     defaultValue: {}
-  project:
-    label: 'Project'
-    type: String
-    index: true
+  project: projectSchema
 
 @Typologies = new Meteor.Collection 'typologies', schema: TypologySchema
 Typologies.schema = TypologySchema
@@ -444,6 +461,74 @@ Entities.setParameter = (model, paramId, value) ->
   Typologies.setParameter(model, paramId, value)
 
 Entities.findForProject = (projectId) -> findForProject(Entities, projectId)
+
+####################################################################################################
+# LOTS SCHEMA DEFINITION
+####################################################################################################
+
+lotCategories =
+  general:
+    items:
+      class: extendSchema(classSchema, {optional: true})
+      geom:
+        label: 'Geometry'
+        type: String,
+        desc: '3D Geometry of the lot envelope.'
+  space:
+    items:
+      height: extendSchema(heightSchema,
+        {desc: 'The maximum allowable height for structures in this lot.'})
+
+@LotParametersSchema = createCategoriesSchema
+  categories: lotCategories
+
+LotSchema = new SimpleSchema
+  name:
+    label: 'Name'
+    type: String
+    desc: 'The full name of the lot.'
+  parameters:
+    label: 'Parameters'
+    type: LotParametersSchema
+  project: projectSchema
+
+@Lots = new Meteor.Collection 'lots', schema: LotSchema
+Lots.schema = LotSchema
+Lots.allow(Collections.allowAll())
+
+Lots.fromC3ml = (c3mls, callback) ->
+  lotIds = []
+  doneCalls = 0
+  done = (id) ->
+    lotIds.push(id)
+    doneCalls++
+    console.debug('done', id, doneCalls, c3ml.length)
+    if doneCalls == c3ml.length
+      callback(lotIds)
+  lotNumber = 0
+  for c3ml in c3mls
+    unless c3ml.type == 'polygon'
+      continue
+    coords = c3ml.coordinates
+    lotNumber++
+    # TODO(aramk) Use the names from meta-data
+    name = 'Lot #' + lotNumber
+    # C3ml coordinates are in (longitude, latitude), but WKT is the reverse.
+    WKT.swapCoords coords, (coords) ->
+      console.debug('coords', coords);
+      WKT.fromVertices coords, (wkt) ->
+        lot = {
+          name: name
+          project: Projects.getCurrentId()
+          parameters:
+            general:
+              geom: wkt
+            space:
+              height: c3ml.height
+        }
+        id = Lots.insert(lot)
+        console.debug('lot', id, lot)
+        done(id)
 
 ####################################################################################################
 # PROJECTS SCHEMA DEFINITION

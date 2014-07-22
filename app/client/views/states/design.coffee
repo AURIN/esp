@@ -96,6 +96,7 @@ TemplateClass.rendered = ->
 
 TemplateClass.helpers
   entities: -> Entities.find({project: Projects.getCurrentId()})
+  lots: -> Lots.find({project: Projects.getCurrentId()})
   typologies: -> Typologies.find({project: Projects.getCurrentId()})
   tableSettings: ->
     fields: [

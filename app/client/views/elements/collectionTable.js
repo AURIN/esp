@@ -79,6 +79,7 @@ TemplateClass.rendered = function() {
   tableSettings[data._tableId] = settings;
 
   var collection = data.collection;
+//  var modelCollection = Collections.get(modelCollection);
   var createRoute = data.createRoute;
   var editRoute = data.editRoute;
 

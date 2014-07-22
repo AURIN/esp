@@ -4,11 +4,15 @@
       <div class="default panel">
         <div class="title">Entities</div>
         <div class="items entities">
-          {{> collectionTable collection=entities settings=tableSettings}}
+          {{> collectionTable collection="Entities" items=entities settings=tableSettings}}
         </div>
         <div class="title">Typologies</div>
         <div class="items typologies">
-          {{> collectionTable collection=typologies settings=tableSettings}}
+          {{> collectionTable collection="Typologies" items=typologies settings=tableSettings}}
+        </div>
+        <div class="title">Lots</div>
+        <div class="items lots">
+          {{> collectionTable collection="Lots" items=lots settings=tableSettings}}
         </div>
       </div>
     </div>
