@@ -65,7 +65,6 @@ categories =
       occupants:
         label: 'No. Occupants'
         type: Number
-        decimal: false
         desc: 'Number of occupants in the typology.'
         classes:
           RESIDENTIAL:
@@ -73,7 +72,6 @@ categories =
       jobs:
         label: 'No. Jobs'
         type: Number
-        decimal: false
         desc: 'Number of jobs in the typology.'
         classes:
           COMMERCIAL:
@@ -84,6 +82,7 @@ categories =
       # TODO(aramk) This should eventually be an output parameter calculated from AREA(lot).
         label: 'Lot Size'
         type: Number
+        decimal: true
         desc: 'Area of the land parcel.'
         units: Units.m2
         classes:
@@ -94,6 +93,7 @@ categories =
       extland:
         label: 'Extra Land'
         type: Number
+        decimal: true
         desc: 'Area of the land parcel not covered by the structural improvement.'
         units: Units.m2
         calc: '$space.lotsize - $space.fpa'
@@ -101,6 +101,7 @@ categories =
       # TODO(aramk) This should eventually be an output parameter calculated from AREA(geom).
         label: 'Footprint Area'
         type: Number
+        decimal: true
         desc: 'Area of the building footprint.'
         units: Units.m2
         classes:
@@ -119,6 +120,7 @@ categories =
       en_heat:
         label: 'Energy – Heating'
         type: Number
+        decimal: true
         units: Units.kWyear
         desc: 'Energy required for heating the typology.'
       src_heat:
@@ -129,6 +131,7 @@ categories =
       co2_heat:
         label: 'CO2 – Heating'
         type: Number
+        decimal: true
         units: Units.kgco2
         desc: 'CO2 emissions due to heating the typology'
         calc: (param) ->
@@ -140,6 +143,7 @@ categories =
       en_cool:
         label: 'Energy – Cooling'
         type: Number
+        decimal: true
         units: Units.kWyear
         desc: 'Energy required for cooling the typology.'
       src_cool:
@@ -150,6 +154,7 @@ categories =
       co2_cool:
         label: 'CO2 – Cooling'
         type: Number
+        decimal: true
         units: Units.kgco2
         desc: 'CO2 emissions due to cooling the typology'
         calc: (param) ->
@@ -164,6 +169,7 @@ categories =
       local_land_value:
         label: 'Land Value'
         type: Number
+        decimal: true
         desc: 'Total land value of the precinct.'
         units: Units.$
         calc: (param) ->
@@ -489,7 +495,7 @@ projectCategories =
       area:
         label: 'Precinct Area'
         type: Number
-        decimal: false
+        decimal: true
         desc: 'Total land area of the precinct.'
         units: Units.m2
 # TODO(aramk) This would eventually be calculated using the area of geom.
@@ -498,12 +504,12 @@ projectCategories =
       climate_zn:
         label: 'Climate Zone'
         type: Number
-        decimal: false
+        decimal: true
         desc: 'BOM climate zone number to determine available typologies.'
       vpsm:
         label: 'Land Value per Square Metre'
         type: Number
-        decimal: false
+        decimal: true
         desc: 'Land value per square metre of the precinct.'
   financial:
     items:
