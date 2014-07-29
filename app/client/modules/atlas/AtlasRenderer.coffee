@@ -1,3 +1,5 @@
+# TODO(aramk) Deprecated.
+
 class @AtlasRenderer
 
   assets: null

@@ -515,41 +515,40 @@ LotSchema = new SimpleSchema
 Lots.schema = LotSchema
 Lots.allow(Collections.allowAll())
 
-Lots.fromC3ml = (c3mls, callback) ->
-  lotIds = []
-  doneCalls = 0
-  done = (id) ->
-    lotIds.push(id)
-    doneCalls++
-    console.debug('done', id, doneCalls, c3ml.length)
-    if doneCalls == c3ml.length
-      callback(lotIds)
-  lotNumber = 0
-  for c3ml in c3mls
-    unless c3ml.type == 'polygon'
-      continue
-    coords = c3ml.coordinates
-    lotNumber++
-    # TODO(aramk) Use the names from meta-data
-    name = 'Lot #' + lotNumber
-    # C3ml coordinates are in (longitude, latitude), but WKT is the reverse.
-    WKT.swapCoords coords, (coords) ->
-      console.debug('coords', coords);
-      WKT.fromVertices coords, (wkt) ->
-        lot = {
-          name: name
-          project: Projects.getCurrentId()
-          parameters:
-            # TODO(aramk) pass extra args for this.
-#            general:
-#              class: null
-            space:
-              geom: wkt
-              height: c3ml.height
-        }
-        id = Lots.insert(lot)
-        console.debug('lot', id, lot)
-        done(id)
+#Lots.fromC3ml = (c3mls, callback) ->
+#  lotIds = []
+#  doneCalls = 0
+#  polygonC3mls = []
+#  done = (id) ->
+#    lotIds.push(id)
+#    doneCalls++
+#    console.debug('done', id, doneCalls, c3mls.length)
+#    if doneCalls == polygonC3mls.length
+#      callback(lotIds)
+#  _.each c3mls, (c3ml) ->
+#    if c3ml.type == 'polygon'
+#      polygonC3mls.push(c3ml)
+#  _.each polygonC3mls, (c3ml, i) ->
+#    coords = c3ml.coordinates
+#    # TODO(aramk) Use the names from meta-data
+#    name = 'Lot #' + (i + 1)
+#    # C3ml coordinates are in (longitude, latitude), but WKT is the reverse.
+#    WKT.swapCoords coords, (coords) ->
+#      WKT.fromVertices coords, (wkt) ->
+#        lot = {
+#          name: name
+#          project: Projects.getCurrentId()
+#          parameters:
+#            # TODO(aramk) pass extra args for this.
+##            general:
+##              class: null
+#            space:
+#              geom: wkt
+#              height: c3ml.height
+#        }
+#        id = Lots.insert(lot)
+#        console.debug('lot', id, lot)
+#        done(id)
 
 ####################################################################################################
 # PROJECTS SCHEMA DEFINITION
@@ -646,12 +645,6 @@ Projectschema = new SimpleSchema
 Projects.allow(Collections.allowAll())
 
 Projects.setCurrentId = (id) -> Session.set('projectId', id)
-#  console.log('finding project')
-#  project = Projects.findOne(id)
-#  unless project
-#    throw new Error('Cannot find project', id)
-#  Session.set('project', project)
-#  project
 Projects.getCurrent = ->
   id = Projects.getCurrentId()
   Projects.findOne(id)

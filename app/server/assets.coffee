@@ -1,8 +1,6 @@
-Meteor.methods
+@AssetServer =
 
-  # TODO(aramk) Currently this uses Catalyst server methods. We will eventually change to ACS.
-
-  'assets/import': (fileId) ->
+  import: (fileId) ->
     buffer = FileUtils.getBuffer(fileId)
     console.log 'buffer', buffer.length
     Catalyst.auth.login()
@@ -18,9 +16,30 @@ Meteor.methods
     console.log 'asset uploaded', asset
     asset
 
-  'assets/synthesize': (request) ->
+  synthesize: (request) ->
     Catalyst.auth.login()
-    Catalyst.assets.synthesize(request)
+    result = Catalyst.assets.synthesize(request)
+    jobId = result.jobId
+    response = Async.runSync (done) ->
+      new Poll().pollJob(jobId).then(
+        (job) -> done(null, job)
+        (err) -> done(err, null)
+      )
+    response.result
+
+  downloadC3ml: (id) ->
+    Catalyst.auth.login()
+    Catalyst.assets.c3ml.download(id)
+
+Meteor.methods
+
+# TODO(aramk) Currently this uses Catalyst server methods. We will eventually change to ACS.
+
+  'assets/import': (fileId) ->
+    AssetServer.import(fileId)
+
+  'assets/synthesize': (request) ->
+    AssetServer.synthesize(request)
 
   'assets/formats': ->
     Catalyst.auth.login()
@@ -31,5 +50,4 @@ Meteor.methods
     Catalyst.assets.poll(jobId)
 
   'assets/c3ml/download': (id) ->
-    Catalyst.auth.login()
-    Catalyst.assets.c3ml.download(id)
+    AssetServer.downloadC3ml(id)

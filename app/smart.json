@@ -21,6 +21,7 @@
     },
     "Dropzonejs": {},
     "collectionFS": {},
-    "npm": {}
+    "npm": {},
+    "q": {}
   }
 }

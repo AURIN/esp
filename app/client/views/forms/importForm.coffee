@@ -25,6 +25,7 @@ Meteor.startup ->
       fileNode = template.find('form input[type="file"]');
       files = fileNode.files
       format = $(template.find('.dropdown.format')).dropdown('get value')
+      onSuccess = template.settings?.onSuccess
       console.debug 'files', files, 'format', format
       if files.length == 0
         console.log('Select a file to upload.')
@@ -44,47 +45,13 @@ Meteor.startup ->
                 console.debug 'progress', progress, uploaded
                 if uploaded
                   clearTimeout(handle)
-                  console.log('Upload complete')
-                  Meteor.call 'assets/import', fileObj._id, (err, result) ->
-                    if err
-                      console.error(err)
+                  console.debug 'uploaded', fileObj
+                  Meteor.call 'lots/from/file', fileObj._id, (err, result) ->
+                    console.debug 'lots/from/file', err, result
+                    if result
+                      onSuccess?(result)
                     else
-                      console.log 'result', result
-                      assets = [result];
-                      loadAssets = {}
-                      for asset in assets
-                        loadAssets[asset.id] = format
-                      request = {
-                        loadAsset: {
-                          isForSynthesis: true,
-                          assets: loadAssets
-                        }
-                      }
-                      console.log 'synthesize', request
-                      Meteor.call 'assets/synthesize', request, (err, result) ->
-                        if err
-                          console.error('Synthesize failed', err)
-                        else
-                          jobId = result.jobId
-                          console.debug('job id', jobId)
-                          new Poll().pollJob(jobId).then(
-                            (job) ->
-                              console.debug 'job', job
-                              body = job.body
-                              # TODO(aramk) Download meta-data to get the names of the entities.
-                              Meteor.call 'assets/c3ml/download', body.c3mlId, (err, c3mls) ->
-                                console.debug('c3ml', c3mls)
-                                Lots.fromC3ml c3mls, (lotIds) ->
-                                  console.debug('lotIds', lotIds)
-#                                atlas = AtlasManager.getInstance()
-#                                console.log('atlas', atlas)
-#                                Meteor.call 'lots/from/c3ml', c3ml, (err, lots) ->
-
-                                #atlas.publish('entity/show/bulk', {features: c3ml});
-                            (err) ->
-                              console.error 'Job failed', err
-                          )
-
+                      console.error 'Job failed', err
 
               handle = setInterval handler, 1000
 

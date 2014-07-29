@@ -9,7 +9,7 @@ class @Poll
     @pollFreq = args.pollFreq
 
   pollJob: (jobId) ->
-    df = $.Deferred()
+    df = Q.defer()
     pollFreq = @pollFreq
     console.log('Polling job', jobId, 'freq', pollFreq);
     pollJob = ->

@@ -10,12 +10,13 @@
           <!--action="http://localhost/catalyst-server/assets/upload"></form>-->
 
           <form class="ui form">
-            <div class="field">
-              <label>File</label>
+            <!-- TODO(aramk) Using bootstrap for consistency with autoform for now. -->
+            <div class="form-group">
+              <label class="control-label">File</label>
               <input placeholder="Upload..." type="file">
             </div>
-            <div class="field">
-              <label>Format</label>
+            <div class="form-group">
+              <label class="control-label">Format</label>
               {{> dropdown name="format" items=formats valueAttr="extensions" labelAttr="label"}}
             </div>
 
