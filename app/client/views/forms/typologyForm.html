@@ -10,7 +10,6 @@
 
           <div class="subtitle">General</div>
           {{> afFieldLabel name="parameters.general.class"}}
-          <!-- TODO(aramk) Refactor to use autoform field -->
           {{> dropdown name="parameters.general.class" items=classes value=classValue}}
           {{> afQuickField name="parameters.general.state"}}
           {{> afQuickField name="parameters.general.code"}}
@@ -21,9 +20,9 @@
           {{> afQuickField name="parameters.general.jobs"}}
 
           <div class="subtitle">Space</div>
+          {{> afQuickField name="parameters.space.geom"}}
           {{> afQuickField name="parameters.space.lotsize"}}
           {{> afQuickField name="parameters.space.fpa"}}
-          <!--{{> afQuickField name="parameters.general.geom"}}-->
 
           <div class="subtitle">Energy</div>
           {{> afQuickField name="parameters.energy.en_heat"}}

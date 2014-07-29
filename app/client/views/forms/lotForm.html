@@ -1,0 +1,33 @@
+<template name="lotForm">
+  <div class="flex-panel crud form">
+    <div class="title">Lot</div>
+    <div class="content">
+      <div class="inner">
+        <div class="ui form segment">
+          {{#autoForm collection=collection id=formName doc=doc type=formType settings=settings}}
+          {{> afQuickField name="name"}}
+          {{> afQuickField name="desc"}}
+
+          <!-- TODO(aramk) Hide this eventually. -->
+          {{> afQuickField name="entity"}}
+
+          <div class="subtitle">General</div>
+          {{> afFieldLabel name="parameters.general.class"}}
+          {{> dropdown name="parameters.general.class" items=classes value=classValue}}
+
+          <div class="subtitle">Space</div>
+          {{> afQuickField name="parameters.space.geom"}}
+          {{> afQuickField name="parameters.space.height"}}
+          <!--{{> afQuickField name="parameters.space.area"}}-->
+
+          <div class="buttons">
+            <button type="button" class="ui red cancel button">Cancel</button>
+            <div class="spacer"></div>
+            <button type="submit" class="ui button submit green">{{submitText}}</button>
+          </div>
+          {{/autoForm}}
+        </div>
+      </div>
+    </div>
+  </div>
+</template>

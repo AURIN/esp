@@ -6,6 +6,6 @@ Meteor.startup ->
 
   Form = Forms.defineModelForm
     name: 'projectForm'
-    collection: 'Projects'
+    collection: Projects
     onSuccess: close
     onCancel: close

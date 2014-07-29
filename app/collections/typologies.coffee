@@ -56,6 +56,23 @@ projectSchema =
   type: String
   index: true
 
+descSchema =
+  label: 'Description'
+  type: String
+  optional: true
+
+creatorSchema =
+  label: 'Creator'
+  type: String
+  optional: true
+
+areaSchema =
+  label: 'Area'
+  type: Number
+  desc: 'Area of the land parcel.'
+  decimal: true
+  units: Units.m2
+
 extendSchema = (orig, changes) ->
   _.extend({}, orig, changes)
 
@@ -63,10 +80,6 @@ categories =
   general:
     items:
     # Generic fields
-      geom:
-        label: 'Geometry'
-        type: String,
-        desc: '3D Geometry of the typology envelope.'
       state:
         type: String
         desc: 'State for which the typology was prepared (impacts water demand).'
@@ -97,18 +110,19 @@ categories =
             defaultValue: 200
   space:
     items:
-      lotsize:
-      # TODO(aramk) This should eventually be an output parameter calculated from AREA(lot).
+      geom:
+        label: 'Geometry'
+        type: String,
+        desc: '3D Geometry of the typology envelope.'
+    # TODO(aramk) Need to discuss how we handle this wrt the lot.
+      lotsize: extendSchema(areaSchema, {
         label: 'Lot Size'
-        type: Number
-        decimal: true
-        desc: 'Area of the land parcel.'
-        units: Units.m2
         classes:
           RESIDENTIAL:
             defaultValue: 500
           COMMERCIAL:
             defaultValue: 300
+      })
       extland:
         label: 'Extra Land'
         type: Number
@@ -287,11 +301,8 @@ TypologySchema = new SimpleSchema
     desc: 'The full name of the typology.'
     type: String
     index: true
-  desc:
-    label: 'Description'
-    desc: 'A detailed description of the typology, including a summary of the materials and services provided.'
-    type: String
-    optional: true
+  desc: extendSchema(descSchema,
+    {desc: 'A detailed description of the typology, including a summary of the materials and services provided.'})
   parameters:
     label: 'Parameters'
     type: ParametersSchema
@@ -412,10 +423,7 @@ EntitySchema = new SimpleSchema
     label: 'Name'
     type: String
     index: true
-  desc:
-    label: 'Description'
-    type: String
-    optional: true
+  desc: descSchema
   typology:
     label: 'Typology'
     type: String
@@ -427,6 +435,10 @@ EntitySchema = new SimpleSchema
   # Necessary to allow required fields within.
     optional: false
     defaultValue: {}
+#  lot:
+#    label: 'Lot'
+#    type: String
+#    description: 'The lot which this entity is assigned to.'
   project:
     label: 'Project'
     type: String
@@ -469,15 +481,17 @@ Entities.findForProject = (projectId) -> findForProject(Entities, projectId)
 lotCategories =
   general:
     items:
+    # If provided, this restricts the class of the entity.
       class: extendSchema(classSchema, {optional: true})
+  space:
+    items:
       geom:
         label: 'Geometry'
         type: String,
         desc: '3D Geometry of the lot envelope.'
-  space:
-    items:
       height: extendSchema(heightSchema,
-        {desc: 'The maximum allowable height for structures in this lot.'})
+        {label: 'Allowable Height', desc: 'The maximum allowable height for structures in this lot.'})
+      area: areaSchema
 
 @LotParametersSchema = createCategoriesSchema
   categories: lotCategories
@@ -487,9 +501,14 @@ LotSchema = new SimpleSchema
     label: 'Name'
     type: String
     desc: 'The full name of the lot.'
+  desc: descSchema
   parameters:
     label: 'Parameters'
     type: LotParametersSchema
+  entity:
+    label: 'Entity'
+    type: String
+    optional: true
   project: projectSchema
 
 @Lots = new Meteor.Collection 'lots', schema: LotSchema
@@ -521,9 +540,11 @@ Lots.fromC3ml = (c3mls, callback) ->
           name: name
           project: Projects.getCurrentId()
           parameters:
-            general:
-              geom: wkt
+            # TODO(aramk) pass extra args for this.
+#            general:
+#              class: null
             space:
+              geom: wkt
               height: c3ml.height
         }
         id = Lots.insert(lot)
@@ -613,10 +634,8 @@ Projectschema = new SimpleSchema
     type: String,
     index: true,
     unique: true
-  desc:
-    label: 'Description'
-    type: String
-    optional: true
+  desc: descSchema
+  creator: creatorSchema
   parameters:
     label: 'Parameters'
     type: ProjectParametersSchema

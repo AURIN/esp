@@ -4,8 +4,9 @@ templateInstance = null
 TemplateClass = Template.design
 
 collectionToForm =
-  'entities': 'entityForm'
-  'typologies': 'typologyForm'
+  entities: 'entityForm'
+  typologies: 'typologyForm'
+  lots: 'lotForm'
 
 TemplateClass.created = ->
   console.log('TemplateClass')

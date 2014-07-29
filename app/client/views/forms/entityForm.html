@@ -9,7 +9,7 @@
           {{> afQuickField name="desc"}}
           {{> afFieldLabel name="typology"}}
           <!-- TODO(aramk) Refactor to use autoform field -->
-          {{> dropdown name="typology" items=typologies value=typology}}
+          {{> dropdown name="typology" items=typologies value=doc.typology}}
 
           <div class="subtitle">General</div>
           {{> afQuickField name="parameters.general.state"}}
@@ -21,9 +21,9 @@
           {{> afQuickField name="parameters.general.jobs"}}
 
           <div class="subtitle">Space</div>
+          {{> afQuickField name="parameters.space.geom"}}
           {{> afQuickField name="parameters.space.lotsize"}}
           {{> afQuickField name="parameters.space.fpa"}}
-          <!--{{> afQuickField name="parameters.general.geom"}}-->
 
           <div class="subtitle">Energy</div>
           {{> afQuickField name="parameters.energy.en_heat"}}

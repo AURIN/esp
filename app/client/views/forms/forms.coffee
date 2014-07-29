@@ -18,11 +18,11 @@
       # Settings should be passed to the autoForm helper to ensure they are available in these
       # callbacks.
       onSubmit: (insertDoc, updateDoc, currentDoc) ->
-        console.log 'onSubmit', arguments, @
+        console.debug 'onSubmit', arguments, @
         args.onSubmit?.apply(@, arguments)
         @template.data?.settings?.onSubmit?.apply(@, arguments)
       onSuccess: (operation, result, template) ->
-        console.log 'onSuccess', arguments, @
+        console.debug 'onSuccess', arguments, @
         AutoForm.resetForm(name)
         args.onSuccess?.apply(@, arguments)
         template.data?.settings?.onSuccess?.apply(@, arguments)
@@ -43,7 +43,7 @@
     Form.events
       'click button.cancel': (e, template) ->
         e.preventDefault();
-        console.log 'onCancel', arguments, @
+        console.debug 'onCancel', arguments, @
         args.onCancel?()
         template.data?.settings?.onCancel?()
 
@@ -91,21 +91,29 @@
             $label.empty()
             $label.append($labelContent).append($units)
 
-        addPopups = ->
+        addPopups = =>
           $(popupInputs).each ->
             $input = $(@)
             $input.data('desc')
-            console.log('$input')
             $input.popup('setting', delay: 500, content: $input.data('desc'))
 
-        removePopups = ->
+        removePopups = =>
           $(popupInputs).popup('destroy')
-          popupInputs = []
 
-        Deps.autorun ->
-          helpMode = Session.get 'helpMode'
-          if helpMode then addPopups() else removePopups()
+        test = 0
+        template = this
+        Deps.autorun (c) =>
+          if template.isDestroyed?
+            c.stop()
+          else
+            helpMode = Session.get 'helpMode'
+            if helpMode then addPopups() else removePopups()
+            test++
 
+    Form.destroyed = ->
+      console.debug 'Destroyed form', @, arguments
+      template = @
+      template.isDestroyed = true
       args.onRender?.apply(this, arguments)
 
     Form

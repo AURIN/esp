@@ -62,7 +62,7 @@ Meteor.startup ->
 
   Form = Forms.defineModelForm
     name: 'entityForm'
-    collection: 'Entities'
+    collection: Entities
     onRender: ->
       updateFields.call(@)
       $typologyInput = getTypologyInput.call(@)
@@ -73,5 +73,4 @@ Meteor.startup ->
         doc
 
   Form.helpers
-    typology: -> @doc?.typology
     typologies: -> Typologies.findForProject()
