@@ -38,22 +38,59 @@ Meteor.startup ->
             if err
               console.error(err.toString())
             else
+              onSynthesize = (response) ->
+                body = response.body
+                console.log 'synthesize', body.length
+                c3mlId = body.c3mlId
+                Meteor.call 'assets/c3ml/download', c3mlId, (err, c3mls) ->
+                  if err
+                    console.error 'c3ml download failed', err
+                    return
+                  # TODO(aramk) Download meta-data to get the names of the entities.
+                  console.log('c3ml', c3mls.length)
+                  # TODO(aramk) Handle error and pass back
+                  LotUtils.fromC3ml c3mls, (lotIds) ->
+                    console.log('lotIds', lotIds)
+                    onSuccess?(lotIds)
+
               # TODO(aramk) Remove timeout and use an event callback.
-              handler = ->
+              onUpload = ->
+                console.debug 'uploaded', fileObj
+                fileId = fileObj._id
+                Meteor.call 'assets/import', fileId, (err, result) ->
+                  if err
+                    console.error 'Asset import failed', err, fileObj
+                    return
+                  console.log 'asset', result
+                  assetId = result.id
+                  assets = [result];
+                  loadAssets = {}
+                  for result in assets
+                    loadAssets[assetId] = format
+                  request =
+                    loadAsset:
+                      isForSynthesis: true
+                      assets: loadAssets
+                  console.log 'synthesize request', request
+                  Meteor.call 'assets/synthesize', request, (err, result) ->
+                    if err
+                      console.error 'Asset synthesize failed', err
+                      return
+                    console.debug 'assets/synthesize', err, result
+                    if result
+                      onSynthesize(result)
+                    else
+                      console.error 'Synthesize failed', err
+
+              timerHandler = ->
                 progress = fileObj.uploadProgress()
                 uploaded = fileObj.isUploaded()
                 console.debug 'progress', progress, uploaded
                 if uploaded
                   clearTimeout(handle)
-                  console.debug 'uploaded', fileObj
-                  Meteor.call 'lots/from/file', {fileId: fileObj._id, format: format}, (err, result) ->
-                    console.debug 'lots/from/file', err, result
-                    if result
-                      onSuccess?(result)
-                    else
-                      console.error 'Job failed', err
+                  onUpload()
 
-              handle = setInterval handler, 1000
+              handle = setInterval timerHandler, 1000
 
 # TODO(aramk) Integrate dropzone.
 #    onRender: ->

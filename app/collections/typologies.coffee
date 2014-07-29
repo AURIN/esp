@@ -430,19 +430,11 @@ EntitySchema = new SimpleSchema
     optional: true
   parameters:
     label: 'Parameters'
-#    type: ParametersSchema
     type: EntityParametersSchema
   # Necessary to allow required fields within.
     optional: false
     defaultValue: {}
-#  lot:
-#    label: 'Lot'
-#    type: String
-#    description: 'The lot which this entity is assigned to.'
-  project:
-    label: 'Project'
-    type: String
-    index: true
+  project: projectSchema
 
 @Entities = new Meteor.Collection 'entities', schema: EntitySchema
 Entities.schema = EntitySchema

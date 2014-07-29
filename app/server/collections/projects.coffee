@@ -6,3 +6,4 @@ Meteor.methods
     selector = {project: id}
     Entities.remove(selector)
     Typologies.remove(selector)
+    Lots.remove(selector)
