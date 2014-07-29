@@ -1,16 +1,18 @@
 #setStateName = (name) ->
 #  Session.set('stateName', name)
 
-AuthController = RouteController.extend({})
+BaseController = RouteController.extend
+# Don't render until we're ready (waitOn) resolved
+  action: -> @render() if @ready()
 
 crudRoute = (collectionName, controller) ->
-  controller ?= AuthController
+  controller ?= BaseController
   collectionId = Strings.firstToLowerCase(collectionName)
   singularName = Strings.singular(collectionId)
   itemRoute = singularName + 'Item'
   editRoute = singularName + 'Edit'
   formName = singularName + 'Form'
-  console.log('crud routes', itemRoute, editRoute, formName);
+  console.debug('crud routes', itemRoute, editRoute, formName);
   Router.map ->
     this.route collectionId, {path: '/' + collectionId, controller: controller, template: collectionId}
     this.route itemRoute,
@@ -26,28 +28,20 @@ crudRoute = (collectionName, controller) ->
 # TODO(aramk) Add back when we have auth.
 #    AccountsEntry.signInRequired(this.router)
 
-DesignController = RouteController.extend
+DesignController = BaseController.extend
   template: 'design'
-  waitOn: ->
-    console.log('waitOn 1')
-    Meteor.subscribe('projects')
-    # TODO(aramk) Waiting on more than one doesn't work.
+# TODO(aramk) Add action to the base controller and remove from routes.
+#  waitOn: ->
 #    _.map(['projects', 'entities', 'typologies'], (name) -> Meteor.subscribe(name))
+#  action : -> @render() if @ready()
   onBeforeAction: ->
-#    console.log('onBeforeAction')
     id = @.params._id
     Projects.setCurrentId(id)
-#    Session.set('projectId', id)
-#    project = Projects.findOne(id)
-#    setStateName(project.name)
-#    Projects.setCurrentId(id)
 
-ProjectsController = RouteController.extend
+ProjectsController = BaseController.extend
   template: 'projects'
   waitOn: -> Meteor.subscribe('projects')
-  onBeforeAction: ->
-#    console.log('onBeforeAction');
-#    setStateName('Projects')
+
 
 crudRoute('Projects')
 
@@ -67,10 +61,7 @@ Router.onBeforeAction (pause) ->
 Router.map ->
   this.route 'design', {
     path: '/design/:_id'
-    waitOn: ->
-      console.log('waitOn 2')
-      Meteor.subscribe('projects')
-#      _.map(['projects', 'entities', 'typologies'], (name) -> Meteor.subscribe(name))
+    waitOn: -> _.map(['projects', 'entities', 'typologies'], (name) -> Meteor.subscribe(name))
     controller: DesignController
   }
 

@@ -100,20 +100,17 @@
         removePopups = =>
           $(popupInputs).popup('destroy')
 
-        test = 0
-        template = this
         Deps.autorun (c) =>
-          if template.isDestroyed?
+          if @.isDestroyed?
             c.stop()
           else
             helpMode = Session.get 'helpMode'
             if helpMode then addPopups() else removePopups()
-            test++
 
     Form.destroyed = ->
       console.debug 'Destroyed form', @, arguments
       template = @
       template.isDestroyed = true
-      args.onRender?.apply(this, arguments)
+      args.onRender?.apply(@, arguments)
 
     Form
