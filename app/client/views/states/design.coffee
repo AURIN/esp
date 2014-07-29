@@ -31,52 +31,11 @@ TemplateClass.rendered = ->
   # TODO(aramk) Make Renderer a Meteor module.
   atlasNode = @find('.atlas')
 
-  populateTable = ->
+  # TODO(aramk) Atlas ignored for now.
+  return
 
-    addRow = (data, args) ->
-      id = data.id
-      args = Setter.merge({
-        table: $table
-        showCallback: renderer.showEntity.bind(renderer)
-        hideCallback: renderer.hideEntity.bind(renderer)
-      }, args)
-      $visibilityCheckbox = $('<div class="ui checkbox"><input type="checkbox"><label></label></div>')
-      .checkbox({
-          onEnable: =>
-            args.showCallback.call(this, id)
-          onDisable: =>
-            args.hideCallback.call(this, id)
-        })
-      $row = $('<tr><td></td><td>' + (data.name || id) +
-        '</td><td class="extra buttons"></td></tr>')
-      $('td:first', $row).append($visibilityCheckbox)
-      $(args.table).append($row)
-      $row
-
-    _.each(renderer.assets, (asset, id) ->
-      $row = addRow(asset, {
-        showCallback: renderer.showAsset.bind(renderer)
-        hideCallback: renderer.hideAsset.bind(renderer)})
-      $row.addClass('heading')
-      $zoomButton = $('<div class="ui button icon zoom">' +
-        '<i class="zoom in icon"></i></div>').click -> renderer.zoomAsset(id)
-      $('.extra.buttons', $row).append($zoomButton)
-      _.each(asset.entities, (entity, i) ->
-        entity.name = entity.name || ('Entity ' + (i + 1))
-        addRow(entity)
-      )
-    )
-
-  $table = $(@find('.ui.table'))
   # Don't show Atlas viewer.
-  if Window.getVarBool('atlas') == false
-    # Create a blank renderer
-    renderer =
-      assets: []
-      showEntity: -> null
-      hideEntity: -> null
-    populateTable
-  else
+  unless Window.getVarBool('atlas') == false
     require([
         'atlas-cesium/core/CesiumAtlas'
       ], (CesiumAtlas) =>

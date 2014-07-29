@@ -22,6 +22,7 @@ collectionFS
 cfs-filesystem
 Dropzonejs
 npm
+q
 
 # Our custom packages come last so RequireJS doesn't cause issues.
 requirejs

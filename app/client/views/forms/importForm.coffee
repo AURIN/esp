@@ -46,7 +46,7 @@ Meteor.startup ->
                 if uploaded
                   clearTimeout(handle)
                   console.debug 'uploaded', fileObj
-                  Meteor.call 'lots/from/file', fileObj._id, (err, result) ->
+                  Meteor.call 'lots/from/file', {fileId: fileObj._id, format: format}, (err, result) ->
                     console.debug 'lots/from/file', err, result
                     if result
                       onSuccess?(result)

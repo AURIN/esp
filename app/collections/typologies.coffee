@@ -483,6 +483,11 @@ lotCategories =
     items:
     # If provided, this restricts the class of the entity.
       class: extendSchema(classSchema, {optional: true})
+      enabled:
+        label: 'Enabled'
+        type: Boolean
+        desc: 'Whether the lot can have entities placed inside.'
+        defaultValue: true
   space:
     items:
       geom:
@@ -502,13 +507,13 @@ LotSchema = new SimpleSchema
     type: String
     desc: 'The full name of the lot.'
   desc: descSchema
-  parameters:
-    label: 'Parameters'
-    type: LotParametersSchema
   entity:
     label: 'Entity'
     type: String
     optional: true
+  parameters:
+    label: 'Parameters'
+    type: LotParametersSchema
   project: projectSchema
 
 @Lots = new Meteor.Collection 'lots', schema: LotSchema

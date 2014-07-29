@@ -1,10 +1,12 @@
 @LotServer =
 
-  fromFile: (fileId) ->
-    asset = AssetServer.import 'assets/import', fileId
+  fromFile: (args) ->
+    fileId = args.fileId
+    format = args.format
+    asset = AssetServer.import fileId
     assetId = asset.id
-    console.log 'result', job
-    assets = [job];
+    console.log 'result', asset
+    assets = [asset];
     loadAssets = {}
     for asset in assets
       loadAssets[assetId] = format
@@ -14,17 +16,19 @@
         assets: loadAssets
       }
     }
-    console.log 'synthesize', request
-    job = AssetServer.synthesize request
-    body = job.body
+    console.log 'synthesize request', request
+    response = AssetServer.synthesize request
+    console.log('synthesize response', response)
+    body = response.body
     console.log 'synthesize', body.length
-    c3mls = AssetServer.downloadC3ml assetId
+    c3mlId = body.c3mlId
+    c3mls = AssetServer.downloadC3ml c3mlId
     # TODO(aramk) Download meta-data to get the names of the entities.
-    console.debug('c3ml', c3mls.length)
+    console.log('c3ml', c3mls.length)
     response = Async.runSync (done) ->
       # TODO(aramk) Handle error and pass back
-      Lots.fromC3ml c3mls, (lotIds) ->
-        console.debug('lotIds', lotIds)
+      LotUtils.fromC3ml c3mls, (lotIds) ->
+        console.log('lotIds', lotIds)
         done(null, lotIds)
     response.result
 
@@ -32,17 +36,9 @@ Meteor.methods
 
   'lots/from/file': LotServer.fromFile
 
-#  'lots/from/c3ml': (c3mls) ->
-#    lotIds = []
-#    for c3ml in c3mls
-#      polygon = c3ml.polygon
-#      unless polygon?
-#        continue
-#      wktString = ''
-#      id = Lots.insert({
-#        parameters:
-#          general:
-#            geom: wktString
-#      })
-#      lotIds.push(id)
-#    lotIds
+  # TODO(aramk) Remove
+  'wkt': ->
+    response = Async.runSync (done) ->
+      WKT.fromVertices [[0,0]], ->
+        console.log('callback', arguments)
+    response.result

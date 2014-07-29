@@ -12,7 +12,7 @@ class @Poll
     df = Q.defer()
     pollFreq = @pollFreq
     console.log('Polling job', jobId, 'freq', pollFreq);
-    pollJob = ->
+    pollJob = Meteor.bindEnvironment ->
       Meteor.call 'assets/poll', jobId, (err, job) ->
         if err
           console.error('Unable to get job.', err)
@@ -29,4 +29,4 @@ class @Poll
           console.log('Still Poll job', jobId)
           setTimeout(pollJob, pollFreq)
     pollJob()
-    df
+    df.promise

@@ -1,4 +1,5 @@
 getWKT = (callback) ->
+  console.log('require', require)
   require ['atlas/util/WKT'], (WKT) ->
     callback(WKT.getInstance())
 
