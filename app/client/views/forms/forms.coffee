@@ -106,11 +106,12 @@
           else
             helpMode = Session.get 'helpMode'
             if helpMode then addPopups() else removePopups()
+      args.onRender?.apply(@, arguments)
 
     Form.destroyed = ->
       console.debug 'Destroyed form', @, arguments
       template = @
       template.isDestroyed = true
-      args.onRender?.apply(@, arguments)
+      args.onDestroy?.apply(@, arguments)
 
     Form
