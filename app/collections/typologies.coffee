@@ -588,6 +588,18 @@ projectCategories =
         label: 'SA1 Code'
         type: Number
         desc: 'SA1 in which this precinct predominantly or completely resides.'
+      lat:
+        label: 'Latitude'
+        type: Number
+        decimal: true
+        desc: 'The latitude coordinate for this precinct'
+        optional: false
+      lng:
+        label: 'Longitude'
+        type: Number
+        decimal: true
+        desc: 'The longitude coordinate for this precinct'
+        optional: false
   space:
     items:
       geom:
@@ -648,3 +660,13 @@ Projects.getCurrent = ->
 #  Session.get('project')
 Projects.getCurrentId = -> Session.get('projectId')
 
+Projects.getLocationAddress = (id) ->
+  project = Projects.findOne(id)
+  location = project.parameters.location
+  components = [location.suburb, location.loc_auth, location.ste_reg, location.country]
+  (_.filter components, (c) -> c?).join(', ')
+
+Projects.getLocationCoords = (id) ->
+  project = Projects.findOne(id)
+  location = project.parameters.location
+  {latitude: location.lat, longitude: location.lng}

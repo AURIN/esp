@@ -10,9 +10,9 @@ collectionToForm =
 
 TemplateClass.created = ->
   console.log('TemplateClass')
-#  projectId = Session.get('projectId')
-#  console.log('projects', Projects.find().fetch())
-#  Projects.setCurrentId(projectId)
+  #  projectId = Session.get('projectId')
+  #  console.log('projects', Projects.find().fetch())
+  #  Projects.setCurrentId(projectId)
   projectId = Projects.getCurrentId()
   project = Projects.getCurrent()
   unless project
@@ -28,11 +28,8 @@ TemplateClass.rendered = ->
   # TODO(aramk) Data is what is passed to the template, not the data on the instance.
   @data ?= {}
 
-  # TODO(aramk) Make Renderer a Meteor module.
+  template = @
   atlasNode = @find('.atlas')
-
-  # TODO(aramk) Atlas ignored for now.
-  return
 
   # Don't show Atlas viewer.
   unless Window.getVarBool('atlas') == false
@@ -46,12 +43,7 @@ TemplateClass.rendered = ->
       console.debug('Attaching Atlas')
       cesiumAtlas.attachTo(atlasNode)
       cesiumAtlas.publish('debugMode', true)
-      renderer = new AtlasRenderer()
-      renderer.startup({
-        atlas: cesiumAtlas
-      })
-      @data.renderer = renderer
-      populateTable
+      TemplateClass.onAtlasLoad(template, cesiumAtlas)
     )
 
 TemplateClass.helpers
@@ -88,7 +80,7 @@ TemplateClass.addPanel = (template, component) ->
   UI.insert component, $panel[0]
 
 TemplateClass.removePanel = (template, component) ->
-  console.debug 'Removing panel', this, template, component
+  console.debug 'Removing panel', @, template, component
   $(component.dom.getNodes()).parent().remove()
   component.dom.remove()
   $container = getSidebar(template)
@@ -102,17 +94,23 @@ TemplateClass.setUpPanel = (template, panelTemplate, data) ->
 TemplateClass.setUpFormPanel = (template, formTemplate, doc, settings) ->
   template ?= templateInstance
   settings ?= {}
-  data = doc: doc, settings: settings
+  data =
+    doc: doc, settings: settings
   panel = TemplateClass.setUpPanel template, formTemplate, data
   callback = -> TemplateClass.removePanel template, panel
   settings.onCancel = settings.onSuccess = callback
   panel
 
-#TemplateClass.events
-#  'click .entities .add.item': (e, template) ->
-#    TemplateClass.setUpFormPanel template, Template.entityForm
-#  'dblclick .entities .edit': (e, template) ->
-#    # TODO(aramk)
-#    null
-#  'dblclick .typologies .edit': (e, template) ->
-#    TemplateClass.setUpFormPanel template, Template.typologyForm, @
+TemplateClass.onAtlasLoad = (template, atlas) ->
+#  project = Projects.getCurrent()
+  projectId = Projects.getCurrentId()
+  location = Projects.getLocationCoords(projectId)
+  if location.latitude? and location.longitude?
+    location
+    console.debug 'Loading project location', location
+    atlas.publish 'camera/zoomTo', {position: location}
+  else
+    address = Projects.getLocationAddress(projectId)
+    console.debug 'Loading project address', address
+    atlas.publish 'camera/zoomTo', {address: address}
+
