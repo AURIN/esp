@@ -102,11 +102,10 @@ TemplateClass.setUpFormPanel = (template, formTemplate, doc, settings) ->
   panel
 
 TemplateClass.onAtlasLoad = (template, atlas) ->
-#  project = Projects.getCurrent()
   projectId = Projects.getCurrentId()
   location = Projects.getLocationCoords(projectId)
   if location.latitude? and location.longitude?
-    location
+    location.elevation ?= 20000
     console.debug 'Loading project location', location
     atlas.publish 'camera/zoomTo', {position: location}
   else

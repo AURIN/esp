@@ -2,7 +2,7 @@ Meteor.startup ->
 
   Form = Forms.defineModelForm
     name: 'lotForm'
-    collection: Lots
+    collection: 'Lots'
     onRender: ->
 
     hooks:

@@ -32,6 +32,7 @@ Units =
   m2: 'm^2'
   $m2: '$/m^2'
   $: '$'
+  deg: 'degrees'
   kgco2: 'kg CO_2-e'
   Lyear: 'L/year'
   MLyear: 'ML/year'
@@ -592,14 +593,22 @@ projectCategories =
         label: 'Latitude'
         type: Number
         decimal: true
+        units: Units.deg
         desc: 'The latitude coordinate for this precinct'
         optional: false
       lng:
         label: 'Longitude'
         type: Number
         decimal: true
+        units: Units.deg
         desc: 'The longitude coordinate for this precinct'
         optional: false
+      cam_elev:
+        label: 'Camera Elevation'
+        type: Number
+        decimal: true
+        units: Units.m
+        desc: 'The starting elevation of the camera when viewing the project.'
   space:
     items:
       geom:
@@ -669,4 +678,4 @@ Projects.getLocationAddress = (id) ->
 Projects.getLocationCoords = (id) ->
   project = Projects.findOne(id)
   location = project.parameters.location
-  {latitude: location.lat, longitude: location.lng}
+  {latitude: location.lat, longitude: location.lng, elevation: location.cam_elev}

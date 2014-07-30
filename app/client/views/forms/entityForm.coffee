@@ -62,7 +62,7 @@ Meteor.startup ->
 
   Form = Forms.defineModelForm
     name: 'entityForm'
-    collection: Entities
+    collection: 'Entities'
     onRender: ->
       updateFields.call(@)
       $typologyInput = getTypologyInput.call(@)
