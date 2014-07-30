@@ -6,8 +6,11 @@ Meteor.startup ->
   Meteor.call 'assets/formats', (err, result) ->
     console.log('formats', err, result)
     _.each result, (format) ->
-      format.label = format.extensions.toUpperCase()
-      Formats.insert(format)
+      ext = format.extensions
+      # TODO(aramk) Remove this filter to allow other types.
+      if ext == 'shp'
+        format.label = ext.toUpperCase()
+        Formats.insert(format)
     console.log('formats', Formats.find().fetch())
 
   ImportedAssets = Collections.createTemporary()
@@ -18,6 +21,7 @@ Meteor.startup ->
 
   Form.helpers
     formats: -> Formats.find()
+    defaultFormat: -> 'shp' #Formats.find({label: 'SHP'}).fetch()[0]
 
   Form.events
     'submit form': (e, template) ->

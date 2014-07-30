@@ -17,10 +17,11 @@
             </div>
             <div class="form-group">
               <label class="control-label">Format</label>
-              {{> dropdown name="format" items=formats valueAttr="extensions" labelAttr="label"}}
+              {{> dropdown name="format" items=formats valueAttr="extensions" labelAttr="label"
+              value=defaultFormat}}
             </div>
 
-            <div class="buttons">
+            <div class="crud buttons">
               <button type="button" class="ui red cancel button">Cancel</button>
               <div class="spacer"></div>
               <button type="submit" class="ui button submit green">Import</button>

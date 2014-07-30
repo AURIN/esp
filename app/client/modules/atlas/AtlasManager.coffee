@@ -19,6 +19,10 @@ instance = null
       console.debug 'Loading project address', address
       atlas.publish 'camera/zoomTo', {address: address}
 
+  getCurrentCamera: (args) ->
+    atlas = @getInstance()
+    atlas.publish('camera/current', args)
+
   renderEntity: (entity) ->
     atlas = @getInstance()
     atlas.publish 'entity/show', entity

@@ -92,19 +92,19 @@ body {
   flex-direction: column;
   overflow: hidden;
   height: 100%;
-  .title {
+  > .title {
     flex-shrink: 0;
   }
-  .content {
+  > .content {
     flex-grow: 1;
     overflow: auto;
     margin: 0;
     padding: 0;
+    .inner {
+      width: 100%;
+    }
   }
-  .inner {
-    width: 100%;
-  }
-  .buttons {
+  > .buttons {
     padding: 5px;
     border: 1px solid #ccc;
   }
@@ -126,7 +126,7 @@ body {
       margin-left: 10px;
       padding: 5px;
     }
-    > .form-group, > .control-label, > .dropdown, > .field {
+    > * {
       padding: 0 10px;
       margin-bottom: 10px;
       .control-label {
@@ -140,7 +140,7 @@ body {
       color: blue;
     }
   }
-  .buttons {
+  > .buttons {
     display: flex;
     flex-direction: row;
     flex-shrink: 0;
@@ -160,7 +160,7 @@ body {
     background: #ddd;
     box-shadow: 0 0 0 1px @color-line-3;
   }
-  .subtitle {
+  .subtitle, .crud.form form > .subtitle {
     padding: 8px;
     background: #eee;
     font-size: 13px;

@@ -18,13 +18,15 @@
           {{> afQuickField name="parameters.location.suburb"}}
           {{> afQuickField name="parameters.location.post_code"}}
           {{> afQuickField name="parameters.location.sa1_code"}}
+
+          <div class="ui divider"></div>
           {{> afQuickField name="parameters.location.lat"}}
           {{> afQuickField name="parameters.location.lng"}}
           {{> afQuickField name="parameters.location.cam_elev"}}
-
-          <!--<div class="subtitle">Space</div>-->
-          <!--{{> afQuickField name="parameters.space.geom"}}-->
-          <!--{{> afQuickField name="parameters.space.area"}}-->
+          <div class="ui buttons">
+            <div class="ui button tiny view-current">Use Current View</div>
+            <div class="ui button tiny view-apply">Apply</div>
+          </div>
 
           <div class="subtitle">Environment</div>
           {{> afQuickField name="parameters.environment.climate_zn"}}
@@ -33,7 +35,7 @@
           <div class="subtitle">Financial</div>
           {{> afQuickField name="parameters.financial.land_value"}}
 
-          <div class="buttons">
+          <div class="crud buttons">
             <button type="button" class="ui red cancel button">Cancel</button>
             <div class="spacer"></div>
             <button type="submit" class="ui button submit green">{{submitText}}</button>

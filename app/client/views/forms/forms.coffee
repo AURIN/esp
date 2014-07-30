@@ -2,12 +2,6 @@
 
   FIELD_SELECTOR: '.form-group',
 
-# We may pass the temporary collection as an attribute to autoform templates, so we need to
-# define this to avoid errors since it is passed into the actual <form> HTML object.
-  preventText: (obj) ->
-    obj.toText = -> ''
-    obj
-
   defineModelForm: (args) ->
     name = args.name
     Form = Template[name]
@@ -50,7 +44,7 @@
     Form.rendered = ->
       console.debug 'Rendered form', @, arguments
       # Move the buttons to the same level as the title and content to allow using flex-layout.
-      $buttons = $(@find('.buttons'))
+      $buttons = $(@find('.crud.buttons'))
       $crudForm = $(@find('.flex-panel'))
       if $buttons.length > 0 && $crudForm.length > 0
         $crudForm.append($buttons)
@@ -115,3 +109,12 @@
       args.onDestroy?.apply(@, arguments)
 
     Form
+
+# We may pass the temporary collection as an attribute to autoform templates, so we need to
+# define this to avoid errors since it is passed into the actual <form> HTML object.
+  preventText: (obj) ->
+    obj.toText = -> ''
+    obj
+
+  findFieldInput: (template, name) ->
+    template.find('[name="' + name + '"]')
