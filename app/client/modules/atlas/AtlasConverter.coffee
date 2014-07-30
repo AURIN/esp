@@ -4,16 +4,18 @@ WKT = Style = Colour = null
 class @AtlasConverter
 
   toGeoEntityArgs: (args) ->
-    geoEntity = _.extend({}, args)
+    geoEntity = _.extend({
+      show: true
+    }, args)
     vertices = args.vertices
-    height = args.height || 20
-    width = args.width || 10
-    elevation = args.elevation || 0
+    height = args.height ? 20
+    width = args.width ? 10
+    elevation = args.elevation ? 0
     color = args.color
     borderColour = args.borderColor
     # TODO(aramk) Enable opacity in atlas-cesium.
     opacity = args.opacity
-    borderOpacity = args.borderOpacity || 1
+    borderOpacity = args.borderOpacity ? 1
     geometry =
       vertices: vertices,
       elevation: elevation,
@@ -48,21 +50,28 @@ class @AtlasConverter
 
 _.extend(AtlasConverter, {
 
-  ready: (callback) ->
-    require([
-        'atlas/util/WKT',
-        'atlas/model/Style',
-        'atlas/model/Colour'
-      ], (_WKT, _Style, _Colour) ->
+  _instance: null,
+
+  ready: ->
+    df = Q.defer()
+    # Load requirements when requesting instance.
+    require [
+      'atlas/util/WKT'
+      'atlas/model/Style'
+      'atlas/model/Colour'
+    ], (_WKT, _Style, _Colour) ->
       WKT = _WKT
       Style = _Style
       Colour = _Colour
-      callback()
-    )
+      df.resolve()
+    df.promise
 
-  newInstance: (callback) ->
-    this.ready(->
-      callback(new AtlasConverter())
-    )
+  newInstance: -> @ready().then -> new AtlasConverter()
+
+  getInstance: ->
+    @ready().then =>
+      unless @_instance
+        @_instance = new AtlasConverter()
+      @_instance
 
 })

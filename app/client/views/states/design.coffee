@@ -34,8 +34,10 @@ TemplateClass.rendered = ->
   # Don't show Atlas viewer.
   unless Window.getVarBool('atlas') == false
     require([
-        'atlas-cesium/core/CesiumAtlas'
-      ], (CesiumAtlas) =>
+        'atlas-cesium/core/CesiumAtlas',
+        'atlas/lib/utility/Log'
+      ], (CesiumAtlas, Log) =>
+      Log.setLevel('debug')
       console.debug('Creating Atlas...')
       cesiumAtlas = new CesiumAtlas()
       AtlasManager.setInstance(cesiumAtlas)
@@ -101,6 +103,7 @@ TemplateClass.setUpFormPanel = (template, formTemplate, doc, settings) ->
   panel
 
 TemplateClass.onAtlasLoad = (template, atlas) ->
+  # Zoom to project location
   projectId = Projects.getCurrentId()
   location = Projects.getLocationCoords(projectId)
   if location.latitude? and location.longitude?
@@ -111,4 +114,11 @@ TemplateClass.onAtlasLoad = (template, atlas) ->
     address = Projects.getLocationAddress(projectId)
     console.debug 'Loading project address', address
     atlas.publish 'camera/zoomTo', {address: address}
+
+  # Render lots
+  lots = Lots.findForProject(projectId).fetch()
+  _.each lots, (lot) ->
+    LotUtils.toGeoEntityArgs(lot._id).then (geoEntityArgs) ->
+      console.log('geoEntityArgs', lot, geoEntityArgs)
+      atlas.publish 'entity/show', geoEntityArgs
 

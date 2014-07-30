@@ -25,7 +25,7 @@ Meteor.startup ->
       fileNode = template.find('form input[type="file"]');
       files = fileNode.files
       format = $(template.find('.dropdown.format')).dropdown('get value')
-      onSuccess = template.settings?.onSuccess
+      onSuccess = template.data?.settings?.onSuccess
       console.debug 'files', files, 'format', format
       if files.length == 0
         console.log('Select a file to upload.')
