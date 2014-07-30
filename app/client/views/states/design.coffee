@@ -103,22 +103,10 @@ TemplateClass.setUpFormPanel = (template, formTemplate, doc, settings) ->
   panel
 
 TemplateClass.onAtlasLoad = (template, atlas) ->
-  # Zoom to project location
   projectId = Projects.getCurrentId()
-  location = Projects.getLocationCoords(projectId)
-  if location.latitude? and location.longitude?
-    location.elevation ?= 20000
-    console.debug 'Loading project location', location
-    atlas.publish 'camera/zoomTo', {position: location}
-  else
-    address = Projects.getLocationAddress(projectId)
-    console.debug 'Loading project address', address
-    atlas.publish 'camera/zoomTo', {address: address}
-
+  AtlasManager.zoomToProject()
   # Render lots
   lots = Lots.findForProject(projectId).fetch()
   _.each lots, (lot) ->
-    LotUtils.toGeoEntityArgs(lot._id).then (geoEntityArgs) ->
-      console.log('geoEntityArgs', lot, geoEntityArgs)
-      atlas.publish 'entity/show', geoEntityArgs
-
+    LotUtils.toGeoEntityArgs(lot._id).then (geoEntity) ->
+      AtlasManager.renderEntity(geoEntity)

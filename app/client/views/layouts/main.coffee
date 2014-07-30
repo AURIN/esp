@@ -8,6 +8,5 @@ Template.mainLayout.events
     Projects.setCurrentId(null)
   'click .edit.button': ->
     Template.design.setUpFormPanel null, Template.projectForm, Projects.getCurrent()
-#    Router.go 'projectEdit', {_id: Projects.getCurrentId()}
-  'click .import.button': ->
-    Template.design.setUpFormPanel null, Template.importForm
+  'click .import.button': -> Template.design.setUpFormPanel null, Template.importForm
+  'click .zoom.button': -> AtlasManager.zoomToProject()
