@@ -146,7 +146,6 @@ categories =
         custom: ->
           # Abstract these rules into a single string or function for evaluation.
           lotsize = this.siblingField('lotsize')
-          console.log 'custom', lotsize, this
           if lotsize.isSet && lotsize.operator != '$unset' && this.isSet && this.operator != '$unset' && this.value > lotsize.value
             'Footprint Area must be less than or equal to the Lot Size'
       height: heightSchema

@@ -81,8 +81,7 @@ TemplateClass.addPanel = (template, component) ->
 
 TemplateClass.removePanel = (template, component) ->
   console.debug 'Removing panel', @, template, component
-  $(component.dom.getNodes()).parent().remove()
-  component.dom.remove()
+  TemplateUtils.getDom(component).remove()
   $container = getSidebar(template)
   $('>.panel:last', $container).show()
 

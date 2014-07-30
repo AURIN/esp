@@ -18,7 +18,7 @@ Template.reportPanel.rendered = ->
     id = $reportDropdown.dropdown('get value')
     report = Reports.findOne(id)
     if reportTemplate
-      reportTemplate.dom.remove()
+      TemplateUtils.getDom(reportTemplate).remove()
     name = report.templateName
     console.log 'Rendering report', name
     reportTemplate = UI.render(Template[name])
