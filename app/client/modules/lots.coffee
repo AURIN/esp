@@ -55,8 +55,8 @@
           project: Projects.getCurrentId()
           parameters:
             general:
-              class: Typologies.resolveClass(entityParams.landuse)
-              dev: entityParams.redev ? true
+              class: Typologies.resolveClassId(entityParams.landuse)
+              dev: Booleans.parse(entityParams.redev ? true)
             space:
               geom: wkt
               height: c3ml.height

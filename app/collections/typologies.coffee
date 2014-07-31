@@ -316,8 +316,9 @@ Typologies.schema = TypologySchema
 Typologies.classes = TypologyClasses
 Typologies.allow(Collections.allowAll())
 
-Typologies.resolveClass = (cls) ->
-  TypologyClasses[(cls + '').toUpperCase()]
+Typologies.resolveClassId = (cls) -> (cls + '').toUpperCase()
+
+Typologies.resolveClassName = (cls) -> TypologyClasses[Typologies.resolveClassId(cls)]
 
 Typologies.getParameter = (model, paramId) ->
   target = model.parameters ?= {}

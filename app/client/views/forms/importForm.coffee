@@ -61,8 +61,10 @@ Meteor.startup ->
                       return
                     else
                       body = result.body
+                      # Use geoBlobId instead of original assetId to ensure IDs in the c3ml match
+                      # those in the parameter response.
                       LotUtils.fromAsset({
-                        assetId: assetId
+                        assetId: body.geoBlobId
                         c3mlId: body.c3mlId
                         metaDataId: body.metaDataId
                       }).then (lotIds) ->

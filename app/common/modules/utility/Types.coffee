@@ -20,3 +20,9 @@
 
   isString: (object) ->
     this.isType(object, 'String')
+
+  isBoolean: (object) ->
+    this.isType(object, 'Boolean')
+
+  isNumber: (object) ->
+    this.isType(object, 'Number')
