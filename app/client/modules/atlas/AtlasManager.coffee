@@ -27,9 +27,19 @@ instance = null
     atlas = @getInstance()
     atlas.publish 'entity/show', entity
 
-  # TODO
+  unrenderEntity: (id) ->
+    atlas = @getInstance()
+    atlas.publish 'entity/remove', {id: id}
+
+  getEntity: (id) ->
+    atlas = @getInstance()
+    atlas._managers.entity.getById(id)
 
   showEntity: (id) ->
+    atlas = @getInstance()
+    atlas.publish 'entity/show', {id: id}
 
   hideEntity: (id) ->
+    atlas = @getInstance()
+    atlas.publish 'entity/hide', {id: id}
 

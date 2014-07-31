@@ -105,8 +105,32 @@ TemplateClass.setUpFormPanel = (template, formTemplate, doc, settings) ->
 TemplateClass.onAtlasLoad = (template, atlas) ->
   projectId = Projects.getCurrentId()
   AtlasManager.zoomToProject()
-  # Render lots
-  lots = Lots.findForProject(projectId).fetch()
-  _.each lots, (lot) ->
-    LotUtils.toGeoEntityArgs(lot._id).then (geoEntity) ->
-      AtlasManager.renderEntity(geoEntity)
+  renderLot = (id) ->
+    entity = AtlasManager.getEntity(id)
+    if entity
+      AtlasManager.showEntity(id)
+    else
+      LotUtils.toGeoEntityArgs(id).then (geoEntity) ->
+        AtlasManager.renderEntity(geoEntity)
+  unrenderLot = (id) ->
+    AtlasManager.unrenderEntity(id)
+  lots = Lots.findForProject(projectId)
+  # TODO(aramk) Even when all models are already loaded, observe() calls the added callback on
+  # Render existing lots
+  # creation every time.
+  #    _.each lots.fetch(), (lot) ->
+  #      console.log('lot', lot)
+  #      renderLot(lot._id)
+  # Listen to changes to Lots and (un)render them as needed
+  lots.observe
+    added: (lot) ->
+      console.log('added', arguments)
+      renderLot(lot._id)
+    changed: (newLot, oldLot) ->
+      console.log('changed', arguments)
+      id = newLot._id
+      unrenderLot(id)
+      renderLot(id)
+    removed: (oldLot) ->
+      console.log('removed', arguments)
+      unrenderLot(oldLot._id)

@@ -565,14 +565,12 @@ projectCategories =
         decimal: true
         units: Units.deg
         desc: 'The latitude coordinate for this precinct'
-        optional: false
       lng:
         label: 'Longitude'
         type: Number
         decimal: true
         units: Units.deg
         desc: 'The longitude coordinate for this precinct'
-        optional: false
       cam_elev:
         label: 'Camera Elevation'
         type: Number
@@ -646,6 +644,12 @@ Projects.getLocationAddress = (id) ->
   (_.filter components, (c) -> c?).join(', ')
 
 Projects.getLocationCoords = (id) ->
-  project = Projects.findOne(id)
+  project = if id then Projects.findOne(id) else Projects.getCurrent()
   location = project.parameters.location
   {latitude: location.lat, longitude: location.lng, elevation: location.cam_elev}
+
+Projects.setLocationCoords = (id, location) ->
+  id ?= Projects.getCurrentId()
+  Projects.update id, $set:
+    'parameters.location.lat': location.latitude
+    'parameters.location.lng': location.longitude

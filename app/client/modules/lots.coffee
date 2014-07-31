@@ -25,6 +25,7 @@
   _fromAsset: (args) ->
     df = Q.defer()
     c3mls = args.c3mls
+    metaData = args.metaData
     params = args.params
     lotIds = []
     doneCalls = 0
@@ -34,6 +35,15 @@
       doneCalls++
       console.debug('done', id, doneCalls, c3mls.length)
       if doneCalls == polygonC3mls.length
+        projectId = Projects.getCurrentId()
+        # If the project doesn't have lat, lng location, set it as that found in this file.
+        location = Projects.getLocationCoords(projectId)
+        unless location.latitude? && location.longitude?
+          assetPosition = metaData.lookAt?.position
+          if assetPosition?
+            console.debug 'Setting project location', assetPosition
+            Projects.setLocationCoords(projectId,
+              {longitude: assetPosition.x, latitude: assetPosition.y})
         df.resolve(lotIds)
     _.each c3mls, (c3ml) ->
       if c3ml.type == 'polygon'
