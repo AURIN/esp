@@ -10,6 +10,9 @@ Meteor.startup ->
     onSuccess: close
     onCancel: close
 
+  Form.helpers
+    project: -> Projects.getCurrentId()
+
   Form.events
     'click .button.view-current': (e, template) ->
       AtlasManager.getCurrentCamera

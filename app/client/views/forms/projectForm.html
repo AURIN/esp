@@ -23,10 +23,12 @@
           {{> afQuickField name="parameters.location.lat"}}
           {{> afQuickField name="parameters.location.lng"}}
           {{> afQuickField name="parameters.location.cam_elev"}}
+          {{#if project}}
           <div class="ui buttons">
             <div class="ui button tiny view-current">Use Current View</div>
             <div class="ui button tiny view-apply">Apply</div>
           </div>
+          {{/if}}
 
           <div class="subtitle">Environment</div>
           {{> afQuickField name="parameters.environment.climate_zn"}}

@@ -160,7 +160,10 @@ body {
     background: #ddd;
     box-shadow: 0 0 0 1px @color-line-3;
   }
-  .subtitle, .crud.form form > .subtitle {
+  .subtitle,
+    // Overrides
+  .crud.form form > .subtitle,
+  &.crud.form form > .subtitle {
     padding: 8px;
     background: #eee;
     font-size: 13px;

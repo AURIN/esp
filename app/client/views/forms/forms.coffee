@@ -41,6 +41,9 @@
         args.onCancel?()
         template.data?.settings?.onCancel?()
 
+    Form.created = ->
+      args.onCreate?.apply(@, arguments)
+
     Form.rendered = ->
       console.debug 'Rendered form', @, arguments
       # Move the buttons to the same level as the title and content to allow using flex-layout.

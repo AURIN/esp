@@ -22,6 +22,7 @@ class @Poll
           # TODO(aramk) Unsure why these both exist.
           status = job.status ? job.body?.status
           if status && status.toLowerCase() == 'fail'
+            console.log('Job failed')
             df.reject(job)
           else
             df.resolve(job)

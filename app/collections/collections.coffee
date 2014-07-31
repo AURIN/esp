@@ -81,7 +81,7 @@ global = @
     if Types.isString(arg)
       arg = @get(arg)
     if @isCollection(arg)
-      arg = arg.find({})
+      arg = arg.find({}).fetch()
     if @isCursor(arg)
       return arg.fetch()
     return []

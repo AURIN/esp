@@ -1,17 +1,15 @@
 Meteor.startup ->
 
-  Formats = Collections.createTemporary()
-
-  # TODO(aramk) Change this to assets/formats/inputs.
-  Meteor.call 'assets/formats', (err, result) ->
-    console.log('formats', err, result)
-    _.each result, (format) ->
-      ext = format.extensions
-      # TODO(aramk) Remove this filter to allow other types.
-      if ext == 'shp'
-        format.label = ext.toUpperCase()
-        Formats.insert(format)
-    console.log('formats', Formats.find().fetch())
+  getFormats = (collection) ->
+    # TODO(aramk) Change this to assets/formats/inputs.
+    Meteor.call 'assets/formats', (err, result) ->
+      _.each result, (format) ->
+        ext = format.extensions
+        # TODO(aramk) Remove this filter to allow other types.
+        if ext == 'shp'
+          format.label = ext.toUpperCase()
+          collection.insert(format)
+    collection
 
   ImportedAssets = Collections.createTemporary()
 
@@ -20,8 +18,11 @@ Meteor.startup ->
     collection: ImportedAssets
 
   Form.helpers
-    formats: -> Formats.find()
-    defaultFormat: -> 'shp' #Formats.find({label: 'SHP'}).fetch()[0]
+    formats: ->
+      formats = Collections.createTemporary()
+      getFormats(formats)
+      formats.find()
+    defaultFormat: -> 'shp'
 
   Form.events
     'submit form': (e, template) ->
@@ -42,21 +43,6 @@ Meteor.startup ->
             if err
               console.error(err.toString())
             else
-              onSynthesize = (response) ->
-                body = response.body
-                console.log 'synthesize', body.length
-                c3mlId = body.c3mlId
-                Meteor.call 'assets/c3ml/download', c3mlId, (err, c3mls) ->
-                  if err
-                    console.error 'c3ml download failed', err
-                    return
-                  # TODO(aramk) Download meta-data to get the names of the entities.
-                  console.log('c3ml', c3mls.length)
-                  # TODO(aramk) Handle error and pass back
-                  LotUtils.fromC3ml c3mls, (lotIds) ->
-                    console.log('lotIds', lotIds)
-                    onSuccess?(lotIds)
-
               # TODO(aramk) Remove timeout and use an event callback.
               onUpload = ->
                 console.debug 'uploaded', fileObj
@@ -67,24 +53,21 @@ Meteor.startup ->
                     return
                   console.log 'asset', result
                   assetId = result.id
-                  assets = [result];
                   loadAssets = {}
-                  for result in assets
-                    loadAssets[assetId] = format
-                  request =
-                    loadAsset:
-                      isForSynthesis: true
-                      assets: loadAssets
-                  console.log 'synthesize request', request
-                  Meteor.call 'assets/synthesize', request, (err, result) ->
+                  loadAssets[assetId] = format
+                  Meteor.call 'assets/load', loadAssets, (err, result) ->
                     if err
-                      console.error 'Asset synthesize failed', err
+                      console.error 'Loading assets failed', loadAssets, err
                       return
-                    console.debug 'assets/synthesize', err, result
-                    if result
-                      onSynthesize(result)
                     else
-                      console.error 'Synthesize failed', err
+                      body = result.body
+                      LotUtils.fromAsset({
+                        assetId: assetId
+                        c3mlId: body.c3mlId
+                        metaDataId: body.metaDataId
+                      }).then (lotIds) ->
+                        console.log('lotIds', lotIds)
+                        onSuccess?(lotIds)
 
               timerHandler = ->
                 progress = fileObj.uploadProgress()

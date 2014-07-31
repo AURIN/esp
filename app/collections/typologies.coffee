@@ -316,6 +316,9 @@ Typologies.schema = TypologySchema
 Typologies.classes = TypologyClasses
 Typologies.allow(Collections.allowAll())
 
+Typologies.resolveClass = (cls) ->
+  TypologyClasses[(cls + '').toUpperCase()]
+
 Typologies.getParameter = (model, paramId) ->
   target = model.parameters ?= {}
   segments = paramId.split('.')
@@ -475,8 +478,8 @@ lotCategories =
     items:
     # If provided, this restricts the class of the entity.
       class: extendSchema(classSchema, {optional: true})
-      enabled:
-        label: 'Enabled'
+      dev:
+        label: 'For Development'
         type: Boolean
         desc: 'Whether the lot can have entities placed inside.'
         defaultValue: true
