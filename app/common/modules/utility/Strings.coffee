@@ -30,8 +30,34 @@
     plural ?= @plural(singular)
     if count == 1 then singular else plural
 
-  format:
+# @param {String} name
+# @param {Object} args
+# @param {Function} args.validator - A function which should return whether the generated name
+# is satisfactory or should continue to be generated.
+# @param {Function} [args.transformer] - Transforms the name. Passed the prefix and the
+# index of the current try. Must return unique output for each try to avoid infinite looping.
+# @param {Number} [args.limit=100] - The number of times to try suffixing before giving up.
+# @returns {String} A name using the prefix and a suffix if necessary to distinguish the name
+# from those existing.
+  generateName: (name, args) ->
+    defaultTransformer = (name, i) ->
+      name + ' ' + (i + 1)
+    args = _.extend args, {limit: 100, transformer: defaultTransformer}
+    validator = args.validator
+    transformer = args.transformer
+    limit = args.limit
+    tryCount = 0
+    while tryCount < limit
+      tryCount++
+      newName = transformer(name, tryCount)
+      if newName == name
+        throw new Error('Transformer gave same output between tries. name: ' + name + ' tryCount: ' + tryCount)
+      name = newName
+      if validator(name)
+        break
+    name
 
+  format:
     sup: (str) -> str.replace(/\^(\w+)/g, '<sup>$1</sup>')
     sub: (str) -> str.replace(/_(\w+)/g, '<sub>$1</sub>')
     scripts: (str) -> @.sup(@.sub(str))
