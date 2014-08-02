@@ -40,21 +40,22 @@
 # @returns {String} A name using the prefix and a suffix if necessary to distinguish the name
 # from those existing.
   generateName: (name, args) ->
-    defaultTransformer = (name, i) ->
-      name + ' ' + (i + 1)
+    defaultTransformer = (origName, currName, i) ->
+      origName + ' ' + (i + 1)
     args = _.extend args, {limit: 100, transformer: defaultTransformer}
+    origName = name
     validator = args.validator
     transformer = args.transformer
     limit = args.limit
     tryCount = 0
     while tryCount < limit
-      tryCount++
-      newName = transformer(name, tryCount)
+      if validator(name, tryCount)
+        break
+      newName = transformer(origName, name, tryCount)
       if newName == name
         throw new Error('Transformer gave same output between tries. name: ' + name + ' tryCount: ' + tryCount)
       name = newName
-      if validator(name)
-        break
+      tryCount++
     name
 
   format:

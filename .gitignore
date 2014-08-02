@@ -2,6 +2,7 @@ app/public/design/atlas
 app/public/design/atlas-cesium
 app/.meteor/local
 app/tests/mongo
+packages
 
 node_modules
 bower_components
