@@ -143,13 +143,15 @@ TemplateClass.onAtlasLoad = (template, atlas) ->
   # Listen to selections from atlas
   # TODO(aramk) Support multiple selection.
   # TODO(aramk) Remove duplication.
+  $table = getLotTable(template)
+  tableId = Template.collectionTable.getDomTableId($table)
   atlas.subscribe 'entity/select', (args) ->
     id = args.ids[0]
-    $table = getLotTable(template)
-    tableId = Template.collectionTable.getDomTableId($table)
     Template.collectionTable.setSelectedId(tableId, id)
   atlas.subscribe 'entity/deselect', (args) ->
-    $table = getLotTable(template)
-    tableId = Template.collectionTable.getDomTableId($table)
     Template.collectionTable.deselect(tableId)
-
+  # Listen to selections in the table
+  $table.on 'select', (e, id) ->
+    atlas.publish('entity/select', ids: [id])
+  $table.on 'deselect', (e, id) ->
+    atlas.publish('entity/deselect', ids: [id])
