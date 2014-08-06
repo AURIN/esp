@@ -12,7 +12,7 @@ class @AtlasConverter
     width = args.width ? 10
     elevation = args.elevation ? 0
     color = args.color
-    borderColour = args.borderColor ? '#000'
+    borderColour = args.borderColor
     # TODO(aramk) Enable opacity in atlas-cesium.
     opacity = args.opacity
     borderOpacity = args.borderOpacity ? 1
@@ -35,10 +35,15 @@ class @AtlasConverter
     # Style
     styleArgs = {}
     if color
-      Setter.mixin(styleArgs, this.toAtlasStyleArgs(color, opacity, 'fill'))
+      _.extend(styleArgs, this.toAtlasStyleArgs(color, opacity, 'fill'))
     if borderColour
-      Setter.mixin(styleArgs, this.toAtlasStyleArgs(borderColour, borderOpacity, 'border'))
-    geometry.style = new Style(styleArgs)
+      _.extend(styleArgs, this.toAtlasStyleArgs(borderColour, borderOpacity, 'border'))
+    defaultStyle = Style.getDefault()
+    geometry.style = new Style(_.defaults(styleArgs, {
+      fillColour: defaultStyle.getFillColour()
+      borderColour: defaultStyle.getBorderColour()
+      borderWidth: defaultStyle.getBorderWidth()
+    }))
     geoEntity
 
   toAtlasStyleArgs: (colour, opacity, prefix) ->

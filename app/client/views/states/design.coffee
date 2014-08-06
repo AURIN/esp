@@ -73,6 +73,12 @@ TemplateClass.helpers
 getSidebar = (template) ->
   $(template.find('.design.container > .sidebar'))
 
+getEntityTable = (template) ->
+  $(template.find('.entities .collection-table'))
+
+getLotTable = (template) ->
+  $(template.find('.lots .collection-table'))
+
 TemplateClass.addPanel = (template, component) ->
   console.debug 'addPanel', template, component
   $container = getSidebar(template)
@@ -134,3 +140,16 @@ TemplateClass.onAtlasLoad = (template, atlas) ->
     removed: (oldLot) ->
       console.log('removed', arguments)
       unrenderLot(oldLot._id)
+  # Listen to selections from atlas
+  # TODO(aramk) Support multiple selection.
+  # TODO(aramk) Remove duplication.
+  atlas.subscribe 'entity/select', (args) ->
+    id = args.ids[0]
+    $table = getLotTable(template)
+    tableId = Template.collectionTable.getDomTableId($table)
+    Template.collectionTable.setSelectedId(tableId, id)
+  atlas.subscribe 'entity/deselect', (args) ->
+    $table = getLotTable(template)
+    tableId = Template.collectionTable.getDomTableId($table)
+    Template.collectionTable.deselect(tableId)
+

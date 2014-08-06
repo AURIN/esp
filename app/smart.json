@@ -12,15 +12,18 @@
     "requirejs": {
       "git": "https://github.com/aramk/requirejs"
     },
-    "reactive-table": {
-      "git": "https://github.com/aramk/reactive-table",
-      "branch": "feature/selectable"
-    },
     "atlas": {
       "path": "../bower_components/atlas"
     },
     "atlas-cesium": {
       "path": "../bower_components/atlas-cesium"
+    },
+    "reactive-table": {
+      "git": "https://github.com/aramk/reactive-table",
+      "branch": "feature/selectable"
+    },
+    "collection-table": {
+      "git": "https://github.com/aramk/meteor-collection-table"
     },
     "Dropzonejs": {},
     "collectionFS": {},

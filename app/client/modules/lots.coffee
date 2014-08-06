@@ -83,3 +83,5 @@
         id: id
         vertices: space.geom
         height: space.height
+        color: '#8ae200'
+        borderColor: '#000'
