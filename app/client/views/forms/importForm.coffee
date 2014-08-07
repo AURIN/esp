@@ -2,7 +2,7 @@ Meteor.startup ->
 
   getFormats = (collection) ->
     # TODO(aramk) Change this to assets/formats/inputs.
-    Meteor.call 'assets/formats', (err, result) ->
+    Meteor.call 'assets/formats/input', (err, result) ->
       _.each result, (format) ->
         ext = format.extensions
         # TODO(aramk) Remove this filter to allow other types.

@@ -83,6 +83,14 @@ Meteor.methods
     Catalyst.auth.login()
     Catalyst.assets.formats()
 
+  'assets/formats/input': ->
+    Catalyst.auth.login()
+    Catalyst.assets.inputFormats()
+
+  'assets/formats/output': ->
+    Catalyst.auth.login()
+    Catalyst.assets.outputFormats()
+
   'assets/poll': (jobId) ->
     Catalyst.auth.login()
     Catalyst.assets.poll(jobId)
