@@ -3,16 +3,19 @@
 templateInstance = null
 TemplateClass = Template.design
 
+displayModesCollection = null
+DisplayModes =
+  footprint: 'Footprint'
+  extrusion: 'Extrusion'
+  mesh: 'Mesh'
+Session.setDefault('displayMode', 'footprint')
+
 collectionToForm =
   entities: 'entityForm'
   typologies: 'typologyForm'
   lots: 'lotForm'
 
 TemplateClass.created = ->
-  console.log('TemplateClass')
-  #  projectId = Session.get('projectId')
-  #  console.log('projects', Projects.find().fetch())
-  #  Projects.setCurrentId(projectId)
   projectId = Projects.getCurrentId()
   project = Projects.getCurrent()
   unless project
@@ -23,15 +26,15 @@ TemplateClass.created = ->
       project = Projects.findOne(projectId)
       Session.set('stateName', project.name)
   templateInstance = @
+  displayModesCollection = Collections.createTemporary()
+  _.each DisplayModes, (name, id) ->
+    displayModesCollection.insert({value: id, label: name})
 
 TemplateClass.rendered = ->
-  # TODO(aramk) Data is what is passed to the template, not the data on the instance.
-  @data ?= {}
-
   template = @
   atlasNode = @find('.atlas')
 
-  # Don't show Atlas viewer.
+  # Don't show Atlas viewer if disabled.
   unless Window.getVarBool('atlas') == false
     require([
         'atlas-cesium/core/CesiumAtlas',
@@ -47,6 +50,11 @@ TemplateClass.rendered = ->
       cesiumAtlas.publish('debugMode', true)
       TemplateClass.onAtlasLoad(template, cesiumAtlas)
     )
+
+  # Move extra buttons into collection tables
+  $lotsTable = $(@find('.lots .collection-table'))
+  $lotsButtons = $(@find('.lots .extra.menu')).addClass('item')
+  $('.crud.menu', $lotsTable).after($lotsButtons)
 
 TemplateClass.helpers
   entities: -> Entities.find({project: Projects.getCurrentId()})
@@ -69,6 +77,13 @@ TemplateClass.helpers
       formName = collectionToForm[collectionName]
       console.debug 'onEdit', arguments, collectionName, formName
       TemplateClass.setUpFormPanel templateInstance, Template[formName], args.model
+  displayModes: -> displayModesCollection.find()
+  defaultDisplayMode: -> Session.get('displayMode')
+
+TemplateClass.events
+  'change .displayMode.dropdown': (e) ->
+    displayMode = $(e.currentTarget).dropdown('get value')
+    Session.set('displayMode', displayMode)
 
 getSidebar = (template) ->
   $(template.find('.design.container > .sidebar'))
@@ -111,6 +126,7 @@ TemplateClass.setUpFormPanel = (template, formTemplate, doc, settings) ->
 TemplateClass.onAtlasLoad = (template, atlas) ->
   projectId = Projects.getCurrentId()
   AtlasManager.zoomToProject()
+  # TODO(aramk) Abstract this rendering for Entities as well.
   renderLot = (id) ->
     entity = AtlasManager.getEntity(id)
     if entity
@@ -121,12 +137,6 @@ TemplateClass.onAtlasLoad = (template, atlas) ->
   unrenderLot = (id) ->
     AtlasManager.unrenderEntity(id)
   lots = Lots.findForProject(projectId)
-  # TODO(aramk) Even when all models are already loaded, observe() calls the added callback on
-  # Render existing lots
-  # creation every time.
-  #    _.each lots.fetch(), (lot) ->
-  #      console.log('lot', lot)
-  #      renderLot(lot._id)
   # Listen to changes to Lots and (un)render them as needed
   lots.observe
     added: (lot) ->
@@ -155,3 +165,19 @@ TemplateClass.onAtlasLoad = (template, atlas) ->
     atlas.publish('entity/select', ids: [id])
   $table.on 'deselect', (e, id) ->
     atlas.publish('entity/deselect', ids: [id])
+  # Re-render when display mode changes.
+  firstRun = true
+  Deps.autorun (c) ->
+    # Register a dependency on display mode changes.
+    displayMode = Session.get('displayMode')
+    if firstRun
+      # Don't run the first time, since we already render through the observe() callback.
+      firstRun = false
+      return
+    if projectId != Projects.getCurrentId()
+      # Don't handle updates if changing project.
+      c.stop()
+      return
+    console.log('displayMode', displayMode)
+    _.each AtlasManager.getFeatures(), (entity) ->
+      entity.setDisplayMode(displayMode);

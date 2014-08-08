@@ -1,7 +1,6 @@
 Meteor.startup ->
 
   getFormats = (collection) ->
-    # TODO(aramk) Change this to assets/formats/inputs.
     Meteor.call 'assets/formats/input', (err, result) ->
       _.each result, (format) ->
         ext = format.extensions
@@ -69,6 +68,7 @@ Meteor.startup ->
                         metaDataId: body.metaDataId
                       }).then (lotIds) ->
                         console.log('lotIds', lotIds)
+                        AtlasManager.zoomToProject()
                         onSuccess?(lotIds)
 
               timerHandler = ->

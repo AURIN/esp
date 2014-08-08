@@ -2,12 +2,20 @@
 # SCHEMA DECLARATION
 ####################################################################################################
 
-TypologyClasses = {
-  RESIDENTIAL: 'Residential',
-  COMMERCIAL: 'Commercial',
-  OPEN_SPACE: 'Open Space',
-  PATHWAYS: 'Pathways',
-}
+TypologyClasses =
+  RESIDENTIAL:
+    name: 'Residential'
+    color: 'blue'
+  COMMERCIAL:
+    name: 'Commercial'
+    color: 'red'
+  OPEN_SPACE:
+    name: 'Open Space'
+    color: 'green'
+  PATHWAYS:
+    name: 'Pathways'
+    color: 'black'
+
 ClassNames = Object.keys(TypologyClasses)
 
 TypologyTypes = ['Basic', 'Energy Efficient']
@@ -316,9 +324,17 @@ Typologies.schema = TypologySchema
 Typologies.classes = TypologyClasses
 Typologies.allow(Collections.allowAll())
 
-Typologies.resolveClassId = (cls) -> (cls + '').toUpperCase()
+Typologies.resolveClassId = (name) ->
+  id = (name + '').toUpperCase()
+  if TypologyClasses[id]? then id else null
 
-Typologies.resolveClassName = (cls) -> TypologyClasses[Typologies.resolveClassId(cls)]
+Typologies.resolveClassName = (name) ->
+  id = Typologies.resolveClassId(name)
+  cls = TypologyClasses[id]
+  cls?.name
+
+Typologies.toObjects = ->
+  _.map Typologies.classes, (cls, id) -> Setter.merge(Setter.clone(cls), {id: id})
 
 Typologies.getParameter = (model, paramId) ->
   target = model.parameters ?= {}
@@ -479,10 +495,10 @@ lotCategories =
     items:
     # If provided, this restricts the class of the entity.
       class: extendSchema(classSchema, {optional: true})
-      dev:
+      develop:
         label: 'For Development'
         type: Boolean
-        desc: 'Whether the lot can have entities placed inside.'
+        desc: 'Whether the lot can be used for development.'
         defaultValue: true
   space:
     items:
@@ -515,6 +531,12 @@ LotSchema = new SimpleSchema
 @Lots = new Meteor.Collection 'lots', schema: LotSchema
 Lots.schema = LotSchema
 Lots.allow(Collections.allowAll())
+
+Lots.getParameter = (model, paramId) ->
+  Typologies.getParameter(model, paramId)
+
+Lots.setParameter = (model, paramId, value) ->
+  Typologies.setParameter(model, paramId, value)
 
 Lots.findForProject = (projectId) -> findForProject(Lots, projectId)
 

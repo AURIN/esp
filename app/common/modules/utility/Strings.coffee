@@ -17,6 +17,8 @@
   firstToUpperCase: (str) ->
     str.replace /(^\w)/, (firstChar) -> firstChar.toUpperCase()
 
+  isNumber: (str) -> !/[^\d\.E-]/g.test(str)
+
 # TODO(aramk) Improve naive pluralize methods.
 
   singular: (plural) ->

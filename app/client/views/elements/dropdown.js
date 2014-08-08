@@ -5,15 +5,16 @@ AutoForm.inputValueHandlers({
 });
 
 Template.dropdown.rendered = function() {
+  var $dropdown = $(this.find('.dropdown'));
   var labelAttr = this.data.labelAttr || 'name';
   var valueAttr = this.data.valueAttr || '_id';
+  var text = this.data.text;
   var firstSetUp = true;
   var setUpDropdown = function() {
     // TODO(aramk) This isn't efficient since we're manually recreating all items instead of
     // using the reactive template. We need a way to detect the template is re-rendered. Until then
     // this is a compromise.
     var items = Collections.getItems(this.data.items);
-    var $dropdown = $(this.find('.dropdown'));
     var $menu = $(this.find('.menu'));
     $menu.empty();
     _.each(items, function(item) {
@@ -27,8 +28,15 @@ Template.dropdown.rendered = function() {
     if (value && firstSetUp) {
       $dropdown.dropdown('set value', value).dropdown('set selected', value);
     }
+    updateText();
     firstSetUp = false;
   }.bind(this);
+  var updateText = function () {
+    if (text !== undefined) {
+      $dropdown.dropdown('set text', text);
+    }
+  };
+  // Handle changes to the collection.
   var items = this.data.items;
   if (Collections.isCursor(items)) {
     // If passed a cursor, listen for changes and update the items reactively.
@@ -42,6 +50,9 @@ Template.dropdown.rendered = function() {
     });
   }
   setUpDropdown();
+  $dropdown.on('change', function () {
+    updateText();
+  });
 };
 
 Template.dropdown.destroyed = function() {

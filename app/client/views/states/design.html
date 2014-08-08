@@ -13,6 +13,10 @@
         <div class="title">Lots</div>
         <div class="items lots">
           {{> collectionTable collection="Lots" items=lots settings=tableSettings}}
+          <div class="extra menu">
+            {{> dropdown name="displayMode" items=displayModes value=defaultDisplayMode
+            labelAttr="label" valueAttr="value" text="Display"}}
+          </div>
         </div>
       </div>
     </div>

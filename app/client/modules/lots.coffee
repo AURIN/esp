@@ -51,21 +51,21 @@
     _.each polygonC3mls, (c3ml, i) ->
       entityId = c3ml.id
       entityParams = params[entityId] ? {}
-      lotId = entityParams.id
+      lotId = entityParams.propid
       # If the ID is a float value, remove the decimals.
-      idIsNumber = !/[^\d\.]/g.test(lotId)
+      idIsNumber = Strings.isNumber(lotId)
       if idIsNumber
-        lotId = lotId.replace(/\.\d+$/, '')
+        lotId = parseFloat(lotId).toString().replace(/\.\d+$/, '')
       coords = c3ml.coordinates
       name = lotId ? 'Lot #' + (i + 1)
-      # C3ml coordinates are in (longitude, latitude), but WKT is the reverse.
+      classId = Typologies.resolveClassId(entityParams.landuse)
       WKT.fromVertices coords, (wkt) ->
         lot =
           name: name
           project: Projects.getCurrentId()
           parameters:
             general:
-              class: Typologies.resolveClassId(entityParams.landuse)
+              class: classId
               dev: Booleans.parse(entityParams.redev ? true)
             space:
               geom: wkt
@@ -78,10 +78,15 @@
   toGeoEntityArgs: (id) ->
     AtlasConverter.getInstance().then (converter) ->
       lot = Lots.findOne(id)
+      className = Lots.getParameter(lot, 'general.class')
+      typologyClass = Typologies.classes[className]
+      color = typologyClass.color
       space = lot.parameters.space
+      displayMode = Session.get('displayMode')
       converter.toGeoEntityArgs
         id: id
         vertices: space.geom
         height: space.height
-        color: '#8ae200'
+        displayMode: displayMode
+        color: color
         borderColor: '#000'

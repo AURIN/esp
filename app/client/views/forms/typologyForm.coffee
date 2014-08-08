@@ -42,5 +42,5 @@ Meteor.startup ->
         doc
 
   Form.helpers
-    classes: -> _.map Typologies.classes, (name, id) -> {_id: id, name: name}
+    classes: -> Typologies.toObjects()
     classValue: -> @doc?.parameters?.general?.class

@@ -26,7 +26,7 @@ class @AtlasConverter
     wkt = WKT.getInstance()
     if wkt.isPolygon(vertices)
       geoEntity.polygon = geometry
-      geoEntity.displayMode = if height > 0 || elevation > 0 then 'extrusion' else 'footprint'
+      geoEntity.displayMode ?= if height > 0 || elevation > 0 then 'extrusion' else 'footprint'
     else if wkt.isLineString vertices
       geoEntity.line = geometry
     else if vertices != null

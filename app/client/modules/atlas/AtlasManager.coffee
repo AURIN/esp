@@ -35,6 +35,10 @@ instance = null
     atlas = @getInstance()
     atlas._managers.entity.getById(id)
 
+  getFeatures: ->
+    atlas = @getInstance()
+    atlas._managers.entity.getFeatures()
+
   showEntity: (id) ->
     atlas = @getInstance()
     atlas.publish 'entity/show', {id: id}
@@ -42,4 +46,12 @@ instance = null
   hideEntity: (id) ->
     atlas = @getInstance()
     atlas.publish 'entity/hide', {id: id}
+
+  getDisplayModes: ->
+    df = Q.defer()
+    require ['atlas/model/Feature'], (Feature) ->
+      items = _.map Feature.DisplayMode, (value, id) ->
+        {label: Strings.toTitleCase(value), value: value}
+      df.resolve(items)
+    df.promise
 

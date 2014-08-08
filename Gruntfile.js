@@ -146,15 +146,18 @@ module.exports = function(grunt) {
 
   grunt.registerTask('build-atlas', 'Builds Atlas.', function(arg1) {
     var isLazy = arg1 === 'lazy';
+    var dirname = __dirname;
     if (!isLazy || !fs.existsSync(ATLAS_BUILD_FILE)) {
       console.log('Atlas needs building...');
       shell.cd(ATLAS_PATH);
       shell.exec('grunt build');
+      shell.cd(dirname);
     }
     if (!isLazy || !fs.existsSync(ATLAS_CESIUM_BUILD_FILE)) {
       console.log('Atlas-Cesium needs building...');
       shell.cd(ATLAS_CESIUM_PATH);
       shell.exec('grunt build');
+      shell.cd(dirname);
     }
   });
 
