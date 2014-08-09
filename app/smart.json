@@ -25,6 +25,9 @@
     "collection-table": {
       "git": "https://github.com/aramk/meteor-collection-table"
     },
+    "dropdown": {
+      "git": "https://github.com/aramk/meteor-dropdown"
+    },
     "Dropzonejs": {},
     "collectionFS": {},
     "npm": {},

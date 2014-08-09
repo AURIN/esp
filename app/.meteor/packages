@@ -15,6 +15,7 @@ accounts-ui
 semantic-ui
 reactive-table
 collection-table
+dropdown
 coffeescript
 collection2
 cfs-ejson-file
