@@ -11,15 +11,28 @@
           <!-- TODO(aramk) Hide this eventually. -->
           {{> afQuickField name="entity"}}
 
+          <!--{{> afQuickField name="parameters.space.area"}}-->
+
           <div class="subtitle">General</div>
           {{> afFieldLabel name="parameters.general.class"}}
           {{> dropdown name="parameters.general.class" items=classes value=classValue}}
           {{> afQuickField name="parameters.general.develop"}}
 
           <div class="subtitle">Space</div>
+
+          <!--<div class="subsubtitle">Footprint</div>-->
+          <label>Footprint</label>
           {{> afQuickField name="parameters.space.geom"}}
+          <div class="ui footprint buttons">
+            <div class="ui toggle create button {{isCreating}}">Create</div>
+            <div class="ui toggle edit button {{isEditing}}">Edit</div>
+            <div class="ui delete button">Delete</div>
+            <!--<div class="ui toggle delete button {{isDeleted}}">Delete</div>-->
+          </div>
+          <!-- TODO(aramk) -->
+          <!--<div class="subsubtitle">Mesh</div>-->
+
           {{> afQuickField name="parameters.space.height"}}
-          <!--{{> afQuickField name="parameters.space.area"}}-->
 
           <div class="crud buttons">
             <button type="button" class="ui red cancel button">Cancel</button>

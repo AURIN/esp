@@ -57,6 +57,9 @@
       if idIsNumber
         lotId = parseFloat(lotId).toString().replace(/\.\d+$/, '')
       coords = c3ml.coordinates
+      # Ignore lots with no geometry.
+      if coords.length == 0
+        return
       name = lotId ? 'Lot #' + (i + 1)
       classId = Typologies.resolveClassId(entityParams.landuse)
       WKT.fromVertices coords, (wkt) ->
