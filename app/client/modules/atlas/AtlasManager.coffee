@@ -25,7 +25,7 @@ instance = null
 
   renderEntity: (entity) ->
     atlas = @getInstance()
-    atlas.publish 'entity/show', entity
+    atlas.publish 'entity/show/bulk', {features: [entity]}
 
   unrenderEntity: (id) ->
     atlas = @getInstance()

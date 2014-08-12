@@ -73,10 +73,13 @@ TemplateClass.helpers
       console.debug 'onCreate', arguments, collectionName, formName
       TemplateClass.setUpFormPanel templateInstance, Template[formName]
     onEdit: (args) ->
-      collectionName = Collections.getName(args.collection)
+      id = args.id
+      collection = args.collection
+      model = collection.findOne(id)
+      collectionName = Collections.getName(collection)
       formName = collectionToForm[collectionName]
       console.debug 'onEdit', arguments, collectionName, formName
-      TemplateClass.setUpFormPanel templateInstance, Template[formName], args.model
+      TemplateClass.setUpFormPanel templateInstance, Template[formName], model
   displayModes: -> displayModesCollection.find()
   defaultDisplayMode: -> Session.get('displayMode')
 

@@ -24,9 +24,9 @@
           <label>Footprint</label>
           {{> afQuickField name="parameters.space.geom"}}
           <div class="ui footprint buttons">
-            <div class="ui toggle create button {{isCreating}}">Create</div>
-            <div class="ui toggle edit button {{isEditing}}">Edit</div>
-            <div class="ui delete button">Delete</div>
+            <div class="ui toggle create button {{isCreating}} {{canCreate}}">Create</div>
+            <div class="ui toggle edit button {{isEditing}} {{canEdit}}">Edit</div>
+            <div class="ui delete button {{canDelete}}">Delete</div>
             <!--<div class="ui toggle delete button {{isDeleted}}">Delete</div>-->
           </div>
           <!-- TODO(aramk) -->
