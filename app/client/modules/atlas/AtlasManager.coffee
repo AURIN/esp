@@ -55,3 +55,18 @@ instance = null
       df.resolve(items)
     df.promise
 
+  draw: (args) ->
+    atlas = @getInstance()
+    atlas.publish('entity/draw', args);
+
+  stopDraw: (args) ->
+    atlas = @getInstance()
+    atlas.publish('entity/draw/stop', args);
+
+  edit: (args) ->
+    atlas = @getInstance()
+    atlas.publish('edit/enable', args);
+
+  stopEdit: ->
+    atlas = @getInstance()
+    atlas.publish('edit/disable');

@@ -18,29 +18,31 @@ Meteor.startup ->
   hasExisting = -> currentFeature?
 
   stopEditing = ->
-    console.bug('stopping drawing')
-    isCreating = getEditState(EditState.CREATING)
     isEditing = getEditState(EditState.EDITING)
     if isEditing
       console.debug('stopped editing');
       setEditState(EditState.EDITING, false)
+
+  stopCreating = ->
+    isCreating = getEditState(EditState.CREATING)
     if isCreating
       console.debug('stopped creating');
       setEditState(EditState.CREATING, false)
-
 
   Form = Forms.defineModelForm
     name: 'lotForm'
     collection: 'Lots'
     onCreate: ->
       # TODO(aramk) Set these based on whether there is existing geometry or not?
-      _.each _.values(EditState), (key) -> Session.set(key, false)
+      _.each _.values(EditState), (key) -> setEditState(key, false)
       @data ?= {}
       doc = @data.doc
       if doc
         id = doc._id
         AtlasManager.showEntity(id)
         currentFeature = AtlasManager.getEntity(id)
+        if currentFeature?
+          setEditState(EditState.CREATED, true)
     onRender: ->
       $(@findAll('.ui.toggle.button')).state();
 
@@ -56,27 +58,34 @@ Meteor.startup ->
       shouldCreate = isButtonActive(e.currentTarget)
       isCreating = getEditState(EditState.CREATING)
       if shouldCreate
-        # TODO(aramk) Draw mode in atlas
-        console.bug('enabled drawing')
-        isCreating = setEditState(EditState.CREATING, shouldCreate)
+        console.debug('enabled drawing')
+        isCreating = setEditState(EditState.CREATING, true)
+        AtlasManager.draw
+          create: (args) ->
+            currentFeature = args.feature
+            setEditState(EditState.CREATED, true)
+            setEditState(EditState.CREATING, false)
       else if isCreating
-        stopEditing()
+        stopCreating()
 
     'click .footprint.buttons .edit': (e, template) ->
       shouldEdit = isButtonActive(e.currentTarget)
-      isEditing = getEditState(EditState.EDITING) # setEditState(EditState.EDITING, isButtonActive(e.currentTarget))
-      isCreated = getEditState(EditState.CREATED)
+      isEditing = getEditState(EditState.EDITING)
       if shouldEdit
-        # TODO(aramk) Enable editing
-        console.bug('enabled editing')
-        isEditing = setEditState(EditState.EDITING, shouldEdit)
+        console.debug('enabled editing')
+        isEditing = setEditState(EditState.EDITING, true)
+        AtlasManager.edit
+          ids: [currentFeature.getId()]
+          complete: (args) ->
+            setEditState(EditState.CREATED, true)
+            setEditState(EditState.EDITING, false)
       else if isEditing
         stopEditing()
 
     'click .footprint.buttons .delete': (e, template) ->
-      # TODO(aramk) Set the footprint being editing as the current footprint
       stopEditing()
-      # TODO(aramk) Remove the footprint.
+      stopCreating()
+      AtlasManager.unrenderEntity(currentFeature.getId())
       setEditState(EditState.CREATING, false)
       setEditState(EditState.EDITING, false)
       setEditState(EditState.CREATED, false)
