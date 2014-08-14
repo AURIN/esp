@@ -56,7 +56,7 @@
       idIsNumber = Strings.isNumber(lotId)
       if idIsNumber
         lotId = parseFloat(lotId).toString().replace(/\.\d+$/, '')
-      coords = c3ml.coordinates
+      coords = _.map c3ml.coordinates, (coord) -> {longitude: coord.x, latitude: coord.y}
       # Ignore lots with no geometry.
       if coords.length == 0
         return

@@ -13,20 +13,21 @@ Meteor.startup ->
     Session.set('edit_' + name, value)
     value
 
-  currentFeature = null
-
-  hasExisting = -> currentFeature?
+  # A reference to the current Atlas GeoEntity.
+  currentGeoEntity = null
 
   stopEditing = ->
     isEditing = getEditState(EditState.EDITING)
     if isEditing
       console.debug('stopped editing');
+      AtlasManager.stopEdit()
       setEditState(EditState.EDITING, false)
 
   stopCreating = ->
     isCreating = getEditState(EditState.CREATING)
     if isCreating
       console.debug('stopped creating');
+      AtlasManager.stopDraw()
       setEditState(EditState.CREATING, false)
 
   Form = Forms.defineModelForm
@@ -40,11 +41,28 @@ Meteor.startup ->
       if doc
         id = doc._id
         AtlasManager.showEntity(id)
-        currentFeature = AtlasManager.getEntity(id)
-        if currentFeature?
+        currentGeoEntity = AtlasManager.getEntity(id)
+        if currentGeoEntity?
           setEditState(EditState.CREATED, true)
     onRender: ->
       $(@findAll('.ui.toggle.button')).state();
+
+    onSuccess: (operation, result, template) ->
+      stopEditing()
+      stopCreating()
+      settings = template.data.settings || {}
+      callback = settings.onSuccess
+      doc = template.data.doc
+      id = if operation == 'insert' then result else doc._id
+      WKT.fromVertices currentGeoEntity.getVertices(), (wkt) ->
+        console.log('wkt', wkt)
+        Lots.update id, {$set: {'parameters.space.geom': wkt}}
+        callback(id) if callback
+
+    onCancel: ->
+      console.debug('cancel!');
+      stopEditing()
+      stopCreating()
 
     hooks:
       formToDoc: (doc) ->
@@ -62,7 +80,7 @@ Meteor.startup ->
         isCreating = setEditState(EditState.CREATING, true)
         AtlasManager.draw
           create: (args) ->
-            currentFeature = args.feature
+            currentGeoEntity = args.feature
             setEditState(EditState.CREATED, true)
             setEditState(EditState.CREATING, false)
       else if isCreating
@@ -75,7 +93,7 @@ Meteor.startup ->
         console.debug('enabled editing')
         isEditing = setEditState(EditState.EDITING, true)
         AtlasManager.edit
-          ids: [currentFeature.getId()]
+          ids: [currentGeoEntity.getId()]
           complete: (args) ->
             setEditState(EditState.CREATED, true)
             setEditState(EditState.EDITING, false)
@@ -85,7 +103,7 @@ Meteor.startup ->
     'click .footprint.buttons .delete': (e, template) ->
       stopEditing()
       stopCreating()
-      AtlasManager.unrenderEntity(currentFeature.getId())
+      AtlasManager.unrenderEntity(currentGeoEntity.getId())
       setEditState(EditState.CREATING, false)
       setEditState(EditState.EDITING, false)
       setEditState(EditState.CREATED, false)
