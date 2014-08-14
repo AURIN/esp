@@ -93,3 +93,13 @@
         displayMode: displayMode
         color: color
         borderColor: '#000'
+
+  # TODO(aramk) Abstract this rendering for Entities as well.
+  # TODO(aramk) This class has grown too generic - refactor.
+  render: (id) ->
+    entity = AtlasManager.getEntity(id)
+    if entity
+      AtlasManager.showEntity(id)
+    else
+      LotUtils.toGeoEntityArgs(id).then (geoEntity) ->
+        AtlasManager.renderEntity(geoEntity)

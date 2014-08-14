@@ -1,6 +1,7 @@
 Meteor.startup ->
 
   EditState =
+    CHANGED: 'changed'
     CREATED: 'created'
 #    EDITED: 'edited'
 #    DELETED: 'deleted'
@@ -19,14 +20,12 @@ Meteor.startup ->
   stopEditing = ->
     isEditing = getEditState(EditState.EDITING)
     if isEditing
-      console.debug('stopped editing');
       AtlasManager.stopEdit()
       setEditState(EditState.EDITING, false)
 
   stopCreating = ->
     isCreating = getEditState(EditState.CREATING)
     if isCreating
-      console.debug('stopped creating');
       AtlasManager.stopDraw()
       setEditState(EditState.CREATING, false)
 
@@ -44,6 +43,7 @@ Meteor.startup ->
         currentGeoEntity = AtlasManager.getEntity(id)
         if currentGeoEntity?
           setEditState(EditState.CREATED, true)
+          currentGeoEntity.onSelect()
     onRender: ->
       $(@findAll('.ui.toggle.button')).state();
 
@@ -59,10 +59,18 @@ Meteor.startup ->
         Lots.update id, {$set: {'parameters.space.geom': wkt}}
         callback(id) if callback
 
-    onCancel: ->
-      console.debug('cancel!');
+    onCancel: (template) ->
       stopEditing()
       stopCreating()
+      isChanged = getEditState(EditState.CHANGED)
+      unless isChanged
+        return
+      # Remove the existing GeoEntity, whether it was drawn or edited.
+      if currentGeoEntity
+        currentGeoEntity.remove()
+      doc = template.data.doc
+      id = doc?._id
+      LotUtils.render(id) if id
 
     hooks:
       formToDoc: (doc) ->
@@ -75,8 +83,8 @@ Meteor.startup ->
     'click .footprint.buttons .create': (e, template) ->
       shouldCreate = isButtonActive(e.currentTarget)
       isCreating = getEditState(EditState.CREATING)
+      setEditState(EditState.CHANGED, true)
       if shouldCreate
-        console.debug('enabled drawing')
         isCreating = setEditState(EditState.CREATING, true)
         AtlasManager.draw
           create: (args) ->
@@ -89,8 +97,8 @@ Meteor.startup ->
     'click .footprint.buttons .edit': (e, template) ->
       shouldEdit = isButtonActive(e.currentTarget)
       isEditing = getEditState(EditState.EDITING)
+      setEditState(EditState.CHANGED, true)
       if shouldEdit
-        console.debug('enabled editing')
         isEditing = setEditState(EditState.EDITING, true)
         AtlasManager.edit
           ids: [currentGeoEntity.getId()]
@@ -107,6 +115,7 @@ Meteor.startup ->
       setEditState(EditState.CREATING, false)
       setEditState(EditState.EDITING, false)
       setEditState(EditState.CREATED, false)
+      setEditState(EditState.CHANGED, true)
 
   stateToActiveClass = (name) -> if getEditState(name) then 'active' else ''
   boolToEnabledClass = (bool) -> if bool then '' else 'disabled'

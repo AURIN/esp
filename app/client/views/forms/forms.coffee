@@ -38,7 +38,7 @@
       'click button.cancel': (e, template) ->
         e.preventDefault();
         console.debug 'onCancel', arguments, @
-        args.onCancel?()
+        args.onCancel?(template)
         template.data?.settings?.onCancel?()
 
     Form.created = ->

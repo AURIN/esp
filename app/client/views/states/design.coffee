@@ -129,16 +129,8 @@ TemplateClass.setUpFormPanel = (template, formTemplate, doc, settings) ->
 TemplateClass.onAtlasLoad = (template, atlas) ->
   projectId = Projects.getCurrentId()
   AtlasManager.zoomToProject()
-  # TODO(aramk) Abstract this rendering for Entities as well.
-  renderLot = (id) ->
-    entity = AtlasManager.getEntity(id)
-    if entity
-      AtlasManager.showEntity(id)
-    else
-      LotUtils.toGeoEntityArgs(id).then (geoEntity) ->
-        AtlasManager.renderEntity(geoEntity)
-  unrenderLot = (id) ->
-    AtlasManager.unrenderEntity(id)
+  renderLot = (id) -> LotUtils.render(id)
+  unrenderLot = (id) -> AtlasManager.unrenderEntity(id)
   lots = Lots.findForProject(projectId)
   # Listen to changes to Lots and (un)render them as needed
   lots.observe

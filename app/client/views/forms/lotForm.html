@@ -20,17 +20,14 @@
 
           <div class="subtitle">Space</div>
 
-          <!--<div class="subsubtitle">Footprint</div>-->
           <label>Footprint</label>
-          {{> afQuickField name="parameters.space.geom"}}
           <div class="ui footprint tiny buttons">
             <div class="ui toggle create button {{isCreating}} {{canCreate}}">Create</div>
             <div class="ui toggle edit button {{isEditing}} {{canEdit}}">Edit</div>
             <div class="ui delete button {{canDelete}}">Delete</div>
-            <!--<div class="ui toggle delete button {{isDeleted}}">Delete</div>-->
           </div>
           <!-- TODO(aramk) -->
-          <!--<div class="subsubtitle">Mesh</div>-->
+          <!--<label>Mesh</label>-->
 
           {{> afQuickField name="parameters.space.height"}}
 
