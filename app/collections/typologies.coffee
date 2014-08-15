@@ -334,9 +334,11 @@ Typologies.resolveClassName = (name) ->
   cls?.name
 
 Typologies.getClassItems = ->
-  _.map Typologies.classes, (cls, id) -> Setter.merge(Setter.clone(cls), {id: id})
+  _.map Typologies.classes, (cls, id) -> Setter.merge(Setter.clone(cls), {_id: id})
 
 Typologies.getParameter = (model, paramId) ->
+  # Remove "parameters." if prefixed to allow flexible lookup.
+  paramId = paramId.replace(/^parameters\./, '')
   target = model.parameters ?= {}
   segments = paramId.split('.')
   unless segments.length > 0
@@ -524,15 +526,20 @@ LotSchema = new SimpleSchema
     type: String
     optional: true
     custom: ->
-      typologyClass = @siblingField('parameters.general.class')
-      unless typologyClass.isSet && this.isSet
-      # TODO(aramk) This isn't guaranteed to work if typology field is not set at same time as
-      # entity. Look up the actual value using an ID.
+      classParamId = 'parameters.general.class'
+      typologyClassField = @siblingField(classParamId)
+      unless typologyClassField.isSet && this.isSet
+        # TODO(aramk) This isn't guaranteed to work if typology field is not set at same time as
+        # entity. Look up the actual value using an ID.
         return 'Class and entity must be set together for validation to work.'
-      if typologyClass.operator == '$unset' && @operator != '$unset'
+      if typologyClassField.operator == '$unset' && @operator != '$unset'
         return 'Class must be present if entity is present.'
-      if typologyClass.operator != '$unset' && @operator != '$unset' && typologyClass.value != Entities.findOne(@value).typology
-        return 'Entity must have the same class as the Lot.'
+      entityTypology = Typologies.findOne(Entities.findOne(this.value).typology)
+      entityClass = Typologies.getParameter(entityTypology, classParamId)
+      typologyClass = typologyClassField.value
+      if typologyClassField.operator != '$unset' && @operator != '$unset' && typologyClass != entityClass
+        return 'Entity must have the same class as the Lot. Entity has ' + entityClass +
+          ', Lot has ' + typologyClass
 
   parameters:
     label: 'Parameters'

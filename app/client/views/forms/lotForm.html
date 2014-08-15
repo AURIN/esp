@@ -10,6 +10,9 @@
 
           <label>Typology</label>
           {{> dropdown name="typology" items=typologies value=typology}}
+          <!--{{#if typology}}-->
+          <!--<div class="ui delete typology button tiny">Delete</div>-->
+          <!--{{/if}}-->
 
           <div class="subtitle">General</div>
           {{> afFieldLabel name="parameters.general.class"}}
