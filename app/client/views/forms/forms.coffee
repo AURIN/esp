@@ -12,7 +12,7 @@
       # Defer the callback if the result is a promise. Ignore if result is false. Otherwise execute
       # callback immediately.
       unless result == false
-        if result.then
+        if result?.then
           result.then -> callback()
         else
           callback()

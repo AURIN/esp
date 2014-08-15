@@ -534,7 +534,10 @@ LotSchema = new SimpleSchema
         return 'Class and entity must be set together for validation to work.'
       if typologyClassField.operator == '$unset' && @operator != '$unset'
         return 'Class must be present if entity is present.'
-      entityTypology = Typologies.findOne(Entities.findOne(this.value).typology)
+      entityId = this.value
+      unless entityId
+        return
+      entityTypology = Typologies.findOne(Entities.findOne(entityId).typology)
       entityClass = Typologies.getParameter(entityTypology, classParamId)
       typologyClass = typologyClassField.value
       if typologyClassField.operator != '$unset' && @operator != '$unset' && typologyClass != entityClass

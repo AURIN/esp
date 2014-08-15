@@ -93,6 +93,7 @@ Meteor.startup ->
       newTypologyId = Template.dropdown.getValue(getTypologyDropdown(template))
       classParamId = 'parameters.general.class'
       geomParamId = 'parameters.space.geom'
+      lotClass = Lots.getParameter(doc, classParamId)
 
       removeOldEntity = ->
         df = Q.defer()
@@ -111,8 +112,7 @@ Meteor.startup ->
         removeOldEntity().then (-> entityDf.resolve(null)), entityDf.reject
       else if oldTypologyId != newTypologyId
         newTypology = Typologies.findOne(newTypologyId)
-        # If no class is provided, use that of the entity's typology.
-        lotClass = Lots.getParameter(doc, classParamId)
+        # If no class is provided, use the class of the entity's typology.
         unless lotClass
           lotClass = Typologies.getParameter(newTypology, classParamId)
 
@@ -141,9 +141,8 @@ Meteor.startup ->
         entityId = results[0]
         wkt = results[1]
         modifier = {}
-        if lotClass != undefined || entityId != undefined
-          modifier.entity = entityId
-          modifier[classParamId] = lotClass
+        modifier.entity = entityId
+        modifier[classParamId] = lotClass
         if wkt?
           modifier[geomParamId] = wkt
         Lots.update id, {$set: modifier}, (err, result) ->
@@ -223,14 +222,8 @@ Meteor.startup ->
 
   # TODO(aramk) Abstract dropdown to allow null selection automatically.
   Form.helpers
-    classes: ->
-      # Add a blank entry to allow removal.
-      [
-        {_id: null, name: ''}
-      ].concat(Typologies.getClassItems()) # TODO(aramk) Use EMPTY?
-    typologies: -> [
-      {_id: null, name: ''}
-    ].concat(Typologies.findForProject().fetch())
+    classes: -> Typologies.getClassItems()
+    typologies: -> Typologies.findForProject().fetch()
     typology: -> getTypologyId(@doc) #getFormTypologyId()
     classValue: -> @doc?.parameters?.general?.class
     isCreating: -> stateToActiveClass(EditState.CREATING)
