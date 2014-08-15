@@ -8,10 +8,8 @@
           {{> afQuickField name="name"}}
           {{> afQuickField name="desc"}}
 
-          <!-- TODO(aramk) Hide this eventually. -->
-          {{> afQuickField name="entity"}}
-
-          <!--{{> afQuickField name="parameters.space.area"}}-->
+          <label>Typology</label>
+          {{> dropdown name="typology" items=typologies value=typology}}
 
           <div class="subtitle">General</div>
           {{> afFieldLabel name="parameters.general.class"}}

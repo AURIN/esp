@@ -85,7 +85,7 @@ areaSchema =
 extendSchema = (orig, changes) ->
   _.extend({}, orig, changes)
 
-categories =
+typologyCategories =
   general:
     items:
     # Generic fields
@@ -153,8 +153,8 @@ categories =
             defaultValue: 250
         custom: ->
           # Abstract these rules into a single string or function for evaluation.
-          lotsize = this.siblingField('lotsize')
-          if lotsize.isSet && lotsize.operator != '$unset' && this.isSet && this.operator != '$unset' && this.value > lotsize.value
+          lotsize = @siblingField('lotsize')
+          if lotsize.isSet && lotsize.operator != '$unset' && @isSet && @operator != '$unset' && @value > lotsize.value
             'Footprint Area must be less than or equal to the Lot Size'
       height: heightSchema
   energy:
@@ -301,7 +301,7 @@ createCategoriesSchema = (args) ->
 ####################################################################################################
 
 @ParametersSchema = createCategoriesSchema
-  categories: categories
+  categories: typologyCategories
 
 TypologySchema = new SimpleSchema
   name:
@@ -333,7 +333,7 @@ Typologies.resolveClassName = (name) ->
   cls = TypologyClasses[id]
   cls?.name
 
-Typologies.toObjects = ->
+Typologies.getClassItems = ->
   _.map Typologies.classes, (cls, id) -> Setter.merge(Setter.clone(cls), {id: id})
 
 Typologies.getParameter = (model, paramId) ->
@@ -433,7 +433,7 @@ Typologies.findForProject = (projectId) -> findForProject(Typologies, projectId)
 ####################################################################################################
 
 # Entities don't need the class parameter since they reference the typology.
-entityCategories = lodash.cloneDeep(categories)
+entityCategories = lodash.cloneDeep(typologyCategories)
 delete entityCategories.general.items.class
 @EntityParametersSchema = createCategoriesSchema
   categories: entityCategories
@@ -523,6 +523,17 @@ LotSchema = new SimpleSchema
     label: 'Entity'
     type: String
     optional: true
+    custom: ->
+      typologyClass = @siblingField('parameters.general.class')
+      unless typologyClass.isSet && this.isSet
+      # TODO(aramk) This isn't guaranteed to work if typology field is not set at same time as
+      # entity. Look up the actual value using an ID.
+        return 'Class and entity must be set together for validation to work.'
+      if typologyClass.operator == '$unset' && @operator != '$unset'
+        return 'Class must be present if entity is present.'
+      if typologyClass.operator != '$unset' && @operator != '$unset' && typologyClass.value != Entities.findOne(@value).typology
+        return 'Entity must have the same class as the Lot.'
+
   parameters:
     label: 'Parameters'
     type: LotParametersSchema

@@ -42,5 +42,5 @@ Meteor.startup ->
         doc
 
   Form.helpers
-    classes: -> Typologies.toObjects()
+    classes: -> Typologies.getClassItems()
     classValue: -> @doc?.parameters?.general?.class

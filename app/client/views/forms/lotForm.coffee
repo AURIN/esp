@@ -29,6 +29,12 @@ Meteor.startup ->
       AtlasManager.stopDraw()
       setEditState(EditState.CREATING, false)
 
+  getTypologyId = (doc) ->
+    entityId = doc?.entity
+    unless entityId?
+      return null
+    Entities.findOne(entityId)?.typology ? null
+
   Form = Forms.defineModelForm
     name: 'lotForm'
     collection: 'Lots'
@@ -44,20 +50,75 @@ Meteor.startup ->
         if currentGeoEntity?
           setEditState(EditState.CREATED, true)
           currentGeoEntity.onSelect()
-    onRender: ->
-      $(@findAll('.ui.toggle.button')).state();
+
+    onRender: -> $(@findAll('.ui.toggle.button')).state()
 
     onSuccess: (operation, result, template) ->
+      data = template.data
+      id = if operation == 'insert' then result else data.doc._id
+      doc = Lots.findOne(id)
+      settings = data.settings || {}
+      callback = settings.onSuccess
+      entityDf = Q.defer()
+      geomDf = Q.defer()
+
+      # Handle drawing and editing.
       stopEditing()
       stopCreating()
-      settings = template.data.settings || {}
-      callback = settings.onSuccess
-      doc = template.data.doc
-      id = if operation == 'insert' then result else doc._id
+      unless currentGeoEntity?
+        console.error('No geometry provided for lot.')
+        return
       WKT.fromVertices currentGeoEntity.getVertices(), (wkt) ->
         console.log('wkt', wkt)
-        Lots.update id, {$set: {'parameters.space.geom': wkt}}
-        callback(id) if callback
+        geomDf.resolve(wkt)
+
+      # Handle saving entity.
+      oldEntityId = doc?.entity
+      oldTypologyId = getTypologyId(doc)
+      newTypologyId = $(template.find('.typology.dropdown')).dropdown('get value')
+      newTypology = Typologies.findOne(newTypologyId)
+      classParamId = 'parameters.general.class'
+      geomParamId = 'parameters.space.geom'
+      if oldTypologyId != newTypologyId
+        # If no class is provided, use that of the entity's typology.
+        lotClass = Lots.getParameter(doc, classParamId)
+        unless lotClass
+          lotClass = Typologies.getParameter(newTypology, classParamId)
+
+        # Create a new entity for this lot-typology combination and remove the existing one
+        # (if any). Name of the entity matches that of the lot.
+        newEntity =
+          name: doc.name
+          typology: newTypologyId
+          project: Projects.getCurrentId()
+        Entities.insert newEntity, (err, newEntityId) ->
+          resolve = -> entityDf.resolve(newEntityId)
+          reject = (err) ->
+            console.error.apply(console, arguments)
+            entityDf.reject(err)
+          if err
+            reject('Updating entity of lot failed', err)
+          else
+            if oldEntityId?
+              Entities.remove oldEntityId, (err, result) ->
+                if err
+                  reject('Removing old entity failed', err)
+                else
+                  resolve()
+            else
+              resolve()
+      else
+        entityDf.resolve(oldEntityId)
+      Q.all([entityDf, geomDf]).then (entityId, wkt) ->
+        modifier = {entity: entityId}
+        if lotClass?
+          modifier[classParamId] = lotClass
+        modifier[geomParamId] = wkt
+        Lots.update id, {$set: modifier}, (err, result) ->
+          if err
+            console.error('Updating lot failed', err)
+          else
+            callback(result) if callback
 
     onCancel: (template) ->
       stopEditing()
@@ -121,7 +182,9 @@ Meteor.startup ->
   boolToEnabledClass = (bool) -> if bool then '' else 'disabled'
 
   Form.helpers
-    classes: -> Typologies.toObjects()
+    classes: -> Typologies.classes
+    typologies: -> Typologies.find()
+    typology: -> getTypologyId(@doc)
     classValue: -> @doc?.parameters?.general?.class
     isCreating: -> stateToActiveClass(EditState.CREATING)
     isEditing: -> stateToActiveClass(EditState.EDITING)
