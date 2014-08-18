@@ -23,12 +23,16 @@ instance = null
     atlas = @getInstance()
     atlas.publish('camera/current', args)
 
-  renderEntity: (entity) ->
+  renderEntity: (entityArgs) ->
+    id = entityArgs.id
+    unless id?
+      throw new Error('Rendered entity must have ID.')
     atlas = @getInstance()
-    atlas.publish 'entity/show/bulk', {features: [entity]}
+    atlas.publish 'entity/show/bulk', {features: [entityArgs]}
     entity = @getEntity(id)
     displayMode = Session.get('displayMode')
     entity.setDisplayMode(displayMode);
+    entity
 
   unrenderEntity: (id) ->
     atlas = @getInstance()

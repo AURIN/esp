@@ -129,23 +129,38 @@ TemplateClass.setUpFormPanel = (template, formTemplate, doc, settings) ->
 TemplateClass.onAtlasLoad = (template, atlas) ->
   projectId = Projects.getCurrentId()
   AtlasManager.zoomToProject()
+
+  # Rendering Lots.
   renderLot = (id) -> LotUtils.render(id)
   unrenderLot = (id) -> AtlasManager.unrenderEntity(id)
-  lots = Lots.findForProject(projectId)
-  # Listen to changes to Lots and (un)render them as needed
+  lots = Lots.findForProject()
+  entities = Entities.findForProject()
+  # Listen to changes to Lots and (un)render them as needed.
   lots.observe
     added: (lot) ->
-      console.log('added', arguments)
       renderLot(lot._id)
     changed: (newLot, oldLot) ->
-      console.log('changed', arguments)
       id = newLot._id
       unrenderLot(id)
       renderLot(id)
-    removed: (oldLot) ->
-      console.log('removed', arguments)
-      unrenderLot(oldLot._id)
-  # Listen to selections from atlas
+    removed: (lot) ->
+      unrenderLot(lot._id)
+
+  # Rendering Entities.
+  renderEntity = (id) -> EntityUtils.render(id)
+  unrenderEntity = (id) -> AtlasManager.unrenderEntity(id)
+  # Listen to changes to Entities and Typologies and (un)render them as needed.
+  entities.observe
+    added: (entity) ->
+      renderEntity(entity._id)
+    changed: (newEntity, oldEntity) ->
+      id = newEntity._id
+      unrenderEntity(id)
+      renderEntity(id)
+    removed: (entity) ->
+      unrenderEntity(entity._id)
+
+  # Listen to selections from atlas.
   # TODO(aramk) Support multiple selection.
   # TODO(aramk) Remove duplication.
   $table = getLotTable(template)
@@ -160,6 +175,7 @@ TemplateClass.onAtlasLoad = (template, atlas) ->
     atlas.publish('entity/select', ids: [id])
   $table.on 'deselect', (e, id) ->
     atlas.publish('entity/deselect', ids: [id])
+
   # Re-render when display mode changes.
   firstRun = true
   Deps.autorun (c) ->

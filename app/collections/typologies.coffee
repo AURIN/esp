@@ -449,7 +449,6 @@ EntitySchema = new SimpleSchema
   typology:
     label: 'Typology'
     type: String
-    optional: true
   parameters:
     label: 'Parameters'
     type: EntityParametersSchema
@@ -488,6 +487,7 @@ Entities.setParameter = (model, paramId, value) ->
 
 Entities.findForProject = (projectId) -> findForProject(Entities, projectId)
 
+# TODO(aramk) use a .observe() instead!
 # Remove the entity from the lot when removing the entity.
 oldEntityRemove = Entities.remove
 Entities.remove = (selector, callback) ->
