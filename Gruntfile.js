@@ -33,14 +33,16 @@ module.exports = function(grunt) {
   var ATLAS_PATH = bowerPath('atlas');
   var ATLAS_BUILD_PATH = path.join(ATLAS_PATH, 'dist');
   var ATLAS_BUILD_FILE = path.join(ATLAS_BUILD_PATH, 'atlas.min.js');
-  var ATLAS_RESOURCES_PATH = path.join(ATLAS_PATH, 'assets');
+  var ATLAS_RESOURCES_PATH = path.join(ATLAS_BUILD_PATH, 'resources');
+  var ATLAS_ASSETS_PATH = path.join(ATLAS_PATH, 'assets');
   var ATLAS_CESIUM_PATH = bowerPath('atlas-cesium');
   var ATLAS_CESIUM_BUILD_PATH = path.join(ATLAS_CESIUM_PATH, 'dist');
   var ATLAS_CESIUM_BUILD_FILE = path.join(ATLAS_CESIUM_BUILD_PATH, 'atlas-cesium.min.js');
   var ATLAS_CESIUM_RESOURCES_PATH = path.join(ATLAS_CESIUM_PATH, 'dist', 'cesium');
-  var ATLAS_CESIUM_STYLE_FILE = path.join(ATLAS_CESIUM_BUILD_PATH, 'atlas-cesium.min.css');
-  var ATLAS_ASSETS_PARENT_DIR = 'design';
-  var ATLAS_ASSETS_PARENT_PATH = publicPath(ATLAS_ASSETS_PARENT_DIR);
+  var ATLAS_CESIUM_STYLE_FILE = path.join(ATLAS_CESIUM_BUILD_PATH, 'resources',
+      'atlas-cesium.min.css');
+  var PUBLIC_PARENT_DIR = 'design';
+  var PUBLIC_PARENT_PATH = publicPath(PUBLIC_PARENT_DIR);
 
   var bowerPaths = [ATLAS_PATH, ATLAS_CESIUM_PATH];
   var npmPaths = [ATLAS_PATH, ATLAS_CESIUM_PATH];
@@ -56,15 +58,21 @@ module.exports = function(grunt) {
         files: [
           {
             expand: true,
-            cwd: ATLAS_RESOURCES_PATH,
+            cwd: ATLAS_ASSETS_PATH,
             src: '**/*',
-            dest: path.join(ATLAS_ASSETS_PARENT_PATH, 'atlas', 'assets')
+            dest: path.join(PUBLIC_PARENT_PATH, 'atlas', 'assets')
           },
           {
             expand: true,
             cwd: ATLAS_CESIUM_RESOURCES_PATH,
             src: '**/*',
-            dest: path.join(ATLAS_ASSETS_PARENT_PATH, 'atlas-cesium', 'cesium')
+            dest: path.join(PUBLIC_PARENT_PATH, 'atlas-cesium', 'cesium')
+          },
+          {
+            expand: true,
+            cwd: ATLAS_RESOURCES_PATH,
+            src: '**/*',
+            dest: path.join(PUBLIC_PARENT_PATH, 'atlas', 'resources')
           }
         ]
       }
@@ -133,14 +141,15 @@ module.exports = function(grunt) {
   });
 
   grunt.registerTask('install-mrt', 'Installs Meteorite dependencies.', function() {
+    // TODO(aramk) Run this as a child process since it causes huge CPU lag otherwise.
     shell.exec('cd ' + APP_DIR + ' && mrt install');
   });
 
   grunt.registerTask('fix-atlas-build', 'Fixes the Atlas build.', function(arg1) {
     // Replace the path to the cesium style which is now in the app's public folder.
     writeFile(ATLAS_CESIUM_STYLE_FILE, function(data) {
-      return data.replace(/(@import\s+["'])(cesium)/,
-              '$1' + path.join(ATLAS_ASSETS_PARENT_DIR, 'atlas-cesium') + '/$2');
+      return data.replace(/(@import\s+["'])[^;]*cesium/,
+              '$1' + path.join(PUBLIC_PARENT_DIR, 'atlas-cesium', 'cesium'));
     });
   });
 

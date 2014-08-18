@@ -56,7 +56,10 @@
       idIsNumber = Strings.isNumber(lotId)
       if idIsNumber
         lotId = parseFloat(lotId).toString().replace(/\.\d+$/, '')
-      coords = c3ml.coordinates
+      coords = _.map c3ml.coordinates, (coord) -> {longitude: coord.x, latitude: coord.y}
+      # Ignore lots with no geometry.
+      if coords.length == 0
+        return
       name = lotId ? 'Lot #' + (i + 1)
       classId = Typologies.resolveClassId(entityParams.landuse)
       WKT.fromVertices coords, (wkt) ->
@@ -81,6 +84,8 @@
       className = Lots.getParameter(lot, 'general.class')
       typologyClass = Typologies.classes[className]
       color = typologyClass.color
+      unless Lots.getParameter(lot, 'general.develop')
+        color = tinycolor.lighten(tinycolor(color), 25).toHexString()
       space = lot.parameters.space
       displayMode = Session.get('displayMode')
       converter.toGeoEntityArgs
@@ -90,3 +95,13 @@
         displayMode: displayMode
         color: color
         borderColor: '#000'
+
+  # TODO(aramk) Abstract this rendering for Entities as well.
+  # TODO(aramk) This class has grown too generic - refactor.
+  render: (id) ->
+    entity = AtlasManager.getEntity(id)
+    if entity
+      AtlasManager.showEntity(id)
+    else
+      LotUtils.toGeoEntityArgs(id).then (geoEntity) ->
+        AtlasManager.renderEntity(geoEntity)

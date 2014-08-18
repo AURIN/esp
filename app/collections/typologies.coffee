@@ -85,7 +85,7 @@ areaSchema =
 extendSchema = (orig, changes) ->
   _.extend({}, orig, changes)
 
-categories =
+typologyCategories =
   general:
     items:
     # Generic fields
@@ -153,8 +153,8 @@ categories =
             defaultValue: 250
         custom: ->
           # Abstract these rules into a single string or function for evaluation.
-          lotsize = this.siblingField('lotsize')
-          if lotsize.isSet && lotsize.operator != '$unset' && this.isSet && this.operator != '$unset' && this.value > lotsize.value
+          lotsize = @siblingField('lotsize')
+          if lotsize.isSet && lotsize.operator != '$unset' && @isSet && @operator != '$unset' && @value > lotsize.value
             'Footprint Area must be less than or equal to the Lot Size'
       height: heightSchema
   energy:
@@ -301,7 +301,7 @@ createCategoriesSchema = (args) ->
 ####################################################################################################
 
 @ParametersSchema = createCategoriesSchema
-  categories: categories
+  categories: typologyCategories
 
 TypologySchema = new SimpleSchema
   name:
@@ -333,10 +333,12 @@ Typologies.resolveClassName = (name) ->
   cls = TypologyClasses[id]
   cls?.name
 
-Typologies.toObjects = ->
-  _.map Typologies.classes, (cls, id) -> Setter.merge(Setter.clone(cls), {id: id})
+Typologies.getClassItems = ->
+  _.map Typologies.classes, (cls, id) -> Setter.merge(Setter.clone(cls), {_id: id})
 
 Typologies.getParameter = (model, paramId) ->
+  # Remove "parameters." if prefixed to allow flexible lookup.
+  paramId = paramId.replace(/^parameters\./, '')
   target = model.parameters ?= {}
   segments = paramId.split('.')
   unless segments.length > 0
@@ -433,7 +435,7 @@ Typologies.findForProject = (projectId) -> findForProject(Typologies, projectId)
 ####################################################################################################
 
 # Entities don't need the class parameter since they reference the typology.
-entityCategories = lodash.cloneDeep(categories)
+entityCategories = lodash.cloneDeep(typologyCategories)
 delete entityCategories.general.items.class
 @EntityParametersSchema = createCategoriesSchema
   categories: entityCategories
@@ -486,6 +488,16 @@ Entities.setParameter = (model, paramId, value) ->
 
 Entities.findForProject = (projectId) -> findForProject(Entities, projectId)
 
+# Remove the entity from the lot when removing the entity.
+oldEntityRemove = Entities.remove
+Entities.remove = (selector, callback) ->
+  wrappedCallback = ->
+    lot = Lots.findOne({entity: selector})
+    if lot?
+      Lots.update(lot._id, {$unset: {entity: null}})
+    callback?()
+  oldEntityRemove.call(@, selector, wrappedCallback)
+
 ####################################################################################################
 # LOTS SCHEMA DEFINITION
 ####################################################################################################
@@ -523,6 +535,26 @@ LotSchema = new SimpleSchema
     label: 'Entity'
     type: String
     optional: true
+    index: true
+    custom: ->
+      classParamId = 'parameters.general.class'
+      typologyClassField = @siblingField(classParamId)
+      unless typologyClassField.isSet && this.isSet
+        # TODO(aramk) This isn't guaranteed to work if typology field is not set at same time as
+        # entity. Look up the actual value using an ID.
+        return 'Class and entity must be set together for validation to work.'
+      if typologyClassField.operator == '$unset' && @operator != '$unset'
+        return 'Class must be present if entity is present.'
+      entityId = this.value
+      unless entityId
+        return
+      entityTypology = Typologies.findOne(Entities.findOne(entityId).typology)
+      entityClass = Typologies.getParameter(entityTypology, classParamId)
+      typologyClass = typologyClassField.value
+      if typologyClassField.operator != '$unset' && @operator != '$unset' && typologyClass != entityClass
+        return 'Entity must have the same class as the Lot. Entity has ' + entityClass +
+          ', Lot has ' + typologyClass
+
   parameters:
     label: 'Parameters'
     type: LotParametersSchema

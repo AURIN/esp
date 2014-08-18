@@ -8,18 +8,30 @@
           {{> afQuickField name="name"}}
           {{> afQuickField name="desc"}}
 
-          <!-- TODO(aramk) Hide this eventually. -->
-          {{> afQuickField name="entity"}}
+          <label>Typology</label>
+          {{> dropdown name="typology" items=typologies value=typology allowEmpty=true}}
+          <!--{{#if typology}}-->
+          <!--<div class="ui delete typology button tiny">Delete</div>-->
+          <!--{{/if}}-->
 
           <div class="subtitle">General</div>
           {{> afFieldLabel name="parameters.general.class"}}
-          {{> dropdown name="parameters.general.class" items=classes value=classValue}}
+          {{> dropdown name="parameters.general.class" items=classes value=classValue
+          allowEmpty=true}}
           {{> afQuickField name="parameters.general.develop"}}
 
           <div class="subtitle">Space</div>
-          {{> afQuickField name="parameters.space.geom"}}
+
+          <label>Footprint</label>
+          <div class="ui footprint tiny buttons">
+            <div class="ui toggle create button {{isCreating}} {{canCreate}}">Create</div>
+            <div class="ui toggle edit button {{isEditing}} {{canEdit}}">Edit</div>
+            <div class="ui delete button {{canDelete}}">Delete</div>
+          </div>
+          <!-- TODO(aramk) -->
+          <!--<label>Mesh</label>-->
+
           {{> afQuickField name="parameters.space.height"}}
-          <!--{{> afQuickField name="parameters.space.area"}}-->
 
           <div class="crud buttons">
             <button type="button" class="ui red cancel button">Cancel</button>

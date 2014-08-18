@@ -25,7 +25,10 @@ instance = null
 
   renderEntity: (entity) ->
     atlas = @getInstance()
-    atlas.publish 'entity/show', entity
+    atlas.publish 'entity/show/bulk', {features: [entity]}
+    entity = @getEntity(id)
+    displayMode = Session.get('displayMode')
+    entity.setDisplayMode(displayMode);
 
   unrenderEntity: (id) ->
     atlas = @getInstance()
@@ -55,3 +58,18 @@ instance = null
       df.resolve(items)
     df.promise
 
+  draw: (args) ->
+    atlas = @getInstance()
+    atlas.publish('entity/draw', args);
+
+  stopDraw: (args) ->
+    atlas = @getInstance()
+    atlas.publish('entity/draw/stop', args);
+
+  edit: (args) ->
+    atlas = @getInstance()
+    atlas.publish('edit/enable', args);
+
+  stopEdit: ->
+    atlas = @getInstance()
+    atlas.publish('edit/disable');

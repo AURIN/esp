@@ -31,6 +31,7 @@
     "Dropzonejs": {},
     "collectionFS": {},
     "npm": {},
-    "q": {}
+    "q": {},
+    "tinycolor": {}
   }
 }

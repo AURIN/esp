@@ -73,10 +73,13 @@ TemplateClass.helpers
       console.debug 'onCreate', arguments, collectionName, formName
       TemplateClass.setUpFormPanel templateInstance, Template[formName]
     onEdit: (args) ->
-      collectionName = Collections.getName(args.collection)
+      id = args.id
+      collection = args.collection
+      model = collection.findOne(id)
+      collectionName = Collections.getName(collection)
       formName = collectionToForm[collectionName]
       console.debug 'onEdit', arguments, collectionName, formName
-      TemplateClass.setUpFormPanel templateInstance, Template[formName], args.model
+      TemplateClass.setUpFormPanel templateInstance, Template[formName], model
   displayModes: -> displayModesCollection.find()
   defaultDisplayMode: -> Session.get('displayMode')
 
@@ -126,16 +129,8 @@ TemplateClass.setUpFormPanel = (template, formTemplate, doc, settings) ->
 TemplateClass.onAtlasLoad = (template, atlas) ->
   projectId = Projects.getCurrentId()
   AtlasManager.zoomToProject()
-  # TODO(aramk) Abstract this rendering for Entities as well.
-  renderLot = (id) ->
-    entity = AtlasManager.getEntity(id)
-    if entity
-      AtlasManager.showEntity(id)
-    else
-      LotUtils.toGeoEntityArgs(id).then (geoEntity) ->
-        AtlasManager.renderEntity(geoEntity)
-  unrenderLot = (id) ->
-    AtlasManager.unrenderEntity(id)
+  renderLot = (id) -> LotUtils.render(id)
+  unrenderLot = (id) -> AtlasManager.unrenderEntity(id)
   lots = Lots.findForProject(projectId)
   # Listen to changes to Lots and (un)render them as needed
   lots.observe
