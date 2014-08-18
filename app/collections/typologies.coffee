@@ -488,6 +488,16 @@ Entities.setParameter = (model, paramId, value) ->
 
 Entities.findForProject = (projectId) -> findForProject(Entities, projectId)
 
+# Remove the entity from the lot when removing the entity.
+oldEntityRemove = Entities.remove
+Entities.remove = (selector, callback) ->
+  wrappedCallback = ->
+    lot = Lots.findOne({entity: selector})
+    if lot?
+      Lots.update(lot._id, {$unset: {entity: null}})
+    callback?()
+  oldEntityRemove.call(@, selector, wrappedCallback)
+
 ####################################################################################################
 # LOTS SCHEMA DEFINITION
 ####################################################################################################
@@ -525,6 +535,7 @@ LotSchema = new SimpleSchema
     label: 'Entity'
     type: String
     optional: true
+    index: true
     custom: ->
       classParamId = 'parameters.general.class'
       typologyClassField = @siblingField(classParamId)
