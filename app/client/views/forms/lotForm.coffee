@@ -54,7 +54,7 @@ Meteor.startup ->
       _.each _.values(EditState), (key) -> setEditState(key, false)
       @data ?= {}
       doc = @data.doc
-      #      setFormTypologyId(getTypologyId(@doc))
+      @data.settings._doc = Setter.clone(doc)
       if doc
         id = doc._id
         AtlasManager.showEntity(id)

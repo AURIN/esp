@@ -84,6 +84,8 @@
       className = Lots.getParameter(lot, 'general.class')
       typologyClass = Typologies.classes[className]
       color = typologyClass.color
+      unless Lots.getParameter(lot, 'general.develop')
+        color = tinycolor.lighten(tinycolor(color), 25).toHexString()
       space = lot.parameters.space
       displayMode = Session.get('displayMode')
       converter.toGeoEntityArgs
