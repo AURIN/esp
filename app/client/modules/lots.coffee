@@ -87,7 +87,7 @@
       unless Lots.getParameter(lot, 'general.develop')
         color = tinycolor.lighten(tinycolor(color), 25).toHexString()
       space = lot.parameters.space
-      displayMode = Session.get('displayMode')
+      displayMode = Session.get('lotDisplayMode')
       converter.toGeoEntityArgs
         id: id
         vertices: space.geom
@@ -96,12 +96,16 @@
         color: color
         borderColor: '#000'
 
-  # TODO(aramk) Abstract this rendering for Entities as well.
-  # TODO(aramk) This class has grown too generic - refactor.
+# TODO(aramk) Abstract this rendering for Entities as well.
+# TODO(aramk) This class has grown too generic - refactor.
   render: (id) ->
+    df = Q.defer()
     entity = AtlasManager.getEntity(id)
     if entity
       AtlasManager.showEntity(id)
+      df.resolve(entity)
     else
-      LotUtils.toGeoEntityArgs(id).then (geoEntity) ->
-        AtlasManager.renderEntity(geoEntity)
+      @toGeoEntityArgs(id).then (geoEntity) ->
+        entity = AtlasManager.renderEntity(geoEntity)
+        df.resolve(entity)
+    df.promise

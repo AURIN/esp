@@ -5,6 +5,10 @@
         <div class="title">Entities</div>
         <div class="items entities">
           {{> collectionTable collection="Entities" items=entities settings=tableSettings}}
+          <div class="extra menu">
+            {{> dropdown name="entityDisplayMode" items=displayModes value=defaultEntityDisplayMode
+            labelAttr="label" valueAttr="value" text="Display"}}
+          </div>
         </div>
         <div class="title">Typologies</div>
         <div class="items typologies">
@@ -14,7 +18,7 @@
         <div class="items lots">
           {{> collectionTable collection="Lots" items=lots settings=tableSettings}}
           <div class="extra menu">
-            {{> dropdown name="displayMode" items=displayModes value=defaultDisplayMode
+            {{> dropdown name="lotDisplayMode" items=displayModes value=defaultLotDisplayMode
             labelAttr="label" valueAttr="value" text="Display"}}
           </div>
         </div>

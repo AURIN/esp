@@ -69,6 +69,7 @@ Meteor.startup ->
     'click .footprint-import .submit.button': (e, template) ->
       # TODO(aramk) Abstract this into a simple import widget. Reuse in import form.
       $footprintImport = $(template.find('.footprint-import'))
+      $geomInput = $(template.find('[name="parameters.space.geom"]'))
       fileNode = $('input[type="file"]', $footprintImport)[0]
       files = fileNode.files
       format = $('.dropdown.format', $footprintImport).dropdown('get value')
@@ -90,6 +91,13 @@ Meteor.startup ->
                 console.debug 'uploaded', fileObj
                 fileId = fileObj._id
                 WKT.fromFile(fileId, {format: format}).then (wktResults) ->
+                  wktIds = Object.keys(wktResults)
+                  if wktIds.length == 0
+                    throw new Error('No footprint geometries found in file')
+                  else if wktIds.length > 1
+                    console.warn('More than one footprint geometry found in file - using first.')
+                  wkt = wktResults[wktIds[0]]
+                  $geomInput.val(wkt)
                   console.log('wktResults', wktResults)
               timerHandler = ->
                 progress = fileObj.uploadProgress()

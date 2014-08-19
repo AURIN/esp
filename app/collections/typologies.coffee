@@ -449,7 +449,6 @@ EntitySchema = new SimpleSchema
   typology:
     label: 'Typology'
     type: String
-    optional: true
   parameters:
     label: 'Parameters'
     type: EntityParametersSchema
@@ -488,6 +487,7 @@ Entities.setParameter = (model, paramId, value) ->
 
 Entities.findForProject = (projectId) -> findForProject(Entities, projectId)
 
+# TODO(aramk) use a .observe() instead!
 # Remove the entity from the lot when removing the entity.
 oldEntityRemove = Entities.remove
 Entities.remove = (selector, callback) ->
@@ -545,7 +545,7 @@ LotSchema = new SimpleSchema
         return 'Class and entity must be set together for validation to work.'
       if typologyClassField.operator == '$unset' && @operator != '$unset'
         return 'Class must be present if entity is present.'
-      entityId = this.value
+      entityId = @value
       unless entityId
         return
       entityTypology = Typologies.findOne(Entities.findOne(entityId).typology)
@@ -554,6 +554,10 @@ LotSchema = new SimpleSchema
       if typologyClassField.operator != '$unset' && @operator != '$unset' && typologyClass != entityClass
         return 'Entity must have the same class as the Lot. Entity has ' + entityClass +
           ', Lot has ' + typologyClass
+      developFieldId = 'parameters.general.develop'
+      developField = @siblingField(developFieldId)
+      if developField.operator != '$unset' && @operator != '$unset' && !developField.value
+        return 'Lot which is not for development cannot have Entity assigned.'
 
   parameters:
     label: 'Parameters'

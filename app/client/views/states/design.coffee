@@ -8,7 +8,8 @@ DisplayModes =
   footprint: 'Footprint'
   extrusion: 'Extrusion'
   mesh: 'Mesh'
-Session.setDefault('displayMode', 'footprint')
+Session.setDefault('lotDisplayMode', 'footprint')
+Session.setDefault('entityDisplayMode', 'extrusion')
 
 collectionToForm =
   entities: 'entityForm'
@@ -43,7 +44,7 @@ TemplateClass.rendered = ->
       Log.setLevel('debug')
       console.debug('Creating Atlas...')
       cesiumAtlas = new CesiumAtlas()
-      AtlasManager.setInstance(cesiumAtlas)
+      AtlasManager.setAtlas(cesiumAtlas)
       console.debug('Created Atlas', cesiumAtlas)
       console.debug('Attaching Atlas')
       cesiumAtlas.attachTo(atlasNode)
@@ -52,9 +53,10 @@ TemplateClass.rendered = ->
     )
 
   # Move extra buttons into collection tables
-  $lotsTable = $(@find('.lots .collection-table'))
-  $lotsButtons = $(@find('.lots .extra.menu')).addClass('item')
-  $('.crud.menu', $lotsTable).after($lotsButtons)
+  _.each ['lots', 'entities'], (type) =>
+    $lotsTable = $(@find('.' + type + ' .collection-table'))
+    $lotsButtons = $(@find('.' + type + ' .extra.menu')).addClass('item')
+    $('.crud.menu', $lotsTable).after($lotsButtons)
 
 TemplateClass.helpers
   entities: -> Entities.find({project: Projects.getCurrentId()})
@@ -81,12 +83,16 @@ TemplateClass.helpers
       console.debug 'onEdit', arguments, collectionName, formName
       TemplateClass.setUpFormPanel templateInstance, Template[formName], model
   displayModes: -> displayModesCollection.find()
-  defaultDisplayMode: -> Session.get('displayMode')
+  defaultEntityDisplayMode: -> Session.get('entityDisplayMode')
+  defaultLotDisplayMode: -> Session.get('lotDisplayMode')
 
 TemplateClass.events
-  'change .displayMode.dropdown': (e) ->
+  'change .entityDisplayMode.dropdown': (e) ->
     displayMode = $(e.currentTarget).dropdown('get value')
-    Session.set('displayMode', displayMode)
+    Session.set('entityDisplayMode', displayMode)
+  'change .lotDisplayMode.dropdown': (e) ->
+    displayMode = $(e.currentTarget).dropdown('get value')
+    Session.set('lotDisplayMode', displayMode)
 
 getSidebar = (template) ->
   $(template.find('.design.container > .sidebar'))
@@ -129,23 +135,43 @@ TemplateClass.setUpFormPanel = (template, formTemplate, doc, settings) ->
 TemplateClass.onAtlasLoad = (template, atlas) ->
   projectId = Projects.getCurrentId()
   AtlasManager.zoomToProject()
+
+  # Rendering Lots.
   renderLot = (id) -> LotUtils.render(id)
   unrenderLot = (id) -> AtlasManager.unrenderEntity(id)
-  lots = Lots.findForProject(projectId)
-  # Listen to changes to Lots and (un)render them as needed
+  lots = Lots.findForProject()
+  entities = Entities.findForProject()
+  # Listen to changes to Lots and (un)render them as needed.
   lots.observe
     added: (lot) ->
-      console.log('added', arguments)
       renderLot(lot._id)
     changed: (newLot, oldLot) ->
-      console.log('changed', arguments)
       id = newLot._id
+      oldEntityId = oldLot.entity
+      newEntityId = newLot.entity
       unrenderLot(id)
       renderLot(id)
-    removed: (oldLot) ->
-      console.log('removed', arguments)
-      unrenderLot(oldLot._id)
-  # Listen to selections from atlas
+      unrenderEntity(oldEntityId)
+      if newEntityId?
+        renderEntity(newEntityId)
+    removed: (lot) ->
+      unrenderLot(lot._id)
+
+  # Rendering Entities.
+  renderEntity = (id) -> EntityUtils.render(id)
+  unrenderEntity = (id) -> AtlasManager.unrenderEntity(id)
+  # Listen to changes to Entities and Typologies and (un)render them as needed.
+  entities.observe
+    added: (entity) ->
+      renderEntity(entity._id)
+    changed: (newEntity, oldEntity) ->
+      id = newEntity._id
+      unrenderEntity(id)
+      renderEntity(id)
+    removed: (entity) ->
+      unrenderEntity(entity._id)
+
+  # Listen to selections from atlas.
   # TODO(aramk) Support multiple selection.
   # TODO(aramk) Remove duplication.
   $table = getLotTable(template)
@@ -160,19 +186,24 @@ TemplateClass.onAtlasLoad = (template, atlas) ->
     atlas.publish('entity/select', ids: [id])
   $table.on 'deselect', (e, id) ->
     atlas.publish('entity/deselect', ids: [id])
+
   # Re-render when display mode changes.
-  firstRun = true
-  Deps.autorun (c) ->
-    # Register a dependency on display mode changes.
-    displayMode = Session.get('displayMode')
-    if firstRun
-      # Don't run the first time, since we already render through the observe() callback.
-      firstRun = false
-      return
-    if projectId != Projects.getCurrentId()
-      # Don't handle updates if changing project.
-      c.stop()
-      return
-    console.log('displayMode', displayMode)
-    _.each AtlasManager.getFeatures(), (entity) ->
-      entity.setDisplayMode(displayMode);
+  reactiveToDisplayMode = (collection, sessionVarName) ->
+    firstRun = true
+    Deps.autorun (c) ->
+      # Register a dependency on display mode changes.
+      displayMode = Session.get(sessionVarName)
+      if firstRun
+        # Don't run the first time, since we already render through the observe() callback.
+        firstRun = false
+        return
+      if projectId != Projects.getCurrentId()
+        # Don't handle updates if changing project.
+        c.stop()
+        return
+      ids = _.map collection.find().fetch(), (doc) -> doc._id
+      _.each AtlasManager.getEntitiesByIds(ids), (entity) ->
+        entity.setDisplayMode(displayMode);
+
+  reactiveToDisplayMode(Lots, 'lotDisplayMode')
+  reactiveToDisplayMode(Entities, 'entityDisplayMode')
