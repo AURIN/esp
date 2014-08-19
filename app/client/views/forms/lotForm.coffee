@@ -62,6 +62,7 @@ Meteor.startup ->
         if currentGeoEntity?
           setEditState(EditState.CREATED, true)
           currentGeoEntity.onSelect()
+      Session.set('_forDev', if doc then Lots.getParameter(doc, 'general.develop') else true)
 
     onRender: -> $(@findAll('.ui.toggle.button')).state()
 
@@ -90,7 +91,11 @@ Meteor.startup ->
       # Handle saving entity.
       oldEntityId = doc.entity
       oldTypologyId = getTypologyId(doc)
-      newTypologyId = Template.dropdown.getValue(getTypologyDropdown(template))
+      $typologyDropdown = getTypologyDropdown(template)
+      if $typologyDropdown.length > 0
+        newTypologyId = Template.dropdown.getValue($typologyDropdown)
+      else
+        newTypologyId = null
       classParamId = 'parameters.general.class'
       developParamId = 'parameters.general.develop'
       geomParamId = 'parameters.space.geom'
@@ -214,6 +219,10 @@ Meteor.startup ->
       setEditState(EditState.CREATED, false)
       setEditState(EditState.CHANGED, true)
 
+    'change [name="parameters.general.develop"]': (e, template) ->
+      shouldEdit = $(e.currentTarget).is(':checked')
+      Session.set('_forDev', shouldEdit)
+
   #    'click .typology.delete.button': (e, template) ->
   #      Template.dropdown.setValue(getTypologyDropdown(template), null)
 
@@ -228,6 +237,7 @@ Meteor.startup ->
   Form.helpers
     classes: -> Typologies.getClassItems()
     typologies: -> Typologies.findByProject().fetch()
+    forDev: -> Session.get('_forDev')
     typology: -> getTypologyId(@doc) #getFormTypologyId()
     classValue: -> @doc?.parameters?.general?.class
     isCreating: -> stateToActiveClass(EditState.CREATING)

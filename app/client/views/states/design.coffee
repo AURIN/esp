@@ -60,6 +60,15 @@ TemplateClass.rendered = ->
     $lotsButtons = $(@find('.' + type + ' .extra.menu')).addClass('item')
     $('.crud.menu', $lotsTable).after($lotsButtons)
 
+onEditFormPanel = (args) ->
+  id = args.id
+  collection = args.collection
+  model = collection.findOne(id)
+  collectionName = Collections.getName(collection)
+  formName = collectionToForm[collectionName]
+  console.debug 'onEdit', arguments, collectionName, formName
+  TemplateClass.setUpFormPanel templateInstance, Template[formName], model
+
 TemplateClass.helpers
   entities: -> Entities.find({project: Projects.getCurrentId()})
   lots: -> Lots.find({project: Projects.getCurrentId()})
@@ -76,14 +85,7 @@ TemplateClass.helpers
       formName = collectionToForm[collectionName]
       console.debug 'onCreate', arguments, collectionName, formName
       TemplateClass.setUpFormPanel templateInstance, Template[formName]
-    onEdit: (args) ->
-      id = args.id
-      collection = args.collection
-      model = collection.findOne(id)
-      collectionName = Collections.getName(collection)
-      formName = collectionToForm[collectionName]
-      console.debug 'onEdit', arguments, collectionName, formName
-      TemplateClass.setUpFormPanel templateInstance, Template[formName], model
+    onEdit: onEditFormPanel
   displayModes: -> displayModesCollection.find(value: {$not: '_nonDevExtrusion'})
   lotDisplayModes: -> displayModesCollection.find(value: {$not: 'mesh'})
   defaultEntityDisplayMode: -> Session.get('entityDisplayMode')
@@ -174,22 +176,6 @@ TemplateClass.onAtlasLoad = (template, atlas) ->
     removed: (entity) ->
       unrenderEntity(entity._id)
 
-  # Listen to selections from atlas.
-  # TODO(aramk) Support multiple selection.
-  # TODO(aramk) Remove duplication.
-  $table = getLotTable(template)
-  tableId = Template.collectionTable.getDomTableId($table)
-  atlas.subscribe 'entity/select', (args) ->
-    id = args.ids[0]
-    Template.collectionTable.setSelectedId(tableId, id)
-  atlas.subscribe 'entity/deselect', (args) ->
-    Template.collectionTable.deselect(tableId)
-  # Listen to selections in the table
-  $table.on 'select', (e, id) ->
-    atlas.publish('entity/select', ids: [id])
-  $table.on 'deselect', (e, id) ->
-    atlas.publish('entity/deselect', ids: [id])
-
   # Re-render when display mode changes.
   reactiveToDisplayMode = (collection, sessionVarName, getDisplayMode) ->
     firstRun = true
@@ -211,3 +197,29 @@ TemplateClass.onAtlasLoad = (template, atlas) ->
 
   reactiveToDisplayMode(Lots, 'lotDisplayMode', LotUtils.getDisplayMode)
   reactiveToDisplayMode(Entities, 'entityDisplayMode')
+
+  # Listen to selections from Atlas.
+  # TODO(aramk) Support multiple selection.
+  # TODO(aramk) Remove duplication.
+  $table = getLotTable(template)
+  tableId = Template.collectionTable.getDomTableId($table)
+  atlas.subscribe 'entity/select', (args) ->
+    id = args.ids[0]
+    Template.collectionTable.setSelectedId(tableId, id)
+  atlas.subscribe 'entity/deselect', (args) ->
+    Template.collectionTable.deselect(tableId)
+  # Listen to selections in the table
+  $table.on 'select', (e, id) ->
+    atlas.publish('entity/select', ids: [id])
+  $table.on 'deselect', (e, id) ->
+    atlas.publish('entity/deselect', ids: [id])
+
+  # Listen to double clicks from Atlas.
+  atlas.subscribe 'entity/dblclick', (args) ->
+    collection = Entities
+    id = args.id
+    unless collection.findOne(id)
+      collection = Lots
+    unless collection.findOne(id)
+      throw new Error('Cannot find model with ID ' + id + ' in a collection.')
+    onEditFormPanel id: id, collection: collection

@@ -32,6 +32,12 @@
         args = arguments
         console.debug 'onSuccess', args, @
         AutoForm.resetForm(name)
+        # TODO(aramk) For some reason, template.data.doc is sometimes modified (_id and other fields
+        # are missing), so we store the doc elsewhere and provide it here.
+        data = template.data
+        _doc = data.settings?._doc
+        if _doc
+          data.doc = _doc
         result = formArgs.onSuccess?.apply(@, args)
         callback = -> template.data?.settings?.onSuccess?.apply(@, args)
         deferCallback(result, callback)

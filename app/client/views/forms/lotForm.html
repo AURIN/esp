@@ -8,11 +8,10 @@
           {{> afQuickField name="name"}}
           {{> afQuickField name="desc"}}
 
+          {{#if forDev}}
           <label>Typology</label>
           {{> dropdown name="typology" items=typologies value=typology allowEmpty=true}}
-          <!--{{#if typology}}-->
-          <!--<div class="ui delete typology button tiny">Delete</div>-->
-          <!--{{/if}}-->
+          {{/if}}
 
           <div class="subtitle">General</div>
           {{> afFieldLabel name="parameters.general.class"}}
@@ -23,6 +22,7 @@
           <div class="subtitle">Space</div>
 
           <label>Footprint</label>
+
           <div class="ui footprint tiny buttons">
             <div class="ui toggle create button {{isCreating}} {{canCreate}}">Create</div>
             <div class="ui toggle edit button {{isEditing}} {{canEdit}}">Edit</div>
