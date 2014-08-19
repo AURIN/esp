@@ -87,7 +87,7 @@
       unless Lots.getParameter(lot, 'general.develop')
         color = tinycolor.lighten(tinycolor(color), 25).toHexString()
       space = lot.parameters.space
-      displayMode = Session.get('displayMode')
+      displayMode = Session.get('lotDisplayMode')
       converter.toGeoEntityArgs
         id: id
         vertices: space.geom

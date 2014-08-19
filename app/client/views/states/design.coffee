@@ -8,7 +8,8 @@ DisplayModes =
   footprint: 'Footprint'
   extrusion: 'Extrusion'
   mesh: 'Mesh'
-Session.setDefault('displayMode', 'footprint')
+Session.setDefault('lotDisplayMode', 'footprint')
+Session.setDefault('entityDisplayMode', 'extrusion')
 
 collectionToForm =
   entities: 'entityForm'
@@ -52,9 +53,10 @@ TemplateClass.rendered = ->
     )
 
   # Move extra buttons into collection tables
-  $lotsTable = $(@find('.lots .collection-table'))
-  $lotsButtons = $(@find('.lots .extra.menu')).addClass('item')
-  $('.crud.menu', $lotsTable).after($lotsButtons)
+  _.each ['lots', 'entities'], (type) =>
+    $lotsTable = $(@find('.' + type + ' .collection-table'))
+    $lotsButtons = $(@find('.' + type + ' .extra.menu')).addClass('item')
+    $('.crud.menu', $lotsTable).after($lotsButtons)
 
 TemplateClass.helpers
   entities: -> Entities.find({project: Projects.getCurrentId()})
@@ -81,12 +83,16 @@ TemplateClass.helpers
       console.debug 'onEdit', arguments, collectionName, formName
       TemplateClass.setUpFormPanel templateInstance, Template[formName], model
   displayModes: -> displayModesCollection.find()
-  defaultDisplayMode: -> Session.get('displayMode')
+  defaultEntityDisplayMode: -> Session.get('entityDisplayMode')
+  defaultLotDisplayMode: -> Session.get('lotDisplayMode')
 
 TemplateClass.events
-  'change .displayMode.dropdown': (e) ->
+  'change .entityDisplayMode.dropdown': (e) ->
     displayMode = $(e.currentTarget).dropdown('get value')
-    Session.set('displayMode', displayMode)
+    Session.set('entityDisplayMode', displayMode)
+  'change .lotDisplayMode.dropdown': (e) ->
+    displayMode = $(e.currentTarget).dropdown('get value')
+    Session.set('lotDisplayMode', displayMode)
 
 getSidebar = (template) ->
   $(template.find('.design.container > .sidebar'))
@@ -141,8 +147,13 @@ TemplateClass.onAtlasLoad = (template, atlas) ->
       renderLot(lot._id)
     changed: (newLot, oldLot) ->
       id = newLot._id
+      oldEntityId = oldLot.entity
+      newEntityId = newLot.entity
       unrenderLot(id)
       renderLot(id)
+      unrenderEntity(oldEntityId)
+      if newEntityId?
+        renderEntity(newEntityId)
     removed: (lot) ->
       unrenderLot(lot._id)
 
@@ -177,18 +188,22 @@ TemplateClass.onAtlasLoad = (template, atlas) ->
     atlas.publish('entity/deselect', ids: [id])
 
   # Re-render when display mode changes.
-  firstRun = true
-  Deps.autorun (c) ->
-    # Register a dependency on display mode changes.
-    displayMode = Session.get('displayMode')
-    if firstRun
-      # Don't run the first time, since we already render through the observe() callback.
-      firstRun = false
-      return
-    if projectId != Projects.getCurrentId()
-      # Don't handle updates if changing project.
-      c.stop()
-      return
-    console.log('displayMode', displayMode)
-    _.each AtlasManager.getFeatures(), (entity) ->
-      entity.setDisplayMode(displayMode);
+  reactiveToDisplayMode = (collection, sessionVarName) ->
+    firstRun = true
+    Deps.autorun (c) ->
+      # Register a dependency on display mode changes.
+      displayMode = Session.get(sessionVarName)
+      if firstRun
+        # Don't run the first time, since we already render through the observe() callback.
+        firstRun = false
+        return
+      if projectId != Projects.getCurrentId()
+        # Don't handle updates if changing project.
+        c.stop()
+        return
+      ids = _.map collection.find().fetch(), (doc) -> doc._id
+      _.each AtlasManager.getEntitiesByIds(ids), (entity) ->
+        entity.setDisplayMode(displayMode);
+
+  reactiveToDisplayMode(Lots, 'lotDisplayMode')
+  reactiveToDisplayMode(Entities, 'entityDisplayMode')

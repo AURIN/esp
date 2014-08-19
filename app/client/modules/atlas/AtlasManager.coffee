@@ -27,8 +27,6 @@ atlas = null
       throw new Error('Rendered entity must have ID.')
     atlas.publish 'entity/show/bulk', {features: [entityArgs]}
     entity = @getEntity(id)
-    displayMode = Session.get('displayMode')
-    entity.setDisplayMode(displayMode);
     entity
 
   unrenderEntity: (id) -> atlas.publish 'entity/remove', {id: id}
@@ -36,6 +34,8 @@ atlas = null
   getEntity: (id) -> atlas._managers.entity.getById(id)
 
   getFeatures: -> atlas._managers.entity.getFeatures()
+
+  getEntitiesByIds: (ids) -> atlas._managers.entity.getByIds(ids)
 
   showEntity: (id) -> atlas.publish 'entity/show', {id: id}
 

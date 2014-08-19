@@ -92,8 +92,10 @@ Meteor.startup ->
       oldTypologyId = getTypologyId(doc)
       newTypologyId = Template.dropdown.getValue(getTypologyDropdown(template))
       classParamId = 'parameters.general.class'
+      developParamId = 'parameters.general.develop'
       geomParamId = 'parameters.space.geom'
       lotClass = Lots.getParameter(doc, classParamId)
+      isForDevelopment = Lots.getParameter(doc, developParamId)
 
       removeOldEntity = ->
         df = Q.defer()
@@ -142,7 +144,9 @@ Meteor.startup ->
         wkt = results[1]
         modifier = {}
         modifier.entity = entityId
+        # These are necessary to ensure validation has all fields available.
         modifier[classParamId] = lotClass
+        modifier[developParamId] = isForDevelopment
         if wkt?
           modifier[geomParamId] = wkt
         Lots.update id, {$set: modifier}, (err, result) ->

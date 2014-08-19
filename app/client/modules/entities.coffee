@@ -8,7 +8,7 @@
       typology = Typologies.findOne(entity.typology)
       space = entity.parameters.space
       typologySpace = typology.parameters.space
-      displayMode = Session.get('displayMode')
+      displayMode = Session.get('entityDisplayMode')
       converter.toGeoEntityArgs
         id: id
         vertices: space.geom ? typologySpace.geom
