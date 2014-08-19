@@ -87,6 +87,7 @@ areaSchema =
   type: Number
   desc: 'Area of the land parcel.'
   decimal: true
+  decimalPoints: 2
   units: Units.m2
   calc: (param, paramId, model) -> calcArea(model._id)
 
@@ -134,11 +135,6 @@ typologyCategories =
     # TODO(aramk) Need to discuss how we handle this wrt the lot.
       lotsize: extendSchema(areaSchema, {
         label: 'Lot Size'
-#        classes:
-#          RESIDENTIAL:
-#            defaultValue: 500
-#          COMMERCIAL:
-#            defaultValue: 300
         calc: (param, paramId, model) ->
           # If the model is a typology, it doesn't have a lot yet, so no lotsize.
           id = model._id
@@ -149,31 +145,15 @@ typologyCategories =
             throw new Error('Lot not found for entity.')
           calcArea(lot._id)
       })
-      extland:
+      extland: extendSchema(areaSchema, {
         label: 'Extra Land'
-        type: Number
-        decimal: true
         desc: 'Area of the land parcel not covered by the structural improvement.'
-        units: Units.m2
         calc: '$space.lotsize - $space.fpa'
-      fpa:
-      # TODO(aramk) This should eventually be an output parameter calculated from AREA(geom).
+      })
+      fpa: extendSchema(areaSchema, {
         label: 'Footprint Area'
-        type: Number
-        decimal: true
         desc: 'Area of the building footprint.'
-        units: Units.m2
-        calc: areaSchema.calc
-#        classes:
-#          RESIDENTIAL:
-#            defaultValue: 133.6
-#          COMMERCIAL:
-#            defaultValue: 250
-#        custom: ->
-#          # Abstract these rules into a single string or function for evaluation.
-#          lotsize = @siblingField('lotsize')
-#          if lotsize.isSet && lotsize.operator != '$unset' && @isSet && @operator != '$unset' && @value > lotsize.value
-#            'Footprint Area must be less than or equal to the Lot Size'
+      })
       height: heightSchema
   energy:
     items:

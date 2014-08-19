@@ -4,6 +4,7 @@ SimpleSchema.extendOptions
 # TODO(aramk) These are added globally, not just for typologies.
   desc: Match.Optional(String)
   units: Match.Optional(String)
+  decimalPoints: Match.Optional(Number)
 # TODO(aramk) There's no need to use serialized formulas, since functions are first-class objects
 # and we don't need to persist or change them outside of source code.
 

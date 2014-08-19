@@ -9,11 +9,6 @@ getWKT = (callback) ->
       wktString = wkt.wktFromVertices(vertices)
       callback(wktString)
 
-#  getArea: (wkt, callback) ->
-#    getWKT (wkt) ->
-#      geometry = wkt.openLayersGeometryFromWKT(wkt)
-#      callback(geometry.getArea())
-
   fromFile: (fileId, args) ->
     df = Q.defer()
     Assets.fromFile(fileId, args).then(

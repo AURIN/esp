@@ -66,6 +66,7 @@
       paramSchema = ParametersSchema.schema(param)
       label = paramSchema.label ? Strings.toTitleCase(param)
       units = paramSchema.units
+      decimalPoints = paramSchema.decimalPoints ? 3
       $field = $('<div class="field"></div>')
       $label = $('<div class="label"><div class="content">' + label + '</div></div>')
       if units?
@@ -73,9 +74,8 @@
       value = data[field.id] ? 'N/A'
       if Number.isNaN(value) or !value?
         value = '0'
-      else
-        if field.type == Number
-          value = formatter.round(value, {minSigFigs: 0, maxSigFigs: 3})
+      else if paramSchema.type == Number
+          value = formatter.round(value, {minSigFigs: 0, maxSigFigs: decimalPoints})
       $value = $('<div class="value">' + value + '</div>')
       $field.append($label, $value)
       $field
