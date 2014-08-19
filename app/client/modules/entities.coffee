@@ -30,6 +30,7 @@
         # If the entity was rendered using the Typology geometry, centre it based on the Lot.
         lot = Lots.findByEntity(id)
         unless lot
+          AtlasManager.unrenderEntity(id)
           throw new Error('Rendered entity does not have an accompanying lot.')
         LotUtils.render(lot._id).then (lotEntity) ->
           centroidDiff = lotEntity.getCentroid().subtract(entity.getCentroid())
