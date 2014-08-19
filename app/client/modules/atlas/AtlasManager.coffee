@@ -1,13 +1,12 @@
-instance = null
+atlas = null
 
 @AtlasManager =
 
-  getInstance: -> instance
+  getAtlas: -> atlas
 
-  setInstance: (_instance) -> instance = _instance
+  setAtlas: (_instance) -> atlas = _instance
 
   zoomToProject: ->
-    atlas = @getInstance()
     projectId = Projects.getCurrentId()
     location = Projects.getLocationCoords(projectId)
     if location.latitude? and location.longitude?
@@ -20,39 +19,27 @@ instance = null
       atlas.publish 'camera/zoomTo', {address: address}
 
   getCurrentCamera: (args) ->
-    atlas = @getInstance()
     atlas.publish('camera/current', args)
 
   renderEntity: (entityArgs) ->
     id = entityArgs.id
     unless id?
       throw new Error('Rendered entity must have ID.')
-    atlas = @getInstance()
     atlas.publish 'entity/show/bulk', {features: [entityArgs]}
     entity = @getEntity(id)
     displayMode = Session.get('displayMode')
     entity.setDisplayMode(displayMode);
     entity
 
-  unrenderEntity: (id) ->
-    atlas = @getInstance()
-    atlas.publish 'entity/remove', {id: id}
+  unrenderEntity: (id) -> atlas.publish 'entity/remove', {id: id}
 
-  getEntity: (id) ->
-    atlas = @getInstance()
-    atlas._managers.entity.getById(id)
+  getEntity: (id) -> atlas._managers.entity.getById(id)
 
-  getFeatures: ->
-    atlas = @getInstance()
-    atlas._managers.entity.getFeatures()
+  getFeatures: -> atlas._managers.entity.getFeatures()
 
-  showEntity: (id) ->
-    atlas = @getInstance()
-    atlas.publish 'entity/show', {id: id}
+  showEntity: (id) -> atlas.publish 'entity/show', {id: id}
 
-  hideEntity: (id) ->
-    atlas = @getInstance()
-    atlas.publish 'entity/hide', {id: id}
+  hideEntity: (id) -> atlas.publish 'entity/hide', {id: id}
 
   getDisplayModes: ->
     df = Q.defer()
@@ -62,18 +49,10 @@ instance = null
       df.resolve(items)
     df.promise
 
-  draw: (args) ->
-    atlas = @getInstance()
-    atlas.publish('entity/draw', args);
+  draw: (args) -> atlas.publish('entity/draw', args);
 
-  stopDraw: (args) ->
-    atlas = @getInstance()
-    atlas.publish('entity/draw/stop', args);
+  stopDraw: (args) -> atlas.publish('entity/draw/stop', args);
 
-  edit: (args) ->
-    atlas = @getInstance()
-    atlas.publish('edit/enable', args);
+  edit: (args) -> atlas.publish('edit/enable', args);
 
-  stopEdit: ->
-    atlas = @getInstance()
-    atlas.publish('edit/disable');
+  stopEdit: -> atlas.publish('edit/disable');

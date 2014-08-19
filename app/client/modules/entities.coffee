@@ -13,6 +13,7 @@
         id: id
         vertices: space.geom ? typologySpace.geom
         height: space.height
+        zIndex: 1
         displayMode: displayMode
         color: '#666'
         borderColor: '#000'
@@ -30,7 +31,6 @@
         lot = Lots.findOne({entity: id})
         unless lot
           throw new Error('Rendered entity does not have an accompanying lot.')
-#        lotGeom = Lots.getParameter(lot, 'space.geom')
         LotUtils.render(lot._id).then (lotEntity) ->
           centroidDiff = lotEntity.getCentroid().subtract(entity.getCentroid())
           entity.translate(centroidDiff)

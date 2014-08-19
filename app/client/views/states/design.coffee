@@ -43,7 +43,7 @@ TemplateClass.rendered = ->
       Log.setLevel('debug')
       console.debug('Creating Atlas...')
       cesiumAtlas = new CesiumAtlas()
-      AtlasManager.setInstance(cesiumAtlas)
+      AtlasManager.setAtlas(cesiumAtlas)
       console.debug('Created Atlas', cesiumAtlas)
       console.debug('Attaching Atlas')
       cesiumAtlas.attachTo(atlasNode)

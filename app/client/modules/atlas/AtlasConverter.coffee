@@ -11,16 +11,18 @@ class @AtlasConverter
     height = args.height ? 20
     width = args.width ? 10
     elevation = args.elevation ? 0
+    zIndex = args.zIndex
     color = args.color
     borderColour = args.borderColor
     # TODO(aramk) Enable opacity in atlas-cesium.
     opacity = args.opacity
     borderOpacity = args.borderOpacity ? 1
     geometry =
-      vertices: vertices,
-      elevation: elevation,
-      height: height,
+      vertices: vertices
+      elevation: elevation
+      height: height
       width: width
+      zIndex: zIndex
 
     # Vertices
     wkt = WKT.getInstance()
@@ -55,7 +57,7 @@ class @AtlasConverter
 
 _.extend(AtlasConverter, {
 
-  _instance: null,
+  _instance: null
 
   ready: ->
     df = Q.defer()
