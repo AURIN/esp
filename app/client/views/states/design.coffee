@@ -4,10 +4,12 @@ templateInstance = null
 TemplateClass = Template.design
 
 displayModesCollection = null
-DisplayModes =
+#_nonDevExtrusionModeId = '_nonDevExtrusion'
+@DisplayModes =
   footprint: 'Footprint'
   extrusion: 'Extrusion'
   mesh: 'Mesh'
+  _nonDevExtrusion: 'Extrude Non-Develop'
 Session.setDefault('lotDisplayMode', 'footprint')
 Session.setDefault('entityDisplayMode', 'extrusion')
 
@@ -82,7 +84,8 @@ TemplateClass.helpers
       formName = collectionToForm[collectionName]
       console.debug 'onEdit', arguments, collectionName, formName
       TemplateClass.setUpFormPanel templateInstance, Template[formName], model
-  displayModes: -> displayModesCollection.find()
+  displayModes: -> displayModesCollection.find(value: {$not: '_nonDevExtrusion'})
+  lotDisplayModes: -> displayModesCollection.find(value: {$not: 'mesh'})
   defaultEntityDisplayMode: -> Session.get('entityDisplayMode')
   defaultLotDisplayMode: -> Session.get('lotDisplayMode')
 
@@ -188,11 +191,12 @@ TemplateClass.onAtlasLoad = (template, atlas) ->
     atlas.publish('entity/deselect', ids: [id])
 
   # Re-render when display mode changes.
-  reactiveToDisplayMode = (collection, sessionVarName) ->
+  reactiveToDisplayMode = (collection, sessionVarName, getDisplayMode) ->
     firstRun = true
     Deps.autorun (c) ->
+      Session.get(sessionVarName)
       # Register a dependency on display mode changes.
-      displayMode = Session.get(sessionVarName)
+      getDisplayMode ?= -> Session.get('entityDisplayMode')
       if firstRun
         # Don't run the first time, since we already render through the observe() callback.
         firstRun = false
@@ -203,7 +207,7 @@ TemplateClass.onAtlasLoad = (template, atlas) ->
         return
       ids = _.map collection.find().fetch(), (doc) -> doc._id
       _.each AtlasManager.getEntitiesByIds(ids), (entity) ->
-        entity.setDisplayMode(displayMode);
+        entity.setDisplayMode(getDisplayMode(entity.getId()));
 
-  reactiveToDisplayMode(Lots, 'lotDisplayMode')
+  reactiveToDisplayMode(Lots, 'lotDisplayMode', LotUtils.getDisplayMode)
   reactiveToDisplayMode(Entities, 'entityDisplayMode')

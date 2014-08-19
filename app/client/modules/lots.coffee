@@ -79,15 +79,16 @@
     df.promise
 
   toGeoEntityArgs: (id) ->
-    AtlasConverter.getInstance().then (converter) ->
+    AtlasConverter.getInstance().then (converter) =>
       lot = Lots.findOne(id)
       className = Lots.getParameter(lot, 'general.class')
+      isForDevelopment = Lots.getParameter(lot, 'general.develop')
       typologyClass = Typologies.classes[className]
       color = typologyClass.color
-      unless Lots.getParameter(lot, 'general.develop')
+      unless isForDevelopment
         color = tinycolor.lighten(tinycolor(color), 25).toHexString()
       space = lot.parameters.space
-      displayMode = Session.get('lotDisplayMode')
+      displayMode = @getDisplayMode(id)
       converter.toGeoEntityArgs
         id: id
         vertices: space.geom
@@ -95,6 +96,15 @@
         displayMode: displayMode
         color: color
         borderColor: '#000'
+
+  getDisplayMode: (id) ->
+    lot = Lots.findOne(id)
+    isForDevelopment = Lots.getParameter(lot, 'general.develop')
+    displayMode = Session.get('lotDisplayMode')
+    if displayMode == '_nonDevExtrusion'
+      if isForDevelopment then 'footprint' else 'extrusion'
+    else
+      displayMode
 
 # TODO(aramk) Abstract this rendering for Entities as well.
 # TODO(aramk) This class has grown too generic - refactor.
