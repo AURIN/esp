@@ -11,22 +11,44 @@ class @EvaluationEngine
     changes = {}
     schemas = @getOutputParamSchemas(args.paramIds)
     console.log('param schemas', schemas)
-    paramGetter = (name) ->
-      value = Entities.getParameter(model, name)
-      unless value?
-        project = Projects.getCurrent()
-        value = Entities.getParameter(project, name)
+
+    # Go through output parameters and calculate them recursively.
+
+    getSchema = (paramId) -> schemas[ParamUtils.addPrefix(paramId)]
+
+    getValueOrCalc = (paramId) ->
+      schema = getSchema(paramId)
+      if schema?
+        # Only output fields are in this schema object.
+        value = calcValue(paramId)
+      else
+        value = getValue(paramId)
       value
+
+    calcValue = (paramId) =>
+      schema = getSchema(paramId)
+      calc = schema.calc
+      if Types.isString(calc)
+        calc = @buildEvalFunc(expr: calc)
+      if Types.isFunction(calc)
+        calc(getValueOrCalc, paramId, model, schema)
+      else
+        throw new Error('Invalid calculation property - must be function, is of type ' +
+          Types.getTypeOf(calc))
+
+    getValue = (paramId) ->
+      value = Entities.getParameter(model, paramId)
+      unless value?
+        # Lookup global value
+        project = Projects.getCurrent()
+        value = Entities.getParameter(project, paramId)
+      value
+
     for paramId, schema of schemas
+      # TODO(aramk) Detect cycles and throw exceptions to prevent infinite loops.
+      # TODO(aramk) Avoid re-calculating values.
       try
-        calc = schema.calc
-        if Types.isString(calc)
-          calc = @buildEvalFunc(expr: calc)
-        if Types.isFunction(calc)
-          result = calc(paramGetter, paramId, model, schema)
-        else
-          throw new Error('Invalid calculation property - must be function, is of type ' +
-            Types.getTypeOf(calc))
+        result = calcValue(paramId)
       catch e
         console.error('Failed to evaluate parameter', paramId, e)
       if result?
@@ -41,7 +63,11 @@ class @EvaluationEngine
     new Function('param', funcBody)
 
   getOutputParamSchemas: (paramIds) ->
-    paramIds ?= @schema._schemaKeys
+    if paramIds
+      _.each paramIds, (id, i) ->
+        paramIds[i] = ParamUtils.addPrefix(id)
+    else
+      paramIds = @schema._schemaKeys
     schemas = {}
     for key in paramIds
       schema = @getParamSchema(key)

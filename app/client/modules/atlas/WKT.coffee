@@ -9,10 +9,10 @@ getWKT = (callback) ->
       wktString = wkt.wktFromVertices(vertices)
       callback(wktString)
 
-  swapCoords: (coords, callback) ->
-    getWKT (wkt) ->
-      wkt.swapCoords(coords)
-      callback(coords)
+#  getArea: (wkt, callback) ->
+#    getWKT (wkt) ->
+#      geometry = wkt.openLayersGeometryFromWKT(wkt)
+#      callback(geometry.getArea())
 
   fromFile: (fileId, args) ->
     df = Q.defer()

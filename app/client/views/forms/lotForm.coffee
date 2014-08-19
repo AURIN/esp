@@ -227,7 +227,7 @@ Meteor.startup ->
   # TODO(aramk) Abstract dropdown to allow null selection automatically.
   Form.helpers
     classes: -> Typologies.getClassItems()
-    typologies: -> Typologies.findForProject().fetch()
+    typologies: -> Typologies.findByProject().fetch()
     typology: -> getTypologyId(@doc) #getFormTypologyId()
     classValue: -> @doc?.parameters?.general?.class
     isCreating: -> stateToActiveClass(EditState.CREATING)

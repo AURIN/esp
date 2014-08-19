@@ -73,4 +73,4 @@ Meteor.startup ->
         doc
 
   Form.helpers
-    typologies: -> Typologies.findForProject()
+    typologies: -> Typologies.findByProject()

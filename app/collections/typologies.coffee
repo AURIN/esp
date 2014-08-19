@@ -75,12 +75,20 @@ creatorSchema =
   type: String
   optional: true
 
+calcArea = (id) ->
+  entity = AtlasManager.getEntity(id)
+  if entity
+    entity.getArea()
+  else
+    throw new Error('GeoEntity not found - cannot calculate area.')
+
 areaSchema =
   label: 'Area'
   type: Number
   desc: 'Area of the land parcel.'
   decimal: true
   units: Units.m2
+  calc: (param, paramId, model) -> calcArea(model._id)
 
 extendSchema = (orig, changes) ->
   _.extend({}, orig, changes)
@@ -122,15 +130,24 @@ typologyCategories =
       geom:
         label: 'Geometry'
         type: String,
-        desc: '3D Geometry of the typology envelope.'
+        desc: '2D geometry of the typology envelope.'
     # TODO(aramk) Need to discuss how we handle this wrt the lot.
       lotsize: extendSchema(areaSchema, {
         label: 'Lot Size'
-        classes:
-          RESIDENTIAL:
-            defaultValue: 500
-          COMMERCIAL:
-            defaultValue: 300
+#        classes:
+#          RESIDENTIAL:
+#            defaultValue: 500
+#          COMMERCIAL:
+#            defaultValue: 300
+        calc: (param, paramId, model) ->
+          # If the model is a typology, it doesn't have a lot yet, so no lotsize.
+          id = model._id
+          unless Entities.findOne(id)
+            return null
+          lot = Lots.findByEntity(id)
+          unless lot
+            throw new Error('Lot not found for entity.')
+          calcArea(lot._id)
       })
       extland:
         label: 'Extra Land'
@@ -146,16 +163,17 @@ typologyCategories =
         decimal: true
         desc: 'Area of the building footprint.'
         units: Units.m2
-        classes:
-          RESIDENTIAL:
-            defaultValue: 133.6
-          COMMERCIAL:
-            defaultValue: 250
-        custom: ->
-          # Abstract these rules into a single string or function for evaluation.
-          lotsize = @siblingField('lotsize')
-          if lotsize.isSet && lotsize.operator != '$unset' && @isSet && @operator != '$unset' && @value > lotsize.value
-            'Footprint Area must be less than or equal to the Lot Size'
+        calc: areaSchema.calc
+#        classes:
+#          RESIDENTIAL:
+#            defaultValue: 133.6
+#          COMMERCIAL:
+#            defaultValue: 250
+#        custom: ->
+#          # Abstract these rules into a single string or function for evaluation.
+#          lotsize = @siblingField('lotsize')
+#          if lotsize.isSet && lotsize.operator != '$unset' && @isSet && @operator != '$unset' && @value > lotsize.value
+#            'Footprint Area must be less than or equal to the Lot Size'
       height: heightSchema
   energy:
     items:
@@ -296,6 +314,17 @@ createCategoriesSchema = (args) ->
     catsFields[catId] = catFields
   new SimpleSchema(catsFields)
 
+@ParamUtils =
+
+  _prefix: 'parameters'
+  _rePrefix: /^parameters\./
+  addPrefix: (id) ->
+    if @_rePrefix.test(id)
+      id
+    else
+      @_prefix + '.' + id
+  removePrefix: (id) -> id.replace(@_rePrefix, '')
+
 ####################################################################################################
 # TYPOLOGY SCHEMA DEFINITION
 ####################################################################################################
@@ -337,8 +366,7 @@ Typologies.getClassItems = ->
   _.map Typologies.classes, (cls, id) -> Setter.merge(Setter.clone(cls), {_id: id})
 
 Typologies.getParameter = (model, paramId) ->
-  # Remove "parameters." if prefixed to allow flexible lookup.
-  paramId = paramId.replace(/^parameters\./, '')
+  paramId = ParamUtils.removePrefix(paramId)
   target = model.parameters ?= {}
   segments = paramId.split('.')
   unless segments.length > 0
@@ -350,6 +378,7 @@ Typologies.getParameter = (model, paramId) ->
   target
 
 Typologies.setParameter = (model, paramId, value) ->
+  paramId = ParamUtils.removePrefix(paramId)
   target = model.parameters ?= {}
   segments = paramId.split('.')
   unless segments.length > 0
@@ -420,7 +449,7 @@ Typologies.filterParameters = (model) ->
       delete modelCategory[paramName]
   model
 
-findForProject = (collection, projectId) ->
+findByProject = (collection, projectId) ->
   projectId ?= Projects.getCurrentId()
   if projectId
     collection.find({project: projectId})
@@ -428,7 +457,7 @@ findForProject = (collection, projectId) ->
     console.error('Project ID not provided - cannot retrieve models.')
     []
 
-Typologies.findForProject = (projectId) -> findForProject(Typologies, projectId)
+Typologies.findByProject = (projectId) -> findByProject(Typologies, projectId)
 
 ####################################################################################################
 # ENTITY SCHEMA DEFINITION
@@ -462,7 +491,7 @@ Entities.schema = EntitySchema
 Entities.allow(Collections.allowAll())
 
 Entities.getFlattened = ->
-  cursor = Entities.findForProject()
+  cursor = Entities.findByProject()
   entities = cursor.fetch()
   for entity in entities
     Entities.mergeTypology(entity)
@@ -485,7 +514,7 @@ Entities.getParameter = (model, paramId) ->
 Entities.setParameter = (model, paramId, value) ->
   Typologies.setParameter(model, paramId, value)
 
-Entities.findForProject = (projectId) -> findForProject(Entities, projectId)
+Entities.findByProject = (projectId) -> findByProject(Entities, projectId)
 
 # TODO(aramk) use a .observe() instead!
 # Remove the entity from the lot when removing the entity.
@@ -574,7 +603,8 @@ Lots.getParameter = (model, paramId) ->
 Lots.setParameter = (model, paramId, value) ->
   Typologies.setParameter(model, paramId, value)
 
-Lots.findForProject = (projectId) -> findForProject(Lots, projectId)
+Lots.findByProject = (projectId) -> findByProject(Lots, projectId)
+Lots.findByEntity = (entityId) -> Lots.findOne({entity: entityId})
 
 ####################################################################################################
 # PROJECTS SCHEMA DEFINITION
@@ -640,7 +670,7 @@ projectCategories =
       geom:
         label: 'Geometry'
         type: String
-        desc: '3D Geometry of the precinct envelope.'
+        desc: '2D geometry of the precinct envelope.'
       area:
         label: 'Precinct Area'
         type: Number

@@ -28,7 +28,7 @@
       @toGeoEntityArgs(id).then (entityArgs) ->
         entity = AtlasManager.renderEntity(entityArgs)
         # If the entity was rendered using the Typology geometry, centre it based on the Lot.
-        lot = Lots.findOne({entity: id})
+        lot = Lots.findByEntity(id)
         unless lot
           throw new Error('Rendered entity does not have an accompanying lot.')
         LotUtils.render(lot._id).then (lotEntity) ->

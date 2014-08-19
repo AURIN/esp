@@ -139,8 +139,8 @@ TemplateClass.onAtlasLoad = (template, atlas) ->
   # Rendering Lots.
   renderLot = (id) -> LotUtils.render(id)
   unrenderLot = (id) -> AtlasManager.unrenderEntity(id)
-  lots = Lots.findForProject()
-  entities = Entities.findForProject()
+  lots = Lots.findByProject()
+  entities = Entities.findByProject()
   # Listen to changes to Lots and (un)render them as needed.
   lots.observe
     added: (lot) ->
