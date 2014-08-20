@@ -130,7 +130,7 @@ typologyCategories =
     items:
       geom:
         label: 'Geometry'
-        type: String,
+        type: String
         desc: '2D footprint geometry of the typology.'
       mesh:
         label: 'Mesh'
@@ -473,12 +473,14 @@ EntitySchema = new SimpleSchema
 Entities.schema = EntitySchema
 Entities.allow(Collections.allowAll())
 
-Entities.getFlattened = ->
-  cursor = Entities.findByProject()
-  entities = cursor.fetch()
-  for entity in entities
-    Entities.mergeTypology(entity)
-  entities
+Entities.getFlattened = (id) ->
+  entity = Entities.findOne(id)
+  Entities.mergeTypology(entity)
+  entity
+
+Entities.getAllFlattened = ->
+  entities = Entities.findByProject().fetch()
+  _.map entities (entity) -> Entities.getFlattened(entity._id)
 
 Entities.mergeTypology = (entity) ->
   typologyId = entity.typology
@@ -488,7 +490,7 @@ Entities.mergeTypology = (entity) ->
       Typologies.mergeDefaults(typology)
       entity.parameters ?= {}
       Setter.defaults(entity.parameters, typology.parameters)
-      Typologies.filterParameters(entity, typology)
+      Typologies.filterParameters(entity)
   entity
 
 Entities.getParameter = (model, paramId) ->

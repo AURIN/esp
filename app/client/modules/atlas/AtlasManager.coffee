@@ -29,6 +29,15 @@ atlas = null
     entity = @getEntity(id)
     entity
 
+  renderEntities: (entityArgs) ->
+    entities = null
+    atlas.publish 'entity/show/bulk', {
+      features: entityArgs
+      callback: (ids) ->
+        entities = atlas._managers.entity.getByIds(ids)
+    }
+    entities
+
   unrenderEntity: (id) -> atlas.publish 'entity/remove', {id: id}
 
   getEntity: (id) -> atlas._managers.entity.getById(id)

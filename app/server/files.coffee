@@ -12,12 +12,8 @@
 
 Meteor.methods
 
-  'files/download/string': (id) ->
-    buffer = FileUtils.getBuffer(id)
-    console.log(buffer)
-    str = buffer.toString()
-    console.log(str)
-    str
+  'files/download/string': (id) -> FileUtils.getBuffer(id).toString()
+  'files/download/json': (id) -> JSON.parse(FileUtils.getBuffer(id).toString())
 
 #  'files/getReadStream': getReadStream
 #
