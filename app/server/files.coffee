@@ -10,8 +10,15 @@
     reader = @getReadStream(fileId)
     Buffers.fromStream(reader)
 
-#Meteor.methods
-#
+Meteor.methods
+
+  'files/download/string': (id) ->
+    buffer = FileUtils.getBuffer(id)
+    console.log(buffer)
+    str = buffer.toString()
+    console.log(str)
+    str
+
 #  'files/getReadStream': getReadStream
 #
 #  'files/getBuffer': (fileId) ->

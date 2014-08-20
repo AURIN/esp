@@ -131,8 +131,11 @@ typologyCategories =
       geom:
         label: 'Geometry'
         type: String,
-        desc: '2D geometry of the typology envelope.'
-    # TODO(aramk) Need to discuss how we handle this wrt the lot.
+        desc: '2D footprint geometry of the typology.'
+      mesh:
+        label: 'Mesh'
+        type: String
+        desc: '3D mesh representing the typology.'
       lotsize: extendSchema(areaSchema, {
         label: 'Lot Size'
         calc: (param, paramId, model) ->

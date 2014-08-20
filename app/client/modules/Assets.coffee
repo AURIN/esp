@@ -6,7 +6,6 @@
       if err
         console.error 'Asset import failed', err, fileObj
         return
-      console.log 'asset', result
       assetId = result.id
       loadAssets = {}
       loadAssets[assetId] = args.format
@@ -15,4 +14,19 @@
           df.reject(err)
         else
           df.resolve(result)
+    df.promise
+
+  toC3ml: (fileId, args) ->
+    df = Q.defer()
+    Assets.fromFile(fileId, args).then(
+      (result) ->
+        body = result.body
+        c3mlId = body.c3mlId
+        Meteor.call 'assets/c3ml/download', c3mlId, (err, c3mls) ->
+          if err
+            df.reject(err)
+            return
+          df.resolve({c3mls: c3mls, body: body})
+      (err) -> df.reject(err)
+    )
     df.promise
