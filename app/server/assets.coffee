@@ -84,7 +84,8 @@ Meteor.methods
     Catalyst.assets.formats()
 
   'assets/formats/input': ->
-    Catalyst.auth.login()
+    auth = Catalyst.auth.login()
+    console.log(auth)
     Catalyst.assets.inputFormats()
 
   'assets/formats/output': ->
