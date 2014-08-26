@@ -60,7 +60,8 @@
           AtlasManager.unrenderEntity(id)
           throw new Error('Rendered entity does not have an accompanying lot.')
         LotUtils.render(lot._id).then (lotEntity) ->
-          centroidDiff = lotEntity.getCentroid().subtract(entity.getCentroid())
+          lotCentroid = lotEntity.getCentroid()
+          centroidDiff = lotCentroid.subtract(entity.getCentroid())
           entity.translate(centroidDiff)
           df.resolve(entity)
 
@@ -74,9 +75,19 @@
                 console.error(e)
               console.log('c3mlEntities', c3mlEntities)
               _.each c3mlEntities, (c3mlEntity) ->
-                c3mlCentroid = c3mlEntity.getCentroid()
+                if c3mlEntity.getForm
+                  c3mlEntity = c3mlEntity.getForm()
+                  unless c3mlEntity
+                    return
+                # TODO(aramk) Meshes still don't have centroid support so use geolocation for now.
+                if c3mlEntity.getGeoLocation
+                  c3mlCentroid = c3mlEntity.getGeoLocation()
+                else
+                  c3mlCentroid = c3mlEntity.getCentroid()
+                unless c3mlCentroid
+                  return
                 console.log('c3mlCentroid', c3mlCentroid)
-                c3mlCentroidDiff = c3mlEntity.getCentroid().subtract(entity.getCentroid())
+                c3mlCentroidDiff = lotCentroid.subtract(c3mlCentroid)
                 c3mlEntity.translate(c3mlCentroidDiff)
 
           _meshDf.fail -> console.error(arguments)
