@@ -98,6 +98,8 @@ TemplateClass.events
   'change .lotDisplayMode.dropdown': (e) ->
     displayMode = $(e.currentTarget).dropdown('get value')
     Session.set('lotDisplayMode', displayMode)
+  'click .allocate.item': (e) ->
+    console.log('allocate')
 
 getSidebar = (template) ->
   $(template.find('.design.container > .sidebar'))
