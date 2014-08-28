@@ -61,7 +61,7 @@ Meteor.startup ->
         currentGeoEntity = AtlasManager.getEntity(id)
         if currentGeoEntity?
           setEditState(EditState.CREATED, true)
-          currentGeoEntity.onSelect()
+          currentGeoEntity.setSelected(true)
       Session.set('_forDev', if doc then Lots.getParameter(doc, 'general.develop') else true)
 
     onRender: -> $(@findAll('.ui.toggle.button')).state()
@@ -116,28 +116,18 @@ Meteor.startup ->
         df.promise
 
       if !newTypologyId
+        # Remove the existing entity for the lot.
         removeOldEntity().then (-> entityDf.resolve(null)), entityDf.reject
       else if oldTypologyId != newTypologyId
-        newTypology = Typologies.findOne(newTypologyId)
-        # If no class is provided, use the class of the entity's typology.
-        unless lotClass
-          lotClass = Typologies.getParameter(newTypology, classParamId)
-
-        # Create a new entity for this lot-typology combination and remove the existing one
-        # (if any). Name of the entity matches that of the lot.
-        newEntity =
-          name: doc.name
-          typology: newTypologyId
-          project: Projects.getCurrentId()
-        Entities.insert newEntity, (err, newEntityId) ->
-          resolve = -> entityDf.resolve(newEntityId)
-          reject = (err) ->
-            console.error.apply(console, arguments)
-            entityDf.reject(err)
-          if err
-            reject('Updating entity of lot failed', err)
-          else
-            removeOldEntity().then resolve, reject
+        # Create a new entity for the lot, removing the old one.
+        resolve = -> entityDf.resolve(newEntityId)
+        reject = (err) ->
+          console.error.apply(console, arguments)
+          entityDf.reject(err)
+        Lots.createEntity(id, newTypologyId).then(
+          -> removeOldEntity().then resolve, reject
+          (err) -> reject('Updating entity of lot failed', err)
+        )
       else
         entityDf.resolve(oldEntityId)
       formDf = Q.defer()

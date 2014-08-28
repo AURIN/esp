@@ -37,7 +37,10 @@
     "cfs-ejson-file": {},
 
     "npm": {},
-    "q": {},
+    "q": {
+      "git": "https://github.com/aramk/meteor-q",
+      "branch": "v1"
+    },
     "tinycolor": {}
   }
 }

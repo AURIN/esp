@@ -591,6 +591,36 @@ Lots.setParameter = (model, paramId, value) ->
 Lots.findByProject = (projectId) -> findByProject(Lots, projectId)
 Lots.findByEntity = (entityId) -> Lots.findOne({entity: entityId})
 
+Lots.createEntity = (lotId, typologyId) ->
+  df = Q.defer()
+  lot = Lots.findOne(lotId)
+  typology = Typologies.findOne(typologyId)
+  if !lot
+    throw new Error('No Lot with ID ' + id)
+  else if !typology
+    throw new Error('No Typology with ID ' + typologyId)
+  # TODO(aramk) Need a warning?
+#  else if lot.entity?
+#    throw new Error('Lot with ID ' + id + ' already has entity')
+  classParamId = 'parameters.general.class'
+  lotClass = Lots.getParameter(lot, classParamId)
+  # If no class is provided, use the class of the entity's typology.
+  unless lotClass
+    lotClass = Typologies.getParameter(typology, classParamId)
+
+  # Create a new entity for this lot-typology combination and remove the existing one
+  # (if any). Name of the entity matches that of the lot.
+  newEntity =
+    name: lot.name
+    typology: typologyId
+    project: Projects.getCurrentId()
+  Entities.insert newEntity, (err, newEntityId) ->
+    if err
+      df.reject(err)
+    else
+      df.resolve(newEntityId)
+  df.promise
+
 ####################################################################################################
 # PROJECTS SCHEMA DEFINITION
 ####################################################################################################
