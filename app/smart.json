@@ -27,10 +27,10 @@
       "git": "https://github.com/aramk/meteor-dropdown"
     },
 
-    "collection2": {},
+    "collection2": "0.4.3",
     "autoform": {
       "git": "https://github.com/aramk/meteor-autoform",
-      "branch": "feature/settings"
+      "branch": "feature/settings-working"
     },
     "collectionfs": {},
     "cfs-filesystem": {},

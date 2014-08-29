@@ -67,7 +67,7 @@ npm@0.0.0
 observe-sequence@1.0.1
 ordered-dict@1.0.0
 power-queue@0.0.0
-q@0.0.0
+q@1.0.1
 random@1.0.0
 reactive-dict@1.0.0
 reactive-list@0.0.0
