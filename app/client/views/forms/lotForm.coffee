@@ -120,12 +120,11 @@ Meteor.startup ->
         removeOldEntity().then (-> entityDf.resolve(null)), entityDf.reject
       else if oldTypologyId != newTypologyId
         # Create a new entity for the lot, removing the old one.
-        resolve = -> entityDf.resolve(newEntityId)
-        reject = (err) ->
-          console.error.apply(console, arguments)
-          entityDf.reject(err)
         Lots.createEntity(id, newTypologyId).then(
-          -> removeOldEntity().then resolve, reject
+          (newEntityId) -> removeOldEntity().then(
+            -> entityDf.resolve(newEntityId)
+            entityDf.reject
+          )
           (err) -> reject('Updating entity of lot failed', err)
         )
       else
@@ -135,13 +134,8 @@ Meteor.startup ->
         console.error.apply(console, arguments)
         formDf.reject(err)
       Q.all([entityDf.promise, geomDf.promise]).then (results) ->
-        entityId = results[0]
         wkt = results[1]
         modifier = {}
-        modifier.entity = entityId
-        # These are necessary to ensure validation has all fields available.
-        modifier[classParamId] = lotClass
-        modifier[developParamId] = isForDevelopment
         if wkt?
           modifier[geomParamId] = wkt
         Lots.update id, {$set: modifier}, (err, result) ->

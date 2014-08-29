@@ -461,6 +461,12 @@ EntitySchema = new SimpleSchema
   typology:
     label: 'Typology'
     type: String
+# Despite having the "entity" field on lots, when a new entity is created it is rendered
+# reactively and without a lot reference it will fail.
+  lot:
+    label: 'Lot'
+    type: String
+    index: true
   parameters:
     label: 'Parameters'
     type: EntityParametersSchema
@@ -501,19 +507,15 @@ Entities.setParameter = (model, paramId, value) ->
 
 Entities.findByProject = (projectId) -> findByProject(Entities, projectId)
 
-# TODO(aramk) use a .observe() instead!
 # Remove the entity from the lot when removing the entity.
-oldEntityRemove = Entities.remove
-Entities.remove = (selector, callback) ->
-  wrappedCallback = ->
-    lot = Lots.findOne({entity: selector})
+Entities.find().observe
+  removed: (entity) ->
+    lot = Lots.findByEntity(entity._id)
     if lot?
-      Lots.update(lot._id, {$unset: {entity: null}})
-    callback?()
-  oldEntityRemove.call(@, selector, wrappedCallback)
+      Lots.remove(lot._id, {$unset: {entity: null}})
 
 ####################################################################################################
-# LOTS SCHEMA DEFINITION
+# LOT SCHEMA DEFINITION
 ####################################################################################################
 
 lotCategories =
@@ -552,11 +554,14 @@ LotSchema = new SimpleSchema
     index: true
     custom: ->
       classParamId = 'parameters.general.class'
+      developFieldId = 'parameters.general.develop'
       typologyClassField = @siblingField(classParamId)
-      unless typologyClassField.isSet && this.isSet
+      developField = @siblingField(developFieldId)
+      unless (typologyClassField.isSet && this.isSet && developField.isSet) || @operator == '$unset'
         # TODO(aramk) This isn't guaranteed to work if typology field is not set at same time as
         # entity. Look up the actual value using an ID.
-        return 'Class and entity must be set together for validation to work.'
+        return 'Class, entity and develop fields must be set together for validation to work, ' +
+          'unless entity is being removed.'
       if typologyClassField.operator == '$unset' && @operator != '$unset'
         return 'Class must be present if entity is present.'
       entityId = @value
@@ -568,8 +573,6 @@ LotSchema = new SimpleSchema
       if typologyClassField.operator != '$unset' && @operator != '$unset' && typologyClass != entityClass
         return 'Entity must have the same class as the Lot. Entity has ' + entityClass +
           ', Lot has ' + typologyClass
-      developFieldId = 'parameters.general.develop'
-      developField = @siblingField(developFieldId)
       if developField.operator != '$unset' && @operator != '$unset' && !developField.value
         return 'Lot which is not for development cannot have Entity assigned.'
 
@@ -600,10 +603,12 @@ Lots.createEntity = (lotId, typologyId) ->
   else if !typology
     throw new Error('No Typology with ID ' + typologyId)
   # TODO(aramk) Need a warning?
-#  else if lot.entity?
-#    throw new Error('Lot with ID ' + id + ' already has entity')
+  #  else if lot.entity?
+  #    throw new Error('Lot with ID ' + id + ' already has entity')
   classParamId = 'parameters.general.class'
+  developParamId = 'parameters.general.develop'
   lotClass = Lots.getParameter(lot, classParamId)
+  isForDevelopment = Lots.getParameter(lot, developParamId)
   # If no class is provided, use the class of the entity's typology.
   unless lotClass
     lotClass = Typologies.getParameter(typology, classParamId)
@@ -614,15 +619,28 @@ Lots.createEntity = (lotId, typologyId) ->
     name: lot.name
     typology: typologyId
     project: Projects.getCurrentId()
+    lot: lotId
   Entities.insert newEntity, (err, newEntityId) ->
     if err
       df.reject(err)
-    else
-      df.resolve(newEntityId)
+      return
+    lotModifier = {entity: newEntityId}
+    # These are necessary to ensure validation has all fields available.
+    lotModifier[classParamId] = lotClass
+    lotModifier[developParamId] = isForDevelopment
+    Lots.update lotId, {$set: lotModifier}, (err, result) ->
+      if err
+        Entities.remove newEntityId, (removeErr, result) ->
+          if removeErr
+            df.reject(removeErr)
+          else
+            df.reject(err)
+      else
+        df.resolve(newEntityId)
   df.promise
 
 ####################################################################################################
-# PROJECTS SCHEMA DEFINITION
+# PROJECT SCHEMA DEFINITION
 ####################################################################################################
 
 projectCategories =

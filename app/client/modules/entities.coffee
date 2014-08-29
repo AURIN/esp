@@ -78,15 +78,16 @@
 
   render: (entityId) ->
     df = Q.defer()
-    entity = AtlasManager.getEntity(entityId)
-    if entity
+    entity = Entities.findOne(entityId)
+    geoEntity = AtlasManager.getEntity(entityId)
+    if geoEntity
       AtlasManager.showEntity(entityId)
-      df.resolve(entity)
+      df.resolve(geoEntity)
     else
       @toGeoEntityArgs(entityId).then (entityArgs) =>
         geoEntity = AtlasManager.renderEntity(entityArgs)
         # If the geoEntity was rendered using the Typology geometry, centre it based on the Lot.
-        lot = Lots.findByEntity(entityId)
+        lot = Lots.findOne(entity.lot)
         unless lot
           AtlasManager.unrenderEntity(entityId)
           throw new Error('Rendered geoEntity does not have an accompanying lot.')
@@ -97,9 +98,11 @@
           geoEntity.translate(entityCentroidDiff)
           df.resolve(geoEntity)
 
+          # Render the mesh afterwards to prevent long delays.
           require ['atlas/model/Feature'], (Feature) =>
-            # Render the mesh afterwards to prevent long delays.
             @._buildMeshCollection(entityId).then (result) ->
+              unless result
+                return
               meshEntity = result.collection
               centroid = result.centroid
               meshCentroidDiff = lotCentroid.subtract(centroid)

@@ -23,28 +23,11 @@
     df.promise
 
   _fromAsset: (args) ->
-    df = Q.defer()
+    lotDfs = []
     c3mls = args.c3mls
     metaData = args.metaData
     params = args.params
-    lotIds = []
-    doneCalls = 0
     polygonC3mls = []
-    done = (id) ->
-      lotIds.push(id)
-      doneCalls++
-      console.debug('done', id, doneCalls, c3mls.length)
-      if doneCalls == polygonC3mls.length
-        projectId = Projects.getCurrentId()
-        # If the project doesn't have lat, lng location, set it as that found in this file.
-        location = Projects.getLocationCoords(projectId)
-        unless location.latitude? && location.longitude?
-          assetPosition = metaData.lookAt?.position
-          if assetPosition?
-            console.debug 'Setting project location', assetPosition
-            Projects.setLocationCoords(projectId,
-              {longitude: assetPosition.x, latitude: assetPosition.y})
-        df.resolve(lotIds)
     _.each c3mls, (c3ml) ->
       if c3ml.type == 'polygon'
         polygonC3mls.push(c3ml)
@@ -62,21 +45,37 @@
         return
       name = lotId ? 'Lot #' + (i + 1)
       classId = Typologies.resolveClassId(entityParams.landuse)
+      lotDf = Q.defer()
+      lotDfs.push(lotDf)
       WKT.fromVertices coords, (wkt) ->
+        develop = Booleans.parse(entityParams.develop ? entityParams.redev ? true)
         lot =
           name: name
           project: Projects.getCurrentId()
           parameters:
             general:
               class: classId
-              dev: Booleans.parse(entityParams.redev ? true)
+              develop: develop
             space:
               geom: wkt
               height: c3ml.height
-        id = Lots.insert(lot)
-        console.debug('lot', id, lot)
-        done(id)
-    df.promise
+        # Validator needs both entity and class set together.
+          entity: null
+        Lots.insert lot, (err, insertId) ->
+          if err
+            lotDf.reject(err)
+          else
+            lotDf.resolve(insertId)
+    Q.all(lotDfs).then ->
+      projectId = Projects.getCurrentId()
+      # If the project doesn't have lat, lng location, set it as that found in this file.
+      location = Projects.getLocationCoords(projectId)
+      unless location.latitude? && location.longitude?
+        assetPosition = metaData.lookAt?.position
+        if assetPosition?
+          console.debug 'Setting project location', assetPosition
+          Projects.setLocationCoords(projectId,
+            {longitude: assetPosition.x, latitude: assetPosition.y})
 
   toGeoEntityArgs: (id) ->
     AtlasConverter.getInstance().then (converter) =>

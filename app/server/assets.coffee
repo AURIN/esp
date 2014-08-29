@@ -3,7 +3,6 @@
   import: (fileId) ->
     buffer = FileUtils.getBuffer(fileId)
     console.log 'buffer', buffer.length
-    Catalyst.auth.login()
     fileObj = Files.findOne(fileId)
     console.log 'fileObj', fileObj
     file = fileObj.original
@@ -12,6 +11,7 @@
       contentType: file.type
       knownLength: file.size
     };
+    Catalyst.auth.login()
     asset = Catalyst.assets.upload(buffer, args)
     console.log 'asset uploaded', asset
     asset
