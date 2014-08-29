@@ -281,20 +281,27 @@ createCategoriesSchema = (args) ->
   cats = args.categories
   unless cats
     throw new Error('No categories provided.')
+  # For each category in the schema.
   catsFields = {}
   for catId, cat of cats
     catSchemaFields = {}
+    # For each field in each category
     for itemId, item of cat.items
       # TODO(aramk) Set the default to 0 for numbers.
       itemFields = _.extend({optional: true}, args.itemDefaults, item)
       autoLabel(itemFields, itemId)
       catSchemaFields[itemId] = itemFields
     catSchema = new SimpleSchema(catSchemaFields)
-    catFields = _.extend({optional: false, defaultValue: {}}, args.categoryDefaults, cat,
-      {type: catSchema})
-    autoLabel(catFields, catId)
-    delete catFields.items
-    catsFields[catId] = catFields
+    catSchemaArgs = _.extend({
+      optional: false
+      defaultValue: {}
+#      autoValue: ->
+#        console.log('autoValue', this, arguments)
+#        {} unless this.isSet
+    }, args.categoryDefaults, cat, {type: catSchema})
+    autoLabel(catSchemaArgs, catId)
+    delete catSchemaArgs.items
+    catsFields[catId] = catSchemaArgs
   new SimpleSchema(catsFields)
 
 @ParamUtils =
@@ -437,10 +444,17 @@ findByProject = (collection, projectId) ->
   if projectId
     collection.find({project: projectId})
   else
-    console.error('Project ID not provided - cannot retrieve models.')
-    []
+    throw new Error('Project ID not provided - cannot retrieve models.')
 
 Typologies.findByProject = (projectId) -> findByProject(Typologies, projectId)
+
+Typologies.getClassMap = (projectId) ->
+  typologies = Typologies.findByProject(projectId).fetch()
+  typologyMap = {}
+  _.each typologies, (typology) ->
+    typologyClass = Typologies.getParameter(typology, 'general.class')
+    typologyMap[typologyClass] = typology
+  typologyMap
 
 ####################################################################################################
 # ENTITY SCHEMA DEFINITION
@@ -575,7 +589,6 @@ LotSchema = new SimpleSchema
           ', Lot has ' + typologyClass
       if developField.operator != '$unset' && @operator != '$unset' && !developField.value
         return 'Lot which is not for development cannot have Entity assigned.'
-
   parameters:
     label: 'Parameters'
     type: LotParametersSchema
@@ -593,6 +606,11 @@ Lots.setParameter = (model, paramId, value) ->
 
 Lots.findByProject = (projectId) -> findByProject(Lots, projectId)
 Lots.findByEntity = (entityId) -> Lots.findOne({entity: entityId})
+Lots.findForDevelopment = (projectId) ->
+  _.filter Lots.findByProject(projectId).fetch(), (lot) ->
+    Lots.getParameter(lot, 'general.develop')
+Lots.findAvailable = (projectId) ->
+  _.filter Lots.findForDevelopment(projectId), (lot) -> !lot.entity
 
 Lots.createEntity = (lotId, typologyId) ->
   df = Q.defer()

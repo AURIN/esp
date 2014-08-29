@@ -93,13 +93,13 @@ TemplateClass.helpers
 
 TemplateClass.events
   'change .entityDisplayMode.dropdown': (e) ->
-    displayMode = $(e.currentTarget).dropdown('get value')
+    displayMode = Template.dropdown.getValue(e.currentTarget)
     Session.set('entityDisplayMode', displayMode)
   'change .lotDisplayMode.dropdown': (e) ->
-    displayMode = $(e.currentTarget).dropdown('get value')
+    displayMode = Template.dropdown.getValue(e.currentTarget)
     Session.set('lotDisplayMode', displayMode)
   'click .allocate.item': (e) ->
-    console.log('allocate')
+    LotUtils.autoAllocate()
 
 getSidebar = (template) ->
   $(template.find('.design.container > .sidebar'))

@@ -3,14 +3,11 @@ Meteor.startup ->
   getTypologyInput = ->
     $(@.find('[name="typology"]')).closest('.dropdown')
 
-  getTypologyInputValue = ->
-    getTypologyInput.call(@).dropdown('get value')
-
   getSelectOption = (value, $select) ->
     $('option[value="' + value + '"]', $select)
 
   updateFields = ->
-    typologyId = getTypologyInputValue.call(@)
+    typologyId = Template.dropdown.getValue(getTypologyInput.call(@))
     typology = Typologies.findOne(typologyId)
     typologyClass = typology?.parameters?.general?.class
     console.debug 'updateFields', @, arguments, typologyId, typology, typologyClass

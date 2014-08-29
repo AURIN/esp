@@ -38,7 +38,7 @@
 
     "npm": {},
     "q": {
-      "git": "https://github.com/aramk/meteor-q",
+      "git": "https://github.com/aramk/q",
       "branch": "v1"
     },
     "tinycolor": {}

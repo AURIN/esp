@@ -118,3 +118,25 @@
         entity = AtlasManager.renderEntity(geoEntity)
         df.resolve(entity)
     df.promise
+
+# Find all unallocated development lots and allocate appropriate typologies for them.
+  autoAllocate: ->
+    console.debug 'Automatically allocating typologies to lots...'
+    dfs = []
+    typologyMap = Typologies.getClassMap()
+    typologies = Typologies.findByProject().fetch()
+    _.each Lots.findAvailable(), (lot) ->
+      typologyClass = Lots.getParameter(lot, 'general.class')
+      if typologyClass?
+        classTypologies = typologyMap[typologyClass] ? []
+      else
+        # Allocate to any typology
+        classTypologies = typologies
+      unless classTypologies.length > 0
+        console.warn 'Could not find suitable typology for lot', lot
+        return
+      typology = Arrays.getRandomItem(classTypologies)
+      console.debug 'Allocating typology', typology, 'to lot', lot
+      entityDf = Lots.createEntity(lot._id, typology._id)
+      dfs.push(entityDf)
+    Q.all(dfs).then -> console.debug 'Successfully allocated', dfs.length, 'lots'

@@ -26,7 +26,6 @@
     unless meshFileId?
       meshDf.resolve(null)
     Meteor.call 'files/download/json', meshFileId, (err, data) ->
-      console.log('download', arguments)
       if err
         meshDf.reject(err)
       else
@@ -40,7 +39,6 @@
       unless result
         df.resolve(null)
         return
-      console.log('c3mls', result.c3mls)
       # Store a single geolocation and translate all c3ml entities by the difference between
       # this and the log geoEntity.
       c3mlBaseCentroid = null
@@ -48,7 +46,6 @@
         c3mlEntities = AtlasManager.renderEntities(result.c3mls)
       catch e
         console.error(e)
-      console.log('c3mlEntities', c3mlEntities)
       entityIds = []
       entityIdMap = {}
       _.each c3mlEntities, (c3mlEntity) ->
@@ -63,7 +60,6 @@
           return
         unless c3mlBaseCentroid
           c3mlBaseCentroid = centroid
-        console.log('c3mlCentroid', centroid)
         entityId = c3mlEntity.getId()
         entityIds.push(entityId)
         entityIdMap[entityId] = true
@@ -92,14 +88,16 @@
           AtlasManager.unrenderEntity(entityId)
           throw new Error('Rendered geoEntity does not have an accompanying lot.')
         lotId = lot._id
-        LotUtils.render(lotId).then (lotEntity) =>
-          lotCentroid = lotEntity.getCentroid()
-          entityCentroidDiff = lotCentroid.subtract(geoEntity.getCentroid())
-          geoEntity.translate(entityCentroidDiff)
-          df.resolve(geoEntity)
+        require ['atlas/model/Feature'], (Feature) =>
+          LotUtils.render(lotId).then (lotEntity) =>
+            lotCentroid = lotEntity.getCentroid()
+            unless geoEntity.getDisplayMode() == Feature.DisplayMode.MESH
+              # TODO(aramk) Mesh doesn't have centroid yet.
+              entityCentroidDiff = lotCentroid.subtract(geoEntity.getCentroid())
+              geoEntity.translate(entityCentroidDiff)
+            df.resolve(geoEntity)
 
-          # Render the mesh afterwards to prevent long delays.
-          require ['atlas/model/Feature'], (Feature) =>
+            # Render the mesh afterwards to prevent long delays.
             @._buildMeshCollection(entityId).then (result) ->
               unless result
                 return
