@@ -44,11 +44,12 @@
       if coords.length == 0
         return
       name = lotId ? 'Lot #' + (i + 1)
-      classId = Typologies.resolveClassId(entityParams.landuse)
+      classId = Typologies.getClassByName(entityParams.landuse)
       lotDf = Q.defer()
       lotDfs.push(lotDf)
       WKT.fromVertices coords, (wkt) ->
         develop = Booleans.parse(entityParams.develop ? entityParams.redev ? true)
+        height = entityParams.height ? c3ml.height
         lot =
           name: name
           project: Projects.getCurrentId()
@@ -58,7 +59,7 @@
               develop: develop
             space:
               geom: wkt
-              height: c3ml.height
+              height: height
         # Validator needs both entity and class set together.
           entity: null
         Lots.insert lot, (err, insertId) ->
@@ -83,9 +84,11 @@
       className = Lots.getParameter(lot, 'general.class')
       isForDevelopment = Lots.getParameter(lot, 'general.develop')
       typologyClass = Typologies.classes[className]
-      color = typologyClass.color
-      unless isForDevelopment
-        color = tinycolor.lighten(tinycolor(color), 25).toHexString()
+      # Reduce saturation of non-develop lots. Ensure full saturation for develop lots.
+      color = tinycolor(typologyClass.color).toHsv()
+      color.s = if isForDevelopment then 1 else 0.5
+      color = tinycolor(color)
+      borderColor = tinycolor.darken(color, 40)
       space = lot.parameters.space
       displayMode = @getDisplayMode(id)
       converter.toGeoEntityArgs
@@ -93,8 +96,8 @@
         vertices: space.geom
         height: space.height
         displayMode: displayMode
-        color: color
-        borderColor: '#000'
+        color: color.toHexString()
+        borderColor: borderColor.toHexString()
 
   getDisplayMode: (id) ->
     lot = Lots.findOne(id)

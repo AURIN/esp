@@ -50,7 +50,7 @@ TemplateClass.rendered = ->
       console.debug('Created Atlas', cesiumAtlas)
       console.debug('Attaching Atlas')
       cesiumAtlas.attachTo(atlasNode)
-      cesiumAtlas.publish('debugMode', true)
+      cesiumAtlas.publish('debugMode', false)
       TemplateClass.onAtlasLoad(template, cesiumAtlas)
     )
 

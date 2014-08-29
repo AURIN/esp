@@ -5,15 +5,18 @@
 TypologyClasses =
   RESIDENTIAL:
     name: 'Residential'
-    color: 'blue'
+    color: '#009cff' # Blue
   COMMERCIAL:
     name: 'Commercial'
     color: 'red'
+  PUBLIC:
+    name: 'Public'
+    color: '#c000ff' # Purple
   OPEN_SPACE:
     name: 'Open Space'
-    color: 'green'
-  PATHWAYS:
-    name: 'Pathways'
+    color: '#7ed700' # Green
+  PATHWAY:
+    name: 'Pathway'
     color: 'black'
 
 ClassNames = Object.keys(TypologyClasses)
@@ -343,14 +346,14 @@ Typologies.schema = TypologySchema
 Typologies.classes = TypologyClasses
 Typologies.allow(Collections.allowAll())
 
-Typologies.resolveClassId = (name) ->
-  id = (name + '').toUpperCase()
-  if TypologyClasses[id]? then id else null
-
-Typologies.resolveClassName = (name) ->
-  id = Typologies.resolveClassId(name)
-  cls = TypologyClasses[id]
-  cls?.name
+Typologies.getClassByName = _.memoize (name) ->
+  matchedId = null
+  sanitize = (str) -> ('' + str).toLowerCase().trim()
+  name = sanitize(name)
+  for id, cls of TypologyClasses
+    if sanitize(cls.name) == name
+      matchedId = id
+  matchedId
 
 Typologies.getClassItems = ->
   _.map Typologies.classes, (cls, id) -> Setter.merge(Setter.clone(cls), {_id: id})
@@ -453,7 +456,8 @@ Typologies.getClassMap = (projectId) ->
   typologyMap = {}
   _.each typologies, (typology) ->
     typologyClass = Typologies.getParameter(typology, 'general.class')
-    typologyMap[typologyClass] = typology
+    map = typologyMap[typologyClass] ?= []
+    map.push(typology)
   typologyMap
 
 ####################################################################################################
