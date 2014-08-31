@@ -30,9 +30,10 @@ cfs-ejson-file
 
 npm
 q
+tinycolor
 
 # Our custom packages come last so RequireJS doesn't cause issues.
 requirejs
 atlas
 atlas-cesium
-tinycolor
+meteor-utility
