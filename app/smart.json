@@ -8,6 +8,9 @@
     "requirejs": {
       "git": "https://github.com/aramk/requirejs"
     },
+    "utility": {
+      "git": "https://github.com/aramk/meteor-utility"
+    },
 
     "atlas": {
       "path": "../bower_components/atlas"
