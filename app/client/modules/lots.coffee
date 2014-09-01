@@ -58,7 +58,7 @@
               class: classId
               develop: develop
             space:
-              geom: wkt
+              geom_2d: wkt
               height: height
         # Validator needs both entity and class set together.
           entity: null
@@ -93,7 +93,7 @@
       displayMode = @getDisplayMode(id)
       converter.toGeoEntityArgs
         id: id
-        vertices: space.geom
+        vertices: space.geom_2d
         height: space.height
         displayMode: displayMode
         color: color.toHexString()

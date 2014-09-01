@@ -156,11 +156,11 @@ typologyCategories =
             defaultValue: 200
   space:
     items:
-      geom:
+      geom_2d:
         label: 'Geometry'
         type: String
         desc: '2D footprint geometry of the typology.'
-      mesh:
+      geom_3d:
         label: 'Mesh'
         type: String
         desc: '3D mesh representing the typology.'
@@ -573,7 +573,7 @@ lotCategories =
         defaultValue: true
   space:
     items:
-      geom:
+      geom_2d:
         label: 'Geometry'
         type: String,
         desc: '3D Geometry of the lot envelope.'
@@ -747,7 +747,7 @@ projectCategories =
         desc: 'The starting elevation of the camera when viewing the project.'
   space:
     items:
-      geom:
+      geom_2d:
         label: 'Geometry'
         type: String
         desc: '2D geometry of the precinct envelope.'
@@ -757,7 +757,7 @@ projectCategories =
         decimal: true
         desc: 'Total land area of the precinct.'
         units: Units.m2
-# TODO(aramk) This would eventually be calculated using the area of geom.
+# TODO(aramk) This would eventually be calculated using the area of geom_2d.
   environment:
     items:
       climate_zn:
