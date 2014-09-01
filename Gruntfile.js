@@ -5,8 +5,10 @@ module.exports = function(grunt) {
       fs = require('fs'),
       nodeFs = require('node-fs'),
       shell = require('shelljs'),
-      child_process = require('child_process');
+      child_process = require('child_process'),
+      _ = require('underscore');
 
+  var APP_ID = 'aurin-esp';
   var BOWER_DIR = 'bower_components';
   var APP_DIR = 'app';
   var DIST_DIR = 'dist';
@@ -26,7 +28,7 @@ module.exports = function(grunt) {
     },
     HEROKU: {
       // Environment variables are configured in Heroku app settings.
-      APP_NAME: 'aurin-esp'
+      APP_NAME: APP_ID
     }
   };
 
@@ -182,7 +184,7 @@ module.exports = function(grunt) {
     shell.rm('-rf', DIST_TEMP_DIR);
   });
 
-  grunt.registerTask('deploy', 'Deploys the built app.', function(arg1) {
+  grunt.registerTask('deploy', 'Deploys the built app.', function(arg1, arg2) {
     var config;
     // All fs, process, shell methods are relative to this directory now.
     var result = shell.cd(DIST_DIR);
@@ -191,12 +193,14 @@ module.exports = function(grunt) {
       return;
     }
     var done = this.async();
+    // TODO(aramk) Run this as a child process since it causes huge CPU lag otherwise.
     if (arg1 === 'heroku') {
       config = DEPLOY_CONFIGS.HEROKU;
       function updateHeroku() {
         execAll(['git pull heroku master', 'git add -A', 'git commit -am "Deployment."',
-          'git push heroku master', 'heroku restart']);
-        done();
+          'git push heroku master', 'heroku restart'], function() {
+          done();
+        });
       }
 
       console.log('Deploying on Heroku...');
@@ -206,20 +210,33 @@ module.exports = function(grunt) {
         shell.rm('-rf', DIST_TEMP_DIR);
         shell.mv(DIST_DIR, DIST_TEMP_DIR);
         var herukoGitRepo = 'git@heroku.com:' + config.APP_NAME + '.git';
-        var runClone = runProcess('git', ['clone ' + herukoGitRepo + ' ' + DIST_DIR]);
+        var runClone = runProcess('git', {args: ['clone ' + herukoGitRepo + ' ' + DIST_DIR]});
         runClone.on('exit', function() {
-          exec('git clone ' + herukoGitRepo + ' ' + DIST_DIR);
+          shell.exec('git clone ' + herukoGitRepo + ' ' + DIST_DIR);
           shell.cd(DIST_DIR);
-          execAll(['heroku git:remote -a ' + config.APP_NAME, 'git pull heroku master']);
-          var tmpDistDir = path.join('..', DIST_TEMP_DIR);
-          shell.cp('-Rf', path.join(tmpDistDir, '*'), '.');
-          shell.rm('-rf', tmpDistDir);
-          updateHeroku();
+          execAll(['heroku git:remote -a ' + config.APP_NAME, 'git pull heroku master'],
+              function() {
+                var tmpDistDir = path.join('..', DIST_TEMP_DIR);
+                shell.cp('-Rf', path.join(tmpDistDir, '*'), '.');
+                shell.rm('-rf', tmpDistDir);
+                updateHeroku();
+              });
         });
       } else {
         console.log('Using existing git repo...');
         updateHeroku();
       }
+    } else if (arg1 === 'meteor') {
+      shell.cd(path.join('..', APP_DIR));
+      var cmd = 'meteor deploy ' + APP_ID + '.meteor.com';
+      if (arg2 === 'debug') {
+        cmd += ' --debug';
+      }
+      runProcess(cmd, {
+        exit: function() {
+          done();
+        }
+      });
     } else {
       console.log('Deploying locally...');
       shell.cd(path.join('programs', 'server'));
@@ -240,7 +257,7 @@ module.exports = function(grunt) {
       for (var name in env) {
         shell.env[name] = env[name];
       }
-      var runNode = runProcess('node', ['main.js']);
+      var runNode = runProcess('node', {args: ['main.js']});
       runNode.on('exit', function() {
         done();
       });
@@ -265,35 +282,95 @@ module.exports = function(grunt) {
   // PROCESSES
 
   /**
-   * Runs a child process; prints stdout and stderr. Arguments match child_process.spawn().
-   * @param cmd
-   * @param args
-   * @param options
-   * @returns {*}
+   * Runs a child process; prints stdout and stderr.
+   * @param {String} cmd - A single command name. If it contains spaces, they are treated as
+   * arguments.
+   * @param {Object} [args]
+   * @param {Array} [args.args] The arguments invoked on the given command.
+   * @param {Object} [args.options] The options passed to child_process.spawn().
+   * @param {Function} [args.data] Invoked with the response data when the command responds with
+   * data.
+   * @param {Function} [args.error] Invoked with the response data when the command has
+   * completed with an error.
+   * @param {Function} [args.exit] Invoked when the command has completed successfully.
+   * @returns {ChildProcess}
    */
-  function runProcess(cmd, args, options) {
-    console.log('Running process: ', cmd, args, options);
-    var proc = child_process.spawn(cmd, args, options);
+  function runProcess(cmd, args) {
+    args = _.extend({
+      args: [],
+      options: {}
+    }, args);
+    var matches = cmd.match(/(\w+)(\s+.+)/);
+    if (matches) {
+      cmd = matches[1];
+      var cmdArgs = matches[2];
+      cmdArgs = cmdArgs.trim().split(/\s+/);
+      args.args = cmdArgs.concat(args.args);
+    }
+    console.log('Running process: ', cmd, args);
+    var proc = child_process.spawn(cmd, args.args, args.options);
     proc.stdout.on('data', function(data) {
       process.stdout.write(data.toString('utf8'));
+      args.success && args.success(data);
     });
     proc.stderr.on('data', function(data) {
       process.stdout.write(data.toString('utf8'));
+      args.error && args.error(data);
+    });
+    proc.on('exit', function(data) {
+      args.exit && args.exit(data);
     });
     return proc;
   }
 
-  function execAll(cmds, log) {
-    log = log === undefined ? true : log;
-    return cmds.forEach(function(cmd) {
-      exec(cmd, log);
+  /**
+   *
+   * @param {Array} cmds
+   * @param {Object} args
+   * @param {Function} [args.beforeCall] - Called before each command is executed.
+   * @param {Function} [args.afterCall] - Called after each command is executed.
+   * @param {Function} [args.afterAll] - Called after all commands are executed.
+   */
+  function runProcessSeries(cmds, args) {
+    args = _.extend({
+    }, args);
+    var processes = [];
+    _.each(cmds, function(cmd, i) {
+      var callNext = function() {
+        console.log('success');
+        args.afterCall && args.afterCall(cmd);
+        if (i < cmds.length - 1) {
+          processes[i]();
+        } else {
+          args.afterAll && args.afterAll();
+        }
+      };
+      var _run = function() {
+        args.beforeCall && args.beforeCall(cmd);
+        runProcess(cmd, {
+          exit: callNext
+        });
+      };
+      if (i === 0) {
+        _run();
+      } else {
+        processes.push(_run);
+      }
     });
   }
 
-  function exec(cmd, log) {
-    log = log === undefined ? true : log;
-    log && console.log(cmd);
-    shell.exec(cmd);
+  function execAll(cmds, callback) {
+    // TODO(aramk) ShellJS.exec() is CPU intensive for long asynchronous tasks, use child process
+    // for now.
+    // TODO(aramk) Use Futures to make this synchronous without callbacks.
+    runProcessSeries(cmds, {
+      beforeCall: function(cmd) {
+        console.log(cmd);
+      },
+      afterAll: function() {
+        callback && callback();
+      }
+    });
   }
 
   // FILES

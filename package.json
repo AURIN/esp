@@ -12,6 +12,7 @@
     "grunt-contrib-copy": "~0.4.1",
     "load-grunt-tasks": "~0.1.0",
     "node-fs": "^0.1.7",
-    "shelljs": "~0.2.6"
+    "shelljs": "~0.2.6",
+    "underscore": "^1.7.0"
   }
 }
