@@ -36,4 +36,4 @@ tinycolor
 requirejs
 atlas
 atlas-cesium
-meteor-utility
+utility
