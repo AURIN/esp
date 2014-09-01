@@ -1,19 +1,47 @@
 ####################################################################################################
+# SCHEMA OPTIONS
+####################################################################################################
+
+SimpleSchema.debug = true
+SimpleSchema.extendOptions
+# Optional extra fields.
+# TODO(aramk) These are added globally, not just for typologies.
+  desc: Match.Optional(String)
+  units: Match.Optional(String)
+# TODO(aramk) There's no need to use serialized formulas, since functions are first-class objects
+# and we don't need to persist or change them outside of source code.
+
+# An expression for calculating the value of the given field for the given model. These are output
+# fields and do not appear in forms. The formula can be a string containing other field IDs prefixed
+# with '$' (e.g. $occupants) which are resolved to the local value per model, or global parameters
+# if no local equivalent is found.
+
+# If the expression is a function, it is passed the current model
+# and the field and should return the result.
+  calc: Match.Optional(Match.Any)
+# A map of class names to objects of properties. "defaultValues" specifies the default value for
+# the given class.
+  classes: Match.Optional(Object)
+
+####################################################################################################
 # SCHEMA DECLARATION
 ####################################################################################################
 
 TypologyClasses =
   RESIDENTIAL:
     name: 'Residential'
-    color: 'blue'
+    color: '#009cff' # Blue
   COMMERCIAL:
     name: 'Commercial'
     color: 'red'
+  MIXED_USE:
+    name: 'Mixed Use'
+    color: '#c000ff' # Purple
   OPEN_SPACE:
     name: 'Open Space'
-    color: 'green'
-  PATHWAYS:
-    name: 'Pathways'
+    color: '#7ed700' # Green
+  PATHWAY:
+    name: 'Pathway'
     color: 'black'
 
 ClassNames = Object.keys(TypologyClasses)
@@ -281,20 +309,27 @@ createCategoriesSchema = (args) ->
   cats = args.categories
   unless cats
     throw new Error('No categories provided.')
+  # For each category in the schema.
   catsFields = {}
   for catId, cat of cats
     catSchemaFields = {}
+    # For each field in each category
     for itemId, item of cat.items
       # TODO(aramk) Set the default to 0 for numbers.
       itemFields = _.extend({optional: true}, args.itemDefaults, item)
       autoLabel(itemFields, itemId)
       catSchemaFields[itemId] = itemFields
     catSchema = new SimpleSchema(catSchemaFields)
-    catFields = _.extend({optional: false, defaultValue: {}}, args.categoryDefaults, cat,
-      {type: catSchema})
-    autoLabel(catFields, catId)
-    delete catFields.items
-    catsFields[catId] = catFields
+    catSchemaArgs = _.extend({
+      optional: false
+      defaultValue: {}
+#      autoValue: ->
+#        console.log('autoValue', this, arguments)
+#        {} unless this.isSet
+    }, args.categoryDefaults, cat, {type: catSchema})
+    autoLabel(catSchemaArgs, catId)
+    delete catSchemaArgs.items
+    catsFields[catId] = catSchemaArgs
   new SimpleSchema(catsFields)
 
 @ParamUtils =
@@ -336,14 +371,14 @@ Typologies.schema = TypologySchema
 Typologies.classes = TypologyClasses
 Typologies.allow(Collections.allowAll())
 
-Typologies.resolveClassId = (name) ->
-  id = (name + '').toUpperCase()
-  if TypologyClasses[id]? then id else null
-
-Typologies.resolveClassName = (name) ->
-  id = Typologies.resolveClassId(name)
-  cls = TypologyClasses[id]
-  cls?.name
+Typologies.getClassByName = _.memoize (name) ->
+  matchedId = null
+  sanitize = (str) -> ('' + str).toLowerCase().trim()
+  name = sanitize(name)
+  for id, cls of TypologyClasses
+    if sanitize(cls.name) == name
+      matchedId = id
+  matchedId
 
 Typologies.getClassItems = ->
   _.map Typologies.classes, (cls, id) -> Setter.merge(Setter.clone(cls), {_id: id})
@@ -437,10 +472,18 @@ findByProject = (collection, projectId) ->
   if projectId
     collection.find({project: projectId})
   else
-    console.error('Project ID not provided - cannot retrieve models.')
-    []
+    throw new Error('Project ID not provided - cannot retrieve models.')
 
 Typologies.findByProject = (projectId) -> findByProject(Typologies, projectId)
+
+Typologies.getClassMap = (projectId) ->
+  typologies = Typologies.findByProject(projectId).fetch()
+  typologyMap = {}
+  _.each typologies, (typology) ->
+    typologyClass = Typologies.getParameter(typology, 'general.class')
+    map = typologyMap[typologyClass] ?= []
+    map.push(typology)
+  typologyMap
 
 ####################################################################################################
 # ENTITY SCHEMA DEFINITION
@@ -461,6 +504,12 @@ EntitySchema = new SimpleSchema
   typology:
     label: 'Typology'
     type: String
+# Despite having the "entity" field on lots, when a new entity is created it is rendered
+# reactively and without a lot reference it will fail.
+  lot:
+    label: 'Lot'
+    type: String
+    index: true
   parameters:
     label: 'Parameters'
     type: EntityParametersSchema
@@ -501,19 +550,15 @@ Entities.setParameter = (model, paramId, value) ->
 
 Entities.findByProject = (projectId) -> findByProject(Entities, projectId)
 
-# TODO(aramk) use a .observe() instead!
 # Remove the entity from the lot when removing the entity.
-oldEntityRemove = Entities.remove
-Entities.remove = (selector, callback) ->
-  wrappedCallback = ->
-    lot = Lots.findOne({entity: selector})
+Entities.find().observe
+  removed: (entity) ->
+    lot = Lots.findByEntity(entity._id)
     if lot?
-      Lots.update(lot._id, {$unset: {entity: null}})
-    callback?()
-  oldEntityRemove.call(@, selector, wrappedCallback)
+      Lots.remove(lot._id, {$unset: {entity: null}})
 
 ####################################################################################################
-# LOTS SCHEMA DEFINITION
+# LOT SCHEMA DEFINITION
 ####################################################################################################
 
 lotCategories =
@@ -552,11 +597,14 @@ LotSchema = new SimpleSchema
     index: true
     custom: ->
       classParamId = 'parameters.general.class'
+      developFieldId = 'parameters.general.develop'
       typologyClassField = @siblingField(classParamId)
-      unless typologyClassField.isSet && this.isSet
+      developField = @siblingField(developFieldId)
+      unless (typologyClassField.isSet && this.isSet && developField.isSet) || @operator == '$unset'
         # TODO(aramk) This isn't guaranteed to work if typology field is not set at same time as
         # entity. Look up the actual value using an ID.
-        return 'Class and entity must be set together for validation to work.'
+        return 'Class, entity and develop fields must be set together for validation to work, ' +
+          'unless entity is being removed.'
       if typologyClassField.operator == '$unset' && @operator != '$unset'
         return 'Class must be present if entity is present.'
       entityId = @value
@@ -568,11 +616,8 @@ LotSchema = new SimpleSchema
       if typologyClassField.operator != '$unset' && @operator != '$unset' && typologyClass != entityClass
         return 'Entity must have the same class as the Lot. Entity has ' + entityClass +
           ', Lot has ' + typologyClass
-      developFieldId = 'parameters.general.develop'
-      developField = @siblingField(developFieldId)
       if developField.operator != '$unset' && @operator != '$unset' && !developField.value
         return 'Lot which is not for development cannot have Entity assigned.'
-
   parameters:
     label: 'Parameters'
     type: LotParametersSchema
@@ -590,9 +635,59 @@ Lots.setParameter = (model, paramId, value) ->
 
 Lots.findByProject = (projectId) -> findByProject(Lots, projectId)
 Lots.findByEntity = (entityId) -> Lots.findOne({entity: entityId})
+Lots.findForDevelopment = (projectId) ->
+  _.filter Lots.findByProject(projectId).fetch(), (lot) ->
+    Lots.getParameter(lot, 'general.develop')
+Lots.findAvailable = (projectId) ->
+  _.filter Lots.findForDevelopment(projectId), (lot) -> !lot.entity
+
+Lots.createEntity = (lotId, typologyId) ->
+  df = Q.defer()
+  lot = Lots.findOne(lotId)
+  typology = Typologies.findOne(typologyId)
+  if !lot
+    throw new Error('No Lot with ID ' + id)
+  else if !typology
+    throw new Error('No Typology with ID ' + typologyId)
+  # TODO(aramk) Need a warning?
+  #  else if lot.entity?
+  #    throw new Error('Lot with ID ' + id + ' already has entity')
+  classParamId = 'parameters.general.class'
+  developParamId = 'parameters.general.develop'
+  lotClass = Lots.getParameter(lot, classParamId)
+  isForDevelopment = Lots.getParameter(lot, developParamId)
+  # If no class is provided, use the class of the entity's typology.
+  unless lotClass
+    lotClass = Typologies.getParameter(typology, classParamId)
+
+  # Create a new entity for this lot-typology combination and remove the existing one
+  # (if any). Name of the entity matches that of the lot.
+  newEntity =
+    name: lot.name
+    typology: typologyId
+    project: Projects.getCurrentId()
+    lot: lotId
+  Entities.insert newEntity, (err, newEntityId) ->
+    if err
+      df.reject(err)
+      return
+    lotModifier = {entity: newEntityId}
+    # These are necessary to ensure validation has all fields available.
+    lotModifier[classParamId] = lotClass
+    lotModifier[developParamId] = isForDevelopment
+    Lots.update lotId, {$set: lotModifier}, (err, result) ->
+      if err
+        Entities.remove newEntityId, (removeErr, result) ->
+          if removeErr
+            df.reject(removeErr)
+          else
+            df.reject(err)
+      else
+        df.resolve(newEntityId)
+  df.promise
 
 ####################################################################################################
-# PROJECTS SCHEMA DEFINITION
+# PROJECT SCHEMA DEFINITION
 ####################################################################################################
 
 projectCategories =
@@ -726,3 +821,4 @@ Projects.setLocationCoords = (id, location) ->
   Projects.update id, $set:
     'parameters.location.lat': location.latitude
     'parameters.location.lng': location.longitude
+

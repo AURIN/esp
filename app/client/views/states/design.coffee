@@ -50,7 +50,7 @@ TemplateClass.rendered = ->
       console.debug('Created Atlas', cesiumAtlas)
       console.debug('Attaching Atlas')
       cesiumAtlas.attachTo(atlasNode)
-      cesiumAtlas.publish('debugMode', true)
+      cesiumAtlas.publish('debugMode', false)
       TemplateClass.onAtlasLoad(template, cesiumAtlas)
     )
 
@@ -93,11 +93,13 @@ TemplateClass.helpers
 
 TemplateClass.events
   'change .entityDisplayMode.dropdown': (e) ->
-    displayMode = $(e.currentTarget).dropdown('get value')
+    displayMode = Template.dropdown.getValue(e.currentTarget)
     Session.set('entityDisplayMode', displayMode)
   'change .lotDisplayMode.dropdown': (e) ->
-    displayMode = $(e.currentTarget).dropdown('get value')
+    displayMode = Template.dropdown.getValue(e.currentTarget)
     Session.set('lotDisplayMode', displayMode)
+  'click .allocate.item': (e) ->
+    LotUtils.autoAllocate()
 
 getSidebar = (template) ->
   $(template.find('.design.container > .sidebar'))

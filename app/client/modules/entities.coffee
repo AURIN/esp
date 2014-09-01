@@ -1,7 +1,7 @@
 # TODO(aramk) Refactor with LotUtils
 
 @EntityUtils =
-  
+
   toGeoEntityArgs: (id) ->
     AtlasConverter.getInstance().then (converter) ->
       entity = Entities.getFlattened(id)
@@ -9,18 +9,6 @@
       space = entity.parameters.space
       typologySpace = typology.parameters.space
       displayMode = Session.get('entityDisplayMode')
-#      getMesh = ->
-#        df = Q.defer()
-#        meshFileId = Entities.getParameter(entity, 'space.mesh')
-#        unless meshFileId?
-#          df.resolve(null)
-#        Meteor.call 'files/download/string', meshFileId, (err, data) ->
-#          if err
-#            df.reject(err)
-#          else
-#            df.resolve()
-#        meshFileId
-#        df.promise
       converter.toGeoEntityArgs
         id: id
 #        mesh: mesh
@@ -31,65 +19,92 @@
         color: '#666'
         borderColor: '#000'
 
-  render: (id) ->
+  _getMesh: (id) ->
+    meshDf = Q.defer()
+    entity = Entities.getFlattened(id)
+    meshFileId = Entities.getParameter(entity, 'space.mesh')
+    unless meshFileId?
+      meshDf.resolve(null)
+    Meteor.call 'files/download/json', meshFileId, (err, data) ->
+      if err
+        meshDf.reject(err)
+      else
+        meshDf.resolve(data)
+    meshDf.promise
+
+  _buildMeshCollection: (id) ->
     df = Q.defer()
-    entity = AtlasManager.getEntity(id)
-    if entity
-      AtlasManager.showEntity(id)
-      df.resolve(entity)
+    geoEntity = AtlasManager.getEntity(id)
+    @_getMesh(id).then (result) ->
+      unless result
+        df.resolve(null)
+        return
+      # Store a single geolocation and translate all c3ml entities by the difference between
+      # this and the log geoEntity.
+      c3mlBaseCentroid = null
+      try
+        c3mlEntities = AtlasManager.renderEntities(result.c3mls)
+      catch e
+        console.error(e)
+      entityIds = []
+      entityIdMap = {}
+      _.each c3mlEntities, (c3mlEntity) ->
+        mesh = null
+        if c3mlEntity.getForm
+          mesh = c3mlEntity.getForm()
+          unless mesh
+            return
+        # TODO(aramk) Meshes still don't have centroid support so use geolocation for now.
+        centroid = mesh.getGeoLocation()
+        unless centroid
+          return
+        unless c3mlBaseCentroid
+          c3mlBaseCentroid = centroid
+        entityId = c3mlEntity.getId()
+        entityIds.push(entityId)
+        entityIdMap[entityId] = true
+      # Add c3mls to a single collection and use it as the mesh display mode for the
+      # feature.
+      require ['atlas/model/Collection'], (Collection) ->
+        # TODO(aramk) Use dependency injection to prevent the need for passing manually.
+        deps = geoEntity._bindDependencies({})
+        collection = new Collection('collection-' + id, {entities: entityIds}, deps)
+        df.resolve(collection: collection, centroid: c3mlBaseCentroid)
+    df.promise
+
+  render: (entityId) ->
+    df = Q.defer()
+    entity = Entities.findOne(entityId)
+    geoEntity = AtlasManager.getEntity(entityId)
+    if geoEntity
+      AtlasManager.showEntity(entityId)
+      df.resolve(geoEntity)
     else
-      getMesh = ->
-        meshDf = Q.defer()
-        entity = Entities.getFlattened(id)
-        meshFileId = Entities.getParameter(entity, 'space.mesh')
-        unless meshFileId?
-          meshDf.reject('No mesh for entity ' + id)
-        Meteor.call 'files/download/json', meshFileId, (err, data) ->
-          console.log('download', arguments)
-          if err
-            meshDf.reject(err)
-          else
-            meshDf.resolve(data)
-        meshDf.promise
-
-      @toGeoEntityArgs(id).then (entityArgs) ->
-        entity = AtlasManager.renderEntity(entityArgs)
-        # If the entity was rendered using the Typology geometry, centre it based on the Lot.
-        lot = Lots.findByEntity(id)
+      @toGeoEntityArgs(entityId).then (entityArgs) =>
+        geoEntity = AtlasManager.renderEntity(entityArgs)
+        # If the geoEntity was rendered using the Typology geometry, centre it based on the Lot.
+        lot = Lots.findOne(entity.lot)
         unless lot
-          AtlasManager.unrenderEntity(id)
-          throw new Error('Rendered entity does not have an accompanying lot.')
-        LotUtils.render(lot._id).then (lotEntity) ->
-          lotCentroid = lotEntity.getCentroid()
-          centroidDiff = lotCentroid.subtract(entity.getCentroid())
-          entity.translate(centroidDiff)
-          df.resolve(entity)
+          AtlasManager.unrenderEntity(entityId)
+          throw new Error('Rendered geoEntity does not have an accompanying lot.')
+        lotId = lot._id
+        require ['atlas/model/Feature'], (Feature) =>
+          LotUtils.render(lotId).then (lotEntity) =>
+            lotCentroid = lotEntity.getCentroid()
+            unless geoEntity.getDisplayMode() == Feature.DisplayMode.MESH
+              # TODO(aramk) Mesh doesn't have centroid yet.
+              entityCentroidDiff = lotCentroid.subtract(geoEntity.getCentroid())
+              geoEntity.translate(entityCentroidDiff)
+            df.resolve(geoEntity)
 
-          _meshDf = getMesh()
-          _meshDf.then (result) ->
-            if result
-              console.log('c3mls', result.c3mls)
-              try
-                c3mlEntities = AtlasManager.renderEntities(result.c3mls)
-              catch e
-                console.error(e)
-              console.log('c3mlEntities', c3mlEntities)
-              _.each c3mlEntities, (c3mlEntity) ->
-                if c3mlEntity.getForm
-                  c3mlEntity = c3mlEntity.getForm()
-                  unless c3mlEntity
-                    return
-                # TODO(aramk) Meshes still don't have centroid support so use geolocation for now.
-                if c3mlEntity.getGeoLocation
-                  c3mlCentroid = c3mlEntity.getGeoLocation()
-                else
-                  c3mlCentroid = c3mlEntity.getCentroid()
-                unless c3mlCentroid
-                  return
-                console.log('c3mlCentroid', c3mlCentroid)
-                c3mlCentroidDiff = lotCentroid.subtract(c3mlCentroid)
-                c3mlEntity.translate(c3mlCentroidDiff)
-
-          _meshDf.fail -> console.error(arguments)
+            # Render the mesh afterwards to prevent long delays.
+            @._buildMeshCollection(entityId).then (result) ->
+              unless result
+                return
+              meshEntity = result.collection
+              centroid = result.centroid
+              meshCentroidDiff = lotCentroid.subtract(centroid)
+              meshEntity.translate(meshCentroidDiff)
+              geoEntity.setForm(Feature.DisplayMode.MESH, meshEntity)
 
     df.promise

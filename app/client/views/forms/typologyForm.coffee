@@ -3,12 +3,9 @@ Meteor.startup ->
   getClassInput = ->
     $(@.find('[name="parameters.general.class"]')).closest('.dropdown')
 
-  getClassInputValue = ->
-    getClassInput.call(@).dropdown('get value')
-
   updateFields = ->
     typology = @data.doc
-    typologyClass = getClassInputValue.call(@)
+    typologyClass = Template.dropdown.getValue(getClassInput())
     console.debug 'updateFields', @, arguments, typologyClass
     for key, input of @schemaInputs
       classes = input.field.classes
@@ -118,7 +115,7 @@ Meteor.startup ->
       $footprintImport = $(template.find('.footprint-import'))
       fileNode = $('input[type="file"]', $footprintImport)[0]
       files = fileNode.files
-      format = $('.dropdown.format', $footprintImport).dropdown('get value')
+      format = Template.dropdown.getValue($('.dropdown.format', $footprintImport))
       console.debug 'files', files, 'format', format
       if files.length == 0
         console.log('Select a file to upload.')

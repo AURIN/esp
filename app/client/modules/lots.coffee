@@ -23,28 +23,11 @@
     df.promise
 
   _fromAsset: (args) ->
-    df = Q.defer()
+    lotDfs = []
     c3mls = args.c3mls
     metaData = args.metaData
     params = args.params
-    lotIds = []
-    doneCalls = 0
     polygonC3mls = []
-    done = (id) ->
-      lotIds.push(id)
-      doneCalls++
-      console.debug('done', id, doneCalls, c3mls.length)
-      if doneCalls == polygonC3mls.length
-        projectId = Projects.getCurrentId()
-        # If the project doesn't have lat, lng location, set it as that found in this file.
-        location = Projects.getLocationCoords(projectId)
-        unless location.latitude? && location.longitude?
-          assetPosition = metaData.lookAt?.position
-          if assetPosition?
-            console.debug 'Setting project location', assetPosition
-            Projects.setLocationCoords(projectId,
-              {longitude: assetPosition.x, latitude: assetPosition.y})
-        df.resolve(lotIds)
     _.each c3mls, (c3ml) ->
       if c3ml.type == 'polygon'
         polygonC3mls.push(c3ml)
@@ -61,22 +44,39 @@
       if coords.length == 0
         return
       name = lotId ? 'Lot #' + (i + 1)
-      classId = Typologies.resolveClassId(entityParams.landuse)
+      classId = Typologies.getClassByName(entityParams.landuse)
+      lotDf = Q.defer()
+      lotDfs.push(lotDf)
       WKT.fromVertices coords, (wkt) ->
+        develop = Booleans.parse(entityParams.develop ? entityParams.redev ? true)
+        height = entityParams.height ? c3ml.height
         lot =
           name: name
           project: Projects.getCurrentId()
           parameters:
             general:
               class: classId
-              dev: Booleans.parse(entityParams.redev ? true)
+              develop: develop
             space:
               geom: wkt
-              height: c3ml.height
-        id = Lots.insert(lot)
-        console.debug('lot', id, lot)
-        done(id)
-    df.promise
+              height: height
+        # Validator needs both entity and class set together.
+          entity: null
+        Lots.insert lot, (err, insertId) ->
+          if err
+            lotDf.reject(err)
+          else
+            lotDf.resolve(insertId)
+    Q.all(lotDfs).then ->
+      projectId = Projects.getCurrentId()
+      # If the project doesn't have lat, lng location, set it as that found in this file.
+      location = Projects.getLocationCoords(projectId)
+      unless location.latitude? && location.longitude?
+        assetPosition = metaData.lookAt?.position
+        if assetPosition?
+          console.debug 'Setting project location', assetPosition
+          Projects.setLocationCoords(projectId,
+            {longitude: assetPosition.x, latitude: assetPosition.y})
 
   toGeoEntityArgs: (id) ->
     AtlasConverter.getInstance().then (converter) =>
@@ -84,9 +84,11 @@
       className = Lots.getParameter(lot, 'general.class')
       isForDevelopment = Lots.getParameter(lot, 'general.develop')
       typologyClass = Typologies.classes[className]
-      color = typologyClass.color
-      unless isForDevelopment
-        color = tinycolor.lighten(tinycolor(color), 25).toHexString()
+      # Reduce saturation of non-develop lots. Ensure full saturation for develop lots.
+      color = tinycolor(typologyClass.color).toHsv()
+      color.s = if isForDevelopment then 1 else 0.5
+      color = tinycolor(color)
+      borderColor = tinycolor.darken(color, 40)
       space = lot.parameters.space
       displayMode = @getDisplayMode(id)
       converter.toGeoEntityArgs
@@ -94,8 +96,8 @@
         vertices: space.geom
         height: space.height
         displayMode: displayMode
-        color: color
-        borderColor: '#000'
+        color: color.toHexString()
+        borderColor: borderColor.toHexString()
 
   getDisplayMode: (id) ->
     lot = Lots.findOne(id)
@@ -119,3 +121,25 @@
         entity = AtlasManager.renderEntity(geoEntity)
         df.resolve(entity)
     df.promise
+
+# Find all unallocated development lots and allocate appropriate typologies for them.
+  autoAllocate: ->
+    console.debug 'Automatically allocating typologies to lots...'
+    dfs = []
+    typologyMap = Typologies.getClassMap()
+    typologies = Typologies.findByProject().fetch()
+    _.each Lots.findAvailable(), (lot) ->
+      typologyClass = Lots.getParameter(lot, 'general.class')
+      if typologyClass?
+        classTypologies = typologyMap[typologyClass] ? []
+      else
+        # Allocate to any typology
+        classTypologies = typologies
+      unless classTypologies.length > 0
+        console.warn 'Could not find suitable typology for lot', lot
+        return
+      typology = Arrays.getRandomItem(classTypologies)
+      console.debug 'Allocating typology', typology, 'to lot', lot
+      entityDf = Lots.createEntity(lot._id, typology._id)
+      dfs.push(entityDf)
+    Q.all(dfs).then -> console.debug 'Successfully allocated', dfs.length, 'lots'

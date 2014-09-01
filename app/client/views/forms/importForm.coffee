@@ -28,7 +28,7 @@ Meteor.startup ->
       e.preventDefault()
       fileNode = template.find('form input[type="file"]');
       files = fileNode.files
-      format = $(template.find('.dropdown.format')).dropdown('get value')
+      format = Template.dropdown.getValue(template.find('.dropdown.format'))
       onSuccess = template.data?.settings?.onSuccess
       console.debug 'files', files, 'format', format
       if files.length == 0

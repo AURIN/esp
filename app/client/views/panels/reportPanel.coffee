@@ -15,7 +15,7 @@ Template.reportPanel.rendered = ->
   reportTemplate = null
   $reports = $(@find('.content'))
   renderReport = ->
-    id = $reportDropdown.dropdown('get value')
+    id = Template.dropdown.getValue($reportDropdown)
     report = Reports.findOne(id)
     if reportTemplate
       TemplateUtils.getDom(reportTemplate).remove()
