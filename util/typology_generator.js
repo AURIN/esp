@@ -57,7 +57,11 @@ function getUnits(units) {
 csv.parse(csvData, {columns: true}, function(err, output) {
   var categories = {};
   var addToCategory = function(categoryName, fieldName, field) {
-    var category = categories[categoryName] = categories[categoryName] || {items: {}};
+    var categoryId = categoryName.toLowerCase().replace(/\s+/, '_');
+    var category = categories[categoryId] = categories[categoryName] || {
+      label: categoryName,
+      items: {}
+    };
     var items = category.items;
     if (items[fieldName]) {
       throw new Error('Field "' + fieldName + '" already added to category "' + categoryName +

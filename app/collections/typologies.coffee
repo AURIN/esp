@@ -124,6 +124,7 @@ extendSchema = (orig, changes) ->
 
 typologyCategories =
   general:
+    label: 'General'
     items:
     # Generic fields
       state:
@@ -155,6 +156,7 @@ typologyCategories =
           COMMERCIAL:
             defaultValue: 200
   space:
+    label: 'Space'
     items:
       geom:
         label: 'Geometry'
@@ -186,7 +188,21 @@ typologyCategories =
         desc: 'Area of the building footprint.'
       })
       height: heightSchema
+      prpn_lawn:
+        label: 'Proportion Extra Land – Lawn'
+        desc: 'Proportion of extra land covered by lawn.'
+        type: Number
+        decimal: true
+        # TODO(aramk) Is this supported, or do we need to use classes?
+        defaultValue: 0.15
+#      prpn_annu:
+#
+#      prpn_hardy:
+#
+#      prpn_imper:
+
   energy:
+    label: 'Energy'
     items:
       en_heat:
         label: 'Energy – Heating'
@@ -235,6 +251,7 @@ typologyCategories =
           energySource = EnergySources[src]
           if energySource then energySource.kgCO2 * en else null
   financial:
+    label: 'Financial'
     items:
     # TODO(aramk) This was used as a demo of using global parameters in an expression.
       local_land_value:
@@ -327,7 +344,8 @@ createCategoriesSchema = (args) ->
 #        console.log('autoValue', this, arguments)
 #        {} unless this.isSet
     }, args.categoryDefaults, cat, {type: catSchema})
-    autoLabel(catSchemaArgs, catId)
+    unless catSchemaArgs.label
+      autoLabel(catSchemaArgs, catId)
     delete catSchemaArgs.items
     catsFields[catId] = catSchemaArgs
   new SimpleSchema(catsFields)
