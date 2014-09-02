@@ -19,7 +19,7 @@ Meteor.startup ->
       isParamField = ParamUtils.hasPrefix(key)
       paramName = ParamUtils.removePrefix(key) if isParamField
       classes = schemaField.classes
-      classOptions = classes?[typologyClass?]
+      classOptions = classes?[typologyClass]
       allClassOptions = classes?.ALL
       if allClassOptions?
         classOptions = _.extend(allClassOptions, classOptions)

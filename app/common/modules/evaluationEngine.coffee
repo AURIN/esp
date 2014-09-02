@@ -10,23 +10,22 @@ class @EvaluationEngine
     model = args.model
     changes = {}
     schemas = @getOutputParamSchemas(args.paramIds)
-    console.log('param schemas', schemas)
-
     # Go through output parameters and calculate them recursively.
+    getOutputParamSchema = (paramId) -> schemas[ParamUtils.addPrefix(paramId)]
 
-    getSchema = (paramId) -> schemas[ParamUtils.addPrefix(paramId)]
-
-    getValueOrCalc = (paramId) ->
-      schema = getSchema(paramId)
-      if schema?
+    getValueOrCalc = (paramId) =>
+      if getOutputParamSchema(paramId)
         # Only output fields are in this schema object.
         value = calcValue(paramId)
       else
-        value = getValue(paramId)
+        if @getParamSchema(paramId)
+          value = getValue(paramId)
+        else
+          throw new Error('Cannot find parameter with ID ' + paramId)
       value
 
     calcValue = (paramId) =>
-      schema = getSchema(paramId)
+      schema = getOutputParamSchema(paramId)
       calc = schema.calc
       if Types.isString(calc)
         calc = @buildEvalFunc(expr: calc)
@@ -63,13 +62,11 @@ class @EvaluationEngine
     new Function('param', funcBody)
 
   getOutputParamSchemas: (paramIds) ->
-    if paramIds
-      _.each paramIds, (id, i) ->
-        paramIds[i] = ParamUtils.addPrefix(id)
-    else
+    unless paramIds
       paramIds = @schema._schemaKeys
     schemas = {}
     for key in paramIds
+      key = ParamUtils.addPrefix(key)
       schema = @getParamSchema(key)
       if schema?
         if schema.calc?
@@ -82,8 +79,6 @@ class @EvaluationEngine
   setResult: (model, paramId, value) ->
     Entities.setParameter(model, paramId, value)
 
-  getParamSchema: (paramId) ->
-    @schema.schema(paramId)
+  getParamSchema: (paramId) -> @schema.schema(ParamUtils.addPrefix(paramId))
 
-  isOutputParam: (paramId) ->
-    @getParamSchema(paramId).calc?
+  isOutputParam: (paramId) -> @getParamSchema(paramId).calc?

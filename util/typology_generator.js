@@ -26,7 +26,7 @@ csvData = sanitizeEncoding(csvData);
 
 function sanitizeEncoding(str) {
   // Replace UNICODE dash with ASCII.
-  return str.replace('\u2013', '-');
+  return str.replace(/\u2013|\u8211/g, '-');
 }
 
 var nameField = 'Field Name';
@@ -41,16 +41,16 @@ var integerType = 'Integer';
 var floatType = 'Float';
 var naNType = 'N/A';
 var unitsMap = {
-  'm\u00b2': 'm^2'
+  'm²': 'm^2'
 };
 
 function getUnits(units) {
   var result = unitsMap[units];
-  if (result === undefined && result !== integerType && result !== floatType &&
-      result !== naNType) {
-    return result;
-  } else {
+  if (result === undefined && units !== integerType && units !== floatType &&
+      units !== naNType) {
     return units;
+  } else {
+    return result;
   }
 }
 

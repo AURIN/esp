@@ -73,6 +73,8 @@ Units =
   Lyear: 'L/year'
   MLyear: 'ML/year'
   kWyear: 'kWh/year'
+  MJyear: 'MJ/year'
+  GJyear: 'GJ/year'
 
 # Common field schemas shared across collection schemas.
 
@@ -187,82 +189,233 @@ typologyCategories =
         label: 'Footprint Area'
         desc: 'Area of the building footprint.'
       })
+      gpa:
+        label: 'Gross Floor Area'
+        desc: 'Gross floor area of all the rooms in the typology.'
+        type: Number
+        decimal: true
+        units: Units.m2
+      cfa:
+        label: 'Conditioned Floor Area'
+        desc: 'Total conditioned area of the typology.'
+        type: Number
+        decimal: true
+        units: Units.m2
+      storeys:
+        label: 'Storeys'
+        desc: 'Number of floors/storeys in the typology.'
+        type: Number
+        units: 'Floors'
+      occupants:
+        label: 'No. Occupants'
+        desc: 'Number of occupants in the typology.'
+        type: Number
+        units: 'Persons'
+      num_0br:
+        label: 'Dwellings - Studio'
+        desc: 'Number of studio units in the typology.'
+        type: Number
+        units: 'Dwellings'
+      num_1br:
+        label: 'Dwellings - 1 Bedroom'
+        desc: 'Number of 1 bedroom units in the typology.'
+        type: Number
+        units: 'Dwellings'
+      num_2br:
+        label: 'Dwellings - 2 Bedroom'
+        desc: 'Number of 2 bedroom units in the typology.'
+        type: Number
+        units: 'Dwellings'
+      num_3plus:
+        label: 'Dwellings - 3 Bedroom Plus'
+        desc: 'Number of 3 bedroom units in the typology.'
+        type: Number
+        units: 'Dwellings'
       height: heightSchema
       prpn_lawn:
-        label: 'Proportion Extra Land – Lawn'
+        label: 'Proportion Extra Land - Lawn'
         desc: 'Proportion of extra land covered by lawn.'
         type: Number
         decimal: true
         classes:
-          ALL:
+          RESIDENTIAL:
             defaultValue: 0.15
-#      prpn_annu:
-#
-#      prpn_hardy:
-#
-#      prpn_imper:
-
-  energy:
-    label: 'Energy'
+      prpn_annu:
+        label: 'Proportion Extra Land - Annual Plants'
+        desc: 'Proportion of extra land covered by annual plants, such as flowers and veggies.'
+        type: Number
+        decimal: true
+        classes:
+          RESIDENTIAL:
+            defaultValue: 0.1
+      prpn_hardy:
+        label: 'Proportion Extra Land - Hardy Plants'
+        desc: 'Proportion of extra land covered by hardy or waterwise plants.'
+        type: Number
+        decimal: true
+        classes:
+          RESIDENTIAL:
+            defaultValue: 0.35
+      prpn_imper:
+        label: 'Proportion Extra Land - Impermeable'
+        desc: 'Proportion of extra land covered by pavement or another impermeable surface.'
+        type: Number
+        decimal: true
+        classes:
+          RESIDENTIAL:
+            defaultValue: 0.4
+      ext_land_l:
+        label: 'Extra Land - Lawn'
+        desc: 'Area of extra land covered by lawn.'
+        type: Number
+        decimal: true
+        units: Units.m2
+        calc: '$space.extland * $space.prpn_lawn'
+      ext_land_a:
+        label: 'Extra Land - Annual Plants'
+        desc: 'Area of extra land covered by annual plants, such as flowers and veggies.'
+        type: Number
+        decimal: true
+        units: Units.m2
+        calc: '$space.extland * $space.prpn_annu'
+      ext_land_h:
+        label: 'Extra Land - Hardy Plants'
+        desc: 'Area of extra land covered by hardy or waterwise plants.'
+        type: Number
+        decimal: true
+        units: Units.m2
+        calc: '$space.extland * $space.prpn_hardy'
+      ext_land_i:
+        label: 'Extra Land - Impermeable'
+        desc: 'Area of extra land covered by pavement or another impermeable surface.'
+        type: Number
+        decimal: true
+        units: Units.m2
+        calc: '$space.extland * $space.prpn_imper'
+  energy_demand:
+    label: 'Energy Demand'
     items:
       en_heat:
-        label: 'Energy – Heating'
+        label: 'Energy - Heating'
+        desc: 'Energy required for heating the typology.'
+        type: Number
+        decimal: true
+        units: Units.MJyear
+      src_heat:
+        label: 'Energy Source – Heating'
+        desc: 'Energy source in the typology used for heating. ' + stringAllowedValues(EnergySourceTypes)
+        type: String
+        allowedValues: EnergySourceTypes
+      en_cool:
+        label: 'Energy – Cooling'
+        desc: 'Energy required for cooling the typology.'
+        type: Number
+        decimal: true
+        units: Units.MJyear
+      en_light:
+        label: 'Energy - Lighting'
+        desc: 'Energy required for lighting the typology.'
         type: Number
         decimal: true
         units: Units.kWyear
-        desc: 'Energy required for heating the typology.'
-      src_heat:
-        label: 'Energy Source – Heating'
+      en_hwat:
+        label: 'Energy - Hot Water'
+        desc: 'Energy required for hot water heating in the typology.'
+        type: Number
+        decimal: true
+        units: Units.GJyear
+      src_hwat:
+        label: 'Energy Source - Hot Water'
+        desc: 'Energy source in the typology used for hot water heating. Either ‘Electricity’ or ‘Gas’. Used to calculated CO2-e.'
         type: String
         allowedValues: EnergySourceTypes
-        desc: 'Energy source in the typology used for heating. ' + stringAllowedValues(EnergySourceTypes)
+      en_cook:
+        label: 'Energy - Cooktop and Oven'
+        desc: 'Energy required for cooking in the typology.'
+        type: Number
+        decimal: true
+        units: Units.MJyear
+      src_cook:
+        label: 'Energy Source - Cooktop and Oven'
+        desc: 'Energy source in the typology used for cooking. Either \'Electricity\' or \'Gas\'. Used to calculate CO2-e.'
+        type: String
+        allowedValues: EnergySourceTypes
+      en_app:
+        label: 'Energy - Appliances'
+        desc: 'Energy required for powering appliances in the typology.'
+        type: Number
+        decimal: true
+        units: Units.MJyear
+      size_pv:
+        label: 'PV System Size'
+        desc: 'PV system size fitted on the typology.'
+        type: Number
+        decimal: true
+        units: Units.kWyear
+      en_pv:
+        label: 'PV Energy Generation'
+        desc: 'Energy generated by the fitted PV system.'
+        type: Number
+        decimal: true
+        units: 'kWh'
+        # TODO(aramk) Add needed project parameter
+        calc: '$energy_demand.size_pv * '
+
+      # TODO(aramk) Couldn't find these in the CSV
+#      src_cool:
+#        label: 'Energy Source – Cooling'
+#        type: String
+#        allowedValues: EnergySourceTypes
+#        desc: 'Energy source in the typology used for cooling. ' + stringAllowedValues(EnergySourceTypes)
+#      co2_cool:
+#        label: 'CO2 – Cooling'
+#        type: Number
+#        decimal: true
+#        units: Units.kgco2
+#        desc: 'CO2 emissions due to cooling the typology'
+#        calc: (param) ->
+#          src = param('energy.src_cool')
+#          en = param('energy.en_cool')
+#          return null unless src? and en?
+#          energySource = EnergySources[src]
+#          if energySource then energySource.kgCO2 * en else null
+
+
+  operating_carbon:
+    label: 'Operating Carbon'
+    items:
       co2_heat:
         label: 'CO2 – Heating'
+        desc: 'CO2 emissions due to heating the typology'
         type: Number
         decimal: true
         units: Units.kgco2
-        desc: 'CO2 emissions due to heating the typology'
         calc: (param) ->
           src = param('energy.src_heat')
           en = param('energy.en_heat')
           return null unless src? and en?
           energySource = EnergySources[src]
           if energySource then energySource.kgCO2 * en else null
-      en_cool:
-        label: 'Energy – Cooling'
-        type: Number
-        decimal: true
-        units: Units.kWyear
-        desc: 'Energy required for cooling the typology.'
-      src_cool:
-        label: 'Energy Source – Cooling'
-        type: String
-        allowedValues: EnergySourceTypes
-        desc: 'Energy source in the typology used for cooling. ' + stringAllowedValues(EnergySourceTypes)
-      co2_cool:
-        label: 'CO2 – Cooling'
-        type: Number
-        decimal: true
-        units: Units.kgco2
-        desc: 'CO2 emissions due to cooling the typology'
-        calc: (param) ->
-          src = param('energy.src_cool')
-          en = param('energy.en_cool')
-          return null unless src? and en?
-          energySource = EnergySources[src]
-          if energySource then energySource.kgCO2 * en else null
-  financial:
-    label: 'Financial'
-    items:
-    # TODO(aramk) This was used as a demo of using global parameters in an expression.
-      local_land_value:
-        label: 'Land Value'
-        type: Number
-        decimal: true
-        desc: 'Total land value of the precinct.'
-        units: Units.$
-        calc: (param) ->
-          param('financial.land_value') * param('space.lotsize')
+
+#  financial:
+#    label: 'Financial'
+#    items:
+#      local_land_value:
+#        label: 'Land Value'
+#        type: Number
+#        decimal: true
+#        desc: 'Total land value of the precinct.'
+#        units: Units.$
+#        calc: (param) ->
+#          param('financial.land_value') * param('space.lotsize')
+#      vpsm:
+#        label: 'Land Value per Square Metre'
+#        type: Number
+#        decimal: true
+#        desc: 'Land value per square metre of the precinct.'
+#        calc: (param) ->
+#          param('financial.local_land_value') / param('lot_size')
+
 #  environmental:
 #    items:
 #      pav_prpn:
@@ -467,9 +620,9 @@ Typologies.getDefaultParameterValues = _.memoize (typologyClass) ->
     allClassDefaultValue = classes?.ALL?.defaultValue
     defaultValue = classDefaultValue ? allClassDefaultValue
 
-#    if defaultValue? && classDefaultValue?
-#      console.warn('Field has both defaultValue and classes with defaultValue - using latter.')
-#      defaultValue = classDefaultValue
+    #    if defaultValue? && classDefaultValue?
+    #      console.warn('Field has both defaultValue and classes with defaultValue - using latter.')
+    #      defaultValue = classDefaultValue
 
     if defaultValue?
       values[paramId] = defaultValue
@@ -799,7 +952,6 @@ projectCategories =
         decimal: true
         desc: 'Total land area of the precinct.'
         units: Units.m2
-# TODO(aramk) This would eventually be calculated using the area of geom_2d.
   environment:
     items:
       climate_zn:
@@ -807,18 +959,13 @@ projectCategories =
         type: Number
         decimal: true
         desc: 'BOM climate zone number to determine available typologies.'
-      vpsm:
-        label: 'Land Value per Square Metre'
-        type: Number
-        decimal: true
-        desc: 'Land value per square metre of the precinct.'
-  financial:
-    items:
-      land_value:
-        label: 'Land Value'
-        type: Number
-        desc: 'Total land value of the precinct.'
-        units: Units.$
+#  financial:
+#    items:
+#      land_value:
+#        label: 'Land Value'
+#        type: Number
+#        desc: 'Total land value of the precinct.'
+#        units: Units.$
 
 ProjectParametersSchema = createCategoriesSchema
   categories: projectCategories

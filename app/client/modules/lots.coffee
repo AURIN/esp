@@ -85,9 +85,12 @@
       isForDevelopment = Lots.getParameter(lot, 'general.develop')
       typologyClass = Typologies.classes[className]
       # Reduce saturation of non-develop lots. Ensure full saturation for develop lots.
-      color = tinycolor(typologyClass.color).toHsv()
-      color.s = if isForDevelopment then 1 else 0.5
-      color = tinycolor(color)
+      if typologyClass
+        color = tinycolor(typologyClass.color).toHsv()
+        color.s = if isForDevelopment then 1 else 0.5
+        color = tinycolor(color)
+      else
+        color = tinycolor('#ccc')
       borderColor = tinycolor.darken(color, 40)
       space = lot.parameters.space
       displayMode = @getDisplayMode(id)
