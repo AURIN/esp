@@ -1,3 +1,13 @@
+#!/usr/bin/env node
+
+/**
+ * Generates CoffeeScript from a UTF-8 CSV containing an ESP Typology schema.
+ * @see https://docs.google.com/spreadsheets/d/1Qt5ViQ_II6fYQhwfJicmSMUmTlpUBtnyRbH5CaU1S3g/edit#gid=0
+ * @example
+ * $ node typology_generator.js <input.csv> [<output.coffee>]
+ * $ node typology_generator.js <input.csv> > <output.coffee>
+ */
+
 var fs = require('fs'),
     csv = require('csv'),
     _ = require('underscore'),
@@ -110,7 +120,12 @@ csv.parse(csvData, {columns: true}, function(err, output) {
 
 function serialize(obj) {
   var script = '(' + JSON.stringify(obj) + ')';
+  // Remove logging - for some reason js2coffee logs "true".
+  var oldLog = console.log;
+  console.log = function() {
+  };
   script = jsToCoffee(script);
+  console.log = oldLog;
   // All types should be names of JavaScript functions.
   return script.replace(/(type\s*:\s*)'(\w+)'/gi, '$1$2');
 }
