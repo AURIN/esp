@@ -7,9 +7,11 @@
   },
   "private": "true",
   "devDependencies": {
+    "csv": "^0.4.0",
     "grunt": "~0.4.1",
     "grunt-contrib-clean": "~0.5.0",
     "grunt-contrib-copy": "~0.4.1",
+    "js2coffee": "^0.3.3",
     "load-grunt-tasks": "~0.1.0",
     "node-fs": "^0.1.7",
     "shelljs": "~0.2.6",
