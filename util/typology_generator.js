@@ -58,7 +58,7 @@ csv.parse(csvData, {columns: true}, function(err, output) {
   var categories = {};
   var addToCategory = function(categoryName, fieldName, field) {
     var categoryId = categoryName.toLowerCase().replace(/\s+/, '_');
-    var category = categories[categoryId] = categories[categoryName] || {
+    var category = categories[categoryId] = categories[categoryId] || {
       label: categoryName,
       items: {}
     };
@@ -107,7 +107,7 @@ csv.parse(csvData, {columns: true}, function(err, output) {
       field.units = units;
     }
 
-    if (isCalc) {
+    if (isCalc === 'TRUE') {
       field.calc = '<formula>';
     }
 
