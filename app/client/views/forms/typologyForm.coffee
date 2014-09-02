@@ -79,12 +79,12 @@ Meteor.startup ->
         handleMeshUpload(c3mls, template)
 
   handleFootprintUpload = (c3ml, template) ->
-    $geomInput = $(template.find('[name="parameters.space.geom"]'))
+    $geomInput = $(template.find('[name="parameters.space.geom_2d"]'))
     WKT.fromC3ml(c3ml).then (wkt) ->
       $geomInput.val(wkt)
 
   handleMeshUpload = (c3mls, template) ->
-    $meshInput = $(template.find('[name="parameters.space.mesh"]'))
+    $meshInput = $(template.find('[name="parameters.space.geom_3d"]'))
     # Upload the c3ml as a file.
     doc = {c3mls: c3mls}
     docString = JSON.stringify(doc)

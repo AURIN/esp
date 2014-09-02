@@ -98,7 +98,7 @@ Meteor.startup ->
         newTypologyId = null
       classParamId = 'parameters.general.class'
       developParamId = 'parameters.general.develop'
-      geomParamId = 'parameters.space.geom'
+      geomParamId = 'parameters.space.geom_2d'
       lotClass = Lots.getParameter(doc, classParamId)
       isForDevelopment = Lots.getParameter(doc, developParamId)
 

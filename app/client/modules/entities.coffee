@@ -11,8 +11,7 @@
       displayMode = Session.get('entityDisplayMode')
       converter.toGeoEntityArgs
         id: id
-#        mesh: mesh
-        vertices: space.geom ? typologySpace.geom
+        vertices: space.geom_2d ? typologySpace.geom_2d
         height: space.height
         zIndex: 1
         displayMode: displayMode
@@ -22,7 +21,7 @@
   _getMesh: (id) ->
     meshDf = Q.defer()
     entity = Entities.getFlattened(id)
-    meshFileId = Entities.getParameter(entity, 'space.mesh')
+    meshFileId = Entities.getParameter(entity, 'space.geom_3d')
     unless meshFileId?
       meshDf.resolve(null)
     Meteor.call 'files/download/json', meshFileId, (err, data) ->
