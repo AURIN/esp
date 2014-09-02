@@ -4,25 +4,41 @@ Meteor.startup ->
     $(@.find('[name="parameters.general.class"]')).closest('.dropdown')
 
   updateFields = ->
+    # TODO(aramk) Refactor with entityForm.
     typology = @data.doc
-    typologyClass = Template.dropdown.getValue(getClassInput())
+    typologyClass = Template.dropdown.getValue(getClassInput.call(@))
+    defaultParams = Typologies.getDefaultParameterValues(typologyClass)
     console.debug 'updateFields', @, arguments, typologyClass
     for key, input of @schemaInputs
-      classes = input.field.classes
-      classOptions = if classes and typologyClass then classes[typologyClass] else null
-      paramName = key.replace(/^parameters\./, '')
+      schemaField = input.field
+      isParamField = ParamUtils.hasPrefix(key)
+      paramName = ParamUtils.removePrefix(key) if isParamField
+      classes = schemaField.classes
+      classOptions = classes?[typologyClass?]
+      allClassOptions = classes?.ALL
+      if allClassOptions?
+        classOptions = _.extend(allClassOptions, classOptions)
+
+      # Add placeholders for default values
+      if isParamField
+        defaultValue = Typologies.getParameter(defaultParams, key)
+      else
+        # Regular field - not a parameter.
+        defaultValue = schemaField.defaultValue
+
       $input = $(input.node)
       $wrapper = $input.closest(Forms.FIELD_SELECTOR)
-      if classOptions
-        # Add placeholders for default values
-        $input.attr('placeholder', classOptions.defaultValue)
+      $input.attr('placeholder', defaultValue) if defaultValue?
+
       # Hide fields which have classes specified which don't contain the current class.
       $wrapper[if classes and not classOptions then 'hide' else 'show']()
       # Add a "none" option to select fields.
       if $input.is('select')
         $option = $('<option value="">None</option>')
         $input.prepend($option)
-        inputValue = if typology then Typologies.getParameter(typology, paramName) else null
+        inputValue = null
+        if typology && isParamField
+          inputValue = Typologies.getParameter(typology, paramName)
         unless inputValue?
           $input.val('')
 
@@ -52,7 +68,7 @@ Meteor.startup ->
   Form.helpers
     classes: -> Typologies.getClassItems()
     classValue: -> @doc?.parameters?.general?.class
-    # TODO(aramk) Refactor with import form.
+  # TODO(aramk) Refactor with import form.
     formats: ->
       formats = Collections.createTemporary()
       getFormats(formats)
@@ -88,7 +104,7 @@ Meteor.startup ->
     # Upload the c3ml as a file.
     doc = {c3mls: c3mls}
     docString = JSON.stringify(doc)
-#    buffer = ArrayBuffers.stringToBufferArray(docString)
+    #    buffer = ArrayBuffers.stringToBufferArray(docString)
     blob = new Blob([docString])
     # TODO(aramk) Abstract into Files.upload.
     Files.insert blob, (err, fileObj) ->
@@ -105,8 +121,8 @@ Meteor.startup ->
           console.debug 'uploaded', fileObj
           id = fileObj._id
           $meshInput.val(id)
-#          Meteor.call 'files/download/string', fileObj._id, (err, data) ->
-#            console.debug 'download', arguments
+      #          Meteor.call 'files/download/string', fileObj._id, (err, data) ->
+      #            console.debug 'download', arguments
       handle = setInterval timerHandler, 1000
 
   Form.events

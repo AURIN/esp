@@ -7,24 +7,40 @@ Meteor.startup ->
     $('option[value="' + value + '"]', $select)
 
   updateFields = ->
+    # TODO(aramk) Refactor with typeForm.
     typologyId = Template.dropdown.getValue(getTypologyInput.call(@))
     typology = Typologies.findOne(typologyId)
     typologyClass = typology?.parameters?.general?.class
+    defaultParams = Typologies.getDefaultParameterValues(typologyClass)
+    #    defaultParams = Typologies.mergeDefaults(typology ? {})
     console.debug 'updateFields', @, arguments, typologyId, typology, typologyClass
     for key, input of @schemaInputs
-      console.debug 'input', key, input
-      paramName = key.replace(/^parameters\./, '')
-      classes = input.field.classes
-      classOptions = if classes and typologyClass then classes[typologyClass] else null
-      typologyValue = if typology then Typologies.getParameter(typology, paramName) else null
-      defaultValue = classOptions?.defaultValue
-      console.debug 'typologyValue', typologyValue, classOptions
+      schemaField = input.field;
+      isParamField = ParamUtils.hasPrefix(key)
+      paramName = ParamUtils.removePrefix(key) if isParamField
+      classes = schemaField.classes
+      classOptions = classes?[typologyClass?]
+      allClassOptions = classes?.ALL
+      if allClassOptions?
+        classOptions = _.extend(allClassOptions, classOptions)
+
+      # For entities, we need to distinguish between default values inherited by the typology and
+      # typology values that will be inherited by the entity.
+      typologyValue = null
+      if typology && isParamField
+        typologyValue = Typologies.getParameter(typology, paramName)
+      if isParamField
+        defaultValue = Typologies.getParameter(defaultParams, key)
+      else
+        # Regular field - not a parameter.
+        defaultValue = schemaField.defaultValue
+
       $input = $(input.node)
       $wrapper = $input.closest(Forms.FIELD_SELECTOR)
       if typologyValue?
         # Add placeholders for inherited values
         $input.attr('placeholder', typologyValue)
-      else if defaultValue
+      else if defaultValue?
         # Add placeholders for default values
         $input.attr('placeholder', defaultValue)
       # Hide fields which have classes specified which don't contain the current class.
@@ -49,7 +65,7 @@ Meteor.startup ->
             $defaultOption.text('Default (' + $defaultOption.text() + ')')
         entity = @data.doc
         entityValue = if entity then Entities.getParameter(entity, paramName) else
-        # Only show None if we don't have a set or inherited value
+          # Only show None if we don't have a set or inherited value
         if !entityValue? && !typologyValue?
           # TODO(aramk) This is not available if a value exists, since we cannot override with null
           # yet.

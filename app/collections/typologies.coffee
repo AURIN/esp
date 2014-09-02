@@ -193,8 +193,9 @@ typologyCategories =
         desc: 'Proportion of extra land covered by lawn.'
         type: Number
         decimal: true
-        # TODO(aramk) Is this supported, or do we need to use classes?
-        defaultValue: 0.15
+        classes:
+          ALL:
+            defaultValue: 0.15
 #      prpn_annu:
 #
 #      prpn_hardy:
@@ -335,6 +336,18 @@ createCategoriesSchema = (args) ->
       # TODO(aramk) Set the default to 0 for numbers.
       itemFields = _.extend({optional: true}, args.itemDefaults, item)
       autoLabel(itemFields, itemId)
+      # If defaultValue is used, put it into "classes" to prevent SimpleSchema from storing this
+      # value in the doc. We want to inherit this value at runtime for all classes, but not
+      # persist it in multiple documents in case we want to change it later in the schema.
+      # TODO(aramk) Check if this is intended behaviour.
+      defaultValue = itemFields.defaultValue
+      if defaultValue?
+        classes = itemFields.classes ?= {}
+        allClassOptions = classes.ALL ?= {}
+        if allClassOptions.defaultValue?
+          throw new Error('Default value specified on field and in classOptions - only use one.')
+        allClassOptions.defaultValue = defaultValue
+        delete itemFields.defaultValue
       catSchemaFields[itemId] = itemFields
     catSchema = new SimpleSchema(catSchemaFields)
     catSchemaArgs = _.extend({
@@ -344,8 +357,7 @@ createCategoriesSchema = (args) ->
 #        console.log('autoValue', this, arguments)
 #        {} unless this.isSet
     }, args.categoryDefaults, cat, {type: catSchema})
-    unless catSchemaArgs.label
-      autoLabel(catSchemaArgs, catId)
+    autoLabel(catSchemaArgs, catId)
     delete catSchemaArgs.items
     catsFields[catId] = catSchemaArgs
   new SimpleSchema(catsFields)
@@ -360,6 +372,7 @@ createCategoriesSchema = (args) ->
     else
       @_prefix + '.' + id
   removePrefix: (id) -> id.replace(@_rePrefix, '')
+  hasPrefix: (id) -> @._rePrefix.test(id)
 
 ####################################################################################################
 # TYPOLOGY SCHEMA DEFINITION
@@ -401,9 +414,11 @@ Typologies.getClassByName = _.memoize (name) ->
 Typologies.getClassItems = ->
   _.map Typologies.classes, (cls, id) -> Setter.merge(Setter.clone(cls), {_id: id})
 
-Typologies.getParameter = (model, paramId) ->
+Typologies.getParameter = (obj, paramId) ->
+  # Allow paramId to optionally contain the prefix.
   paramId = ParamUtils.removePrefix(paramId)
-  target = model.parameters ?= {}
+  # Allow obj to contain "parameters" map or be the map itself.
+  target = obj.parameters ? obj ?= {}
   segments = paramId.split('.')
   unless segments.length > 0
     return undefined
@@ -444,9 +459,18 @@ forEachFieldSchema = (schema, callback) ->
 Typologies.getDefaultParameterValues = _.memoize (typologyClass) ->
   values = {}
   forEachFieldSchema ParametersSchema, (fieldSchema, paramId) ->
+    # TODO(aramk) defaultValue currently removed from schema field.
+#    defaultValue = fieldSchema.defaultValue
     classes = fieldSchema.classes
     # NOTE: This does not look for official defaultValue in the schema, only in the class options.
-    defaultValue = if classes then classes[typologyClass]?.defaultValue else null
+    classDefaultValue = classes?[typologyClass]?.defaultValue
+    allClassDefaultValue = classes?.ALL?.defaultValue
+    defaultValue = classDefaultValue ? allClassDefaultValue
+
+#    if defaultValue? && classDefaultValue?
+#      console.warn('Field has both defaultValue and classes with defaultValue - using latter.')
+#      defaultValue = classDefaultValue
+
     if defaultValue?
       values[paramId] = defaultValue
   Typologies.unflattenParameters(values, false)
