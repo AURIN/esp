@@ -5,7 +5,7 @@ Meteor.startup ->
   # schema.
 
   Migrations.add
-    version: 1,
+    version: 1
     up: ->
       migratedModelCount = 0
       # Schema changes.
