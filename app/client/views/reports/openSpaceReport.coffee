@@ -18,8 +18,8 @@ Meteor.startup ->
       {param: 'space.ext_land_i'}
 
       {title: 'Energy'}
-      {param: 'energy.en_heat'}
-      {param: 'energy.co2_heat'}
+      {param: 'energy_demand.en_heat'}
+      {param: 'operating_carbon.co2_heat'}
 
 #      {title: 'Financial'}
 #      {param: 'financial.local_land_value'}

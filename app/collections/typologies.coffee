@@ -68,7 +68,7 @@ WaterDemandSources =
   RAINWATER_TANK:
     name: 'Rainwater Tank'
   ON_SITE_TREATED:
-  name 'On-Site Treated'
+    name: 'On-Site Treated'
   GREYWATER:
     name: 'Greywater'
 
@@ -223,7 +223,7 @@ typologyCategories =
         label: 'Footprint Area'
         desc: 'Area of the building footprint.'
       })
-      gpa:
+      gfa:
         label: 'Gross Floor Area'
         desc: 'Gross floor area of all the rooms in the typology.'
         type: Number
@@ -360,7 +360,7 @@ typologyCategories =
         units: Units.GJyear
       src_hwat:
         label: 'Energy Source - Hot Water'
-        desc: 'Energy source in the typology used for hot water heating. Either ‘Electricity’ or ‘Gas’. Used to calculated CO2-e.'
+        desc: 'Energy source in the typology used for hot water heating. Used to calculated CO2-e.'
         type: String
         allowedValues: EnergySourceTypes
       en_cook:
@@ -369,9 +369,10 @@ typologyCategories =
         type: Number
         decimal: true
         units: Units.MJyear
+    # TODO(aramk) Default value should be based on src_cook.
       src_cook:
         label: 'Energy Source - Cooktop and Oven'
-        desc: 'Energy source in the typology used for cooking. Either \'Electricity\' or \'Gas\'. Used to calculate CO2-e.'
+        desc: 'Energy source in the typology used for cooking. Used to calculate CO2-e.'
         type: String
         allowedValues: EnergySourceTypes
       en_app:
@@ -497,7 +498,7 @@ typologyCategories =
         type: Number
         decimal: true
         units: Units.kgco2
-        calc: '$energy_demand.co2_heat + $energy_demand.co2_cool + $energy_demand.co2_light + $energy_demand.co2_hwat + $energy_demand.co2_cook + $energy_demand.co2_app - ($energy_demand.en_pv * $operating_carbon.elec)'
+        calc: '$operating_carbon.co2_heat + $operating_carbon.co2_cool + $operating_carbon.co2_light + $operating_carbon.co2_hwat + $operating_carbon.co2_cook + $operating_carbon.co2_app - ($energy_demand.en_pv * $operating_carbon.elec)'
   water_demand:
     label: 'Water Demand'
     items:
@@ -693,7 +694,7 @@ typologyCategories =
         type: Number
         decimal: true
         units: 'Degrees'
-        # TODO(aramk) Implement a function to get this
+      # TODO(aramk) Implement a function to get this
         calc: '0'
       eq_azmth_h:
         label: 'Azimuth Heating Energy Array'
@@ -1156,7 +1157,7 @@ Lots.createEntity = (lotId, typologyId) ->
 # PROJECT SCHEMA DEFINITION
 ####################################################################################################
 
-projectCategofries =
+projectCategories =
   general:
     label: 'General'
     items:
@@ -1503,13 +1504,29 @@ projectCategofries =
                 type: Number
                 decimal: true
                 units: Units.kgco2m2
+# TODO(aramk) Use these for src_cook.
+#  energy_demand:
+#    label: 'Energy Demand'
+#    items:
+#      en_cook_elec:
+#        label: 'Cooktop and Oven - Electricity Demand'
+#        desc: 'Energy required for cooking in a typology using electricity.'
+#        type: Number
+#        decimal: true
+#        units: Units.MJyear
+#        defaultValue: 1956
+#      en_cook_gas:
+#        label: 'Cooktop and Oven - Gas Demand'
+#        desc: 'Energy required for cooking in a typology using gas.'
+#        type: Number
+#        decimal: true
+#        units: Units.MJyear
+#        defaultValue: 3366
 
 ProjectParametersSchema = createCategoriesSchema
   categories: projectCategories
 
-console.log('ProjectParametersSchema', ProjectParametersSchema)
-
-Projectschema = new SimpleSchema
+ProjectSchema = new SimpleSchema
   name:
     label: 'Name'
     type: String,
@@ -1523,7 +1540,7 @@ Projectschema = new SimpleSchema
     optional: false
     defaultValue: {}
 
-@Projects = new Meteor.Collection 'project', schema: Projectschema
+@Projects = new Meteor.Collection 'project', schema: ProjectSchema
 Projects.allow(Collections.allowAll())
 
 Projects.setCurrentId = (id) -> Session.set('projectId', id)
