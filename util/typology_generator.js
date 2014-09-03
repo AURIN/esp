@@ -82,16 +82,18 @@ csv.parse(csvData, {columns: true}, function(err, output) {
       return;
     }
 
-    var desc = row[descField].trim();
-    var label = row[labelField].trim();
+    var field = {};
+    var desc = row[descField];
+    if (desc) {
+      field.desc = desc.trim();
+    }
+    var label = row[labelField];
+    if (label) {
+      field.label = label.trim();
+    }
     var units = row[unitsField].trim();
     var type = row[typeField].trim();
     var isCalc = row[calcField].trim();
-
-    var field = {
-      label: label,
-      desc: desc
-    };
 
     if (type === floatType || type === integerType) {
       field.type = 'Number';
@@ -116,7 +118,7 @@ csv.parse(csvData, {columns: true}, function(err, output) {
 
   var typologyString = serialize(categories);
   if (outputPath) {
-    fs.writeFileSync(outputPath);
+    fs.writeFileSync(outputPath, typologyString);
   } else {
     console.log(typologyString);
   }

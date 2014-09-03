@@ -70,9 +70,11 @@ Units =
   $: '$'
   deg: 'degrees'
   kgco2: 'kg CO_2-e'
+  kgco2m2: 'kg CO_2-e/m^2'
   Lyear: 'L/year'
   MLyear: 'ML/year'
   kWyear: 'kWh/year'
+  kWday: 'kWh/day'
   MJyear: 'MJ/year'
   GJyear: 'GJ/year'
 
@@ -358,10 +360,18 @@ typologyCategories =
         type: Number
         decimal: true
         units: 'kWh'
-        # TODO(aramk) Add needed project parameter
-        calc: '$energy_demand.size_pv * '
+      # TODO(aramk) Add needed project parameter
+      # TODO(aramk) Make days in year a constant above.
+        calc: '$energy_demand.size_pv * $renewable_energy.pv_output * 365'
+      en_total:
+        label: 'Energy - Total Operating'
+        desc: 'Total operating energy from all energy uses.'
+        type: Number
+        decimal: true
+        units: Units.MJyear
+        calc: '$energy_demand.en_app + $energy_demand.en_cook + ($energy_demand.en_hwat * 1000) + ($energy_demand.en_light * 3.6) + $energy_demand.en_cool + $energy_demand.en_heat - ($energy_demand.en_pv * 3.6)'
 
-      # TODO(aramk) Couldn't find these in the CSV
+# TODO(aramk) Couldn't find these in the CSV
 #      src_cool:
 #        label: 'Energy Source – Cooling'
 #        type: String
@@ -380,6 +390,38 @@ typologyCategories =
 #          energySource = EnergySources[src]
 #          if energySource then energySource.kgCO2 * en else null
 
+  embodied_carbon:
+    label: 'Embodied Carbon'
+    items:
+      e_co2_green:
+        label: 'CO2 - Greenspace'
+        desc: 'CO2 embodied in the greenspace portion of external land.'
+        type: Number
+        units: Units.kgco2
+        calc: '($space.ext_land_l + $space.ext_land_a + $space.ext_land_h) * $embodied_carbon.greenspace'
+#      e_co2_imp:
+#        label: 'CO2 - Impervious'
+#        desc: 'CO2 embodied in the impervious portion of external land.'
+#        type: Number
+#        units: Units.kgco2
+#        calc: '<formula>'
+#      e_co2_emb:
+#        label: 'CO2 - Total External Embodied'
+#        desc: 'CO2 embodied in the external impermeable surfaces.'
+#        type: Number
+#        units: Units.kgco2
+#        calc: '<formula>'
+#      i_co2_emb:
+#        label: 'CO2 - Internal Embodied'
+#        desc: 'CO2 embodied in the materials of the typology.'
+#        type: Number
+#        units: Units.kgco2
+#      t_co2_emb:
+#        label: 'CO2 - Total Embodied'
+#        desc: 'Total CO2 embodied in the property.'
+#        type: Number
+#        units: Units.kgco2
+#        calc: '<formula>'
 
   operating_carbon:
     label: 'Operating Carbon'
@@ -396,25 +438,16 @@ typologyCategories =
           return null unless src? and en?
           energySource = EnergySources[src]
           if energySource then energySource.kgCO2 * en else null
-
-#  financial:
-#    label: 'Financial'
-#    items:
-#      local_land_value:
-#        label: 'Land Value'
-#        type: Number
-#        decimal: true
-#        desc: 'Total land value of the precinct.'
-#        units: Units.$
-#        calc: (param) ->
-#          param('financial.land_value') * param('space.lotsize')
-#      vpsm:
-#        label: 'Land Value per Square Metre'
-#        type: Number
-#        decimal: true
-#        desc: 'Land value per square metre of the precinct.'
-#        calc: (param) ->
-#          param('financial.local_land_value') / param('lot_size')
+  financial:
+    label: 'Financial'
+    items:
+      cost_land:
+        label: 'Cost – Land Parcel'
+        type: Number
+        decimal: true
+        desc: 'Value of the parcel of land.'
+        units: Units.$
+        calc: '$financial.land_value * $space.lotsize'
 
 #  environmental:
 #    items:
@@ -460,9 +493,6 @@ typologyCategories =
 # AUXILIARY - MUST BE DEFINED BEFORE USE
 ####################################################################################################
 
-autoLabel = (field, id) ->
-  field.label ?= toTitleCase(id)
-
 # TODO(aramk) Can't use Strings or other utilities outside Meteor.startup since it's not loaded yet
 toTitleCase = (str) ->
   parts = str.split(/\s+/)
@@ -474,18 +504,21 @@ toTitleCase = (str) ->
         title += ' '
   title
 
-# Constructs SimpleSchema for the categories and their items specified above.
-createCategoriesSchema = (args) ->
-  args ?= {}
-  cats = args.categories
-  unless cats
-    throw new Error('No categories provided.')
-  # For each category in the schema.
-  catsFields = {}
-  for catId, cat of cats
-    catSchemaFields = {}
-    # For each field in each category
-    for itemId, item of cat.items
+autoLabel = (field, id) ->
+  label = field.label
+  if label?
+    label
+  else
+    label = id.replace('_', '')
+    toTitleCase(label)
+
+createCategorySchemaObj = (cat, catId, args) ->
+  catSchemaFields = {}
+  # For each field in each category
+  for itemId, item of cat.items
+    if item.items?
+      itemFields = createCategorySchemaObj(item, itemId, args)
+    else
       # TODO(aramk) Set the default to 0 for numbers.
       itemFields = _.extend({optional: true}, args.itemDefaults, item)
       autoLabel(itemFields, itemId)
@@ -501,17 +534,27 @@ createCategoriesSchema = (args) ->
           throw new Error('Default value specified on field and in classOptions - only use one.')
         allClassOptions.defaultValue = defaultValue
         delete itemFields.defaultValue
-      catSchemaFields[itemId] = itemFields
-    catSchema = new SimpleSchema(catSchemaFields)
-    catSchemaArgs = _.extend({
-      optional: false
-      defaultValue: {}
-#      autoValue: ->
-#        console.log('autoValue', this, arguments)
-#        {} unless this.isSet
-    }, args.categoryDefaults, cat, {type: catSchema})
-    autoLabel(catSchemaArgs, catId)
-    delete catSchemaArgs.items
+    catSchemaFields[itemId] = itemFields
+  catSchema = new SimpleSchema(catSchemaFields)
+  catSchemaArgs = _.extend({
+    optional: false
+    defaultValue: {}
+  }, args.categoryDefaults, cat, {type: catSchema})
+  autoLabel(catSchemaArgs, catId)
+  delete catSchemaArgs.items
+  catSchemaArgs
+
+# Constructs a SimpleSchema which contains all categories and each category is it's own
+# SimpleSchema.
+createCategoriesSchema = (args) ->
+  args ?= {}
+  cats = args.categories
+  unless cats
+    throw new Error('No categories provided.')
+  # For each category in the schema.
+  catsFields = {}
+  for catId, cat of cats
+    catSchemaArgs = createCategorySchemaObj(cat, catId, args)
     catsFields[catId] = catSchemaArgs
   new SimpleSchema(catsFields)
 
@@ -887,13 +930,24 @@ Lots.createEntity = (lotId, typologyId) ->
 
 projectCategories =
   general:
+    label: 'General'
     items:
       creator:
       # TODO(aramk) Integrate this with users.
         type: String
         desc: 'Creator of the project or precinct.'
         optional: false
+  renewable_energy:
+    label: 'Renewable Energy'
+    items:
+      pv_output:
+        desc: 'Output of PV per kW'
+        units: Units.kWday
+        type: Number
+        decimal: true
+        defaultValue: 4.4
   location:
+    label: 'Location'
     items:
       country:
         type: String
@@ -941,6 +995,7 @@ projectCategories =
         units: Units.m
         desc: 'The starting elevation of the camera when viewing the project.'
   space:
+    label: 'Space'
     items:
       geom_2d:
         label: 'Geometry'
@@ -953,22 +1008,38 @@ projectCategories =
         desc: 'Total land area of the precinct.'
         units: Units.m2
   environment:
+    label: 'Environment'
     items:
       climate_zn:
         label: 'Climate Zone'
         type: Number
         decimal: true
         desc: 'BOM climate zone number to determine available typologies.'
-#  financial:
-#    items:
-#      land_value:
-#        label: 'Land Value'
-#        type: Number
-#        desc: 'Total land value of the precinct.'
-#        units: Units.$
+  financial:
+    label: 'Financial'
+    items:
+      land_value:
+        label: 'Land Value'
+        type: Number
+        desc: 'Land Value per Square Metre'
+        units: Units.$m2
+  embodied_carbon:
+    label: 'Embodied Carbon'
+    # TODO(aramk) Add these into a subcategory
+    items:
+      landscaping:
+        label: 'Landscaping'
+        items:
+          greenspace:
+            label: 'Greenspace'
+            type: Number
+            decimal: true
+            units: Units.kgco2m2
 
 ProjectParametersSchema = createCategoriesSchema
   categories: projectCategories
+
+console.log('ProjectParametersSchema', ProjectParametersSchema)
 
 Projectschema = new SimpleSchema
   name:
