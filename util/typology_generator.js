@@ -36,6 +36,7 @@ var descField = 'Description';
 var unitsField = 'Units';
 var typeField = 'Data Type';
 var calcField = 'Calculated?';
+var defaultValueField = 'Default Value';
 
 var integerType = 'Integer';
 var floatType = 'Float';
@@ -82,18 +83,20 @@ csv.parse(csvData, {columns: true}, function(err, output) {
       return;
     }
 
-    var field = {};
-    var desc = row[descField];
-    if (desc) {
-      field.desc = desc.trim();
-    }
-    var label = row[labelField];
-    if (label) {
-      field.label = label.trim();
-    }
     var units = row[unitsField].trim();
     var type = row[typeField].trim();
     var isCalc = row[calcField].trim();
+    var desc = row[descField];
+    var label = row[labelField];
+    var defaultValue = row[defaultValueField];
+
+    var field = {};
+    if (desc) {
+      field.desc = desc.trim();
+    }
+    if (label) {
+      field.label = label.trim();
+    }
 
     if (type === floatType || type === integerType) {
       field.type = 'Number';
@@ -111,6 +114,22 @@ csv.parse(csvData, {columns: true}, function(err, output) {
 
     if (isCalc === 'TRUE') {
       field.calc = '<formula>';
+    }
+
+    if (defaultValue) {
+      defaultValue = defaultValue.trim();
+      if (defaultValue.length !== 0 && defaultValue !== '-') {
+        if (type === floatType) {
+          defaultValue = parseFloat(defaultValue);
+        } else if (type === integerType) {
+          defaultValue = parseInt(defaultValue);
+        }
+        field.classes = {
+          '<class>': {
+            defaultValue: defaultValue
+          }
+        };
+      }
     }
 
     addToCategory(categoryName, fieldName, field);

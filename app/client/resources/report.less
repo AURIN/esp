@@ -32,6 +32,7 @@
   }
 }
 
+@report-field-padding: 8px;
 .report {
   .field {
     display: inline-block;
@@ -42,15 +43,21 @@
       }
     }
     .label, .value {
-      padding: 8px;
+      padding: @report-field-padding;
+      padding-top: 0;
     }
     .value {
       float: right;
       padding-left: 0;
     }
+    &:first-child {
+      .label, .value {
+        padding-top: @report-field-padding;
+      }
+    }
   }
   .subtitle {
-    margin-bottom: 0 !important;
+    margin-bottom: @report-field-padding !important;
   }
   .footer {
     padding: 10px;

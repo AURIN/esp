@@ -10,27 +10,29 @@ class @EvaluationEngine
     model = args.model
     changes = {}
     schemas = @getOutputParamSchemas(args.paramIds)
-    # Go through output parameters and calculate them recursively.
-    getOutputParamSchema = (paramId) -> schemas[ParamUtils.addPrefix(paramId)]
 
     getValueOrCalc = (paramId) =>
-      if getOutputParamSchema(paramId)
-        # Only output fields are in this schema object.
+      # NOTE: Parameters may reference other parameters which were not requested for evaluation, so
+      # don't restrict searching to within the given paramIds.
+      schema = @getParamSchema(paramId)
+      unless schema
+        throw new Error('Cannot find parameter with ID ' + paramId)
+      # Use existing calculated value if available.
+      value = getValue(paramId)
+      if !value? && @isOutputParam(paramId)
         value = calcValue(paramId)
-      else
-        if @getParamSchema(paramId)
-          value = getValue(paramId)
-        else
-          throw new Error('Cannot find parameter with ID ' + paramId)
       value
 
     calcValue = (paramId) =>
-      schema = getOutputParamSchema(paramId)
+      schema = @getParamSchema(paramId)
       calc = schema.calc
       if Types.isString(calc)
         calc = @buildEvalFunc(expr: calc)
       if Types.isFunction(calc)
-        calc(getValueOrCalc, paramId, model, schema)
+        result = calc(getValueOrCalc, paramId, model, schema)
+        # Store the calculated value to prevent calculating again.
+        @setResult(model, paramId, result)
+        result
       else
         throw new Error('Invalid calculation property - must be function, is of type ' +
           Types.getTypeOf(calc))
@@ -43,16 +45,16 @@ class @EvaluationEngine
         value = Entities.getParameter(project, paramId)
       value
 
+    # Go through output parameters and calculate them recursively.
     for paramId, schema of schemas
       # TODO(aramk) Detect cycles and throw exceptions to prevent infinite loops.
       # TODO(aramk) Avoid re-calculating values.
       try
-        result = calcValue(paramId)
+        result = getValueOrCalc(paramId)
       catch e
         console.error('Failed to evaluate parameter', paramId, e)
       if result?
         changes[paramId] = result
-        @setResult(model, paramId, result)
     changes
 
   buildEvalFunc: (args) ->

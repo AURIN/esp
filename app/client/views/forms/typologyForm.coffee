@@ -10,10 +10,11 @@ Meteor.startup ->
     defaultParams = Typologies.getDefaultParameterValues(typologyClass)
     console.debug 'updateFields', @, arguments, typologyClass
     for key, input of @schemaInputs
-      schemaField = input.field
+      fieldSchema = input.field
       isParamField = ParamUtils.hasPrefix(key)
+      isSelectField = !!fieldSchema.allowedValues
       paramName = ParamUtils.removePrefix(key) if isParamField
-      classes = schemaField.classes
+      classes = fieldSchema.classes
       classOptions = classes?[typologyClass]
       allClassOptions = classes?.ALL
       if allClassOptions?
@@ -24,11 +25,25 @@ Meteor.startup ->
         defaultValue = Typologies.getParameter(defaultParams, key)
       else
         # Regular field - not a parameter.
-        defaultValue = schemaField.defaultValue
+        defaultValue = fieldSchema.defaultValue
 
       $input = $(input.node)
       $wrapper = $input.closest(Forms.FIELD_SELECTOR)
-      $input.attr('placeholder', defaultValue) if defaultValue?
+      if defaultValue?
+        if isSelectField
+          # TODO(aramk) Setting value for dropdowns doesn't work - autoform might be setting it
+          # after render?
+          setSelectValue = ($select, value) ->
+            ->
+              console.log($select, value)
+              $select.val(value)
+          setTimeout(
+            setSelectValue($input, defaultValue)
+            1000
+          )
+#          $('option[value="' + defaultValue + '"]', $input).attr('selected', 'selected')
+        else
+          $input.attr('placeholder', defaultValue)
 
       # Hide fields which have classes specified which don't contain the current class.
       $wrapper[if classes and not classOptions then 'hide' else 'show']()

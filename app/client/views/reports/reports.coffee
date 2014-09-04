@@ -39,8 +39,11 @@
         formatter = new NumberFormatter();
         $fields = $(@find('.fields'))
         for field in fields
-          $field = Reports.renderField(field, results, formatter)
-          $fields.append($field)
+          try
+            $field = Reports.renderField(field, results, formatter)
+            $fields.append($field)
+          catch e
+            console.error('Failed report field render: ' + e)
         $footer = $(@find('.footer'))
         count = entities.length
         plural = Strings.pluralize('entity', count, 'entities')
@@ -64,18 +67,22 @@
     if param?
       # TODO(aramk) Actually output the field value
       paramSchema = ParametersSchema.schema(param)
+      unless paramSchema
+        throw new Error('Could not find schema for param: ' + param)
       label = paramSchema.label ? Strings.toTitleCase(param)
       units = paramSchema.units
-      decimalPoints = paramSchema.decimalPoints ? 3
+      decimalPoints = paramSchema.decimalPoints ? 2
       $field = $('<div class="field"></div>')
       $label = $('<div class="label"><div class="content">' + label + '</div></div>')
       if units?
         $label.append('<div class="units">' + Strings.format.scripts(units) + '</div>')
       value = data[field.id] ? 'N/A'
       if Number.isNaN(value) or !value?
-        value = '0'
+        value = 'N/A'
       else if paramSchema.type == Number
-          value = formatter.round(value, {minSigFigs: 0, maxSigFigs: decimalPoints})
+        # Round the value using the formatter to a fixed set of decimal points, otherwise it's hard
+        # to compare values.
+        value = formatter.round(value, {minSigFigs: decimalPoints, maxSigFigs: decimalPoints})
       $value = $('<div class="value">' + value + '</div>')
       $field.append($label, $value)
       $field

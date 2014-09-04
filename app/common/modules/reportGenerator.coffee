@@ -3,7 +3,7 @@ Aggregator =
   total: (values) ->
     total = 0
     for value in values
-      if value?
+      if value? && !isNaN(value)
         total += value
     total
 

@@ -15,10 +15,10 @@ Meteor.startup ->
     #    defaultParams = Typologies.mergeDefaults(typology ? {})
     console.debug 'updateFields', @, arguments, typologyId, typology, typologyClass
     for key, input of @schemaInputs
-      schemaField = input.field;
+      fieldSchema = input.field;
       isParamField = ParamUtils.hasPrefix(key)
       paramName = ParamUtils.removePrefix(key) if isParamField
-      classes = schemaField.classes
+      classes = fieldSchema.classes
       classOptions = classes?[typologyClass]
       allClassOptions = classes?.ALL
       if allClassOptions?
@@ -33,7 +33,7 @@ Meteor.startup ->
         defaultValue = Typologies.getParameter(defaultParams, key)
       else
         # Regular field - not a parameter.
-        defaultValue = schemaField.defaultValue
+        defaultValue = fieldSchema.defaultValue
 
       $input = $(input.node)
       $wrapper = $input.closest(Forms.FIELD_SELECTOR)

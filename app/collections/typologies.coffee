@@ -47,32 +47,8 @@ TypologyClasses =
 ClassNames = Object.keys(TypologyClasses)
 
 TypologyTypes = ['Basic', 'Energy Efficient']
-
-# TODO(aramk) Convert to using global parameters.
-# Energy sources and their kg of CO2 usage
-EnergySources =
-  ELECTRICITY:
-    name: 'Electricity'
-    units: 'kWh'
-  GAS:
-    name: 'Gas'
-    units: 'MJ'
-
-EnergySourceTypes = Object.keys(EnergySources)
-
-WaterDemandSources =
-  POTABLE:
-    name: 'Potable'
-  BORE:
-    name: 'Bore'
-  RAINWATER_TANK:
-    name: 'Rainwater Tank'
-  ON_SITE_TREATED:
-    name: 'On-Site Treated'
-  GREYWATER:
-    name: 'Greywater'
-
-stringAllowedValues = (allowed) -> '(' + allowed.join(', ') + ')'
+EnergySources = ['Electricity', 'Gas']
+WaterDemandSources = ['Potable', 'Bore', 'Rainwater Tank', 'On-Site Treated', 'Greywater']
 
 # ^ and _ are converted to superscript and subscript in forms and reports.
 Units =
@@ -103,7 +79,7 @@ Units =
 
 classSchema =
   type: String
-  desc: stringAllowedValues(ClassNames)
+  desc: 'Major class or land use category of the precinct object.'
   optional: false
   allowedValues: ClassNames
 
@@ -140,7 +116,6 @@ areaSchema =
   type: Number
   desc: 'Area of the land parcel.'
   decimal: true
-  decimalPoints: 2
   units: Units.m2
   calc: (param, paramId, model) -> calcArea(model._id)
 
@@ -150,9 +125,9 @@ calcEnergyC02 = (sourceParamId, energyParamId, paramGetter) ->
   en = paramGetter(energyParamId)
   return null unless src? and en?
   # Convert kWh to MJ
-  if src == 'ELECTRICITY'
+  if src == 'Electricity'
     en * paramGetter('operating_carbon.elec') / 3.6
-  else if src == 'GAS'
+  else if src == 'Gas'
     en * paramGetter('operating_carbon.gas') / 3.6
 
 extendSchema = (orig, changes) ->
@@ -173,24 +148,14 @@ typologyCategories =
       subclass:
         type: String
         desc: 'Typology within a class. Ex. "Community Garden", "Park" or "Public Plaza".'
+      climate_zn:
+        desc: 'BOM climate zone number.'
+        label: 'Climate Zone'
+        type: Number
       type:
         type: String
-        desc: 'Version of the subclass. ' + stringAllowedValues(TypologyTypes)
+        desc: 'Version of the subclass.'
         allowedValues: TypologyTypes
-      occupants:
-        label: 'No. Occupants'
-        type: Number
-        desc: 'Number of occupants in the typology.'
-        classes:
-          RESIDENTIAL:
-            defaultValue: 300
-      jobs:
-        label: 'No. Jobs'
-        type: Number
-        desc: 'Number of jobs in the typology.'
-        classes:
-          COMMERCIAL:
-            defaultValue: 200
   space:
     label: 'Space'
     items:
@@ -240,6 +205,7 @@ typologyCategories =
         desc: 'Number of floors/storeys in the typology.'
         type: Number
         units: 'Floors'
+      height: heightSchema
       occupants:
         label: 'No. Occupants'
         desc: 'Number of occupants in the typology.'
@@ -265,7 +231,6 @@ typologyCategories =
         desc: 'Number of 3 bedroom units in the typology.'
         type: Number
         units: 'Dwellings'
-      height: heightSchema
       prpn_lawn:
         label: 'Proportion Extra Land - Lawn'
         desc: 'Proportion of extra land covered by lawn.'
@@ -337,9 +302,9 @@ typologyCategories =
         units: Units.MJyear
       src_heat:
         label: 'Energy Source – Heating'
-        desc: 'Energy source in the typology used for heating. ' + stringAllowedValues(EnergySourceTypes)
+        desc: 'Energy source in the typology used for heating.'
         type: String
-        allowedValues: EnergySourceTypes
+        allowedValues: EnergySources
       en_cool:
         label: 'Energy – Cooling'
         desc: 'Energy required for cooling the typology.'
@@ -362,31 +327,43 @@ typologyCategories =
         label: 'Energy Source - Hot Water'
         desc: 'Energy source in the typology used for hot water heating. Used to calculated CO2-e.'
         type: String
-        allowedValues: EnergySourceTypes
+        allowedValues: EnergySources
       en_cook:
         label: 'Energy - Cooktop and Oven'
         desc: 'Energy required for cooking in the typology.'
         type: Number
         decimal: true
         units: Units.MJyear
+        classes:
+          RESIDENTIAL:
+            defaultValue: 1956
     # TODO(aramk) Default value should be based on src_cook.
       src_cook:
         label: 'Energy Source - Cooktop and Oven'
         desc: 'Energy source in the typology used for cooking. Used to calculate CO2-e.'
         type: String
-        allowedValues: EnergySourceTypes
+        allowedValues: EnergySources
+        classes:
+          RESIDENTIAL:
+            defaultValue: 'Electricity'
       en_app:
         label: 'Energy - Appliances'
         desc: 'Energy required for powering appliances in the typology.'
         type: Number
         decimal: true
         units: Units.MJyear
+        classes:
+          RESIDENTIAL:
+            defaultValue: 9749
       size_pv:
         label: 'PV System Size'
         desc: 'PV system size fitted on the typology.'
         type: Number
         decimal: true
         units: Units.kWhyear
+        classes:
+          RESIDENTIAL:
+            defaultValue: 0
       en_pv:
         label: 'PV Energy Generation'
         desc: 'Energy generated by the fitted PV system.'
@@ -403,14 +380,6 @@ typologyCategories =
         decimal: true
         units: Units.MJyear
         calc: '$energy_demand.en_app + $energy_demand.en_cook + ($energy_demand.en_hwat * 1000) + ($energy_demand.en_light * 3.6) + $energy_demand.en_cool + $energy_demand.en_heat - ($energy_demand.en_pv * 3.6)'
-
-# TODO(aramk) Couldn't find these in the CSV
-#      src_cool:
-#        label: 'Energy Source – Cooling'
-#        type: String
-#        allowedValues: EnergySourceTypes
-#        desc: 'Energy source in the typology used for cooling. ' + stringAllowedValues(EnergySourceTypes)
-
   embodied_carbon:
     label: 'Embodied Carbon'
     items:
@@ -572,6 +541,9 @@ typologyCategories =
         desc: 'Source of water for external water demand.'
         type: String
         allowedValues: Object.keys(WaterDemandSources)
+        classes:
+          RESIDENTIAL:
+            defaultValue: 'Potable'
       wu_pot_tot:
         label: 'Water Use - Total Potable'
         desc: 'Total potable water use for internal and external purposes.'
@@ -919,8 +891,9 @@ Typologies.mergeDefaults = (model) ->
 
 # Filters parameters which don't belong to the class assigned to the given model. This does not
 # affect reports since only fields matching the class should be included, but is a fail-safe for
-# when calculated expressions may conditionally reference fields outside their class, or when
-# reports accidentally include fields outside their class.
+# when calculated expressions may conditionally reference fields outside their class, since it's
+# possible to change the class of a typology and this keeps the values for fields only applicable
+# to the old typology.
 Typologies.filterParameters = (model) ->
   typologyClass = model.parameters.general?.class
   unless typologyClass?
