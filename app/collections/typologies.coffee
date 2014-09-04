@@ -118,7 +118,7 @@ areaSchema =
   desc: 'Area of the land parcel.'
   decimal: true
   units: Units.m2
-  calc: (param, paramId, model) -> calcArea(model._id)
+  calc: -> calcArea(@model._id)
 
 # NOTE: energyParamId expected to be in MJ.
 calcEnergyC02 = (sourceParamId, energyParamId, paramGetter) ->
@@ -170,9 +170,9 @@ typologyCategories =
         desc: '3D mesh representing the typology.'
       lotsize: extendSchema(areaSchema, {
         label: 'Lot Size'
-        calc: (param, paramId, model) ->
+        calc: ->
           # If the model is a typology, it doesn't have a lot yet, so no lotsize.
-          id = model._id
+          id = @model._id
           unless Entities.findOne(id)
             return null
           lot = Lots.findByEntity(id)
@@ -422,7 +422,7 @@ typologyCategories =
         type: Number
         decimal: true
         units: Units.kgco2
-        calc: (param) -> calcEnergyC02('energy_demand.src_heat', 'energy_demand.en_heat', param)
+        calc: -> calcEnergyC02('energy_demand.src_heat', 'energy_demand.en_heat', @param)
       co2_cool:
         label: 'CO2 – Cooling'
         desc: 'CO2 emissions due to cooling the typology.'
@@ -444,8 +444,8 @@ typologyCategories =
         type: Number
         decimal: true
         units: Units.kgco2
-        calc: (param) ->
-          co2 = calcEnergyC02('energy_demand.src_hwat', 'energy_demand.en_hwat', param)
+        calc: ->
+          co2 = calcEnergyC02('energy_demand.src_hwat', 'energy_demand.en_hwat', @param)
           if co2? then co2 * 1000 else null
       co2_cook:
         label: 'CO2 - Cooktop and Oven'
@@ -453,7 +453,7 @@ typologyCategories =
         type: Number
         decimal: true
         units: Units.kgco2
-        calc: (param) -> calcEnergyC02('energy_demand.src_cook', 'energy_demand.en_cook', param)
+        calc: -> calcEnergyC02('energy_demand.src_cook', 'energy_demand.en_cook', @param)
       co2_app:
         label: 'CO2 - Appliances'
         desc: 'CO2-e emissions due to powering appliances in the typology.'
@@ -551,16 +551,17 @@ typologyCategories =
         type: Number
         decimal: true
         units: Units.kL
-        calc: (param) ->
-          # TODO(aramk) Convert this to a string by using an IF() function.
-          wu_pot_tot = 0
-          i_wu_pot = param('water_demand.i_wu_pot')
-          e_wd_total = param('water_demand.e_wd_total')
-          wu_pot_tot += i_wu_pot
-          e_wd_src = param('water_demand.e_wd_src')
-          if e_wd_src == 'Potable'
-            wu_pot_tot += e_wd_total
-          wu_pot_tot
+        calc: '$water_demand.i_wu_pot + IF($water_demand.e_wd_src, $water_demand.e_wd_total, 0)'
+#        calc: (param) ->
+#          # TODO(aramk) Convert this to a string by using an IF() function.
+#          wu_pot_tot = 0
+#          i_wu_pot = param('water_demand.i_wu_pot')
+#          e_wd_total = param('water_demand.e_wd_total')
+#          wu_pot_tot += i_wu_pot
+#          e_wd_src = param('water_demand.e_wd_src')
+#          if e_wd_src == 'Potable'
+#            wu_pot_tot += e_wd_total
+#          wu_pot_tot
       wd_total:
         label: 'Water Demand - Total'
         desc: 'Total water use for internal and external purposes.'

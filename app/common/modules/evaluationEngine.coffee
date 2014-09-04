@@ -28,9 +28,11 @@ class @EvaluationEngine
       schema = @getParamSchema(paramId)
       calc = schema.calc
       if Types.isString(calc)
-        calc = @buildEvalFunc(expr: calc)
+        calc = buildEvalFunc(expr: calc)
+        schema.calc = calc
       if Types.isFunction(calc)
-        result = calc(getValueOrCalc, paramId, model, schema)
+        addCalcContext(calc)
+        result = calc.call(calc.context)
         result = @sanitizeValue(paramId, result)
         # Store the calculated value to prevent calculating again.
         @setResult(model, paramId, result)
@@ -47,6 +49,29 @@ class @EvaluationEngine
 
     getGlobalValue = (paramId) -> Entities.getParameter(project, paramId)
 
+    buildEvalFunc = (args) ->
+      expr = args.expr
+      # Replace the $ in the expression with a function call to retrieve the value.
+      funcBody = expr.replace(/\$([\w.]+)/gi, 'param("$1")')
+      # Ensure existing function calls are on "this" context.
+      funcBody = funcBody.replace(/(\w+)\s*\(/gi, 'this.$1(')
+      funcBody = 'return ' + funcBody
+      calc = new Function(funcBody)
+      addCalcContext(calc)
+#      calc.context = _.extend({
+#        param: getValueOrCalc
+#      }, CalcContext)
+      calc
+
+    # TODO(aramk) Refactor
+    addCalcContext = (calc) ->
+      calc.context = _.defaults(_.extend(calc.context ? {}, {
+        param: getValueOrCalc
+        paramId: paramId
+        model: model
+        schema: schema
+      }), CalcContext)
+
     # Go through output parameters and calculate them recursively.
     for paramId, schema of schemas
       # TODO(aramk) Detect cycles and throw exceptions to prevent infinite loops.
@@ -58,12 +83,6 @@ class @EvaluationEngine
       if result?
         changes[paramId] = result
     changes
-
-  buildEvalFunc: (args) ->
-    expr = args.expr
-    # Replace the $ in the expression with a function call to retrieve the value.
-    funcBody = 'return ' + expr.replace(/\$([\w.]+)/gi, 'param("$1")')
-    new Function('param', funcBody)
 
   getOutputParamSchemas: (paramIds) ->
     unless paramIds
@@ -97,3 +116,11 @@ class @EvaluationEngine
       value
 
   isGlobalParam: (paramId) -> Projects.schema.schema(ParamUtils.addPrefix(paramId))
+
+CalcContext =
+
+  IF: (condition, thenResult, elseResult) ->
+    if condition then thenResult else elseResult
+
+#CalcFunction = ->
+#CalcFunction.prototype = CalcContext
