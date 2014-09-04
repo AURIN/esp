@@ -121,15 +121,14 @@ areaSchema =
   calc: -> calcArea(@model._id)
 
 # NOTE: energyParamId expected to be in MJ.
-calcEnergyC02 = (sourceParamId, energyParamId, paramGetter) ->
-  src = paramGetter(sourceParamId)
-  en = paramGetter(energyParamId)
+calcEnergyC02 = (sourceParamId, energyParamId) ->
+  src = @param(sourceParamId)
+  en = @param(energyParamId)
   return null unless src? and en?
-  # Convert kWh to MJ
   if src == 'Electricity'
-    en * paramGetter('operating_carbon.elec') / 3.6
+    en * @KWH_TO_MJ(@param('operating_carbon.elec'))
   else if src == 'Gas'
-    en * paramGetter('operating_carbon.gas') / 3.6
+    en * @KWH_TO_MJ(@param('operating_carbon.gas'))
 
 extendSchema = (orig, changes) ->
   _.extend({}, orig, changes)
@@ -380,7 +379,7 @@ typologyCategories =
         type: Number
         decimal: true
         units: Units.MJyear
-        calc: '$energy_demand.en_app + $energy_demand.en_cook + ($energy_demand.en_hwat * 1000) + ($energy_demand.en_light * 3.6) + $energy_demand.en_cool + $energy_demand.en_heat - ($energy_demand.en_pv * 3.6)'
+        calc: '$energy_demand.en_app + $energy_demand.en_cook + ($energy_demand.en_hwat * 1000) + KWH_TO_MJ($energy_demand.en_light) + $energy_demand.en_cool + $energy_demand.en_heat - KWH_TO_MJ($energy_demand.en_pv)'
   embodied_carbon:
     label: 'Embodied Carbon'
     items:
@@ -422,15 +421,14 @@ typologyCategories =
         type: Number
         decimal: true
         units: Units.kgco2
-        calc: -> calcEnergyC02('energy_demand.src_heat', 'energy_demand.en_heat', @param)
+        calc: -> calcEnergyC02.call(@, 'energy_demand.src_heat', 'energy_demand.en_heat')
       co2_cool:
         label: 'CO2 – Cooling'
         desc: 'CO2 emissions due to cooling the typology.'
         type: Number
         decimal: true
         units: Units.kgco2
-      # Convert kWh to MJ
-        calc: '$energy_demand.en_cool * $operating_carbon.elec / 3.6'
+        calc: '$energy_demand.en_cool * KWH_TO_MJ($operating_carbon.elec)'
       co2_light:
         label: 'CO2 - Lighting'
         desc: 'CO2-e emissions due to lighting the typology.'
@@ -445,7 +443,7 @@ typologyCategories =
         decimal: true
         units: Units.kgco2
         calc: ->
-          co2 = calcEnergyC02('energy_demand.src_hwat', 'energy_demand.en_hwat', @param)
+          co2 = calcEnergyC02.call(@, 'energy_demand.src_hwat', 'energy_demand.en_hwat')
           if co2? then co2 * 1000 else null
       co2_cook:
         label: 'CO2 - Cooktop and Oven'
@@ -453,15 +451,14 @@ typologyCategories =
         type: Number
         decimal: true
         units: Units.kgco2
-        calc: -> calcEnergyC02('energy_demand.src_cook', 'energy_demand.en_cook', @param)
+        calc: -> calcEnergyC02.call(@, 'energy_demand.src_cook', 'energy_demand.en_cook')
       co2_app:
         label: 'CO2 - Appliances'
         desc: 'CO2-e emissions due to powering appliances in the typology.'
         type: Number
         decimal: true
         units: Units.kgco2
-      # Convert kWh to MJ
-        calc: '$energy_demand.en_app * $operating_carbon.elec / 3.6'
+        calc: '$energy_demand.en_app * KWH_TO_MJ($operating_carbon.elec)'
       co2_op_tot:
         label: 'CO2 - Total Operating'
         desc: 'Total operating CO2 from all energy uses.'
@@ -552,16 +549,6 @@ typologyCategories =
         decimal: true
         units: Units.kL
         calc: '$water_demand.i_wu_pot + IF($water_demand.e_wd_src, $water_demand.e_wd_total, 0)'
-#        calc: (param) ->
-#          # TODO(aramk) Convert this to a string by using an IF() function.
-#          wu_pot_tot = 0
-#          i_wu_pot = param('water_demand.i_wu_pot')
-#          e_wd_total = param('water_demand.e_wd_total')
-#          wu_pot_tot += i_wu_pot
-#          e_wd_src = param('water_demand.e_wd_src')
-#          if e_wd_src == 'Potable'
-#            wu_pot_tot += e_wd_total
-#          wu_pot_tot
       wd_total:
         label: 'Water Demand - Total'
         desc: 'Total water use for internal and external purposes.'
@@ -635,16 +622,14 @@ typologyCategories =
         type: Number
         decimal: true
         units: Units.$
-      # TODO(aramk) TOO COMPLEX! USE IF() FOR THIS.
-        calc: '0'
+        calc: '365 * $utilities.price_supply_elec + IF($energy_demand.src_heat=="Electricity",$energy_demand.en_heat,IF($energy_demand.src_heat=="Gas",0)) * KWH_TO_MJ($utilities.price_supply_elec) + IF($energy_demand.src_hwat=="Electricity",$energy_demand.en_hwat,IF($energy_demand.src_hwat=="Gas",0)) * 1000 * KWH_TO_MJ($utilities.price_supply_elec) + IF($energy_demand.src_cook=="Electricity",$energy_demand.en_cook,IF($energy_demand.src_cook=="Gas",0)) * KWH_TO_MJ($utilities.price_supply_elec) + $energy_demand.en_light * $utilities.price_supply_elec + $energy_demand.en_app * KWH_TO_MJ($utilities.price_supply_elec)'
       cost_op_g:
         label: 'Cost - Gas Usage'
         desc: 'Operating costs due to gas usage.'
         type: Number
         decimal: true
         units: Units.$
-      # TODO(aramk) TOO COMPLEX! USE IF() FOR THIS.
-        calc: '0'
+        calc: '365 * $utilities.price_supply_gas + IF($energy_demand.src_heat=="Electricity",0,IF($energy_demand.src_heat=="Gas",$energy_demand.en_heat)) * $utilities.price_usage_gas + IF($energy_demand.src_hwat=="Electricity",0,IF($energy_demand.src_hwat=="Gas",$energy_demand.en_hwat)) * 1000 * $utilities.price_usage_gas + IF($energy_demand.src_cook=="Electricity",0,IF($energy_demand.src_cook=="Gas",$energy_demand.en_cook)) * $utilities.price_usage_gas'
       cost_op_w:
         label: 'Cost - Water Usage'
         desc: 'Operating costs due to water usage.'

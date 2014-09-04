@@ -58,9 +58,6 @@ class @EvaluationEngine
       funcBody = 'return ' + funcBody
       calc = new Function(funcBody)
       addCalcContext(calc)
-#      calc.context = _.extend({
-#        param: getValueOrCalc
-#      }, CalcContext)
       calc
 
     # TODO(aramk) Refactor
@@ -110,17 +107,13 @@ class @EvaluationEngine
 
   sanitizeValue: (paramId, value) ->
     schema = @getParamSchema(paramId)
-    if schema && schema.type == Number && (!value? || isNaN(value))
-      0
-    else
-      value
+    if schema && schema.type == Number && (!value? || isNaN(value)) then 0 else value
 
   isGlobalParam: (paramId) -> Projects.schema.schema(ParamUtils.addPrefix(paramId))
 
+# Context object passed to each evaluation function. Allows passing functions for use in the
+# schema expression.
 CalcContext =
-
-  IF: (condition, thenResult, elseResult) ->
-    if condition then thenResult else elseResult
-
-#CalcFunction = ->
-#CalcFunction.prototype = CalcContext
+  IF: (condition, thenResult, elseResult) -> if condition then thenResult else elseResult
+  KWH_TO_MJ: (kWh) -> kWh * 3.6
+  MJ_TO_KW: (mj) -> mj / 3.6
