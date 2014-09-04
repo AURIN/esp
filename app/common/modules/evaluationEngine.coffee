@@ -10,12 +10,12 @@ class @EvaluationEngine
     model = args.model
     changes = {}
     schemas = @getOutputParamSchemas(args.paramIds)
+    project = Projects.mergeDefaults(Projects.getCurrent())
 
     getValueOrCalc = (paramId) =>
       # NOTE: Parameters may reference other parameters which were not requested for evaluation, so
       # don't restrict searching to within the given paramIds.
-      schema = @getParamSchema(paramId)
-      unless schema
+      unless @getParamSchema(paramId) || @isGlobalParam(paramId)
         throw new Error('Cannot find parameter with ID ' + paramId)
       # Use existing calculated value if available.
       value = getValue(paramId)
@@ -40,10 +40,10 @@ class @EvaluationEngine
     getValue = (paramId) ->
       value = Entities.getParameter(model, paramId)
       unless value?
-        # Lookup global value
-        project = Projects.getCurrent()
-        value = Entities.getParameter(project, paramId)
+        value = getGlobalValue(paramId)
       value
+
+    getGlobalValue = (paramId) -> Entities.getParameter(project, paramId)
 
     # Go through output parameters and calculate them recursively.
     for paramId, schema of schemas
@@ -84,3 +84,5 @@ class @EvaluationEngine
   getParamSchema: (paramId) -> @schema.schema(ParamUtils.addPrefix(paramId))
 
   isOutputParam: (paramId) -> @getParamSchema(paramId).calc?
+
+  isGlobalParam: (paramId) -> Projects.schema.schema(ParamUtils.addPrefix(paramId))

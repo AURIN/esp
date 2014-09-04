@@ -11,26 +11,23 @@
           <!-- TODO(aramk) Refactor to use autoform field -->
           {{> dropdown name="typology" items=typologies value=doc.typology}}
 
-          <div class="subtitle">General</div>
-          {{> afQuickField name="parameters.general.state"}}
-          {{> afQuickField name="parameters.general.code"}}
-          {{> afQuickField name="parameters.general.subclass"}}
-          {{> afQuickField name="parameters.general.type"}}
-
           <div class="subtitle">Space</div>
           <!-- TODO(aramk) Add same widget used in typology schema. -->
           <!--{{> afQuickField name="parameters.space.geom_2d"}}-->
+
           {{> afQuickField name="parameters.space.prpn_lawn"}}
           {{> afQuickField name="parameters.space.prpn_annu"}}
           {{> afQuickField name="parameters.space.prpn_hardy"}}
           {{> afQuickField name="parameters.space.prpn_imper"}}
-          {{> afQuickField name="parameters.space.occupants"}}
 
-          <div class="subtitle">Energy</div>
-          {{> afQuickField name="parameters.energy_demand.en_heat"}}
-          {{> afQuickField name="parameters.energy.src_heat" options="allowed"}}
-          {{> afQuickField name="parameters.energy.en_cool"}}
-          {{> afQuickField name="parameters.energy.src_cool" options="allowed"}}
+          <div class="subtitle">Energy Demand</div>
+          {{> afQuickField name="parameters.energy_demand.src_cook" options="allowed"}}
+          {{> afQuickField name="parameters.energy_demand.en_cook"}}
+          {{> afQuickField name="parameters.energy_demand.en_app"}}
+          {{> afQuickField name="parameters.energy_demand.size_pv"}}
+
+          <div class="subtitle">Water Demand</div>
+          {{> afQuickField name="parameters.water_demand.e_wd_src" options="allowed"}}
 
           <div class="crud buttons">
             <button type="button" class="ui red cancel button">Cancel</button>
