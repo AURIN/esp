@@ -66,12 +66,13 @@ Meteor.startup ->
         entity = @data.doc
         entityValue = if entity then Entities.getParameter(entity, paramName) else
           # Only show None if we don't have a set or inherited value
-        if !entityValue? && !typologyValue?
+        if !defaultParams && !entityValue? && !typologyValue?
           # TODO(aramk) This is not available if a value exists, since we cannot override with null
           # yet.
           $option = $('<option value="">None</option>')
           $input.prepend($option)
           $input.val('')
+
 
   Form = Forms.defineModelForm
     name: 'entityForm'

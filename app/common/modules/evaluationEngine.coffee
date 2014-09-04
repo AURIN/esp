@@ -17,11 +17,12 @@ class @EvaluationEngine
       # don't restrict searching to within the given paramIds.
       unless @getParamSchema(paramId) || @isGlobalParam(paramId)
         throw new Error('Cannot find parameter with ID ' + paramId)
-      # Use existing calculated value if available.
+      # Use existing calculated value if available. NOTE: do not sanitize to allow checking whether
+      # the value exists.
       value = getValue(paramId)
       if !value? && @isOutputParam(paramId)
         value = calcValue(paramId)
-      value
+      @sanitizeValue(paramId, value)
 
     calcValue = (paramId) =>
       schema = @getParamSchema(paramId)
@@ -30,6 +31,7 @@ class @EvaluationEngine
         calc = @buildEvalFunc(expr: calc)
       if Types.isFunction(calc)
         result = calc(getValueOrCalc, paramId, model, schema)
+        result = @sanitizeValue(paramId, result)
         # Store the calculated value to prevent calculating again.
         @setResult(model, paramId, result)
         result
@@ -37,7 +39,7 @@ class @EvaluationEngine
         throw new Error('Invalid calculation property - must be function, is of type ' +
           Types.getTypeOf(calc))
 
-    getValue = (paramId) ->
+    getValue = (paramId) =>
       value = Entities.getParameter(model, paramId)
       unless value?
         value = getGlobalValue(paramId)
@@ -83,6 +85,15 @@ class @EvaluationEngine
 
   getParamSchema: (paramId) -> @schema.schema(ParamUtils.addPrefix(paramId))
 
-  isOutputParam: (paramId) -> @getParamSchema(paramId).calc?
+  isOutputParam: (paramId) ->
+    schema = @getParamSchema(paramId)
+    if schema then schema.calc? else false
+
+  sanitizeValue: (paramId, value) ->
+    schema = @getParamSchema(paramId)
+    if schema && schema.type == Number && (!value? || isNaN(value))
+      0
+    else
+      value
 
   isGlobalParam: (paramId) -> Projects.schema.schema(ParamUtils.addPrefix(paramId))

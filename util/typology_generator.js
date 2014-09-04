@@ -37,6 +37,7 @@ var unitsField = 'Units';
 var typeField = 'Data Type';
 var calcField = 'Calculated?';
 var defaultValueField = 'Default Value';
+var valueField = 'Value';
 
 var integerType = 'Integer';
 var floatType = 'Float';
@@ -88,7 +89,7 @@ csv.parse(csvData, {columns: true}, function(err, output) {
     var isCalc = row[calcField].trim();
     var desc = row[descField];
     var label = row[labelField];
-    var defaultValue = row[defaultValueField];
+    var defaultValue = row[defaultValueField] || row[valueField];
 
     var field = {};
     if (desc) {

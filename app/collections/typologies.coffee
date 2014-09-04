@@ -401,7 +401,7 @@ typologyCategories =
         desc: 'CO2 embodied in the external impermeable surfaces.'
         type: Number
         units: Units.kgco2
-        calc: '$space.e_co2_green * $space.e_co2_imp'
+        calc: '$embodied_carbon.e_co2_green * $embodied_carbon.e_co2_imp'
       i_co2_emb:
         label: 'CO2 - Internal Embodied'
         desc: 'CO2 embodied in the materials of the typology.'
@@ -412,7 +412,7 @@ typologyCategories =
         desc: 'Total CO2 embodied in the property.'
         type: Number
         units: Units.kgco2
-        calc: '$space.e_co2_emb * $space.i_co2_emb'
+        calc: '$embodied_carbon.e_co2_emb * $embodied_carbon.i_co2_emb'
   operating_carbon:
     label: 'Operating Carbon'
     items:
@@ -437,7 +437,7 @@ typologyCategories =
         type: Number
         decimal: true
         units: Units.kgco2
-        calc: '$energy_demand.en_light * operating_carbon.elec'
+        calc: '$energy_demand.en_light * $operating_carbon.elec'
       co2_hwat:
         label: 'CO2 - Hot Water'
         desc: 'CO2-e emissions due to hot water heating in the typology.'
@@ -541,7 +541,7 @@ typologyCategories =
         label: 'External Water Demand - Source'
         desc: 'Source of water for external water demand.'
         type: String
-        allowedValues: Object.keys(WaterDemandSources)
+        allowedValues: WaterDemandSources
         classes:
           RESIDENTIAL:
             defaultValue: 'Potable'
@@ -558,7 +558,7 @@ typologyCategories =
           e_wd_total = param('water_demand.e_wd_total')
           wu_pot_tot += i_wu_pot
           e_wd_src = param('water_demand.e_wd_src')
-          if e_wd_src == 'POTABLE'
+          if e_wd_src == 'Potable'
             wu_pot_tot += e_wd_total
           wu_pot_tot
       wd_total:
@@ -576,7 +576,7 @@ typologyCategories =
         desc: 'Stormwater run-off during an extreme storm event.'
         type: Number
         units: Units.Lsec
-        calc: '($space.fpa * $stormwater.runoff_roof + $space.ext_land_i * $stormwater.runoff_impervious + SUM($space.ext_land_l + $space.ext_land_a + $space.ext_land_h) * $stormwater.runoff_pervious) * $stormwater.rainfall_intensity / 3600'
+        calc: '($space.fpa * $stormwater.runoff_roof + $space.ext_land_i * $stormwater.runoff_impervious + ($space.ext_land_l + $space.ext_land_a + $space.ext_land_h) * $stormwater.runoff_pervious) * $stormwater.rainfall_intensity / 3600'
   financial:
     label: 'Financial'
     items:
@@ -628,22 +628,22 @@ typologyCategories =
         type: Number
         units: Units.$
         calc: '$financial.cost_land + $financial.cost_xland + $financial.cost_con'
-#      cost_op_e:
-#        label: 'Cost - Electricity Usage'
-#        desc: 'Operating costs due to electricity usage.'
-#        type: Number
-#        decimal: true
-#        units: Units.$
-#        # TODO(aramk) TOO COMPLEX! USE IF() FOR THIS.
-#        calc: '<formula>'
-#      cost_op_g:
-#        label: 'Cost - Gas Usage'
-#        desc: 'Operating costs due to gas usage.'
-#        type: Number
-#        decimal: true
-#        units: Units.$
-#        # TODO(aramk) TOO COMPLEX! USE IF() FOR THIS.
-#        calc: '<formula>'
+      cost_op_e:
+        label: 'Cost - Electricity Usage'
+        desc: 'Operating costs due to electricity usage.'
+        type: Number
+        decimal: true
+        units: Units.$
+      # TODO(aramk) TOO COMPLEX! USE IF() FOR THIS.
+        calc: '0'
+      cost_op_g:
+        label: 'Cost - Gas Usage'
+        desc: 'Operating costs due to gas usage.'
+        type: Number
+        decimal: true
+        units: Units.$
+      # TODO(aramk) TOO COMPLEX! USE IF() FOR THIS.
+        calc: '0'
       cost_op_w:
         label: 'Cost - Water Usage'
         desc: 'Operating costs due to water usage.'
@@ -1220,11 +1220,13 @@ projectCategories =
         type: Number
         decimal: true
         units: Units.co2kWh
+        defaultValue: 0.92
       gas:
         label: 'Carbon per kWh - Gas'
         type: Number
         decimal: true
         units: Units.co2kWh
+        defaultValue: 0.229
   renewable_energy:
     label: 'Renewable Energy'
     items:
@@ -1242,31 +1244,37 @@ projectCategories =
         type: Number
         decimal: true
         units: Units.$day
+        defaultValue: 1.038
       price_usage_elec:
         label: 'Electricity Usage Price per kWh'
         type: Number
         decimal: true
         units: Units.$kWh
+        defaultValue: 0.27
       price_supply_gas:
         label: 'Gas Supply Charge'
         type: Number
         decimal: true
         units: Units.$day
+        defaultValue: 0.667
       price_usage_gas:
         label: 'Gas Usage Price'
         type: Number
         decimal: true
         units: '$/MJ'
+        defaultValue: 0.024
       price_supply_water:
         label: 'Water Supply Charge'
         type: Number
         decimal: true
         units: Units.$day
+        defaultValue: 0.298
       price_usage_water:
         label: 'Water Usage Price'
         type: Number
         decimal: true
         units: Units.$kL
+        defaultValue: 0.25
   external_water:
     label: 'External Water'
     items:
@@ -1275,16 +1283,19 @@ projectCategories =
         type: Number
         decimal: true
         units: Units.kLm2year
+        defaultValue: 1.0225
       demand_ap:
         label: 'Annual Plants Water Demand'
         type: Number
         decimal: true
         units: Units.kLm2year
+        defaultValue: 1.1775
       demand_hp:
         label: 'Hardy Plants Water Demand'
         type: Number
         decimal: true
         units: Units.kLm2year
+        defaultValue: 0.7275
   stormwater:
     label: 'Stormwater'
     items:
@@ -1292,19 +1303,23 @@ projectCategories =
         label: 'Roofed Area Run-Off Coefficient'
         type: Number
         decimal: true
+        defaultValue: 1
       runoff_impervious:
         label: 'Impervious Area Run-Off Coefficient'
         type: Number
         decimal: true
+        defaultValue: 0.9
       runoff_pervious:
         label: 'Pervious Area Run-Off Coefficient'
         type: Number
         decimal: true
+        defaultValue: 0.16
       rainfall_intensity:
         label: 'Rainfall Intensity'
         type: Number
         decimal: true
         units: Units.mm
+        defaultValue: 145
   financial:
     label: 'Financial'
     items:
@@ -1316,6 +1331,7 @@ projectCategories =
             type: Number
             desc: 'Land Value per Square Metre'
             units: Units.$m2
+            defaultValue: 500
       landscaping:
         label: 'Landscaping'
         items:
@@ -1324,21 +1340,25 @@ projectCategories =
             type: Number
             decimal: true
             units: Units.$m2
+            defaultValue: 40
           price_annu:
             label: 'Cost per Sqm - Annual Plants'
             type: Number
             decimal: true
             units: Units.$m2
+            defaultValue: 40
           price_hardy:
             label: 'Cost per Sqm - Hardy Plants'
             type: Number
             decimal: true
             units: Units.$m2
+            defaultValue: 50
           price_imper:
             label: 'Cost per Sqm - Impermeable'
             type: Number
             decimal: true
             units: Units.$m2
+            defaultValue: 75
       pathways:
         label: 'Pathways'
         items:
@@ -1349,26 +1369,32 @@ projectCategories =
                 label: 'Cost per Sqm - Full Depth Asphalt'
                 type: Number
                 units: Units.$m2
+                defaultValue: 129
               price_asphalt_cement:
                 label: 'Cost per Sqm - Asphalt Over Cement'
                 type: Number
                 units: Units.$m2
+                defaultValue: 123
               price_granular_spray:
                 label: 'Cost per Sqm - Granular with Spray Seal'
                 type: Number
                 units: Units.$m2
+                defaultValue: 83
               price_granular_asphalt:
                 label: 'Cost per Sqm - Granular with Asphalt'
                 type: Number
                 units: Units.$m2
+                defaultValue: 85
               price_concrete_plain:
                 label: 'Cost per Sqm - Plain Concrete'
                 type: Number
                 units: Units.$m2
+                defaultValue: 96
               price_concrete_reinforced:
                 label: 'Cost per Sqm - Reinforced Concrete'
                 type: Number
                 units: Units.$m2
+                defaultValue: 116
           footpaths:
             label: 'Footpaths'
             items:
@@ -1376,10 +1402,12 @@ projectCategories =
                 label: 'Cost per Sqm - Concrete'
                 type: Number
                 units: Units.$m2
+                defaultValue: 42
               price_block_paved:
                 label: 'Cost per Sqm - Block Paved'
                 type: Number
                 units: Units.$m2
+                defaultValue: 64
           bicycle_paths:
             label: 'Bicycle Paths'
             items:
@@ -1387,10 +1415,12 @@ projectCategories =
                 label: 'Cost per Sqm - Asphalt'
                 type: Number
                 units: Units.$m2
+                defaultValue: 41
               price_concrete:
                 label: 'Cost per Sqm - Concrete'
                 type: Number
                 units: Units.$m2
+                defaultValue: 52
           all:
             label: 'All'
             items:
@@ -1398,6 +1428,7 @@ projectCategories =
                 label: 'Cost per Sqm - Verge'
                 type: Number
                 units: Units.$m2
+                defaultValue: 20
   embodied_carbon:
     label: 'Embodied Carbon'
     items:
@@ -1409,11 +1440,13 @@ projectCategories =
             type: Number
             decimal: true
             units: Units.kgco2m2
+            defaultValue: -20
           impermeable:
             label: 'Impermeable'
             type: Number
             decimal: true
             units: Units.kgco2m2
+            defaultValue: 2.2586
       pathways:
         label: 'Pathways'
         items:
@@ -1422,31 +1455,37 @@ projectCategories =
             type: Number
             decimal: true
             units: Units.kgco2m2
+            defaultValue: 36.04
           deep_asphalt:
             label: 'Deep Strength Asphalt'
             type: Number
             decimal: true
             units: Units.kgco2m2
+            defaultValue: 33.8
           granular_spray:
             label: 'Granular with Spray Seal'
             type: Number
             decimal: true
             units: Units.kgco2m2
+            defaultValue: 11.35
           granular_asphalt:
             label: 'Granular with Asphalt'
             type: Number
             decimal: true
             units: Units.kgco2m2
+            defaultValue: 12.07
           concrete_plain:
             label: 'Plain Concrete'
             type: Number
             decimal: true
             units: Units.kgco2m2
+            defaultValue: 51.33
           concrete_reinforced:
             label: 'Reinforced Concrete'
             type: Number
             decimal: true
             units: Units.kgco2m2
+            defaultValue: 53.51
           footpaths:
             label: 'Footpaths'
             items:
@@ -1455,11 +1494,13 @@ projectCategories =
                 type: Number
                 decimal: true
                 units: Units.kgco2m2
+                defaultValue: 26.38
               block_paved:
                 label: 'Block Paved'
                 type: Number
                 decimal: true
                 units: Units.kgco2m2
+                defaultValue: 7.48
           bicycle_paths:
             label: 'Bicycle Paths'
             items:
@@ -1468,11 +1509,13 @@ projectCategories =
                 type: Number
                 decimal: true
                 units: Units.kgco2m2
+                defaultValue: 4.85
               concrete:
                 label: 'Concrete'
                 type: Number
                 decimal: true
                 units: Units.kgco2m2
+                defaultValue: 45.12
           all:
             label: 'All'
             items:
@@ -1481,6 +1524,7 @@ projectCategories =
                 type: Number
                 decimal: true
                 units: Units.kgco2m2
+                defaultValue: -20
 # TODO(aramk) Use these for src_cook.
 #  energy_demand:
 #    label: 'Energy Demand'
