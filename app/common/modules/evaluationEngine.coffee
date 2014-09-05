@@ -60,7 +60,6 @@ class @EvaluationEngine
       addCalcContext(calc)
       calc
 
-    # TODO(aramk) Refactor
     addCalcContext = (calc) ->
       calc.context = _.defaults(_.extend(calc.context ? {}, {
         param: getValueOrCalc
@@ -75,7 +74,6 @@ class @EvaluationEngine
     # Go through output parameters and calculate them recursively.
     for paramId, schema of schemas
       # TODO(aramk) Detect cycles and throw exceptions to prevent infinite loops.
-      # TODO(aramk) Avoid re-calculating values.
       try
         result = getValueOrCalc(paramId)
       catch e

@@ -3,6 +3,7 @@
   define: (args) ->
     name = args.name
     title = args.title
+    typologyClass = args.typologyClass
     Report = Template[name]
     Report.title = title
     unless Report
@@ -30,7 +31,13 @@
       # TODO(aramk) Invoke generator first, then pass data to renderField
 
       # TODO(aramk) Filter based on selected entities/typologies with Session.get
-      entities = Entities.getAllFlattened()
+      entityFilter = null
+      if typologyClass?
+        entityFilter = (entity) ->
+          console.log('arguments', arguments)
+          typology = Typologies.findOne(entity.typology)
+          Typologies.getParameter(typology, 'general.class') == typologyClass
+      entities = Entities.getAllFlattened(entityFilter)
       console.log('Evaluating entities', entities)
       results = reportGenerator.generate(models: entities, fields: fields)
       console.log('results', results)

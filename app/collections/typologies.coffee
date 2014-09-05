@@ -973,8 +973,10 @@ Entities.getFlattened = (id) ->
   Entities.mergeTypology(entity)
   entity
 
-Entities.getAllFlattened = ->
+Entities.getAllFlattened = (filter) ->
   entities = Entities.findByProject().fetch()
+  if filter
+    entities = _.filter entities, filter
   _.map entities, (entity) -> Entities.getFlattened(entity._id)
 
 Entities.mergeTypology = (entity) ->

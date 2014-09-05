@@ -2,6 +2,8 @@ Meteor.startup ->
   Reports.define
     name: 'residentialReport'
     title: 'Residential Report'
+    typologyClass: 'RESIDENTIAL'
+
     fields: [
       {title: 'Space'}
       {param: 'space.lotsize'}
