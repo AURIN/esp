@@ -7,8 +7,27 @@ Meteor.startup ->
   Form = Forms.defineModelForm
     name: 'projectForm'
     collection: 'Projects'
+    onRender: -> updateFields.call(@)
     onSuccess: close
     onCancel: close
+
+  updateFields = ->
+    # TODO(aramk) Refactor with Typology form. No select fields are used at the moment.
+    for key, input of @schemaInputs
+      $input = $(input.node)
+      fieldSchema = input.field
+      isParamField = ParamUtils.hasPrefix(key)
+
+      defaultValue = null
+      if isParamField
+        defaultValue = fieldSchema.classes?.ALL?.defaultValue
+      else
+        # Regular field - not a parameter.
+        defaultValue = fieldSchema.defaultValue
+
+      # Add placeholders for default values
+      if defaultValue?
+        $input.attr('placeholder', defaultValue)
 
   Form.helpers
     project: -> Projects.getCurrentId()

@@ -17,6 +17,7 @@ Meteor.startup ->
     for key, input of @schemaInputs
       fieldSchema = input.field
       isParamField = ParamUtils.hasPrefix(key)
+      paramName = ParamUtils.removePrefix(key) if isParamField
       classes = fieldSchema.classes
       classOptions = classes?[typologyClass]
       allClassOptions = classes?.ALL
@@ -27,10 +28,6 @@ Meteor.startup ->
       $wrapper = $input.closest(Forms.FIELD_SELECTOR)
       # Hide fields which have classes specified which don't contain the current class.
       $wrapper[if classes and not classOptions then 'hide' else 'show']()
-
-      unless isParamField
-        continue
-      paramName = ParamUtils.removePrefix(key)
 
       # For entities, we need to distinguish between default values inherited by the typology and
       # typology values that will be inherited by the entity.
@@ -49,6 +46,9 @@ Meteor.startup ->
       else if defaultValue?
         # Add placeholders for default values
         $input.attr('placeholder', defaultValue)
+
+      unless isParamField
+        continue
 
       # For a dropdown field, show the inherited or default value with labels.
       if $input.is('select')

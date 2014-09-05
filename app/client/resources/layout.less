@@ -169,10 +169,15 @@ body {
     font-size: 13px;
     margin-bottom: 10px;
   }
-//  .subsubtitle {
-//    font-size: 12px;
-//    margin-bottom: 8px;
-//  }
+  .subsubtitle,
+    // Overrides
+  .crud.form form > .subsubtitle,
+  &.crud.form form > .subsubtitle {
+    font-weight: bold;
+    background: #f8f8f8;
+    padding-bottom: 6px;
+    padding-top: 6px;
+  }
 }
 
 .units {

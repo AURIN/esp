@@ -14,6 +14,7 @@ Meteor.startup ->
     for key, input of @schemaInputs
       fieldSchema = input.field
       isParamField = ParamUtils.hasPrefix(key)
+      paramName = ParamUtils.removePrefix(key) if isParamField
       classes = fieldSchema.classes
       classOptions = classes?[typologyClass]
       allClassOptions = classes?.ALL
@@ -25,10 +26,6 @@ Meteor.startup ->
       # Hide fields which have classes specified which don't contain the current class.
       $wrapper[if classes and not classOptions then 'hide' else 'show']()
 
-      unless isParamField
-        continue
-      paramName = ParamUtils.removePrefix(key)
-
       if isParamField
         defaultValue = Typologies.getParameter(defaultParams, key)
       else
@@ -37,8 +34,10 @@ Meteor.startup ->
 
       # Add placeholders for default values
       if defaultValue?
-        # Add placeholders for default values
         $input.attr('placeholder', defaultValue)
+
+      unless isParamField
+        continue
 
       # Add "None" option to select fields.
       if $input.is('select')

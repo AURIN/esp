@@ -7,6 +7,7 @@
   },
   "private": "true",
   "devDependencies": {
+    "coffee-script": "^1.8.0",
     "csv": "^0.4.0",
     "grunt": "~0.4.1",
     "grunt-contrib-clean": "~0.5.0",

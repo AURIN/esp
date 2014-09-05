@@ -52,15 +52,16 @@ WaterDemandSources = ['Potable', 'Bore', 'Rainwater Tank', 'On-Site Treated', 'G
 
 # ^ and _ are converted to superscript and subscript in forms and reports.
 Units =
-  m: 'm'
-  mm: 'mm'
-  m2: 'm^2'
   $m2: '$/m^2'
   $: '$'
   $day: '$/day'
   $kWh: '$/kWh'
   $MJ: '$/MJ'
   $kL: '$/kL'
+  m: 'm'
+  mm: 'mm'
+  m2: 'm^2'
+  MJ: 'MJ'
   deg: 'degrees'
   kgco2: 'kg CO_2-e'
   kgco2m2: 'kg CO_2-e/m^2'
@@ -1529,6 +1530,42 @@ projectCategories =
                 decimal: true
                 units: Units.kgco2m2
                 defaultValue: -20
+  energy:
+    label: 'Energy'
+    items:
+      fitout:
+        label: 'Fitout'
+        items:
+          en_elec_oven:
+            label: 'Energy - Electric Oven and Cooktop'
+            type: Number
+            units: Units.MJ
+            defaultValue: 1956
+          en_gas_oven:
+            label: 'Energy - Gas Oven and Cooktop'
+            type: Number
+            units: Units.MJ
+            defaultValue: 3366
+          en_basic_avg_app:
+            label: 'Energy - Basic Avg Perfomance Appliances'
+            type: Number
+            units: Units.MJ
+            defaultValue: 9749
+          en_basic_hp_app:
+            label: 'Energy - Basic High Performance Appliances'
+            type: Number
+            units: Units.MJ
+            defaultValue: 6998
+          en_aff_avg_app:
+            label: 'Energy - Affluenza Avg Performance Appliances'
+            type: Number
+            units: Units.MJ
+            defaultValue: 12442
+          en_aff_hp_app:
+            label: 'Energy - Affluenza High Perfomance Appliances'
+            type: Number
+            units: Units.MJ
+            defaultValue: 10951
 # TODO(aramk) Use these for src_cook.
 #  energy_demand:
 #    label: 'Energy Demand'
