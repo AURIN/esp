@@ -22,7 +22,7 @@ class @EvaluationEngine
       value = getValue(paramId)
       if !value? && @isOutputParam(paramId)
         value = calcValue(paramId)
-      @sanitizeValue(paramId, value)
+      @sanitizeParamValue(paramId, value)
 
     calcValue = (paramId) =>
       schema = @getParamSchema(paramId)
@@ -33,7 +33,7 @@ class @EvaluationEngine
       if Types.isFunction(calc)
         addCalcContext(calc)
         result = calc.call(calc.context)
-        result = @sanitizeValue(paramId, result)
+        result = @sanitizeParamValue(paramId, result)
         # Store the calculated value to prevent calculating again.
         @setResult(model, paramId, result)
         result
@@ -105,15 +105,18 @@ class @EvaluationEngine
     schema = @getParamSchema(paramId)
     if schema then schema.calc? else false
 
-  sanitizeValue: (paramId, value) ->
+  sanitizeParamValue: (paramId, value) ->
     schema = @getParamSchema(paramId)
-    if schema && schema.type == Number && (!value? || isNaN(value)) then 0 else value
+    if schema && schema.type == Number && (!value? || isNaN(value)) then NULL_VALUE else value
 
   isGlobalParam: (paramId) -> Projects.schema.schema(ParamUtils.addPrefix(paramId))
+
+NULL_VALUE = 0
+sanitizeValue = (value) -> value ? 0
 
 # Context object passed to each evaluation function. Allows passing functions for use in the
 # schema expression.
 CalcContext =
-  IF: (condition, thenResult, elseResult) -> if condition then thenResult else elseResult
+  IF: (condition, thenResult, elseResult) -> if condition then sanitizeValue(thenResult) else sanitizeValue(elseResult)
   KWH_TO_MJ: (kWh) -> kWh * 3.6
   MJ_TO_KW: (mj) -> mj / 3.6
