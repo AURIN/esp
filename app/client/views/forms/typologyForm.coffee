@@ -3,59 +3,62 @@ Meteor.startup ->
   getClassInput = ->
     $(@.find('[name="parameters.general.class"]')).closest('.dropdown')
 
+  getSelectOption = (value, $select) ->
+    $('option[value="' + value + '"]', $select)
+
   updateFields = ->
     # TODO(aramk) Refactor with entityForm.
-    typology = @data.doc
     typologyClass = Template.dropdown.getValue(getClassInput.call(@))
     defaultParams = Typologies.getDefaultParameterValues(typologyClass)
     console.debug 'updateFields', @, arguments, typologyClass
     for key, input of @schemaInputs
       fieldSchema = input.field
       isParamField = ParamUtils.hasPrefix(key)
-      isSelectField = !!fieldSchema.allowedValues
-      paramName = ParamUtils.removePrefix(key) if isParamField
       classes = fieldSchema.classes
       classOptions = classes?[typologyClass]
       allClassOptions = classes?.ALL
       if allClassOptions?
         classOptions = _.extend(allClassOptions, classOptions)
 
-      # Add placeholders for default values
+      $input = $(input.node)
+      $wrapper = $input.closest(Forms.FIELD_SELECTOR)
+      # Hide fields which have classes specified which don't contain the current class.
+      $wrapper[if classes and not classOptions then 'hide' else 'show']()
+
+      unless isParamField
+        continue
+      paramName = ParamUtils.removePrefix(key)
+
       if isParamField
         defaultValue = Typologies.getParameter(defaultParams, key)
       else
         # Regular field - not a parameter.
         defaultValue = fieldSchema.defaultValue
 
-      $input = $(input.node)
-      $wrapper = $input.closest(Forms.FIELD_SELECTOR)
+      # Add placeholders for default values
       if defaultValue?
-        if isSelectField
-          # TODO(aramk) Setting value for dropdowns doesn't work - autoform might be setting it
-          # after render?
-          setSelectValue = ($select, value) ->
-            ->
-              console.log($select, value)
-              $select.val(value)
-          setTimeout(
-            setSelectValue($input, defaultValue)
-            1000
-          )
-#          $('option[value="' + defaultValue + '"]', $input).attr('selected', 'selected')
-        else
-          $input.attr('placeholder', defaultValue)
+        # Add placeholders for default values
+        $input.attr('placeholder', defaultValue)
 
-      # Hide fields which have classes specified which don't contain the current class.
-      $wrapper[if classes and not classOptions then 'hide' else 'show']()
-      # Add a "none" option to select fields.
+      # Add "None" option to select fields.
       if $input.is('select')
-        $option = $('<option value="">None</option>')
-        $input.prepend($option)
-        inputValue = null
-        if typology && isParamField
-          inputValue = Typologies.getParameter(typology, paramName)
+        typology = @data.doc
+        inputValue = Typologies.getParameter(typology, paramName) if typology
+        if defaultValue?
+          # Label which option is the default value.
+          $defaultOption = getSelectOption(defaultValue, $input)
+          if $defaultOption.length > 0
+            $defaultOption.text($defaultOption.text() + ' (Default)')
+        else
+          # TODO(aramk) This is not available if a default value exists, since we cannot
+          # override with null yet. It is available only if a value is not set.
+          $option = $('<option value="">None</option>')
+          $input.prepend($option)
         unless inputValue?
-          $input.val('')
+          if defaultValue?
+            $input.val(defaultValue)
+          else
+            $input.val('')
 
   Form = Forms.defineModelForm
     name: 'typologyForm'

@@ -687,7 +687,7 @@ toTitleCase = (str) ->
   title = ''
   for part, i in parts
     if part != ''
-      title += part.slice(0, 1).toUpperCase() + part.slice(1, part.length);
+      title += part.slice(0, 1).toUpperCase() + part.slice(1, part.length)
       if i != parts.length - 1 and parts[i + 1] != ''
         title += ' '
   title

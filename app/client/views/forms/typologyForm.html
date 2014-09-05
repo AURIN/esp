@@ -54,6 +54,12 @@
           {{> afQuickField name="parameters.energy_demand.src_hwat" options="allowed"}}
           {{> afQuickField name="parameters.energy_demand.en_hwat"}}
 
+          <!-- NOTE: Fields from entity form. -->
+          {{> afQuickField name="parameters.energy_demand.src_cook" options="allowed"}}
+          {{> afQuickField name="parameters.energy_demand.en_cook"}}
+          {{> afQuickField name="parameters.energy_demand.en_app"}}
+          {{> afQuickField name="parameters.energy_demand.size_pv"}}
+
           <div class="subtitle">Embodied Carbon</div>
           {{> afQuickField name="parameters.embodied_carbon.i_co2_emb"}}
 
@@ -63,6 +69,9 @@
           {{> afQuickField name="parameters.water_demand.i_wu_rain"}}
           {{> afQuickField name="parameters.water_demand.i_wu_treat"}}
           {{> afQuickField name="parameters.water_demand.i_wu_grey"}}
+
+          <!-- NOTE: Fields from entity form. -->
+          {{> afQuickField name="parameters.water_demand.e_wd_src" options="allowed"}}
 
           <div class="subtitle">Financial</div>
           {{> afQuickField name="parameters.financial.cost_con"}}

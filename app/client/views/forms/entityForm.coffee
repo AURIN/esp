@@ -15,14 +15,22 @@ Meteor.startup ->
     #    defaultParams = Typologies.mergeDefaults(typology ? {})
     console.debug 'updateFields', @, arguments, typologyId, typology, typologyClass
     for key, input of @schemaInputs
-      fieldSchema = input.field;
+      fieldSchema = input.field
       isParamField = ParamUtils.hasPrefix(key)
-      paramName = ParamUtils.removePrefix(key) if isParamField
       classes = fieldSchema.classes
       classOptions = classes?[typologyClass]
       allClassOptions = classes?.ALL
       if allClassOptions?
         classOptions = _.extend(allClassOptions, classOptions)
+
+      $input = $(input.node)
+      $wrapper = $input.closest(Forms.FIELD_SELECTOR)
+      # Hide fields which have classes specified which don't contain the current class.
+      $wrapper[if classes and not classOptions then 'hide' else 'show']()
+
+      unless isParamField
+        continue
+      paramName = ParamUtils.removePrefix(key)
 
       # For entities, we need to distinguish between default values inherited by the typology and
       # typology values that will be inherited by the entity.
@@ -35,44 +43,38 @@ Meteor.startup ->
         # Regular field - not a parameter.
         defaultValue = fieldSchema.defaultValue
 
-      $input = $(input.node)
-      $wrapper = $input.closest(Forms.FIELD_SELECTOR)
       if typologyValue?
         # Add placeholders for inherited values
         $input.attr('placeholder', typologyValue)
       else if defaultValue?
         # Add placeholders for default values
         $input.attr('placeholder', defaultValue)
-      # Hide fields which have classes specified which don't contain the current class.
-      $wrapper[if classes and not classOptions then 'hide' else 'show']()
+
       # For a dropdown field, show the inherited or default value with labels.
       if $input.is('select')
         if typologyValue?
-          $inheritedOption = getSelectOption(typologyValue, $input);
+          $inheritedOption = getSelectOption(typologyValue, $input)
           if $inheritedOption.length > 0
             $inheritedOption.text($inheritedOption.text() + ' (Inherited)')
-            inputValue = $input.val()
-            console.log 'inputValue', inputValue
-            if inputValue == null || inputValue == typologyValue
-              # Either no value is selected, or the inherited value is selected. Remove the value
-              # from the option and select it.
-              $input.val(typologyValue)
-            $inheritedOption.val('')
         if defaultValue?
           # Label which option is the default value.
-          $defaultOption = getSelectOption(defaultValue, $input);
+          $defaultOption = getSelectOption(defaultValue, $input)
           if $defaultOption.length > 0
-            $defaultOption.text('Default (' + $defaultOption.text() + ')')
+            $defaultOption.text($defaultOption.text() + ' (Default)')
         entity = @data.doc
-        entityValue = if entity then Entities.getParameter(entity, paramName) else
+        entityValue = Entities.getParameter(entity, paramName) if entity
           # Only show None if we don't have a set or inherited value
-        if !defaultParams && !entityValue? && !typologyValue?
-          # TODO(aramk) This is not available if a value exists, since we cannot override with null
-          # yet.
-          $option = $('<option value="">None</option>')
-          $input.prepend($option)
-          $input.val('')
-
+        unless entityValue?
+          if typologyValue?
+            $input.val(typologyValue)
+          else if defaultValue?
+            $input.val(defaultValue)
+          else
+            # TODO(aramk) This is not available if a value or default value exists, since we cannot
+            # override with null yet.
+            $option = $('<option value="">None</option>')
+            $input.prepend($option)
+            $input.val('')
 
   Form = Forms.defineModelForm
     name: 'entityForm'
