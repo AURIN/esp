@@ -1011,7 +1011,11 @@ subscribeRefreshReports = ->
   return if _reportRefreshSubscribed
   _.each [Entities, Typologies], (collection) ->
     shouldRefresh = false
-    refreshReport = -> PubSub.publish('report/refresh') if shouldRefresh
+    refreshReport = ->
+      if shouldRefresh
+        # TODO(aramk) Report refreshes too soon and geo entity is being reconstructed after an
+        # update. This delay is a quick fix, but we should use promises.
+        setTimeout (-> PubSub.publish('report/refresh')), 1000
     collection.find().observe
       added: refreshReport
       changed: refreshReport
