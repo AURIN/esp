@@ -64,6 +64,9 @@ class @EvaluationEngine
     addCalcContext = (calc) ->
       calc.context = _.defaults(_.extend(calc.context ? {}, {
         param: getValueOrCalc
+        calc: (expr) ->
+          subcalc = buildEvalFunc(expr: expr)
+          subcalc.call(subcalc.context)
         paramId: paramId
         model: model
         schema: schema

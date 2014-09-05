@@ -48,6 +48,12 @@ ClassNames = Object.keys(TypologyClasses)
 
 TypologyTypes = ['Basic', 'Energy Efficient']
 EnergySources = ['Electricity', 'Gas']
+# Appliance type to the project parameter storing its energy usage.
+ApplianceTypes =
+  'Basic - Avg Performance': 'en_basic_avg_app'
+  'Basic - High Performance': 'en_basic_hp_app'
+  'Affluenza - Avg Performance': 'en_aff_avg_app'
+  'Affluenza - High Performance': 'en_aff_hp_app'
 WaterDemandSources = ['Potable', 'Bore', 'Rainwater Tank', 'On-Site Treated', 'Greywater']
 
 # ^ and _ are converted to superscript and subscript in forms and reports.
@@ -335,9 +341,7 @@ typologyCategories =
         type: Number
         decimal: true
         units: Units.MJyear
-        classes:
-          RESIDENTIAL:
-            defaultValue: 1956
+        calc: 'IF($energy_demand.src_cook=="Electricity", $energy.fitout.en_elec_oven, IF($energy_demand.src_cook=="Gas", $energy.fitout.en_gas_oven)) * ($space.num_0br + $space.num_1br + $space.num_2br + $space.num_3plus)'
     # TODO(aramk) Default value should be based on src_cook.
       src_cook:
         label: 'Energy Source - Cooktop and Oven'
@@ -353,9 +357,20 @@ typologyCategories =
         type: Number
         decimal: true
         units: Units.MJyear
+#        calc: 'IF($energy_demand.type_app=="Basic - Avg Performance", $energy.fitout.en_basic_avg_app, IF($energy_demand.type_app=="Basic - High Performance", $energy.fitout.en_basic_hp_app, IF($energy_demand.type_app=="Affluenza - Avg Performance", $energy.fitout.en_aff_avg_app, IF($energy_demand.type_app=="Affluenza - High Performance", $energy.fitout.en_aff_hp_app)))) * ($space.num_0br + $space.num_1br + $space.num_2br + $space.num_3plus)'
+        calc: ->
+          type_app = @param('energy_demand.type_app')
+          type_en = @param('energy.fitout.' + ApplianceTypes[type_app])
+          rooms = @calc('$space.num_0br + $space.num_1br + $space.num_2br + $space.num_3plus')
+          type_en * rooms
+      type_app:
+        label: 'Energy Source – Appliances'
+        desc: 'Type of appliance fit out.'
+        type: String
+        allowedValues: Object.keys(ApplianceTypes),
         classes:
           RESIDENTIAL:
-            defaultValue: 9749
+            defaultValue: 'Basic - Avg Performance'
       size_pv:
         label: 'PV System Size'
         desc: 'PV system size fitted on the typology.'
