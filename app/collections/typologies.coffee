@@ -548,7 +548,7 @@ typologyCategories =
         type: Number
         decimal: true
         units: Units.kL
-        calc: '$water_demand.i_wu_pot + IF($water_demand.e_wd_src, $water_demand.e_wd_total, 0)'
+        calc: '$water_demand.i_wu_pot + IF($water_demand.e_wd_src == "Potable", $water_demand.e_wd_total, 0)'
       wd_total:
         label: 'Water Demand - Total'
         desc: 'Total water use for internal and external purposes.'
@@ -986,6 +986,24 @@ Entities.find().observe
     lot = Lots.findByEntity(entity._id)
     if lot?
       Lots.remove(lot._id, {$unset: {entity: null}})
+
+# Listen for changes to Entities or Typologies and refresh reports.
+_reportRefreshSubscribed = false
+subscribeRefreshReports = ->
+  return if _reportRefreshSubscribed
+  _.each [Entities, Typologies], (collection) ->
+    shouldRefresh = false
+    refreshReport = -> PubSub.publish('report/refresh') if shouldRefresh
+    collection.find().observe
+      added: refreshReport
+      changed: refreshReport
+      removed: refreshReport
+    # TODO(aramk) Temporary solution to prevent refreshing due to added callback firing for all
+    # existing docs.
+    shouldRefresh = true
+  _reportRefreshSubscribed = true
+# Refresh only if a report has been rendered before.
+PubSub.subscribe 'report/rendered', subscribeRefreshReports
 
 ####################################################################################################
 # LOT SCHEMA DEFINITION

@@ -48,6 +48,9 @@
         count = entities.length
         plural = Strings.pluralize('entity', count, 'entities')
         $footer.text("Assessed #{count} #{plural}")
+        # Trigger event to notify any listeners that the report has been rendered.
+        $report = $(@find('.report'))
+        $report.trigger('render')
       )
 
     Report.helpers

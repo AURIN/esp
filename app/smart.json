@@ -40,6 +40,9 @@
       "branch": "v1"
     },
     "tinycolor": {},
-    "percolatestudio-migrations": {}
+    "percolatestudio-migrations": {},
+    "pubsub": {
+      "git": "https://github.com/aramk/PubSubJS"
+    }
   }
 }
