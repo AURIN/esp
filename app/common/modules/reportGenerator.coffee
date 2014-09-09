@@ -38,6 +38,17 @@ class @ReportGenerator
       # TODO(aramk) Ignore header fields earlier.
       unless paramId?
         continue
-      paramResults = _.map models, (model) -> Entities.getParameter(model, paramId)
-      reportResults[field.id] = Aggregator[aggregate](paramResults)
+      fieldAggregate = field.aggregate ? aggregate
+      if fieldAggregate? && fieldAggregate != false
+        # Aggregate over all entities.
+        paramResults = _.map models, (model) -> Entities.getParameter(model, paramId)
+        result = Aggregator[fieldAggregate](paramResults)
+      else if field.calc
+        # Evaluate the field expression directly.
+        # TODO(aramk) May not have a need for this.
+        throw new Error('Calc expression in report field not yet supported')
+      else
+        console.error('Field ignored - must aggregate or provide calc expression.', field)
+        continue
+      reportResults[field.id] = result
     reportResults

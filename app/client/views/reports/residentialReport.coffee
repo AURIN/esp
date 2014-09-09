@@ -20,8 +20,6 @@ Meteor.startup ->
       {param: 'space.ext_land_h'}
       {param: 'space.ext_land_i'}
 
-      {param: 'parking.parking_t'}
-
       {title: 'Energy Demand'}
       {param: 'energy_demand.en_heat'}
       {param: 'energy_demand.en_cool'}
@@ -49,10 +47,15 @@ Meteor.startup ->
       {param: 'operating_carbon.co2_op_tot'}
 
       {title: 'Water Demand'}
+      {param: 'water_demand.i_wu_pot'}
+      {param: 'water_demand.i_wu_bore'}
+      {param: 'water_demand.i_wu_rain'}
+      {param: 'water_demand.i_wu_treat'}
+      {param: 'water_demand.i_wu_grey'}
+      {param: 'water_demand.i_wu_total'}
       {param: 'water_demand.e_wd_lawn'}
       {param: 'water_demand.e_wd_ap'}
       {param: 'water_demand.e_wd_hp'}
-      {param: 'water_demand.i_wu_total'}
       {param: 'water_demand.e_wd_total'}
       {param: 'water_demand.wu_pot_tot'}
       {param: 'water_demand.wd_total'}
@@ -67,13 +70,20 @@ Meteor.startup ->
       {param: 'financial.cost_hardy'}
       {param: 'financial.cost_imper'}
       {param: 'financial.cost_xland'}
+      {param: 'financial.cost_con'}
       {param: 'financial.cost_prop'}
+      {param: 'financial.cost_prop', label: 'Average Property Cost', aggregate: 'average'}
       {param: 'financial.cost_op_e'}
       {param: 'financial.cost_op_g'}
       {param: 'financial.cost_op_w'}
       {param: 'financial.cost_op_t'}
+      {param: 'financial.cost_op_t', label: 'Average Operating Cost', aggregate: 'average'}
 
       {title: 'Orientation'}
       {param: 'orientation.azimuth'}
 
+      {title: 'Parking'}
+      {param: 'parking.parking_sl'}
+      {param: 'parking.parking_ug'}
+      {param: 'parking.parking_t'}
     ]

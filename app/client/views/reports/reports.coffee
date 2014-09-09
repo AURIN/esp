@@ -79,7 +79,7 @@
       paramSchema = ParametersSchema.schema(param)
       unless paramSchema
         throw new Error('Could not find schema for param: ' + param)
-      label = paramSchema.label ? Strings.toTitleCase(param)
+      label = field.label ? paramSchema.label ? Strings.toTitleCase(param)
       units = paramSchema.units
       decimalPoints = paramSchema.decimalPoints ? 2
       $field = $('<div class="field"></div>')

@@ -828,6 +828,7 @@ TypologySchema = new SimpleSchema
 @Typologies = new Meteor.Collection 'typologies', schema: TypologySchema
 Typologies.schema = TypologySchema
 Typologies.classes = TypologyClasses
+Typologies.units = Units
 Typologies.allow(Collections.allowAll())
 
 Typologies.getClassByName = _.memoize (name) ->
@@ -1026,32 +1027,30 @@ Entities.setParameter = (model, paramId, value) ->
 
 Entities.findByProject = (projectId) -> findByProject(Entities, projectId)
 
-# Remove the entity from the lot when removing the entity.
-Entities.find().observe
-  removed: (entity) ->
-    lot = Lots.findByEntity(entity._id)
-    if lot?
-      Lots.remove(lot._id, {$unset: {entity: null}})
-
 # Listen for changes to Entities or Typologies and refresh reports.
 _reportRefreshSubscribed = false
 subscribeRefreshReports = ->
   return if _reportRefreshSubscribed
-  _.each [Entities, Typologies], (collection) ->
+  _.each [
+    {collection: Entities, observe: ['added', 'changed', 'removed']}
+    {collection: Typologies, observe: ['changed']}
+  ], (args) ->
+    collection = args.collection
     shouldRefresh = false
     refreshReport = ->
       if shouldRefresh
         # TODO(aramk) Report refreshes too soon and geo entity is being reconstructed after an
         # update. This delay is a quick fix, but we should use promises.
         setTimeout (-> PubSub.publish('report/refresh')), 1000
-    collection.find().observe
-      added: refreshReport
-      changed: refreshReport
-      removed: refreshReport
+    cursor = collection.find()
+    _.each _.unique(args.observe), (methodName) ->
+      observeArgs = {}
+      observeArgs[methodName] = refreshReport
+      cursor.observe(observeArgs)
     # TODO(aramk) Temporary solution to prevent refreshing due to added callback firing for all
     # existing docs.
     shouldRefresh = true
-  _reportRefreshSubscribed = true
+    _reportRefreshSubscribed = true
 # Refresh only if a report has been rendered before.
 PubSub.subscribe 'report/rendered', subscribeRefreshReports
 
@@ -1691,3 +1690,25 @@ Projects.getDefaultParameterValues = _.memoize ->
 Projects.mergeDefaults = (model) ->
   defaults = Projects.getDefaultParameterValues()
   mergeDefaultParameters(model, defaults)
+
+####################################################################################################
+# ASSOCIATION MAINTENANCE
+####################################################################################################
+
+# Remove the entity from the lot when removing the entity.
+Entities.find().observe
+  removed: (entity) ->
+    lot = Lots.findByEntity(entity._id)
+    Lots.update(lot._id, {$unset: {entity: null}}) if lot?
+
+# Remove the entity when the lot is removed.
+Lots.find().observe
+  removed: (lot) ->
+    entityId = lot.entity
+    Entities.remove(entityId) if lot.entity?
+
+# Remove entities when the typology is removed.
+Typologies.find().observe
+  removed: (typology) ->
+    entities = Entities.find({typology: typology._id}).fetch()
+    _.each entities, (entity) -> Entities.remove(entity._id)
