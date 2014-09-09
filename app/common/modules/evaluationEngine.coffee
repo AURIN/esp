@@ -1,7 +1,6 @@
 class @EvaluationEngine
 
   constructor: (args) ->
-    # {@type} SimpleSchema
     @schema = args.schema
     unless @schema?
       throw new Error('No schema provided')

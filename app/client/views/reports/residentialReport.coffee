@@ -8,18 +8,27 @@ Meteor.startup ->
       {title: 'Space'}
       {param: 'space.lotsize'}
       {param: 'space.extland'}
-
-      # TODO(aramk) Remove these?
       {param: 'space.fpa'}
       {param: 'space.gfa'}
+      {param: 'space.plot_ratio'}
+      {param: 'space.dwell_dens'}
+      {param: 'space.dwell_tot'}
+      {param: 'space.occupants'}
 
       {param: 'space.ext_land_l'}
       {param: 'space.ext_land_a'}
       {param: 'space.ext_land_h'}
       {param: 'space.ext_land_i'}
-      {param: 'space.ext_land_i'}
+
+      {param: 'parking.parking_t'}
 
       {title: 'Energy Demand'}
+      {param: 'energy_demand.en_heat'}
+      {param: 'energy_demand.en_cool'}
+      {param: 'energy_demand.en_light'}
+      {param: 'energy_demand.en_hwat'}
+      {param: 'energy_demand.en_cook'}
+      {param: 'energy_demand.en_app'}
       {param: 'energy_demand.en_pv'}
       {param: 'energy_demand.en_total'}
 
@@ -27,11 +36,11 @@ Meteor.startup ->
       {param: 'embodied_carbon.e_co2_green'}
       {param: 'embodied_carbon.e_co2_imp'}
       {param: 'embodied_carbon.e_co2_emb'}
+      {param: 'embodied_carbon.i_co2_emb'}
       {param: 'embodied_carbon.t_co2_emb'}
 
       {title: 'Operating Carbon'}
       {param: 'operating_carbon.co2_heat'}
-      {param: 'operating_carbon.co2_cool'}
       {param: 'operating_carbon.co2_cool'}
       {param: 'operating_carbon.co2_light'}
       {param: 'operating_carbon.co2_hwat'}
@@ -40,10 +49,10 @@ Meteor.startup ->
       {param: 'operating_carbon.co2_op_tot'}
 
       {title: 'Water Demand'}
-      {param: 'water_demand.i_wu_total'}
       {param: 'water_demand.e_wd_lawn'}
       {param: 'water_demand.e_wd_ap'}
       {param: 'water_demand.e_wd_hp'}
+      {param: 'water_demand.i_wu_total'}
       {param: 'water_demand.e_wd_total'}
       {param: 'water_demand.wu_pot_tot'}
       {param: 'water_demand.wd_total'}

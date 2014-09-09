@@ -64,24 +64,25 @@ Units =
   $kWh: '$/kWh'
   $MJ: '$/MJ'
   $kL: '$/kL'
-  m: 'm'
-  mm: 'mm'
-  m2: 'm^2'
-  MJ: 'MJ'
+  co2kWh: 'CO2-e/kWh'
   deg: 'degrees'
+  GJyear: 'GJ/year'
+  ha: 'ha'
   kgco2: 'kg CO_2-e'
   kgco2m2: 'kg CO_2-e/m^2'
-  kL: 'kL'
-  kLm2year: 'kL/m²/year'
-  co2kWh: 'CO2-e/kWh'
-  Lsec: 'L/second'
-  Lyear: 'L/year'
-  MLyear: 'ML/year'
   kWhyear: 'kWh/year'
   kWh: 'kWh'
   kWhday: 'kWh/day'
+  kL: 'kL'
+  kLm2year: 'kL/m²/year'
+  Lsec: 'L/second'
+  Lyear: 'L/year'
+  m: 'm'
+  m2: 'm^2'
+  mm: 'mm'
+  MLyear: 'ML/year'
+  MJ: 'MJ'
   MJyear: 'MJ/year'
-  GJyear: 'GJ/year'
 
 # Common field schemas shared across collection schemas.
 
@@ -213,6 +214,11 @@ typologyCategories =
         type: Number
         units: 'Floors'
       height: heightSchema
+      plot_ratio:
+        label: 'Plot Ratio'
+        desc: 'The building footprint area divided by the lot size.'
+        type: Number
+        calc: '$space.fpa / $space.lotsize'
       occupants:
         label: 'No. Occupants'
         desc: 'Number of occupants in the typology.'
@@ -238,6 +244,19 @@ typologyCategories =
         desc: 'Number of 3 bedroom units in the typology.'
         type: Number
         units: 'Dwellings'
+      dwell_tot:
+        label: 'Dwellings - Total'
+        desc: 'Number of total dwellings in the typology.'
+        type: Number
+        units: 'Dwellings'
+        calc: '$space.num_0br + $space.num_1br + $space.num_2br + $space.num_3plus'
+      dwell_dens:
+        label: 'Dwelling - Density'
+        desc: 'Total number of dwellings divided by the lot size.'
+        type: Number
+        decimal: true
+        units: 'Dwellings/' + Units.ha
+        calc: '$space.dwell_tot / $space.lotsize * 10000'
       prpn_lawn:
         label: 'Proportion Extra Land - Lawn'
         desc: 'Proportion of extra land covered by lawn.'
@@ -302,41 +321,44 @@ typologyCategories =
     label: 'Energy Demand'
     items:
       en_heat:
-        label: 'Energy - Heating'
+        label: 'Heating'
         desc: 'Energy required for heating the typology.'
         type: Number
         decimal: true
         units: Units.MJyear
       src_heat:
-        label: 'Energy Source – Heating'
+        label: 'Heating Source'
         desc: 'Energy source in the typology used for heating.'
         type: String
         allowedValues: EnergySources
       en_cool:
-        label: 'Energy – Cooling'
+        label: 'Cooling'
         desc: 'Energy required for cooling the typology.'
         type: Number
         decimal: true
         units: Units.MJyear
       en_light:
-        label: 'Energy - Lighting'
+        label: 'Lighting'
         desc: 'Energy required for lighting the typology.'
         type: Number
         decimal: true
         units: Units.kWhyear
       en_hwat:
-        label: 'Energy - Hot Water'
+        label: 'Hot Water'
         desc: 'Energy required for hot water heating in the typology.'
         type: Number
         decimal: true
         units: Units.GJyear
       src_hwat:
-        label: 'Energy Source - Hot Water'
+        label: 'Hot Water Source'
         desc: 'Energy source in the typology used for hot water heating. Used to calculated CO2-e.'
         type: String
         allowedValues: EnergySources
+        classes:
+          RESIDENTIAL:
+            defaultValue: 'Electricity'
       en_cook:
-        label: 'Energy - Cooktop and Oven'
+        label: 'Cooktop and Oven'
         desc: 'Energy required for cooking in the typology.'
         type: Number
         decimal: true
@@ -344,7 +366,7 @@ typologyCategories =
         calc: 'IF($energy_demand.src_cook=="Electricity", $energy.fitout.en_elec_oven, IF($energy_demand.src_cook=="Gas", $energy.fitout.en_gas_oven)) * ($space.num_0br + $space.num_1br + $space.num_2br + $space.num_3plus)'
     # TODO(aramk) Default value should be based on src_cook.
       src_cook:
-        label: 'Energy Source - Cooktop and Oven'
+        label: 'Cooktop and Oven Source'
         desc: 'Energy source in the typology used for cooking. Used to calculate CO2-e.'
         type: String
         allowedValues: EnergySources
@@ -352,7 +374,7 @@ typologyCategories =
           RESIDENTIAL:
             defaultValue: 'Electricity'
       en_app:
-        label: 'Energy - Appliances'
+        label: 'Appliances'
         desc: 'Energy required for powering appliances in the typology.'
         type: Number
         decimal: true
@@ -364,7 +386,7 @@ typologyCategories =
           rooms = @calc('$space.num_0br + $space.num_1br + $space.num_2br + $space.num_3plus')
           type_en * rooms
       type_app:
-        label: 'Energy Source – Appliances'
+        label: 'Appliances Source'
         desc: 'Type of appliance fit out.'
         type: String
         allowedValues: Object.keys(ApplianceTypes),
@@ -390,7 +412,7 @@ typologyCategories =
       # TODO(aramk) Make days in year a constant above.
         calc: '$energy_demand.size_pv * $renewable_energy.pv_output * 365'
       en_total:
-        label: 'Energy - Total Operating'
+        label: 'Total Operating'
         desc: 'Total operating energy from all energy uses.'
         type: Number
         decimal: true
@@ -400,60 +422,60 @@ typologyCategories =
     label: 'Embodied Carbon'
     items:
       e_co2_green:
-        label: 'CO2 - Greenspace'
+        label: 'Greenspace'
         desc: 'CO2 embodied in the greenspace portion of external land.'
         type: Number
         units: Units.kgco2
         calc: '($space.ext_land_l + $space.ext_land_a + $space.ext_land_h) * $embodied_carbon.landscaping.greenspace'
       e_co2_imp:
-        label: 'CO2 - Impervious'
+        label: 'Impervious'
         desc: 'CO2 embodied in the impervious portion of external land.'
         type: Number
         units: Units.kgco2
         calc: '$space.ext_land_i * $embodied_carbon.landscaping.impermeable'
       e_co2_emb:
-        label: 'CO2 - Total External Embodied'
+        label: 'Total External Embodied'
         desc: 'CO2 embodied in the external impermeable surfaces.'
         type: Number
         units: Units.kgco2
-        calc: '$embodied_carbon.e_co2_green * $embodied_carbon.e_co2_imp'
+        calc: '$embodied_carbon.e_co2_green + $embodied_carbon.e_co2_imp'
       i_co2_emb:
-        label: 'CO2 - Internal Embodied'
+        label: 'Internal Embodied'
         desc: 'CO2 embodied in the materials of the typology.'
         type: Number
         units: Units.kgco2
       t_co2_emb:
-        label: 'CO2 - Total Embodied'
+        label: 'Total Embodied'
         desc: 'Total CO2 embodied in the property.'
         type: Number
         units: Units.kgco2
-        calc: '$embodied_carbon.e_co2_emb * $embodied_carbon.i_co2_emb'
+        calc: '$embodied_carbon.e_co2_emb + $embodied_carbon.i_co2_emb'
   operating_carbon:
     label: 'Operating Carbon'
     items:
       co2_heat:
-        label: 'CO2 – Heating'
+        label: 'Heating'
         desc: 'CO2 emissions due to heating the typology.'
         type: Number
         decimal: true
         units: Units.kgco2
         calc: -> calcEnergyC02.call(@, 'energy_demand.src_heat', 'energy_demand.en_heat')
       co2_cool:
-        label: 'CO2 – Cooling'
+        label: 'Cooling'
         desc: 'CO2 emissions due to cooling the typology.'
         type: Number
         decimal: true
         units: Units.kgco2
         calc: '$energy_demand.en_cool * KWH_TO_MJ($operating_carbon.elec)'
       co2_light:
-        label: 'CO2 - Lighting'
+        label: 'Lighting'
         desc: 'CO2-e emissions due to lighting the typology.'
         type: Number
         decimal: true
         units: Units.kgco2
         calc: '$energy_demand.en_light * $operating_carbon.elec'
       co2_hwat:
-        label: 'CO2 - Hot Water'
+        label: 'Hot Water'
         desc: 'CO2-e emissions due to hot water heating in the typology.'
         type: Number
         decimal: true
@@ -462,21 +484,21 @@ typologyCategories =
           co2 = calcEnergyC02.call(@, 'energy_demand.src_hwat', 'energy_demand.en_hwat')
           if co2? then co2 * 1000 else null
       co2_cook:
-        label: 'CO2 - Cooktop and Oven'
+        label: 'Cooktop and Oven'
         desc: 'CO2-e emissions due to cooking in the typology.'
         type: Number
         decimal: true
         units: Units.kgco2
         calc: -> calcEnergyC02.call(@, 'energy_demand.src_cook', 'energy_demand.en_cook')
       co2_app:
-        label: 'CO2 - Appliances'
+        label: 'Appliances'
         desc: 'CO2-e emissions due to powering appliances in the typology.'
         type: Number
         decimal: true
         units: Units.kgco2
         calc: '$energy_demand.en_app * KWH_TO_MJ($operating_carbon.elec)'
       co2_op_tot:
-        label: 'CO2 - Total Operating'
+        label: 'Total Operating'
         desc: 'Total operating CO2 from all energy uses.'
         type: Number
         decimal: true
@@ -585,7 +607,7 @@ typologyCategories =
     label: 'Financial'
     items:
       cost_land:
-        label: 'Cost – Land Parcel'
+        label: 'Cost - Land Parcel'
         type: Number
         decimal: true
         desc: 'Value of the parcel of land.'
@@ -692,6 +714,12 @@ typologyCategories =
         desc: 'Number of underground parking spaces.'
         type: Number
         units: 'Spaces'
+      parking_t:
+        label: 'Parking Spaces - Total'
+        desc: 'Total number of parking spaces.'
+        type: Number
+        units: 'Spaces'
+        calc: '$parking.parking_sl + $parking.parking_ug'
 
 ####################################################################################################
 # AUXILIARY - MUST BE DEFINED BEFORE USE
