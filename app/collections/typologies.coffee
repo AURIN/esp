@@ -960,6 +960,8 @@ Typologies.getClassMap = (projectId) ->
     map.push(typology)
   typologyMap
 
+Typologies.findByClass = (typologyClass) -> Typologies.find('parameters.general.class': typologyClass)
+
 ####################################################################################################
 # ENTITY SCHEMA DEFINITION
 ####################################################################################################
@@ -1026,6 +1028,10 @@ Entities.setParameter = (model, paramId, value) ->
   Typologies.setParameter(model, paramId, value)
 
 Entities.findByProject = (projectId) -> findByProject(Entities, projectId)
+
+Entities.getClass = (id) ->
+  typology = Typologies.findOne(Entities.findOne(id).typology)
+  Typologies.getParameter(typology, 'general.class')
 
 # Listen for changes to Entities or Typologies and refresh reports.
 _reportRefreshSubscribed = false

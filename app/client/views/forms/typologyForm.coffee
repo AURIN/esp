@@ -40,7 +40,7 @@ Meteor.startup ->
         continue
 
       # Add "None" option to select fields.
-      if $input.is('select')
+      if $input.is('select') && !$input.data('isSetUp')
         typology = @data.doc
         inputValue = Typologies.getParameter(typology, paramName) if typology
         if defaultValue?
@@ -58,6 +58,7 @@ Meteor.startup ->
             $input.val(defaultValue)
           else
             $input.val('')
+        $input.data('isSetUp', true)
 
   Form = Forms.defineModelForm
     name: 'typologyForm'

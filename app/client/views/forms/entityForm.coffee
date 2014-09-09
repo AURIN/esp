@@ -51,7 +51,7 @@ Meteor.startup ->
         continue
 
       # For a dropdown field, show the inherited or default value with labels.
-      if $input.is('select')
+      if $input.is('select') && !$input.data('isSetUp')
         if typologyValue?
           $inheritedOption = getSelectOption(typologyValue, $input)
           if $inheritedOption.length > 0
@@ -75,6 +75,7 @@ Meteor.startup ->
             $option = $('<option value="">None</option>')
             $input.prepend($option)
             $input.val('')
+        $input.data('isSetUp', true)
 
   Form = Forms.defineModelForm
     name: 'entityForm'
