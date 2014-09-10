@@ -82,11 +82,16 @@ Meteor.startup ->
               lots = Lots.findByTypology(docId)
               lotCount = lots.length
               if lotCount > 0
-                result = confirm(lotCount + ' ' + Strings.pluralize('Lot', lotCount) + ' will' +
-                  ' have their classes changed from ' + oldClass + ' to ' + newClass +
-                  ' to support this Typology. Do you wish to proceed?')
-                # Updating the actual Lot is handled by the collection.
-                @result(if result then modifier else false)
+                lotNames = (_.map lots, (lot) -> lot.name).join(', ')
+                alert('These Lots are using this Typology: ' + lotNames + '. Remove this Typology' +
+                  ' from the Lot first before changing its class.')
+                @result(false)
+                # TODO(aramk) Due to a bug this is disabled for now.
+#                result = confirm(lotCount + ' ' + Strings.pluralize('Lot', lotCount) + ' will' +
+#                  ' have their classes changed from ' + oldClass + ' to ' + newClass +
+#                  ' to support this Typology. Do you wish to proceed?')
+#                # Updating the actual Lot is handled by the collection.
+#                @result(if result then modifier else false)
           modifier
 
   # TODO(aramk) Refactor with import form.

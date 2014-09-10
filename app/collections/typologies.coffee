@@ -1717,6 +1717,16 @@ Lots.find().observe
   removed: (lot) ->
     entityId = lot.entity
     Entities.remove(entityId) if lot.entity?
+# TODO(aramk) Remove - just for testing. Observe to see if it changes after updating class
+#  changed: (_new, _old) ->
+#    console.log('new', _new)
+#    console.log('old', _old)
+
+# TODO(aramk) Remove - just for testing.
+#lotUpdate = Lots.update
+#Lots.update = ->
+#  console.log('update', @, arguments)
+#  lotUpdate.apply(@, arguments)
 
 # Remove entities when the typology is removed.
 Typologies.find().observe
