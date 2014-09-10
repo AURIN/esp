@@ -71,6 +71,23 @@ Meteor.startup ->
       formToDoc: (doc) ->
         doc.project = Projects.getCurrentId()
         doc
+      before:
+        update: (docId, modifier, template) ->
+          classParamId = 'parameters.general.class'
+          newClass = modifier.$set[classParamId]
+          if newClass
+            oldTypology = Typologies.findOne(docId)
+            oldClass = Typologies.getParameter(oldTypology, classParamId)
+            if newClass != oldClass
+              lots = Lots.findByTypology(docId)
+              lotCount = lots.length
+              if lotCount > 0
+                result = confirm(lotCount + ' ' + Strings.pluralize('Lot', lotCount) + ' will' +
+                  ' have their classes changed from ' + oldClass + ' to ' + newClass +
+                  ' to support this Typology. Do you wish to proceed?')
+                # Updating the actual Lot is handled by the collection.
+                @result(if result then modifier else false)
+          modifier
 
   # TODO(aramk) Refactor with import form.
   getFormats = (collection) ->

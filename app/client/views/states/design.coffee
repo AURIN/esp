@@ -143,11 +143,16 @@ TemplateClass.onAtlasLoad = (template, atlas) ->
   projectId = Projects.getCurrentId()
   AtlasManager.zoomToProject()
 
+  ##################################################################################################
+  # VISUALISATION MAINTENANCE
+  ##################################################################################################
+
   # Rendering Lots.
   renderLot = (id) -> LotUtils.render(id)
   unrenderLot = (id) -> AtlasManager.unrenderEntity(id)
   lots = Lots.findByProject()
   entities = Entities.findByProject()
+  typologies = Typologies.findByProject()
   # Listen to changes to Lots and (un)render them as needed.
   lots.observe
     added: (lot) ->
@@ -167,14 +172,16 @@ TemplateClass.onAtlasLoad = (template, atlas) ->
   # Rendering Entities.
   renderEntity = (id) -> EntityUtils.render(id)
   unrenderEntity = (id) -> AtlasManager.unrenderEntity(id)
+  refreshEntity = (id) ->
+    unrenderEntity(id)
+    renderEntity(id)
   # Listen to changes to Entities and Typologies and (un)render them as needed.
   entities.observe
     added: (entity) ->
       renderEntity(entity._id)
     changed: (newEntity, oldEntity) ->
       id = newEntity._id
-      unrenderEntity(id)
-      renderEntity(id)
+      refreshEntity(id)
     removed: (entity) ->
       unrenderEntity(entity._id)
 
@@ -199,6 +206,20 @@ TemplateClass.onAtlasLoad = (template, atlas) ->
 
   reactiveToDisplayMode(Lots, 'lotDisplayMode', LotUtils.getDisplayMode)
   reactiveToDisplayMode(Entities, 'entityDisplayMode')
+
+  # Re-render entities of a typology when fields affecting visualisation are changed.
+  Collections.observe typologies, {
+    changed: (newTypology, oldTypology) ->
+      hasParamChanged = (paramName) ->
+        newValue = Typologies.getParameter(newTypology, paramName)
+        oldValue = Typologies.getParameter(oldTypology, paramName)
+        newValue != oldValue
+      hasChanged = _.some ['general.class', 'space.geom_2d', 'space.geom_3d',
+                           'space.height'], (paramName) -> hasParamChanged(paramName)
+      if hasChanged
+        _.each Entities.find(typology: newTypology._id).fetch(), (entity) ->
+          refreshEntity(entity._id)
+  }
 
   # Listen to selections from Atlas.
   # TODO(aramk) Support multiple selection.

@@ -960,7 +960,10 @@ Typologies.getClassMap = (projectId) ->
     map.push(typology)
   typologyMap
 
-Typologies.findByClass = (typologyClass) -> Typologies.find('parameters.general.class': typologyClass)
+Typologies.findByClass = (typologyClass, projectId) -> Typologies.find(
+  'parameters.general.class': typologyClass
+  project: projectId || Projects.getCurrentId()
+)
 
 ####################################################################################################
 # ENTITY SCHEMA DEFINITION
@@ -1138,6 +1141,8 @@ Lots.setParameter = (model, paramId, value) ->
 
 Lots.findByProject = (projectId) -> findByProject(Lots, projectId)
 Lots.findByEntity = (entityId) -> Lots.findOne({entity: entityId})
+Lots.findByTypology = (typologyId) ->
+  _.map Entities.find(typology: typologyId).fetch(), (entity) -> Lots.findByEntity(entity._id)
 Lots.findForDevelopment = (projectId) ->
   _.filter Lots.findByProject(projectId).fetch(), (lot) ->
     Lots.getParameter(lot, 'general.develop')
@@ -1718,3 +1723,20 @@ Typologies.find().observe
   removed: (typology) ->
     entities = Entities.find({typology: typology._id}).fetch()
     _.each entities, (entity) -> Entities.remove(entity._id)
+
+# Changing the class of the lots with the typology when changing it on the typology.
+Typologies.find().observe
+  changed: (newTypology, oldTypology) ->
+    classParamId = 'parameters.general.class'
+    newClass = Typologies.getParameter(newTypology, classParamId)
+    oldClass = Typologies.getParameter(oldTypology, classParamId)
+    if newClass != oldClass
+      lots = Lots.findByTypology(newTypology._id)
+      console.debug('Updating class of Lots', lots, 'from', oldClass, 'to', newClass)
+      _.each lots, (lot) ->
+        modifier = {$set: {}}
+        modifier.$set[classParamId] = newClass
+        # TODO(aramk) For some reason, even if this is delayed, the models will switch back despite
+        # a successful update.
+        Lots.update lot._id, modifier, (err, result) ->
+          console.debug('Lots update', err, result)
