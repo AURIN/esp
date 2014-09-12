@@ -12,17 +12,19 @@ fileCache = {}
 download = (method, fileId) ->
   unless fileId?
     throw new Error('No file ID given')
-  fileDf = fileCache[fileId]
-  if fileDf
-    fileDf.promise.then (data) -> Setter.clone(data)
-  else
-    fileDf = Q.defer()
-    fileCache[fileId] = fileDf
+  fileDf = Q.defer()
+  cacheDf = fileCache[fileId]
+  unless cacheDf
+    cacheDf = fileCache[fileId] = Q.defer()
     Meteor.call method, fileId, (err, data) =>
       if err
-        fileDf.reject(err)
+        cacheDf.reject(err)
       else
-        fileDf.resolve(data)
+        cacheDf.resolve(data)
+  cacheDf.promise.then(
+    (data) -> fileDf.resolve(Setter.clone(data))
+    fileDf.reject
+  )
   fileDf.promise
 
 Files.download = (fileId) -> download('files/download/string', fileId)

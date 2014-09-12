@@ -249,12 +249,12 @@ TemplateClass.onAtlasLoad = (template, atlas) ->
   atlas.subscribe 'entity/select', (args) ->
     id = args.ids[0]
     tableId = Template.collectionTable.getDomTableId(getTable(id))
-    Template.collectionTable.setSelectedId(tableId, id)
+    Template.collectionTable.setSelectedId(tableId, id) if tableId
   atlas.subscribe 'entity/deselect', (args) ->
     id = args.ids[0]
     if id
       tableId = Template.collectionTable.getDomTableId(getTable(id))
-      Template.collectionTable.deselect(tableId)
+      Template.collectionTable.deselect(tableId) if tableId
 
   # Listen to double clicks from Atlas.
   atlas.subscribe 'entity/dblclick', (args) ->
