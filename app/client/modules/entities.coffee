@@ -19,17 +19,14 @@
         borderColor: '#000'
 
   _getMesh: (id) ->
-    meshDf = Q.defer()
     entity = Entities.getFlattened(id)
     meshFileId = Entities.getParameter(entity, 'space.geom_3d')
-    unless meshFileId?
+    if meshFileId
+      Files.downloadJson(meshFileId)
+    else
+      meshDf = Q.defer()
       meshDf.resolve(null)
-    Meteor.call 'files/download/json', meshFileId, (err, data) ->
-      if err
-        meshDf.reject(err)
-      else
-        meshDf.resolve(data)
-    meshDf.promise
+      meshDf.promise
 
   _buildMeshCollection: (id) ->
     df = Q.defer()
