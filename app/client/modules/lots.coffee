@@ -120,8 +120,8 @@
       AtlasManager.showEntity(id)
       df.resolve(entity)
     else
-      @toGeoEntityArgs(id).then (geoEntity) ->
-        entity = AtlasManager.renderEntity(geoEntity)
+      @toGeoEntityArgs(id).then (entityArgs) ->
+        entity = AtlasManager.renderEntity(entityArgs)
         df.resolve(entity)
     df.promise
 

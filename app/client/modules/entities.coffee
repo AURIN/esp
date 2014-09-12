@@ -38,37 +38,28 @@
       unless result
         df.resolve(null)
         return
-      # Store a single geolocation and translate all c3ml entities by the difference between
-      # this and the log geoEntity.
-      c3mlBaseCentroid = null
+      # Modify the ID of c3ml entities to allow reusing them for multiple collections.
+      c3mls = result.c3mls
+      _.each result.c3mls, (c3ml) -> c3ml.id = id + ':' + c3ml.id
       try
-        c3mlEntities = AtlasManager.renderEntities(result.c3mls)
+        c3mlEntities = AtlasManager.renderEntities(c3mls)
       catch e
         console.error(e)
       entityIds = []
-      entityIdMap = {}
       _.each c3mlEntities, (c3mlEntity) ->
         mesh = null
         if c3mlEntity.getForm
           mesh = c3mlEntity.getForm()
           unless mesh
             return
-        # TODO(aramk) Meshes still don't have centroid support so use geolocation for now.
-        centroid = mesh.getGeoLocation()
-        unless centroid
-          return
-        unless c3mlBaseCentroid
-          c3mlBaseCentroid = centroid
-        entityId = c3mlEntity.getId()
-        entityIds.push(entityId)
-        entityIdMap[entityId] = true
+        entityIds.push(c3mlEntity.getId())
       # Add c3mls to a single collection and use it as the mesh display mode for the
       # feature.
       require ['atlas/model/Collection'], (Collection) ->
         # TODO(aramk) Use dependency injection to prevent the need for passing manually.
         deps = geoEntity._bindDependencies({})
         collection = new Collection('collection-' + id, {entities: entityIds}, deps)
-        df.resolve(collection: collection, centroid: c3mlBaseCentroid)
+        df.resolve(collection)
     df.promise
 
   render: (entityId) ->
@@ -87,23 +78,19 @@
           AtlasManager.unrenderEntity(entityId)
           throw new Error('Rendered geoEntity does not have an accompanying lot.')
         lotId = lot._id
-        require ['atlas/model/Feature'], (Feature) =>
+        require [
+          'atlas/model/Feature'
+        ], (Feature) =>
           LotUtils.render(lotId).then (lotEntity) =>
-            lotCentroid = lotEntity.getCentroid()
+            # Mesh has not been rendered yet, so only position extrusion/footprint.
             unless geoEntity.getDisplayMode() == Feature.DisplayMode.MESH
-              # TODO(aramk) Mesh doesn't have centroid yet.
-              entityCentroidDiff = lotCentroid.subtract(geoEntity.getCentroid())
-              geoEntity.translate(entityCentroidDiff)
+              geoEntity.setCentroid(lotEntity.getCentroid())
             df.resolve(geoEntity)
-
             # Render the mesh afterwards to prevent long delays.
-            @._buildMeshCollection(entityId).then (result) ->
-              unless result
+            @._buildMeshCollection(entityId).then (collection) ->
+              unless collection
                 return
-              meshEntity = result.collection
-              centroid = result.centroid
-              meshCentroidDiff = lotCentroid.subtract(centroid)
-              meshEntity.translate(meshCentroidDiff)
+              meshEntity = collection
+              meshEntity.setCentroid(lotEntity.getCentroid())
               geoEntity.setForm(Feature.DisplayMode.MESH, meshEntity)
-
     df.promise
