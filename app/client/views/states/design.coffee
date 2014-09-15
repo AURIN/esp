@@ -220,9 +220,6 @@ TemplateClass.onAtlasLoad = (template, atlas) ->
   }
 
   # Listen to selections from Atlas.
-  # TODO(aramk) Support multiple selection.
-  # TODO(aramk) Remove duplication.
-  # TODO(aramk) Add support for lots and entities.
 
   # Listen to selections in tables.
   tables = [getEntityTable(template), getLotTable(template)]
@@ -243,18 +240,22 @@ TemplateClass.onAtlasLoad = (template, atlas) ->
     if Entities.findOne(docId)
       getEntityTable(template)
     else if Lots.findOne(docId)
-      getTypologyTable(template)
+      getLotTable(template)
 
   # Select the item in the table when clicking on the globe.
   atlas.subscribe 'entity/select', (args) ->
+    # Always deselect the typologies table to avoid its logic from interfering.
+    typologyTableId = Template.collectionTable.getDomTableId(getTypologyTable(template))
+    Template.collectionTable.deselectAll(typologyTableId)
+
     id = args.ids[0]
     tableId = Template.collectionTable.getDomTableId(getTable(id))
-    Template.collectionTable.setSelectedId(tableId, id) if tableId
+    Template.collectionTable.addSelection(tableId, id) if tableId
   atlas.subscribe 'entity/deselect', (args) ->
     id = args.ids[0]
     if id
       tableId = Template.collectionTable.getDomTableId(getTable(id))
-      Template.collectionTable.deselect(tableId) if tableId
+      Template.collectionTable.removeSelection(tableId, id) if tableId
 
   # Listen to double clicks from Atlas.
   atlas.subscribe 'entity/dblclick', (args) ->
