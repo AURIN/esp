@@ -5,12 +5,8 @@
     title = args.title
     typologyClass = args.typologyClass
     Report = Template[name]
-    Report.title = title
     unless Report
       throw new Error 'No template defined with name ' + name
-
-    evalEngine = new EvaluationEngine(schema: Entities.schema)
-    reportGenerator = new ReportGenerator(evalEngine: evalEngine)
 
     # Flatten the list of fields, which may contain arrays of fields as items
     fields = []
@@ -27,21 +23,14 @@
     for field, i in fields
       field.id = 'field_' + (i + 1)
 
+    Report.title = title
+    Report.fields = fields
+    Report.typologyClass = typologyClass
+
     Report.rendered = ->
-      # TODO(aramk) Invoke generator first, then pass data to renderField
-
-      # TODO(aramk) Filter based on selected entities/typologies with Session.get
-      entityFilter = null
-      if typologyClass?
-        entityFilter = (entity) ->
-          console.log('arguments', arguments)
-          typology = Typologies.findOne(entity.typology)
-          Typologies.getParameter(typology, 'general.class') == typologyClass
-      entities = Entities.getAllFlattened(entityFilter)
-      console.log('Evaluating entities', entities)
-      results = reportGenerator.generate(models: entities, fields: fields)
-      console.log('results', results)
-
+      data = @data
+      results = data.results
+      entities = data.entities
       require(['atlas/util/NumberFormatter'], (NumberFormatter) =>
         formatter = new NumberFormatter();
         $fields = $(@find('.fields'))
@@ -51,10 +40,12 @@
             $fields.append($field)
           catch e
             console.error('Failed report field render: ' + e)
-        $footer = $(@find('.footer'))
+        $header = $(@find('.header'))
+        $info = $('<div class="info"></div>')
+        $header.append($info)
         count = entities.length
         plural = Strings.pluralize('entity', count, 'entities')
-        $footer.text("Assessed #{count} #{plural}")
+        $info.text("Assessing #{count} #{plural}")
         # Trigger event to notify any listeners that the report has been rendered.
         $report = $(@find('.report'))
         $report.trigger('render')

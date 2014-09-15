@@ -1,10 +1,13 @@
 atlas = null
+atlasDf = Q.defer()
 
 @AtlasManager =
 
-  getAtlas: -> atlas
+  getAtlas: -> atlasDf.promise
 
-  setAtlas: (_instance) -> atlas = _instance
+  setAtlas: (_instance) ->
+    atlas = _instance
+    atlasDf.resolve(atlas)
 
   zoomToProject: ->
     projectId = Projects.getCurrentId()
@@ -43,6 +46,10 @@ atlas = null
   getEntity: (id) -> atlas._managers.entity.getById(id)
 
   getFeatures: -> atlas._managers.entity.getFeatures()
+
+  getSelectedFeatureIds: ->
+    _.filter atlas._managers.selection.getSelectionIds(), (id) ->
+      atlas._managers.entity.getById(id).getForm?
 
   getEntitiesByIds: (ids) -> atlas._managers.entity.getByIds(ids)
 
