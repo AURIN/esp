@@ -61,13 +61,13 @@
 
   render: (entityId) ->
     df = Q.defer()
-    entity = Entities.findOne(entityId)
     geoEntity = AtlasManager.getEntity(entityId)
     if geoEntity
       AtlasManager.showEntity(entityId)
       df.resolve(geoEntity)
     else
       @toGeoEntityArgs(entityId).then (entityArgs) =>
+        entity = Entities.getFlattened(entityId)
         geoEntity = AtlasManager.renderEntity(entityArgs)
         # If the geoEntity was rendered using the Typology geometry, centre it based on the Lot.
         lot = Lots.findOne(entity.lot)
@@ -76,8 +76,12 @@
           throw new Error('Rendered geoEntity does not have an accompanying lot.')
         lotId = lot._id
         require [
-          'atlas/model/Feature'
-        ], (Feature) =>
+          'atlas/model/Feature',
+          'atlas/model/Vertex'
+        ], (Feature, Vertex) =>
+          # Apply rotation based on the azimuth.
+          azimuth = Entities.getParameter(entity, 'orientation.azimuth')
+          geoEntity.setRotation(new Vertex(0, 0, azimuth)) if azimuth?
           LotUtils.render(lotId).then (lotEntity) =>
             # Mesh has not been rendered yet, so only position extrusion/footprint.
             unless geoEntity.getDisplayMode() == Feature.DisplayMode.MESH

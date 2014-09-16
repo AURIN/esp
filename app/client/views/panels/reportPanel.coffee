@@ -85,7 +85,6 @@ Template.reportPanel.created = ->
       console.debug('entity/selection/change', @, arguments)
       refreshReport() if currentReportId?
 
-
 Template.reportPanel.rendered = ->
   $reportDropdown = $(@find('.report.dropdown'))
   $refreshButton = $(@find('.refresh.button')).hide()
