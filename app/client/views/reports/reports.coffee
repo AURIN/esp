@@ -66,7 +66,6 @@
   renderField: (field, data, formatter) ->
     param = field.param
     if param?
-      # TODO(aramk) Actually output the field value
       paramSchema = ParametersSchema.schema(param)
       unless paramSchema
         throw new Error('Could not find schema for param: ' + param)

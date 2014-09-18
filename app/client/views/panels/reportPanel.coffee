@@ -1,6 +1,6 @@
 global = @
 Reports = null
-ReportTemplates = ['residentialReport']
+ReportTemplates = ['residentialReport', 'precinctReport']
 
 currentReportId = null
 currentReportTemplate = null

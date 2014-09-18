@@ -497,6 +497,14 @@ typologyCategories =
         decimal: true
         units: Units.kgco2
         calc: '$energy_demand.en_app * KWH_TO_MJ($operating_carbon.elec)'
+      co2_trans:
+        label: 'Transport'
+        desc: 'CO2-e emissions due to transport.'
+        type: Number
+        decimal: true
+        units: Units.kgco2
+        # TODO(aramk) Add once we have pathways.
+        calc: '0'
       co2_op_tot:
         label: 'Total Operating'
         desc: 'Total operating CO2 from all energy uses.'
@@ -720,6 +728,7 @@ typologyCategories =
         type: Number
         units: 'Spaces'
         calc: '$parking.parking_sl + $parking.parking_ug'
+#      prk_capita:
 
 ####################################################################################################
 # AUXILIARY - MUST BE DEFINED BEFORE USE

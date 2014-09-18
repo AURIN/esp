@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
 /**
- * Generates a list of parameters form a CoffeeScript file containing a typology object.
+ * Generates a list of parameters from a CoffeeScript file containing a typology object.
  * @example
  * $ node typology_param_extractor.js <input.coffee> [<output>]
  * $ node typology_param_extractor.js <input.coffee> > <output>
