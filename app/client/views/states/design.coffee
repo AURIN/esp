@@ -61,7 +61,7 @@ TemplateClass.rendered = ->
     $('.crud.menu', $lotsTable).after($lotsButtons)
 
 onEditFormPanel = (args) ->
-  id = args.id
+  id = args.ids[0]
   collection = args.collection
   model = collection.findOne(id)
   collectionName = Collections.getName(collection)
@@ -265,4 +265,4 @@ TemplateClass.onAtlasLoad = (template, atlas) ->
       collection = Lots
     unless collection.findOne(id)
       throw new Error('Cannot find model with ID ' + id + ' in a collection.')
-    onEditFormPanel id: id, collection: collection
+    onEditFormPanel ids: [id], collection: collection
