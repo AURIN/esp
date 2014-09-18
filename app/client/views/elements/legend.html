@@ -1,0 +1,10 @@
+<template name="legend">
+  <div class="legend">
+    <ul>
+      {{#each items}}
+      <li><span class="color" style="background-color: {{color}}"></span><span class="title">{{name
+        }}</span></li>
+      {{/each}}
+    </ul>
+  </div>
+</template>

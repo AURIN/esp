@@ -50,5 +50,36 @@
     background: black;
     color: white;
     overflow: hidden;
+    position: relative;
+    .legend {
+      background: rgba(255, 255, 255, 0.8);
+      position: absolute;
+      color: #555;
+      top: 10px;
+      left: 10px;
+      z-index: 1;
+      > ul {
+        list-style: none;
+        padding: 10px;
+        margin: 0;
+        li {
+          .color {
+            background-color: #009cff;
+            width: 14px;
+            height: 8px;
+            display: inline-block;
+            margin-right: 5px;
+            border: 1px solid rgba(0, 0, 0, 0.25);
+          }
+          > * {
+            vertical-align: middle;
+          }
+        }
+      }
+    }
   }
+}
+
+.project.tools .icon {
+  font-size: 1.2rem;
 }
