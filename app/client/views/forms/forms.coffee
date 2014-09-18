@@ -42,6 +42,14 @@
         callback = -> template.data?.settings?.onSuccess?.apply(@, args)
         deferCallback(result, callback)
 
+      before:
+        insert: (doc, template) ->
+          console.debug('before insert', doc)
+          doc
+        update: (docId, modifier, template) ->
+          console.debug('before update', docId, modifier)
+          modifier
+
     if formArgs.hooks?
       AutoForm.addHooks name, formArgs.hooks
 
@@ -60,7 +68,7 @@
 
     Form.events
       'click button.cancel': (e, template) ->
-        e.preventDefault();
+        e.preventDefault()
         console.debug 'onCancel', arguments, @
         formArgs.onCancel?(template)
         template.data?.settings?.onCancel?()
@@ -76,11 +84,12 @@
       if $buttons.length > 0 && $crudForm.length > 0
         $crudForm.append($buttons)
       $('[type="submit"]', $buttons).click ->
-        $('form', $crudForm).submit();
+        $('form', $crudForm).submit()
+      AutoForm.resetForm(name)
 
       collection = Collections.get(formArgs.collection)
-      schema = collection?._c2?._simpleSchema;
-      $schemaInputs = $(@findAll('[data-schema-key]'));
+      schema = collection?._c2?._simpleSchema
+      $schemaInputs = $(@findAll('[data-schema-key]'))
 
       if schema?
         schemaInputs = {}
@@ -110,7 +119,7 @@
           units = field.units
           if units?
             formattedUnits = Strings.format.scripts(units)
-            $units = $('<div class="units">' + formattedUnits + '</div>');
+            $units = $('<div class="units">' + formattedUnits + '</div>')
             $labelContent = $('<div class="value">' + $label.html() + '</div>')
             $label.empty()
             $label.append($labelContent).append($units)

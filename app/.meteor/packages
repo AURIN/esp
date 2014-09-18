@@ -31,6 +31,8 @@ cfs-ejson-file
 npm
 q
 tinycolor
+percolatestudio-migrations
+pubsub
 
 # Our custom packages come last so RequireJS doesn't cause issues.
 requirejs

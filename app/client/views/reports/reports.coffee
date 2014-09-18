@@ -3,13 +3,10 @@
   define: (args) ->
     name = args.name
     title = args.title
+    typologyClass = args.typologyClass
     Report = Template[name]
-    Report.title = title
     unless Report
       throw new Error 'No template defined with name ' + name
-
-    evalEngine = new EvaluationEngine(schema: Entities.schema)
-    reportGenerator = new ReportGenerator(evalEngine: evalEngine)
 
     # Flatten the list of fields, which may contain arrays of fields as items
     fields = []
@@ -26,25 +23,32 @@
     for field, i in fields
       field.id = 'field_' + (i + 1)
 
+    Report.title = title
+    Report.fields = fields
+    Report.typologyClass = typologyClass
+
     Report.rendered = ->
-      # TODO(aramk) Invoke generator first, then pass data to renderField
-
-      # TODO(aramk) Filter based on selected entities/typologies with Session.get
-      entities = Entities.getAllFlattened()
-      console.log('Evaluating entities', entities)
-      results = reportGenerator.generate(models: entities, fields: fields)
-      console.log('results', results)
-
+      data = @data
+      results = data.results
+      entities = data.entities
       require(['atlas/util/NumberFormatter'], (NumberFormatter) =>
         formatter = new NumberFormatter();
         $fields = $(@find('.fields'))
         for field in fields
-          $field = Reports.renderField(field, results, formatter)
-          $fields.append($field)
-        $footer = $(@find('.footer'))
+          try
+            $field = Reports.renderField(field, results, formatter)
+            $fields.append($field)
+          catch e
+            console.error('Failed report field render: ' + e)
+        $header = $(@find('.header'))
+        $info = $('<div class="info"></div>')
+        $header.append($info)
         count = entities.length
         plural = Strings.pluralize('entity', count, 'entities')
-        $footer.text("Assessed #{count} #{plural}")
+        $info.text("Assessing #{count} #{plural}")
+        # Trigger event to notify any listeners that the report has been rendered.
+        $report = $(@find('.report'))
+        $report.trigger('render')
       )
 
     Report.helpers
@@ -64,18 +68,22 @@
     if param?
       # TODO(aramk) Actually output the field value
       paramSchema = ParametersSchema.schema(param)
-      label = paramSchema.label ? Strings.toTitleCase(param)
+      unless paramSchema
+        throw new Error('Could not find schema for param: ' + param)
+      label = field.label ? paramSchema.label ? Strings.toTitleCase(param)
       units = paramSchema.units
-      decimalPoints = paramSchema.decimalPoints ? 3
+      decimalPoints = paramSchema.decimalPoints ? 2
       $field = $('<div class="field"></div>')
       $label = $('<div class="label"><div class="content">' + label + '</div></div>')
       if units?
         $label.append('<div class="units">' + Strings.format.scripts(units) + '</div>')
       value = data[field.id] ? 'N/A'
       if Number.isNaN(value) or !value?
-        value = '0'
+        value = 'N/A'
       else if paramSchema.type == Number
-          value = formatter.round(value, {minSigFigs: 0, maxSigFigs: decimalPoints})
+        # Round the value using the formatter to a fixed set of decimal points, otherwise it's hard
+        # to compare values.
+        value = formatter.round(value, {minSigFigs: decimalPoints, maxSigFigs: decimalPoints})
       $value = $('<div class="value">' + value + '</div>')
       $field.append($label, $value)
       $field

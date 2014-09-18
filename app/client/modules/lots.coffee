@@ -58,7 +58,7 @@
               class: classId
               develop: develop
             space:
-              geom: wkt
+              geom_2d: wkt
               height: height
         # Validator needs both entity and class set together.
           entity: null
@@ -85,15 +85,18 @@
       isForDevelopment = Lots.getParameter(lot, 'general.develop')
       typologyClass = Typologies.classes[className]
       # Reduce saturation of non-develop lots. Ensure full saturation for develop lots.
-      color = tinycolor(typologyClass.color).toHsv()
-      color.s = if isForDevelopment then 1 else 0.5
-      color = tinycolor(color)
+      if typologyClass
+        color = tinycolor(typologyClass.color).toHsv()
+        color.s = if isForDevelopment then 1 else 0.5
+        color = tinycolor(color)
+      else
+        color = tinycolor('#ccc')
       borderColor = tinycolor.darken(color, 40)
       space = lot.parameters.space
       displayMode = @getDisplayMode(id)
       converter.toGeoEntityArgs
         id: id
-        vertices: space.geom
+        vertices: space.geom_2d
         height: space.height
         displayMode: displayMode
         color: color.toHexString()
@@ -117,8 +120,8 @@
       AtlasManager.showEntity(id)
       df.resolve(entity)
     else
-      @toGeoEntityArgs(id).then (geoEntity) ->
-        entity = AtlasManager.renderEntity(geoEntity)
+      @toGeoEntityArgs(id).then (entityArgs) ->
+        entity = AtlasManager.renderEntity(entityArgs)
         df.resolve(entity)
     df.promise
 

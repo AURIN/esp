@@ -186,11 +186,14 @@ module.exports = function(grunt) {
 
   grunt.registerTask('deploy', 'Deploys the built app.', function(arg1, arg2) {
     var config;
+    var isMeteor = arg1 === 'meteor';
     // All fs, process, shell methods are relative to this directory now.
-    var result = shell.cd(DIST_DIR);
-    if (result === null) {
-      console.log('Run `grunt build` before deploy.');
-      return;
+    if (!isMeteor) {
+      var result = shell.cd(DIST_DIR);
+      if (result === null) {
+        console.log('Run `grunt build` before deploy.');
+        return;
+      }
     }
     var done = this.async();
     // TODO(aramk) Run this as a child process since it causes huge CPU lag otherwise.
@@ -227,7 +230,7 @@ module.exports = function(grunt) {
         updateHeroku();
       }
     } else if (arg1 === 'meteor') {
-      shell.cd(path.join('..', APP_DIR));
+      shell.cd(APP_DIR);
       var cmd = 'meteor deploy ' + APP_ID + '.meteor.com';
       if (arg2 === 'debug') {
         cmd += ' --debug';

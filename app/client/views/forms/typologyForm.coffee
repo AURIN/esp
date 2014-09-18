@@ -3,28 +3,62 @@ Meteor.startup ->
   getClassInput = ->
     $(@.find('[name="parameters.general.class"]')).closest('.dropdown')
 
+  getSelectOption = (value, $select) ->
+    $('option[value="' + value + '"]', $select)
+
   updateFields = ->
-    typology = @data.doc
-    typologyClass = Template.dropdown.getValue(getClassInput())
+    # TODO(aramk) Refactor with entityForm.
+    typologyClass = Template.dropdown.getValue(getClassInput.call(@))
+    defaultParams = Typologies.getDefaultParameterValues(typologyClass)
     console.debug 'updateFields', @, arguments, typologyClass
     for key, input of @schemaInputs
-      classes = input.field.classes
-      classOptions = if classes and typologyClass then classes[typologyClass] else null
-      paramName = key.replace(/^parameters\./, '')
+      fieldSchema = input.field
+      isParamField = ParamUtils.hasPrefix(key)
+      paramName = ParamUtils.removePrefix(key) if isParamField
+      classes = fieldSchema.classes
+      classOptions = classes?[typologyClass]
+      allClassOptions = classes?.ALL
+      if allClassOptions?
+        classOptions = _.extend(allClassOptions, classOptions)
+
       $input = $(input.node)
       $wrapper = $input.closest(Forms.FIELD_SELECTOR)
-      if classOptions
-        # Add placeholders for default values
-        $input.attr('placeholder', classOptions.defaultValue)
       # Hide fields which have classes specified which don't contain the current class.
       $wrapper[if classes and not classOptions then 'hide' else 'show']()
-      # Add a "none" option to select fields.
-      if $input.is('select')
-        $option = $('<option value="">None</option>')
-        $input.prepend($option)
-        inputValue = if typology then Typologies.getParameter(typology, paramName) else null
+
+      if isParamField
+        defaultValue = Typologies.getParameter(defaultParams, key)
+      else
+        # Regular field - not a parameter.
+        defaultValue = fieldSchema.defaultValue
+
+      # Add placeholders for default values
+      if defaultValue?
+        $input.attr('placeholder', defaultValue)
+
+      unless isParamField
+        continue
+
+      # Add "None" option to select fields.
+      if $input.is('select') && !$input.data('isSetUp')
+        typology = @data.doc
+        inputValue = Typologies.getParameter(typology, paramName) if typology
+        if defaultValue?
+          # Label which option is the default value.
+          $defaultOption = getSelectOption(defaultValue, $input)
+          if $defaultOption.length > 0
+            $defaultOption.text($defaultOption.text() + ' (Default)')
+        else
+          # TODO(aramk) This is not available if a default value exists, since we cannot
+          # override with null yet. It is available only if a value is not set.
+          $option = $('<option value="">None</option>')
+          $input.prepend($option)
         unless inputValue?
-          $input.val('')
+          if defaultValue?
+            $input.val(defaultValue)
+          else
+            $input.val('')
+        $input.data('isSetUp', true)
 
   Form = Forms.defineModelForm
     name: 'typologyForm'
@@ -37,6 +71,28 @@ Meteor.startup ->
       formToDoc: (doc) ->
         doc.project = Projects.getCurrentId()
         doc
+      before:
+        update: (docId, modifier, template) ->
+          classParamId = 'parameters.general.class'
+          newClass = modifier.$set[classParamId]
+          if newClass
+            oldTypology = Typologies.findOne(docId)
+            oldClass = Typologies.getParameter(oldTypology, classParamId)
+            if newClass != oldClass
+              lots = Lots.findByTypology(docId)
+              lotCount = lots.length
+              if lotCount > 0
+                lotNames = (_.map lots, (lot) -> lot.name).join(', ')
+                alert('These Lots are using this Typology: ' + lotNames + '. Remove this Typology' +
+                  ' from the Lot first before changing its class.')
+                @result(false)
+                # TODO(aramk) Due to a bug this is disabled for now.
+#                result = confirm(lotCount + ' ' + Strings.pluralize('Lot', lotCount) + ' will' +
+#                  ' have their classes changed from ' + oldClass + ' to ' + newClass +
+#                  ' to support this Typology. Do you wish to proceed?')
+#                # Updating the actual Lot is handled by the collection.
+#                @result(if result then modifier else false)
+          modifier
 
   # TODO(aramk) Refactor with import form.
   getFormats = (collection) ->
@@ -52,7 +108,7 @@ Meteor.startup ->
   Form.helpers
     classes: -> Typologies.getClassItems()
     classValue: -> @doc?.parameters?.general?.class
-    # TODO(aramk) Refactor with import form.
+  # TODO(aramk) Refactor with import form.
     formats: ->
       formats = Collections.createTemporary()
       getFormats(formats)
@@ -79,16 +135,16 @@ Meteor.startup ->
         handleMeshUpload(c3mls, template)
 
   handleFootprintUpload = (c3ml, template) ->
-    $geomInput = $(template.find('[name="parameters.space.geom"]'))
+    $geomInput = $(template.find('[name="parameters.space.geom_2d"]'))
     WKT.fromC3ml(c3ml).then (wkt) ->
       $geomInput.val(wkt)
 
   handleMeshUpload = (c3mls, template) ->
-    $meshInput = $(template.find('[name="parameters.space.mesh"]'))
+    $meshInput = $(template.find('[name="parameters.space.geom_3d"]'))
     # Upload the c3ml as a file.
     doc = {c3mls: c3mls}
     docString = JSON.stringify(doc)
-#    buffer = ArrayBuffers.stringToBufferArray(docString)
+    #    buffer = ArrayBuffers.stringToBufferArray(docString)
     blob = new Blob([docString])
     # TODO(aramk) Abstract into Files.upload.
     Files.insert blob, (err, fileObj) ->
@@ -105,8 +161,8 @@ Meteor.startup ->
           console.debug 'uploaded', fileObj
           id = fileObj._id
           $meshInput.val(id)
-#          Meteor.call 'files/download/string', fileObj._id, (err, data) ->
-#            console.debug 'download', arguments
+      #          Meteor.call 'files/download/string', fileObj._id, (err, data) ->
+      #            console.debug 'download', arguments
       handle = setInterval timerHandler, 1000
 
   Form.events

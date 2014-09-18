@@ -26,7 +26,7 @@ csvData = sanitizeEncoding(csvData);
 
 function sanitizeEncoding(str) {
   // Replace UNICODE dash with ASCII.
-  return str.replace('\u2013', '-');
+  return str.replace(/\u2013|\u8211/g, '-');
 }
 
 var nameField = 'Field Name';
@@ -36,28 +36,34 @@ var descField = 'Description';
 var unitsField = 'Units';
 var typeField = 'Data Type';
 var calcField = 'Calculated?';
+var defaultValueField = 'Default Value';
+var valueField = 'Value';
 
 var integerType = 'Integer';
 var floatType = 'Float';
 var naNType = 'N/A';
 var unitsMap = {
-  'm\u00b2': 'm^2'
+  'm²': 'm^2'
 };
 
 function getUnits(units) {
   var result = unitsMap[units];
-  if (result === undefined && result !== integerType && result !== floatType &&
-      result !== naNType) {
-    return result;
-  } else {
+  if (result === undefined && units !== integerType && units !== floatType &&
+      units !== naNType) {
     return units;
+  } else {
+    return result;
   }
 }
 
 csv.parse(csvData, {columns: true}, function(err, output) {
   var categories = {};
   var addToCategory = function(categoryName, fieldName, field) {
-    var category = categories[categoryName] = categories[categoryName] || {items: {}};
+    var categoryId = categoryName.toLowerCase().replace(/\s+/, '_');
+    var category = categories[categoryId] = categories[categoryId] || {
+      label: categoryName,
+      items: {}
+    };
     var items = category.items;
     if (items[fieldName]) {
       throw new Error('Field "' + fieldName + '" already added to category "' + categoryName +
@@ -78,16 +84,20 @@ csv.parse(csvData, {columns: true}, function(err, output) {
       return;
     }
 
-    var desc = row[descField].trim();
-    var label = row[labelField].trim();
     var units = row[unitsField].trim();
     var type = row[typeField].trim();
     var isCalc = row[calcField].trim();
+    var desc = row[descField];
+    var label = row[labelField];
+    var defaultValue = row[defaultValueField] || row[valueField];
 
-    var field = {
-      label: label,
-      desc: desc
-    };
+    var field = {};
+    if (desc) {
+      field.desc = desc.trim();
+    }
+    if (label) {
+      field.label = label.trim();
+    }
 
     if (type === floatType || type === integerType) {
       field.type = 'Number';
@@ -103,8 +113,24 @@ csv.parse(csvData, {columns: true}, function(err, output) {
       field.units = units;
     }
 
-    if (isCalc) {
+    if (isCalc === 'TRUE') {
       field.calc = '<formula>';
+    }
+
+    if (defaultValue) {
+      defaultValue = defaultValue.trim();
+      if (defaultValue.length !== 0 && defaultValue !== '-') {
+        if (type === floatType) {
+          defaultValue = parseFloat(defaultValue);
+        } else if (type === integerType) {
+          defaultValue = parseInt(defaultValue);
+        }
+        field.classes = {
+          '<class>': {
+            defaultValue: defaultValue
+          }
+        };
+      }
     }
 
     addToCategory(categoryName, fieldName, field);
@@ -112,7 +138,7 @@ csv.parse(csvData, {columns: true}, function(err, output) {
 
   var typologyString = serialize(categories);
   if (outputPath) {
-    fs.writeFileSync(outputPath);
+    fs.writeFileSync(outputPath, typologyString);
   } else {
     console.log(typologyString);
   }

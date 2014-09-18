@@ -11,25 +11,22 @@
           <!-- TODO(aramk) Refactor to use autoform field -->
           {{> dropdown name="typology" items=typologies value=doc.typology}}
 
-          <div class="subtitle">General</div>
-          {{> afQuickField name="parameters.general.state"}}
-          {{> afQuickField name="parameters.general.code"}}
-          {{> afQuickField name="parameters.general.subclass"}}
-          {{> afQuickField name="parameters.general.type"}}
-
-          {{> afQuickField name="parameters.general.occupants"}}
-          {{> afQuickField name="parameters.general.jobs"}}
-
           <div class="subtitle">Space</div>
-          {{> afQuickField name="parameters.space.geom"}}
-          <!--{{> afQuickField name="parameters.space.lotsize"}}-->
-          <!--{{> afQuickField name="parameters.space.fpa"}}-->
+          <!-- TODO(aramk) Add same widget used in typology schema. -->
+          <!--{{> afQuickField name="parameters.space.geom_2d"}}-->
 
-          <div class="subtitle">Energy</div>
-          {{> afQuickField name="parameters.energy.en_heat"}}
-          {{> afQuickField name="parameters.energy.src_heat" options="allowed"}}
-          {{> afQuickField name="parameters.energy.en_cool"}}
-          {{> afQuickField name="parameters.energy.src_cool" options="allowed"}}
+          {{> afQuickField name="parameters.space.prpn_lawn"}}
+          {{> afQuickField name="parameters.space.prpn_annu"}}
+          {{> afQuickField name="parameters.space.prpn_hardy"}}
+          {{> afQuickField name="parameters.space.prpn_imper"}}
+
+          <div class="subtitle">Energy Demand</div>
+          {{> afQuickField name="parameters.energy_demand.src_cook" options="allowed"}}
+          {{> afQuickField name="parameters.energy_demand.type_app" options="allowed"}}
+          {{> afQuickField name="parameters.energy_demand.size_pv"}}
+
+          <div class="subtitle">Water Demand</div>
+          {{> afQuickField name="parameters.water_demand.e_wd_src" options="allowed"}}
 
           <div class="crud buttons">
             <button type="button" class="ui red cancel button">Cancel</button>

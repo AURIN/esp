@@ -1,5 +1,20 @@
 <template name="projects">
-  <div class="projects container">
-    {{> collectionTable collection="Projects" settings=tableSettings}}
+  <div class="projects">
+    <div class="container">
+      {{> collectionTable collection="Projects" settings=tableSettings}}
+    </div>
+    <div class="footer container">
+      <div class="logos">
+        <a href="http://aurin.org.au/" target="_blank"><img src="images/aurin.png" /></a>
+        <a href="http://www.crcsi.com.au/" target="_blank"><img src="images/crcsi.png" /></a>
+        <a href="http://mutopia.unimelb.edu.au/"
+           target="_blank"><img src="images/mutopia.png" /></a>
+      </div>
+
+      <p>This project was made possible with funding from the <a href="http://aurin.org.au/"
+                                                                 target="_blank">Australian Urban
+        Research Infrastructure Network (AURIN)</a> and development from <a
+          href="http://mutopia.unimelb.edu.au/" target="_blank">MUtopia</a>.</p>
+    </div>
   </div>
 </template>

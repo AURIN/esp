@@ -41,10 +41,10 @@ Meteor.startup ->
 
   getTypologyDropdown = (template) -> $(template.find('.typology.dropdown'))
 
-  #  _formTypologySessionId = 'lotFormTypology'
-  #  getFormTypologyId = -> Session.get(_formTypologySessionId)
-  #  setFormTypologyId = (value) -> Session.set(_formTypologySessionId, value)
-
+  addTypologiesForClass = (typologyClass, template) ->
+    typologies = template.data.typologies
+    Collections.removeAllDocs(typologies)
+    _.each Typologies.findByClass(typologyClass).fetch(), (typology) -> typologies.insert(typology)
 
   Form = Forms.defineModelForm
     name: 'lotForm'
@@ -52,9 +52,10 @@ Meteor.startup ->
     onCreate: ->
       # TODO(aramk) Set these based on whether there is existing geometry or not?
       _.each _.values(EditState), (key) -> setEditState(key, false)
-      @data ?= {}
+      data = @data ?= {}
       doc = @data.doc
       @data.settings._doc = Setter.clone(doc)
+      data.typologies = Collections.createTemporary()
       if doc
         id = doc._id
         AtlasManager.showEntity(id)
@@ -62,6 +63,9 @@ Meteor.startup ->
         if currentGeoEntity?
           setEditState(EditState.CREATED, true)
           currentGeoEntity.setSelected(true)
+        entityId = doc.entity
+        if entityId
+          addTypologiesForClass(Entities.getClass(entityId), @)
       Session.set('_forDev', if doc then Lots.getParameter(doc, 'general.develop') else true)
 
     onRender: -> $(@findAll('.ui.toggle.button')).state()
@@ -98,7 +102,7 @@ Meteor.startup ->
         newTypologyId = null
       classParamId = 'parameters.general.class'
       developParamId = 'parameters.general.develop'
-      geomParamId = 'parameters.space.geom'
+      geomParamId = 'parameters.space.geom_2d'
       lotClass = Lots.getParameter(doc, classParamId)
       isForDevelopment = Lots.getParameter(doc, developParamId)
 
@@ -207,12 +211,9 @@ Meteor.startup ->
       shouldEdit = $(e.currentTarget).is(':checked')
       Session.set('_forDev', shouldEdit)
 
-  #    'click .typology.delete.button': (e, template) ->
-  #      Template.dropdown.setValue(getTypologyDropdown(template), null)
-
-  #    'change .typology.dropdown': (e, template) ->
-  #      value = Template.dropdown.getValue(getTypologyDropdown(template))
-  #      setFormTypologyId(value)
+    'change [name="parameters.general.class"]': (e, template) ->
+      value = Template.dropdown.getValue($(e.target).closest('.dropdown'))
+      addTypologiesForClass(value, template)
 
   stateToActiveClass = (name) -> if getEditState(name) then 'active' else ''
   boolToEnabledClass = (bool) -> if bool then '' else 'disabled'
@@ -220,9 +221,9 @@ Meteor.startup ->
   # TODO(aramk) Abstract dropdown to allow null selection automatically.
   Form.helpers
     classes: -> Typologies.getClassItems()
-    typologies: -> Typologies.findByProject().fetch()
+    typologies: -> @typologies
     forDev: -> Session.get('_forDev')
-    typology: -> getTypologyId(@doc) #getFormTypologyId()
+    typology: -> getTypologyId(@doc)
     classValue: -> @doc?.parameters?.general?.class
     isCreating: -> stateToActiveClass(EditState.CREATING)
     isEditing: -> stateToActiveClass(EditState.EDITING)

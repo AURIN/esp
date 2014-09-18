@@ -13,11 +13,10 @@
           {{> dropdown name="parameters.general.class" items=classes value=classValue}}
           {{> afQuickField name="parameters.general.state"}}
           {{> afQuickField name="parameters.general.code"}}
-          {{> afQuickField name="parameters.general.subclass"}}
+          <!-- TODO(aramk) Dropdown for subclass. -->
+          <!--{{> afQuickField name="parameters.general.subclass"}}-->
           {{> afQuickField name="parameters.general.type"}}
-
-          {{> afQuickField name="parameters.general.occupants"}}
-          {{> afQuickField name="parameters.general.jobs"}}
+          {{> afQuickField name="parameters.general.climate_zn"}}
 
           <div class="subtitle">Space</div>
           <label>Footprint</label>
@@ -33,26 +32,57 @@
             </div>
             <button type="button" class="ui button submit green">Import</button>
           </div>
-          {{> afQuickField name="parameters.space.geom"}}
-          {{> afQuickField name="parameters.space.mesh"}}
-          <!--{{> afQuickField name="parameters.space.lotsize"}}-->
-          <!--{{> afQuickField name="parameters.space.fpa"}}-->
+          
+          {{> afQuickField name="parameters.space.geom_2d"}}
+          {{> afQuickField name="parameters.space.geom_3d"}}
 
-          <div class="subtitle">Energy</div>
-          {{> afQuickField name="parameters.energy.en_heat"}}
-          {{> afQuickField name="parameters.energy.src_heat" options="allowed"}}
-          {{> afQuickField name="parameters.energy.en_cool"}}
-          {{> afQuickField name="parameters.energy.src_cool" options="allowed"}}
+          {{> afQuickField name="parameters.space.gfa"}}
+          {{> afQuickField name="parameters.space.cfa"}}
+          {{> afQuickField name="parameters.space.storeys"}}
+          {{> afQuickField name="parameters.space.height"}}
+          {{> afQuickField name="parameters.space.occupants"}}
+          {{> afQuickField name="parameters.space.num_0br"}}
+          {{> afQuickField name="parameters.space.num_1br"}}
+          {{> afQuickField name="parameters.space.num_2br"}}
+          {{> afQuickField name="parameters.space.num_3plus"}}
 
-          <!--<div class="subtitle">Environmental</div>-->
-          <!--{{> afQuickField name="parameters.environmental.pav_prpn"}}-->
-          <!--{{> afQuickField name="parameters.environmental.pav_area"}}-->
-          <!--{{> afQuickField name="parameters.environmental.nat_prpn"}}-->
-          <!--{{> afQuickField name="parameters.environmental.nat_area"}}-->
-          <!--{{> afQuickField name="parameters.environmental.exo_prpn"}}-->
-          <!--{{> afQuickField name="parameters.environmental.exo_area"}}-->
-          <!--{{> afQuickField name="parameters.environmental.lawn_prpn"}}-->
-          <!--{{> afQuickField name="parameters.environmental.lawn_area"}}-->
+          <div class="subtitle">Energy Demand</div>
+          {{> afQuickField name="parameters.energy_demand.src_heat" options="allowed"}}
+          {{> afQuickField name="parameters.energy_demand.en_heat"}}
+          {{> afQuickField name="parameters.energy_demand.en_cool"}}
+          {{> afQuickField name="parameters.energy_demand.en_light"}}
+          {{> afQuickField name="parameters.energy_demand.src_hwat" options="allowed"}}
+          {{> afQuickField name="parameters.energy_demand.en_hwat"}}
+
+          <!-- NOTE: Fields from entity form. -->
+          {{> afQuickField name="parameters.energy_demand.src_cook" options="allowed"}}
+          {{> afQuickField name="parameters.energy_demand.type_app" options="allowed"}}
+          {{> afQuickField name="parameters.energy_demand.size_pv"}}
+
+          <div class="subtitle">Embodied Carbon</div>
+          {{> afQuickField name="parameters.embodied_carbon.i_co2_emb"}}
+
+          <div class="subtitle">Water Demand</div>
+          {{> afQuickField name="parameters.water_demand.i_wu_pot"}}
+          {{> afQuickField name="parameters.water_demand.i_wu_bore"}}
+          {{> afQuickField name="parameters.water_demand.i_wu_rain"}}
+          {{> afQuickField name="parameters.water_demand.i_wu_treat"}}
+          {{> afQuickField name="parameters.water_demand.i_wu_grey"}}
+
+          <!-- NOTE: Fields from entity form. -->
+          {{> afQuickField name="parameters.water_demand.e_wd_src" options="allowed"}}
+
+          <div class="subtitle">Financial</div>
+          {{> afQuickField name="parameters.financial.cost_con"}}
+
+          <div class="subtitle">Orientation</div>
+          {{> afQuickField name="parameters.orientation.azimuth"}}
+          {{> afQuickField name="parameters.orientation.eq_azmth_h"}}
+          {{> afQuickField name="parameters.orientation.eq_azmth_c"}}
+
+          <div class="subtitle">Parking</div>
+          {{> afQuickField name="parameters.parking.parking_sl"}}
+          {{> afQuickField name="parameters.parking.parking_ug"}}
 
           <div class="crud buttons">
             <button type="button" class="ui red cancel button">Cancel</button>

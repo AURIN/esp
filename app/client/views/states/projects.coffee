@@ -25,7 +25,7 @@ TemplateClass.helpers
   onEdit: (args) ->
     console.debug 'onEdit', arguments
     if args.event?.type == 'dblclick'
-      goToPrecinctDesign(args.id)
+      goToPrecinctDesign(args.ids[0])
     else
       args.defaultHandler()
   onDelete: (args) ->

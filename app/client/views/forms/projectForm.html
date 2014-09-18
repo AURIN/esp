@@ -12,30 +12,98 @@
           {{> afQuickField name="parameters.general.creator"}}
 
           <div class="subtitle">Location</div>
-          {{> afQuickField name="parameters.location.country" options="allowed"}}
+          {{> afQuickField name="parameters.location.country"}}
           {{> afQuickField name="parameters.location.ste_reg"}}
           {{> afQuickField name="parameters.location.loc_auth"}}
           {{> afQuickField name="parameters.location.suburb"}}
           {{> afQuickField name="parameters.location.post_code"}}
           {{> afQuickField name="parameters.location.sa1_code"}}
-
-          <div class="ui divider"></div>
           {{> afQuickField name="parameters.location.lat"}}
           {{> afQuickField name="parameters.location.lng"}}
           {{> afQuickField name="parameters.location.cam_elev"}}
-          {{#if project}}
-          <div class="ui buttons">
-            <div class="ui button tiny view-current">Use Current View</div>
-            <div class="ui button tiny view-apply">Apply</div>
-          </div>
-          {{/if}}
+
+          <div class="subtitle">Space</div>
+          {{> afQuickField name="parameters.space.geom_2d"}}
+          {{> afQuickField name="parameters.space.area"}}
 
           <div class="subtitle">Environment</div>
           {{> afQuickField name="parameters.environment.climate_zn"}}
-          {{> afQuickField name="parameters.environment.vpsm"}}
+
+          <div class="subtitle">Operating Carbon</div>
+          {{> afQuickField name="parameters.operating_carbon.elec"}}
+          {{> afQuickField name="parameters.operating_carbon.gas"}}
+
+          <div class="subtitle">Renewable Energy</div>
+          {{> afQuickField name="parameters.renewable_energy.pv_output"}}
+
+          <div class="subtitle">Utilities</div>
+          {{> afQuickField name="parameters.utilities.price_supply_elec"}}
+          {{> afQuickField name="parameters.utilities.price_usage_elec"}}
+          {{> afQuickField name="parameters.utilities.price_supply_gas"}}
+          {{> afQuickField name="parameters.utilities.price_usage_gas"}}
+          {{> afQuickField name="parameters.utilities.price_supply_water"}}
+          {{> afQuickField name="parameters.utilities.price_usage_water"}}
+
+          <div class="subtitle">External Water</div>
+          {{> afQuickField name="parameters.external_water.demand_lawn"}}
+          {{> afQuickField name="parameters.external_water.demand_ap"}}
+          {{> afQuickField name="parameters.external_water.demand_hp"}}
+
+          <div class="subtitle">Stormwater</div>
+          {{> afQuickField name="parameters.stormwater.runoff_roof"}}
+          {{> afQuickField name="parameters.stormwater.runoff_impervious"}}
+          {{> afQuickField name="parameters.stormwater.runoff_pervious"}}
+          {{> afQuickField name="parameters.stormwater.rainfall_intensity"}}
 
           <div class="subtitle">Financial</div>
-          {{> afQuickField name="parameters.financial.land_value"}}
+          <div class="subsubtitle">Land</div>
+          {{> afQuickField name="parameters.financial.land.price_land"}}
+          <div class="subsubtitle">Landscaping</div>
+          {{> afQuickField name="parameters.financial.landscaping.price_lawn"}}
+          {{> afQuickField name="parameters.financial.landscaping.price_annu"}}
+          {{> afQuickField name="parameters.financial.landscaping.price_hardy"}}
+          {{> afQuickField name="parameters.financial.landscaping.price_imper"}}
+          <div class="subsubtitle">Roads</div>
+          {{> afQuickField name="parameters.financial.pathways.roads.price_full_asphalt"}}
+          {{> afQuickField name="parameters.financial.pathways.roads.price_asphalt_cement"}}
+          {{> afQuickField name="parameters.financial.pathways.roads.price_granular_spray"}}
+          {{> afQuickField name="parameters.financial.pathways.roads.price_granular_asphalt"}}
+          {{> afQuickField name="parameters.financial.pathways.roads.price_concrete_plain"}}
+          {{> afQuickField name="parameters.financial.pathways.roads.price_concrete_reinforced"}}
+          <div class="subsubtitle">Footpaths</div>
+          {{> afQuickField name="parameters.financial.pathways.footpaths.price_concrete"}}
+          {{> afQuickField name="parameters.financial.pathways.footpaths.price_block_paved"}}
+          <div class="subsubtitle">Bicycle Paths</div>
+          {{> afQuickField name="parameters.financial.pathways.bicycle_paths.price_asphalt"}}
+          {{> afQuickField name="parameters.financial.pathways.bicycle_paths.price_concrete"}}
+          <div class="subsubtitle">All</div>
+          {{> afQuickField name="parameters.financial.pathways.all.price_verge"}}
+
+          <div class="subtitle">Embodied Carbon</div>
+          <div class="subsubtitle">Landscaping</div>
+          {{> afQuickField name="parameters.embodied_carbon.landscaping.greenspace"}}
+          {{> afQuickField name="parameters.embodied_carbon.landscaping.impermeable"}}
+          <div class="subsubtitle">Pathways</div>
+          {{> afQuickField name="parameters.embodied_carbon.pathways.full_asphalt"}}
+          {{> afQuickField name="parameters.embodied_carbon.pathways.deep_asphalt"}}
+          {{> afQuickField name="parameters.embodied_carbon.pathways.granular_spray"}}
+          {{> afQuickField name="parameters.embodied_carbon.pathways.granular_asphalt"}}
+          {{> afQuickField name="parameters.embodied_carbon.pathways.concrete_plain"}}
+          {{> afQuickField name="parameters.embodied_carbon.pathways.concrete_reinforced"}}
+          {{> afQuickField name="parameters.embodied_carbon.pathways.footpaths.concrete"}}
+          {{> afQuickField name="parameters.embodied_carbon.pathways.footpaths.block_paved"}}
+          {{> afQuickField name="parameters.embodied_carbon.pathways.bicycle_paths.asphalt"}}
+          {{> afQuickField name="parameters.embodied_carbon.pathways.bicycle_paths.concrete"}}
+          {{> afQuickField name="parameters.embodied_carbon.pathways.all.verge"}}
+
+          <div class="subtitle">Energy</div>
+          <div class="subsubtitle">Fitout</div>
+          {{> afQuickField name="parameters.energy.fitout.en_elec_oven"}}
+          {{> afQuickField name="parameters.energy.fitout.en_gas_oven"}}
+          {{> afQuickField name="parameters.energy.fitout.en_basic_avg_app"}}
+          {{> afQuickField name="parameters.energy.fitout.en_basic_hp_app"}}
+          {{> afQuickField name="parameters.energy.fitout.en_aff_avg_app"}}
+          {{> afQuickField name="parameters.energy.fitout.en_aff_hp_app"}}
 
           <div class="crud buttons">
             <button type="button" class="ui red cancel button">Cancel</button>

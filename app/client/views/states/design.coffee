@@ -61,7 +61,7 @@ TemplateClass.rendered = ->
     $('.crud.menu', $lotsTable).after($lotsButtons)
 
 onEditFormPanel = (args) ->
-  id = args.id
+  id = args.ids[0]
   collection = args.collection
   model = collection.findOne(id)
   collectionName = Collections.getName(collection)
@@ -104,11 +104,9 @@ TemplateClass.events
 getSidebar = (template) ->
   $(template.find('.design.container > .sidebar'))
 
-getEntityTable = (template) ->
-  $(template.find('.entities .collection-table'))
-
-getLotTable = (template) ->
-  $(template.find('.lots .collection-table'))
+getEntityTable = (template) -> $(template.find('.entities .collection-table'))
+getTypologyTable = (template) -> $(template.find('.typologies .collection-table'))
+getLotTable = (template) -> $(template.find('.lots .collection-table'))
 
 TemplateClass.addPanel = (template, component) ->
   console.debug 'addPanel', template, component
@@ -143,11 +141,16 @@ TemplateClass.onAtlasLoad = (template, atlas) ->
   projectId = Projects.getCurrentId()
   AtlasManager.zoomToProject()
 
+  ##################################################################################################
+  # VISUALISATION MAINTENANCE
+  ##################################################################################################
+
   # Rendering Lots.
   renderLot = (id) -> LotUtils.render(id)
   unrenderLot = (id) -> AtlasManager.unrenderEntity(id)
   lots = Lots.findByProject()
   entities = Entities.findByProject()
+  typologies = Typologies.findByProject()
   # Listen to changes to Lots and (un)render them as needed.
   lots.observe
     added: (lot) ->
@@ -167,14 +170,16 @@ TemplateClass.onAtlasLoad = (template, atlas) ->
   # Rendering Entities.
   renderEntity = (id) -> EntityUtils.render(id)
   unrenderEntity = (id) -> AtlasManager.unrenderEntity(id)
+  refreshEntity = (id) ->
+    unrenderEntity(id)
+    renderEntity(id)
   # Listen to changes to Entities and Typologies and (un)render them as needed.
   entities.observe
     added: (entity) ->
       renderEntity(entity._id)
     changed: (newEntity, oldEntity) ->
       id = newEntity._id
-      unrenderEntity(id)
-      renderEntity(id)
+      refreshEntity(id)
     removed: (entity) ->
       unrenderEntity(entity._id)
 
@@ -200,21 +205,57 @@ TemplateClass.onAtlasLoad = (template, atlas) ->
   reactiveToDisplayMode(Lots, 'lotDisplayMode', LotUtils.getDisplayMode)
   reactiveToDisplayMode(Entities, 'entityDisplayMode')
 
+  # Re-render entities of a typology when fields affecting visualisation are changed.
+  Collections.observe typologies, {
+    changed: (newTypology, oldTypology) ->
+      hasParamChanged = (paramName) ->
+        newValue = Typologies.getParameter(newTypology, paramName)
+        oldValue = Typologies.getParameter(oldTypology, paramName)
+        newValue != oldValue
+      hasChanged = _.some ['general.class', 'space.geom_2d', 'space.geom_3d', 'space.height',
+                           'orientation.azimuth'], (paramName) -> hasParamChanged(paramName)
+      if hasChanged
+        _.each Entities.find(typology: newTypology._id).fetch(), (entity) ->
+          refreshEntity(entity._id)
+  }
+
   # Listen to selections from Atlas.
-  # TODO(aramk) Support multiple selection.
-  # TODO(aramk) Remove duplication.
-  $table = getLotTable(template)
-  tableId = Template.collectionTable.getDomTableId($table)
+
+  # Listen to selections in tables.
+  tables = [getEntityTable(template), getLotTable(template)]
+  _.each tables, ($table) ->
+    $table.on 'select', (e, id) -> atlas.publish('entity/select', ids: [id])
+    $table.on 'deselect', (e, id) -> atlas.publish('entity/deselect', ids: [id])
+  # Clicking on a typology selects all entities of that typology.
+  $typologyTable = getTypologyTable(template)
+  getEntityIdsByTypologyId = (typologyId) ->
+    _.map Entities.find(typology: typologyId).fetch(), (entity) -> entity._id
+  $typologyTable.on 'select', (e, id) ->
+    atlas.publish('entity/select', ids: getEntityIdsByTypologyId(id))
+  $typologyTable.on 'deselect', (e, id) ->
+    atlas.publish('entity/deselect', ids: getEntityIdsByTypologyId(id))
+
+  # Determine what table should be used for the given doc type.
+  getTable = (docId) ->
+    if Entities.findOne(docId)
+      getEntityTable(template)
+    else if Lots.findOne(docId)
+      getLotTable(template)
+
+  # Select the item in the table when clicking on the globe.
   atlas.subscribe 'entity/select', (args) ->
+    # Always deselect the typologies table to avoid its logic from interfering.
+    typologyTableId = Template.collectionTable.getDomTableId(getTypologyTable(template))
+    Template.collectionTable.deselectAll(typologyTableId)
+
     id = args.ids[0]
-    Template.collectionTable.setSelectedId(tableId, id)
+    tableId = Template.collectionTable.getDomTableId(getTable(id))
+    Template.collectionTable.addSelection(tableId, id) if tableId
   atlas.subscribe 'entity/deselect', (args) ->
-    Template.collectionTable.deselect(tableId)
-  # Listen to selections in the table
-  $table.on 'select', (e, id) ->
-    atlas.publish('entity/select', ids: [id])
-  $table.on 'deselect', (e, id) ->
-    atlas.publish('entity/deselect', ids: [id])
+    id = args.ids[0]
+    if id
+      tableId = Template.collectionTable.getDomTableId(getTable(id))
+      Template.collectionTable.removeSelection(tableId, id) if tableId
 
   # Listen to double clicks from Atlas.
   atlas.subscribe 'entity/dblclick', (args) ->
@@ -224,4 +265,4 @@ TemplateClass.onAtlasLoad = (template, atlas) ->
       collection = Lots
     unless collection.findOne(id)
       throw new Error('Cannot find model with ID ' + id + ' in a collection.')
-    onEditFormPanel id: id, collection: collection
+    onEditFormPanel ids: [id], collection: collection
