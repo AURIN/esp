@@ -29,7 +29,7 @@
     "collection2": "0.4.3",
     "autoform": {
       "git": "https://github.com/aramk/meteor-autoform",
-      "branch": "feature/settings-working"
+      "branch": "develop"
     },
     "collectionfs": {},
     "cfs-filesystem": {},

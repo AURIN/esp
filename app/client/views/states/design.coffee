@@ -212,8 +212,8 @@ TemplateClass.onAtlasLoad = (template, atlas) ->
         newValue = Typologies.getParameter(newTypology, paramName)
         oldValue = Typologies.getParameter(oldTypology, paramName)
         newValue != oldValue
-      hasChanged = _.some ['general.class', 'space.geom_2d', 'space.geom_3d',
-                           'space.height'], (paramName) -> hasParamChanged(paramName)
+      hasChanged = _.some ['general.class', 'space.geom_2d', 'space.geom_3d', 'space.height',
+                           'orientation.azimuth'], (paramName) -> hasParamChanged(paramName)
       if hasChanged
         _.each Entities.find(typology: newTypology._id).fetch(), (entity) ->
           refreshEntity(entity._id)
