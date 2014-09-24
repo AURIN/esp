@@ -187,8 +187,8 @@ module.exports = function(grunt) {
   grunt.registerTask('deploy', 'Deploys the built app.', function(arg1, arg2) {
     var config;
     var isMeteor = arg1 === 'meteor';
-    // All fs, process, shell methods are relative to this directory now.
     if (!isMeteor) {
+      // All fs, process, shell methods are relative to this directory now.
       var result = shell.cd(DIST_DIR);
       if (result === null) {
         console.log('Run `grunt build` before deploy.');
