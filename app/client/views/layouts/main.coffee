@@ -1,4 +1,5 @@
 Template.mainLayout.helpers
+  appName: -> AppConfig.name
   stateName: -> Session.get('stateName')
   project: -> Projects.getCurrent()
 

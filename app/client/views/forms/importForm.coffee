@@ -10,11 +10,16 @@ Meteor.startup ->
           collection.insert(format)
     collection
 
+#  importDfs = null
+
   ImportedAssets = Collections.createTemporary()
 
   Form = Forms.defineModelForm
     name: 'importForm'
     collection: ImportedAssets
+
+#  Form.rendered = ->
+#    importDfs = []
 
   Form.helpers
     formats: ->
@@ -29,13 +34,25 @@ Meteor.startup ->
       fileNode = template.find('form input[type="file"]');
       files = fileNode.files
       format = Template.dropdown.getValue(template.find('.dropdown.format'))
-      onSuccess = template.data?.settings?.onSuccess
+      setLoadingState = (loading) ->
+        $submit = $(template.find('.submit'))
+        $submit.toggleClass('disabled', loading)
+        $submit.prop('disabled', loading)
+        $dimmer = $(template.find('.dimmer'))
+        $dimmer.toggleClass('active', loading)
+      setLoadingState(true)
+      onSuccess = ->
+        setLoadingState(false)
+        template.data?.settings?.onSuccess()
+      importDfs = []
       console.debug 'files', files, 'format', format
       if files.length == 0
         console.log('Select a file to upload.')
       else
         # TODO(aramk) handle multiple files?
         _.each files, (file) ->
+          importDf = Q.defer()
+          importDfs.push(importDf.promise)
           # TODO(aramk) Abstract into Files.upload.
           Files.insert file, (err, fileObj) ->
             console.debug 'Files.insert', arguments
@@ -67,9 +84,7 @@ Meteor.startup ->
                         c3mlId: body.c3mlId
                         metaDataId: body.metaDataId
                       }).then (lotIds) ->
-                        console.log('lotIds', lotIds)
-                        AtlasManager.zoomToProject()
-                        onSuccess?(lotIds)
+                        importDf.resolve(lotIds)
 
               timerHandler = ->
                 progress = fileObj.uploadProgress()
@@ -80,6 +95,10 @@ Meteor.startup ->
                   onUpload()
 
               handle = setInterval timerHandler, 1000
+        console.log('importDfs', importDfs)
+        Q.all(importDfs).then ->
+          AtlasManager.zoomToProject()
+          onSuccess?()
 
 # TODO(aramk) Integrate dropzone.
 #    onRender: ->

@@ -46,7 +46,7 @@
       name = lotId ? 'Lot #' + (i + 1)
       classId = Typologies.getClassByName(entityParams.landuse)
       lotDf = Q.defer()
-      lotDfs.push(lotDf)
+      lotDfs.push(lotDf.promise)
       WKT.fromVertices coords, (wkt) ->
         develop = Booleans.parse(entityParams.develop ? entityParams.redev ? true)
         height = entityParams.height ? c3ml.height
@@ -67,6 +67,7 @@
             lotDf.reject(err)
           else
             lotDf.resolve(insertId)
+    console.log('lotDfs', lotDfs)
     Q.all(lotDfs).then ->
       projectId = Projects.getCurrentId()
       # If the project doesn't have lat, lng location, set it as that found in this file.
