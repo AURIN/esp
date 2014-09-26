@@ -29,3 +29,19 @@ download = (method, fileId) ->
 
 Files.download = (fileId) -> download('files/download/string', fileId)
 Files.downloadJson = (fileId) -> download('files/download/json', fileId)
+
+Files.upload = (obj) ->
+  df = Q.defer()
+  Files.insert obj, (err, fileObj) ->
+    if err
+      df.reject(err)
+      return
+    # TODO(aramk) Remove timeout and use an event callback.
+    timerHandler = ->
+      progress = fileObj.uploadProgress()
+      uploaded = fileObj.isUploaded()
+      if uploaded
+        clearTimeout(handle)
+        df.resolve(fileObj)
+    handle = setInterval timerHandler, 1000
+  df.promise

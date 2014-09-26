@@ -30,3 +30,11 @@
       (err) -> df.reject(err)
     )
     df.promise
+
+  formats:
+    shp:
+      id: 'shp'
+      mimeType: 'application/zip'
+    kmz:
+      id: 'kmz'
+      mimeType: 'application/vnd.google-earth.kmz'

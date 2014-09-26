@@ -86,110 +86,83 @@ Meteor.startup ->
                 alert('These Lots are using this Typology: ' + lotNames + '. Remove this Typology' +
                   ' from the Lot first before changing its class.')
                 @result(false)
-                # TODO(aramk) Due to a bug this is disabled for now.
-#                result = confirm(lotCount + ' ' + Strings.pluralize('Lot', lotCount) + ' will' +
-#                  ' have their classes changed from ' + oldClass + ' to ' + newClass +
-#                  ' to support this Typology. Do you wish to proceed?')
-#                # Updating the actual Lot is handled by the collection.
-#                @result(if result then modifier else false)
+          # TODO(aramk) Due to a bug this is disabled for now.
+          #                result = confirm(lotCount + ' ' + Strings.pluralize('Lot', lotCount) + ' will' +
+          #                  ' have their classes changed from ' + oldClass + ' to ' + newClass +
+          #                  ' to support this Typology. Do you wish to proceed?')
+          #                # Updating the actual Lot is handled by the collection.
+          #                @result(if result then modifier else false)
           modifier
-
-  # TODO(aramk) Refactor with import form.
-  getFormats = (collection) ->
-    Meteor.call 'assets/formats/input', (err, result) ->
-      _.each result, (format) ->
-        ext = format.extensions
-        # TODO(aramk) Remove this filter to allow other types.
-        if ext == 'shp' || ext == 'kmz'
-          format.label = ext.toUpperCase()
-          collection.insert(format)
-    collection
 
   Form.helpers
     classes: -> Typologies.getClassItems()
     classValue: -> @doc?.parameters?.general?.class
-  # TODO(aramk) Refactor with import form.
-    formats: ->
-      formats = Collections.createTemporary()
-      getFormats(formats)
-      formats.find()
-    defaultFormat: -> 'shp'
 
-  onUpload = (fileObj, format, template) ->
+  Form.events
+    'change [data-name="parameters.space.geom_2d"] input': (e, template) ->
+      importFieldHandler(e, template, ['shp'])
+    'change [data-name="parameters.space.geom_3d"] input': (e, template) ->
+      importFieldHandler(e, template, ['kmz'])
+
+  # UPLOADING
+
+  importFieldHandler = (e, template, acceptedFormats) ->
+    fileNode = e.target
+    file = fileNode.files[0]
+    unless file
+      throw new Error('No file selected for uploading')
+    mimeType = file.type
+    format = _.find Assets.formats, (format) -> format.mimeType == mimeType
+    unless format
+      throw new Error('Format not recognised for mime-type: ' + file.type)
+    formatId = format.id
+    if _.indexOf(acceptedFormats, formatId) >= 0
+      $loader = $(e.target).siblings('.ui.dimmer')
+      $loader.addClass('active')
+      removeLoader = -> $loader.removeClass('active')
+      Files.upload(file).then(
+        (fileObj) -> onUpload(fileObj, formatId, e, template).fin(removeLoader)
+        removeLoader
+      )
+    else
+      console.error('File did not match expected format', file, format, acceptedFormats)
+
+  onUpload = (fileObj, format, e, template) ->
     console.debug 'uploaded', fileObj
+    df = Q.defer()
     fileId = fileObj._id
-    Assets.toC3ml(fileId, {format: format}).then (result) ->
-      c3mls = result.c3mls
-      isPolygon = (c3ml) -> c3ml.type == 'polygon'
-      isCollection = (c3ml) -> c3ml.type == 'collection'
-      uploadIsPolygon = _.every c3mls, (c3ml) -> isPolygon(c3ml) || isCollection(c3ml)
-      if uploadIsPolygon
-        c3mlPolygon = _.find c3mls, (c3ml) -> isPolygon(c3ml)
-        unless c3mlPolygon
-          throw new Error('No suitable geometries or meshes found in file.')
-        handleFootprintUpload(c3mlPolygon, template)
-      else
-        uploadNotEmpty = _.some c3mls, (c3ml) -> !isCollection(c3ml)
-        unless uploadNotEmpty
-          throw new Error('File must contain at least one c3ml entity other than a collection.')
-        handleMeshUpload(c3mls, template)
+    Assets.toC3ml(fileId, {format: format}).then(
+      (result) ->
+        c3mls = result.c3mls
+        isPolygon = (c3ml) -> c3ml.type == 'polygon'
+        isCollection = (c3ml) -> c3ml.type == 'collection'
+        uploadIsPolygon = _.every c3mls, (c3ml) -> isPolygon(c3ml) || isCollection(c3ml)
+        if uploadIsPolygon
+          c3mlPolygon = _.find c3mls, (c3ml) -> isPolygon(c3ml)
+          unless c3mlPolygon
+            throw new Error('No suitable geometries or meshes found in file.')
+          handleFootprintUpload(c3mlPolygon, template).then(df.resolve, df.reject)
+        else
+          uploadNotEmpty = _.some c3mls, (c3ml) -> !isCollection(c3ml)
+          unless uploadNotEmpty
+            throw new Error('File must contain at least one c3ml entity other than a collection.')
+          handleMeshUpload(c3mls, template).then(df.resolve, df.reject)
+      (err) -> df.reject(err)
+    )
+    df.promise
 
   handleFootprintUpload = (c3ml, template) ->
     $geomInput = $(template.find('[name="parameters.space.geom_2d"]'))
     WKT.fromC3ml(c3ml).then (wkt) ->
-      $geomInput.val(wkt)
+      # Trigger change to ensure importField controls are updated.
+      $geomInput.val(wkt).trigger('change')
 
   handleMeshUpload = (c3mls, template) ->
     $meshInput = $(template.find('[name="parameters.space.geom_3d"]'))
     # Upload the c3ml as a file.
     doc = {c3mls: c3mls}
     docString = JSON.stringify(doc)
-    #    buffer = ArrayBuffers.stringToBufferArray(docString)
     blob = new Blob([docString])
-    # TODO(aramk) Abstract into Files.upload.
-    Files.insert blob, (err, fileObj) ->
-      console.debug 'Files.insert', arguments
-      if err
-        console.error(err.toString())
-      # TODO(aramk) Remove timeout and use an event callback.
-      timerHandler = ->
-        progress = fileObj.uploadProgress()
-        uploaded = fileObj.isUploaded()
-        console.debug 'progress', progress, uploaded
-        if uploaded
-          clearTimeout(handle)
-          console.debug 'uploaded', fileObj
-          id = fileObj._id
-          $meshInput.val(id)
-      #          Meteor.call 'files/download/string', fileObj._id, (err, data) ->
-      #            console.debug 'download', arguments
-      handle = setInterval timerHandler, 1000
-
-  Form.events
-    'click .footprint-import .submit.button': (e, template) ->
-      # TODO(aramk) Abstract this into a simple import widget. Reuse in import form.
-      $footprintImport = $(template.find('.footprint-import'))
-      fileNode = $('input[type="file"]', $footprintImport)[0]
-      files = fileNode.files
-      format = Template.dropdown.getValue($('.dropdown.format', $footprintImport))
-      console.debug 'files', files, 'format', format
-      if files.length == 0
-        console.log('Select a file to upload.')
-      else
-        # TODO(aramk) handle multiple files?
-        _.each files, (file) ->
-          # TODO(aramk) Abstract into Files.upload.
-          Files.insert file, (err, fileObj) ->
-            console.debug 'Files.insert', arguments
-            if err
-              console.error(err.toString())
-            else
-              # TODO(aramk) Remove timeout and use an event callback.
-              timerHandler = ->
-                progress = fileObj.uploadProgress()
-                uploaded = fileObj.isUploaded()
-                console.debug 'progress', progress, uploaded
-                if uploaded
-                  clearTimeout(handle)
-                  onUpload(fileObj, format, template)
-              handle = setInterval timerHandler, 1000
+    Files.upload(blob).then (fileObj) ->
+      id = fileObj._id
+      $meshInput.val(id).trigger('change')

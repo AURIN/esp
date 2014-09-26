@@ -19,22 +19,17 @@
           {{> afQuickField name="parameters.general.climate_zn"}}
 
           <div class="subtitle">Space</div>
-          <label>Footprint</label>
-          <div class="footprint-import">
-            <div class="form-group">
-              <label class="control-label">File</label>
-              <input placeholder="Upload..." type="file">
-            </div>
-            <div class="form-group">
-              <label class="control-label">Format</label>
-              {{> dropdown name="format" items=formats valueAttr="extensions" labelAttr="label"
-              value=defaultFormat}}
-            </div>
-            <button type="button" class="ui button submit green">Import</button>
+          <label>2D Geometry</label>
+          {{> importField name="parameters.space.geom_2d"}}
+
+          <label>3D Geometry</label>
+          {{> importField name="parameters.space.geom_3d"}}
+
+          <!-- Hide input fields and control their values using importField template. -->
+          <div style="display: none">
+            {{> afQuickField name="parameters.space.geom_2d"}}
+            {{> afQuickField name="parameters.space.geom_3d"}}
           </div>
-          
-          {{> afQuickField name="parameters.space.geom_2d"}}
-          {{> afQuickField name="parameters.space.geom_3d"}}
 
           {{> afQuickField name="parameters.space.gfa"}}
           {{> afQuickField name="parameters.space.cfa"}}
