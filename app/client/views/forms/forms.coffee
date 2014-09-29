@@ -88,7 +88,7 @@
       AutoForm.resetForm(name)
 
       collection = Collections.get(formArgs.collection)
-      schema = collection?._c2?._simpleSchema
+      schema = collection?.simpleSchema()
       $schemaInputs = $(@findAll('[data-schema-key]'))
 
       if schema?

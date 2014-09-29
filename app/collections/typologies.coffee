@@ -778,7 +778,9 @@ createCategorySchemaObj = (cat, catId, args) ->
     catSchemaFields[itemId] = itemFields
   catSchema = new SimpleSchema(catSchemaFields)
   catSchemaArgs = _.extend({
-    optional: false
+    # TODO(aramk) This should be optional: false, but an update to SimpleSchema is causing edits to
+    # these fields to fail during validation, since cleaning doesn't run for modifier objects.
+    optional: true
     defaultValue: {}
   }, args.categoryDefaults, cat, {type: catSchema})
   autoLabel(catSchemaArgs, catId)
@@ -834,8 +836,8 @@ TypologySchema = new SimpleSchema
     defaultValue: {}
   project: projectSchema
 
-@Typologies = new Meteor.Collection 'typologies', schema: TypologySchema
-Typologies.schema = TypologySchema
+@Typologies = new Meteor.Collection 'typologies'
+Typologies.attachSchema(TypologySchema)
 Typologies.classes = TypologyClasses
 Typologies.units = Units
 Typologies.allow(Collections.allowAll())
@@ -1007,8 +1009,8 @@ EntitySchema = new SimpleSchema
     defaultValue: {}
   project: projectSchema
 
-@Entities = new Meteor.Collection 'entities', schema: EntitySchema
-Entities.schema = EntitySchema
+@Entities = new Meteor.Collection 'entities'
+Entities.attachSchema(EntitySchema)
 Entities.allow(Collections.allowAll())
 
 Entities.getFlattened = (id) ->
@@ -1138,8 +1140,8 @@ LotSchema = new SimpleSchema
     type: LotParametersSchema
   project: projectSchema
 
-@Lots = new Meteor.Collection 'lots', schema: LotSchema
-Lots.schema = LotSchema
+@Lots = new Meteor.Collection 'lots'
+Lots.attachSchema(LotSchema)
 Lots.allow(Collections.allowAll())
 
 Lots.getParameter = (model, paramId) ->
@@ -1659,19 +1661,18 @@ ProjectParametersSchema = createCategoriesSchema
 ProjectSchema = new SimpleSchema
   name:
     label: 'Name'
-    type: String,
-    index: true,
+    type: String
+    index: true
     unique: true
   desc: descSchema
   creator: creatorSchema
   parameters:
     label: 'Parameters'
     type: ProjectParametersSchema
-    optional: false
     defaultValue: {}
 
 @Projects = new Meteor.Collection 'project', schema: ProjectSchema
-Projects.schema = ProjectSchema
+Projects.attachSchema(ProjectSchema)
 Projects.allow(Collections.allowAll())
 
 Projects.setCurrentId = (id) -> Session.set('projectId', id)

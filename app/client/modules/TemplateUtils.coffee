@@ -1,4 +1,4 @@
 @TemplateUtils =
 
   getDom: (component) ->
-    component.parentElement
+    component._domrange.parentElement

@@ -1,13 +1,22 @@
 atlas = null
-atlasDf = Q.defer()
+atlasDf = null
+
+init = ->
+  atlas = null
+  atlasDf = Q.defer()
+init()
 
 @AtlasManager =
 
   getAtlas: -> atlasDf.promise
 
   setAtlas: (_instance) ->
+    @removeAtlas()
     atlas = _instance
     atlasDf.resolve(atlas)
+
+  removeAtlas: ->
+    init()
 
   zoomToProject: ->
     projectId = Projects.getCurrentId()
