@@ -778,7 +778,9 @@ createCategorySchemaObj = (cat, catId, args) ->
     catSchemaFields[itemId] = itemFields
   catSchema = new SimpleSchema(catSchemaFields)
   catSchemaArgs = _.extend({
-    optional: false
+    # TODO(aramk) This should be optional: false, but an update to SimpleSchema is causing edits to
+    # these fields to fail during validation, since cleaning doesn't run for modifier objects.
+    optional: true
     defaultValue: {}
   }, args.categoryDefaults, cat, {type: catSchema})
   autoLabel(catSchemaArgs, catId)
@@ -1659,15 +1661,14 @@ ProjectParametersSchema = createCategoriesSchema
 ProjectSchema = new SimpleSchema
   name:
     label: 'Name'
-    type: String,
-    index: true,
+    type: String
+    index: true
     unique: true
   desc: descSchema
   creator: creatorSchema
   parameters:
     label: 'Parameters'
     type: ProjectParametersSchema
-    optional: false
     defaultValue: {}
 
 @Projects = new Meteor.Collection 'project', schema: ProjectSchema
