@@ -1,14 +1,13 @@
 {
   "packages": {
-    "iron-router": {},
-    "handlebar-helpers": {},
-    "semantic-ui": {},
-    "lodash": {},
     "requirejs": {
-      "git": "https://github.com/aramk/requirejs"
+      "git": "https://github.com/aramk/requirejs.git"
+    },
+    "stevezhu:lodash": {
+      "git": "https://github.com/aramk/meteor-lodash.git"
     },
     "utility": {
-      "git": "https://github.com/aramk/meteor-utility"
+      "git": "https://github.com/aramk/meteor-utility.git"
     },
     "atlas": {
       "path": "../bower_components/atlas"
@@ -16,33 +15,22 @@
     "atlas-cesium": {
       "path": "../bower_components/atlas-cesium"
     },
-    "reactive-table": {
-      "git": "https://github.com/aramk/reactive-table",
-      "branch": "feature/selectable"
-    },
     "collection-table": {
-      "git": "https://github.com/aramk/meteor-collection-table"
+      "git": "https://github.com/aramk/meteor-collection-table.git"
     },
     "dropdown": {
-      "git": "https://github.com/aramk/meteor-dropdown"
+      "git": "https://github.com/aramk/meteor-dropdown.git"
     },
-    "collection2": "0.4.3",
     "autoform": {
-      "git": "https://github.com/aramk/meteor-autoform",
+      "git": "https://github.com/aramk/meteor-autoform.git",
       "branch": "develop"
     },
-    "collectionfs": {},
-    "cfs-filesystem": {},
-    "cfs-ejson-file": {},
-    "npm": {},
     "q": {
-      "git": "https://github.com/aramk/q",
+      "git": "https://github.com/aramk/q.git",
       "branch": "v1"
     },
-    "tinycolor": {},
-    "percolatestudio-migrations": {},
     "pubsub": {
-      "git": "https://github.com/aramk/PubSubJS"
+      "git": "https://github.com/aramk/PubSubJS.git"
     }
   }
 }

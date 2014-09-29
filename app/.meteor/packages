@@ -3,39 +3,46 @@
 # 'meteor add' and 'meteor remove' will edit this file for you,
 # but you can also edit it by hand.
 
-standard-app-packages
-less
-jquery
-coffeescript
-underscore
-lodash
-handlebar-helpers
-iron-router
-
+# CORE
 accounts-password
 accounts-ui
+coffeescript
+jquery
+less
+meteor-platform
+standard-app-packages
+underscore
 
-semantic-ui
+# PUBLIC
+aldeed:collection2
+cfs:filesystem
+cfs:standard-packages
+cfs:ejson-file
+digilord:roles
+iron:router
+kidovate:tinycolor
+meteorhacks:npm
+npm-container
+mrt:moment
+nooitaf:semantic-ui
+percolatestudio:percolatestudio-migrations
+raix:handlebar-helpers
+stevezhu:lodash
 
-reactive-table
+# PRIVATE
 collection-table
 dropdown
-
-collection2
-autoform
-
-collectionfs
-cfs-filesystem
-cfs-ejson-file
-
-npm
 q
-tinycolor
-percolatestudio-migrations
+utility
 pubsub
-
-# Our custom packages come last so RequireJS doesn't cause issues.
+# These come last so RequireJS doesn't cause issues.
 requirejs
 atlas
 atlas-cesium
-utility
+
+# PUBLIC-FORKS
+# These are forked repos and added as private packages.
+aldeed:autoform
+aldeed:collection2
+aldeed:simple-schema
+#joshowens:accounts-entry

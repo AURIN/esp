@@ -32,7 +32,7 @@ renderReport = (id) ->
 
   # TODO(aramk) Filter based on selected entities/typologies with Session.get
 
-  evalEngine = new EvaluationEngine(schema: Entities.schema)
+  evalEngine = new EvaluationEngine(schema: Entities.simpleSchema())
   reportGenerator = new ReportGenerator(evalEngine: evalEngine)
 
   typologyClass = ReportTemplate.typologyClass

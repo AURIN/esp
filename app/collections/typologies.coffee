@@ -834,8 +834,8 @@ TypologySchema = new SimpleSchema
     defaultValue: {}
   project: projectSchema
 
-@Typologies = new Meteor.Collection 'typologies', schema: TypologySchema
-Typologies.schema = TypologySchema
+@Typologies = new Meteor.Collection 'typologies'
+Typologies.attachSchema(TypologySchema)
 Typologies.classes = TypologyClasses
 Typologies.units = Units
 Typologies.allow(Collections.allowAll())
@@ -1007,8 +1007,8 @@ EntitySchema = new SimpleSchema
     defaultValue: {}
   project: projectSchema
 
-@Entities = new Meteor.Collection 'entities', schema: EntitySchema
-Entities.schema = EntitySchema
+@Entities = new Meteor.Collection 'entities'
+Entities.attachSchema(EntitySchema)
 Entities.allow(Collections.allowAll())
 
 Entities.getFlattened = (id) ->
@@ -1138,8 +1138,8 @@ LotSchema = new SimpleSchema
     type: LotParametersSchema
   project: projectSchema
 
-@Lots = new Meteor.Collection 'lots', schema: LotSchema
-Lots.schema = LotSchema
+@Lots = new Meteor.Collection 'lots'
+Lots.attachSchema(LotSchema)
 Lots.allow(Collections.allowAll())
 
 Lots.getParameter = (model, paramId) ->
@@ -1671,7 +1671,7 @@ ProjectSchema = new SimpleSchema
     defaultValue: {}
 
 @Projects = new Meteor.Collection 'project', schema: ProjectSchema
-Projects.schema = ProjectSchema
+Projects.attachSchema(ProjectSchema)
 Projects.allow(Collections.allowAll())
 
 Projects.setCurrentId = (id) -> Session.set('projectId', id)

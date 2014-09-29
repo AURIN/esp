@@ -64,3 +64,5 @@ iron-router-progress
 /collectionfs
 /utility
 /percolatestudio-migrations
+/pubsub
+/stevezhu:lodash

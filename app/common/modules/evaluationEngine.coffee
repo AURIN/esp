@@ -109,7 +109,7 @@ class @EvaluationEngine
     schema = @getParamSchema(paramId)
     if schema && schema.type == Number && (!value? || isNaN(value)) then NULL_VALUE else value
 
-  isGlobalParam: (paramId) -> Projects.schema.schema(ParamUtils.addPrefix(paramId))
+  isGlobalParam: (paramId) -> Projects.simpleSchema().schema(ParamUtils.addPrefix(paramId))
 
 NULL_VALUE = 0
 sanitizeValue = (value) -> value ? 0
