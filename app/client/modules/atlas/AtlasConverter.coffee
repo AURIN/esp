@@ -34,9 +34,6 @@ class @AtlasConverter
     else if vertices != null
       console.warn('Unknown type of vertices', args)
 
-    # Mesh
-
-
     # Style
     styleArgs = {}
     if color

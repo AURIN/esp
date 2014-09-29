@@ -8,15 +8,12 @@ SimpleSchema.extendOptions
 # TODO(aramk) These are added globally, not just for typologies.
   desc: Match.Optional(String)
   units: Match.Optional(String)
-# TODO(aramk) There's no need to use serialized formulas, since functions are first-class objects
-# and we don't need to persist or change them outside of source code.
-
+# Used on reference fields containing IDs of models in the given collection type.
+  collectionType: Match.Optional(Function)
 # An expression for calculating the value of the given field for the given model. These are output
 # fields and do not appear in forms. The formula can be a string containing other field IDs prefixed
 # with '$' (e.g. $occupants) which are resolved to the local value per model, or global parameters
-# if no local equivalent is found.
-
-# If the expression is a function, it is passed the current model
+# if no local equivalent is found. If the expression is a function, it is passed the current model
 # and the field and should return the result.
   calc: Match.Optional(Match.Any)
 # A map of class names to objects of properties. "defaultValues" specifies the default value for
@@ -102,6 +99,7 @@ projectSchema =
   label: 'Project'
   type: String
   index: true
+  collectionType: Projects
 
 descSchema =
   label: 'Description'
@@ -503,7 +501,7 @@ typologyCategories =
         type: Number
         decimal: true
         units: Units.kgco2
-        # TODO(aramk) Add once we have pathways.
+      # TODO(aramk) Add once we have pathways.
         calc: '0'
       co2_op_tot:
         label: 'Total Operating'
@@ -778,8 +776,8 @@ createCategorySchemaObj = (cat, catId, args) ->
     catSchemaFields[itemId] = itemFields
   catSchema = new SimpleSchema(catSchemaFields)
   catSchemaArgs = _.extend({
-    # TODO(aramk) This should be optional: false, but an update to SimpleSchema is causing edits to
-    # these fields to fail during validation, since cleaning doesn't run for modifier objects.
+  # TODO(aramk) This should be optional: false, but an update to SimpleSchema is causing edits to
+  # these fields to fail during validation, since cleaning doesn't run for modifier objects.
     optional: true
     defaultValue: {}
   }, args.categoryDefaults, cat, {type: catSchema})
@@ -802,7 +800,6 @@ createCategoriesSchema = (args) ->
   new SimpleSchema(catsFields)
 
 @ParamUtils =
-
   _prefix: 'parameters'
   _rePrefix: /^parameters\./
   addPrefix: (id) ->
@@ -888,17 +885,9 @@ Typologies.unflattenParameters = (doc, hasParametersPrefix) ->
       null
   doc
 
-# Traverse the given schema and call the given callback with the field schema and ID.
-forEachFieldSchema = (schema, callback) ->
-  fieldIds = schema._schemaKeys
-  for fieldId in fieldIds
-    fieldSchema = schema.schema(fieldId)
-    if fieldSchema?
-      callback(fieldSchema, fieldId)
-
 Typologies.getDefaultParameterValues = _.memoize (typologyClass) ->
   values = {}
-  forEachFieldSchema ParametersSchema, (fieldSchema, paramId) ->
+  SchemaUtils.forEachFieldSchema ParametersSchema, (fieldSchema, paramId) ->
     # TODO(aramk) defaultValue currently removed from schema field.
 #    defaultValue = fieldSchema.defaultValue
     classes = fieldSchema.classes
@@ -919,7 +908,7 @@ Typologies.getDefaultParameterValues = _.memoize (typologyClass) ->
 # of the class.
 Typologies.getExcludedDefaultParameters = _.memoize (typologyClass) ->
   excluded = {}
-  forEachFieldSchema ParametersSchema, (fieldSchema, paramId) ->
+  SchemaUtils.forEachFieldSchema ParametersSchema, (fieldSchema, paramId) ->
     classes = fieldSchema.classes
     if classes and !classes[typologyClass]
       excluded[paramId] = true
@@ -995,12 +984,14 @@ EntitySchema = new SimpleSchema
   typology:
     label: 'Typology'
     type: String
+    collectionType: Typologies
 # Despite having the "entity" field on lots, when a new entity is created it is rendered
 # reactively and without a lot reference it will fail.
   lot:
     label: 'Lot'
     type: String
     index: true
+    collectionType: Lots
   parameters:
     label: 'Parameters'
     type: EntityParametersSchema
@@ -1112,6 +1103,7 @@ LotSchema = new SimpleSchema
     type: String
     optional: true
     index: true
+    collectionType: Entities
     custom: ->
       classParamId = 'parameters.general.class'
       developFieldId = 'parameters.general.develop'
@@ -1701,7 +1693,7 @@ Projects.setLocationCoords = (id, location) ->
 
 Projects.getDefaultParameterValues = _.memoize ->
   values = {}
-  forEachFieldSchema ProjectParametersSchema, (fieldSchema, paramId) ->
+  SchemaUtils.forEachFieldSchema ProjectParametersSchema, (fieldSchema, paramId) ->
     # Default value is stored in the "classes" object to avoid being used by SimpleSchema.
     defaultValue = fieldSchema.classes?.ALL?.defaultValue
     if defaultValue?

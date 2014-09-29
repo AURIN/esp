@@ -78,8 +78,8 @@ TemplateClass.helpers
       key: 'name'
       label: 'Name'
     ]
-    rowsPerPage: 100000
-    showNavigation: 'never'
+#    rowsPerPage: 100000
+#    showNavigation: 'never'
     onCreate: (args) ->
       collectionName = Collections.getName(args.collection)
       formName = collectionToForm[collectionName]
@@ -187,8 +187,8 @@ TemplateClass.onAtlasLoad = (template, atlas) ->
   reactiveToDisplayMode = (collection, sessionVarName, getDisplayMode) ->
     firstRun = true
     Deps.autorun (c) ->
-      Session.get(sessionVarName)
       # Register a dependency on display mode changes.
+      Session.get(sessionVarName)
       getDisplayMode ?= -> Session.get('entityDisplayMode')
       if firstRun
         # Don't run the first time, since we already render through the observe() callback.
