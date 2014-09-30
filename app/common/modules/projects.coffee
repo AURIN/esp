@@ -30,6 +30,8 @@ incrementName = (name) ->
 # TODO(aramk) Add support for this or remove the option.
 # @param {Boolean} args.update - If true, no new models will be constructed. Instead, any existing
 # models matching with matching IDs will be updated with the values in the given JSON.
+# @returns {Object.<String, Object>} A map of collection names to maps of old IDs to new IDs for the
+# models in that collection.
   fromJson: (json, args) ->
     # Construct all models as new documents in the first pass, mapping old ID references to new IDs.
     # In the second pass, change all IDs to the new ones to maintain references in the new models.
@@ -87,3 +89,10 @@ incrementName = (name) ->
       (err) -> df.reject(err)
     )
     df.promise
+
+# @param {String} id - The ID of the project to duplicate.
+# @returns {Object.<String, Object>} A map of collection names to maps of old IDs to new IDs for the
+# models in that collection.
+  duplicate: (id) ->
+    json = @toJson(id)
+    @fromJson(json)

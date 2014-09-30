@@ -10,7 +10,14 @@ TemplateClass.rendered = ->
   # Add a launch button to the table toolbar.
   $table = $(@find('.collection-table'))
   $buttons = $('.on-selection-show', $table)
-  $btnLaunch = $('<a class="launch item"><i class="rocket icon"></i></a>')
+  # Duplicate button
+  $btnDuplicate = $('<a class="duplicate item" title="Duplicate Project"><i class="copy icon"></i></a>')
+  $btnDuplicate.on 'click', () ->
+    id = $('.selected[data-id]', $table).data('id')
+    Meteor.call('projects/duplicate', id)
+  $buttons.append($btnDuplicate)
+  # Launch button
+  $btnLaunch = $('<a class="launch item" title="Launch Project"><i class="rocket icon"></i></a>')
   $btnLaunch.on 'click', () ->
     id = $('.selected[data-id]', $table).data('id')
     goToPrecinctDesign(id)
