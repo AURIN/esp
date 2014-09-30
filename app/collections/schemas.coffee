@@ -1,3 +1,5 @@
+global = @
+
 @SchemaUtils =
 
 # Traverse the given schema and call the given callback with the field schema and ID.
@@ -9,10 +11,10 @@
         callback(fieldSchema, fieldId)
 
   getSchemaReferenceFields: _.memoize(
-    (collection) =>
+    (collection) ->
       refFields = {}
       schema = collection.simpleSchema()
-      @forEachFieldSchema schema, (field, fieldId) ->
+      SchemaUtils.forEachFieldSchema schema, (field, fieldId) ->
         if field.collectionType
           refFields[fieldId] = field
       refFields
@@ -22,12 +24,14 @@
   getRefModifier: (model, collection, idMaps) ->
     modifier = {}
     $set = {}
-    modifier = modifier.$set = $set
+    modifier.$set = $set
     refFields = @getSchemaReferenceFields(collection)
+    console.log('refFields', refFields)
     _.each refFields, (field, fieldId) ->
-      collectionName = Collections.getName(field.collectionType)
+      collectionName = Collections.getName(global[field.collectionType])
       # TODO(aramk) Refactor out logic for looking up fields in modifier format.
-      oldId = Typologies.getParameter(model, fieldId)
+      oldId = Typologies.getModifierProperty(model, fieldId)
       newId = idMaps[collectionName][oldId]
+      console.log('fieldId', fieldId)
       $set[fieldId] = newId
     modifier

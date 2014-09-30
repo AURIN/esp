@@ -9,7 +9,7 @@ SimpleSchema.extendOptions
   desc: Match.Optional(String)
   units: Match.Optional(String)
 # Used on reference fields containing IDs of models in the given collection type.
-  collectionType: Match.Optional(Function)
+  collectionType: Match.Optional(String)
 # An expression for calculating the value of the given field for the given model. These are output
 # fields and do not appear in forms. The formula can be a string containing other field IDs prefixed
 # with '$' (e.g. $occupants) which are resolved to the local value per model, or global parameters
@@ -21,7 +21,637 @@ SimpleSchema.extendOptions
   classes: Match.Optional(Object)
 
 ####################################################################################################
-# SCHEMA DECLARATION
+# COMMON SCHEMA AUXILIARY
+####################################################################################################
+
+# ^ and _ are converted to superscript and subscript in forms and reports.
+Units =
+  $m2: '$/m^2'
+  $: '$'
+  $day: '$/day'
+  $kWh: '$/kWh'
+  $MJ: '$/MJ'
+  $kL: '$/kL'
+  co2kWh: 'CO2-e/kWh'
+  deg: 'degrees'
+  GJyear: 'GJ/year'
+  ha: 'ha'
+  kgco2: 'kg CO_2-e'
+  kgco2m2: 'kg CO_2-e/m^2'
+  kWhyear: 'kWh/year'
+  kWh: 'kWh'
+  kWhday: 'kWh/day'
+  kL: 'kL'
+  kLm2year: 'kL/m²/year'
+  Lsec: 'L/second'
+  Lyear: 'L/year'
+  m: 'm'
+  m2: 'm^2'
+  mm: 'mm'
+  MLyear: 'ML/year'
+  MJ: 'MJ'
+  MJyear: 'MJ/year'
+
+extendSchema = (orig, changes) ->
+  _.extend({}, orig, changes)
+
+# TODO(aramk) Can't use Strings or other utilities outside Meteor.startup since it's not loaded yet
+toTitleCase = (str) ->
+  parts = str.split(/\s+/)
+  title = ''
+  for part, i in parts
+    if part != ''
+      title += part.slice(0, 1).toUpperCase() + part.slice(1, part.length)
+      if i != parts.length - 1 and parts[i + 1] != ''
+        title += ' '
+  title
+
+autoLabel = (field, id) ->
+  label = field.label
+  if label?
+    label
+  else
+    label = id.replace('_', '')
+    toTitleCase(label)
+
+createCategorySchemaObj = (cat, catId, args) ->
+  catSchemaFields = {}
+  # For each field in each category
+  for itemId, item of cat.items
+    if item.items?
+      itemFields = createCategorySchemaObj(item, itemId, args)
+    else
+      # TODO(aramk) Set the default to 0 for numbers.
+      itemFields = _.extend({optional: true}, args.itemDefaults, item)
+      autoLabel(itemFields, itemId)
+      # If defaultValue is used, put it into "classes" to prevent SimpleSchema from storing this
+      # value in the doc. We want to inherit this value at runtime for all classes, but not
+      # persist it in multiple documents in case we want to change it later in the schema.
+      # TODO(aramk) Check if this is intended behaviour.
+      defaultValue = itemFields.defaultValue
+      if defaultValue?
+        classes = itemFields.classes ?= {}
+        allClassOptions = classes.ALL ?= {}
+        if allClassOptions.defaultValue?
+          throw new Error('Default value specified on field and in classOptions - only use one.')
+        allClassOptions.defaultValue = defaultValue
+        delete itemFields.defaultValue
+    catSchemaFields[itemId] = itemFields
+  catSchema = new SimpleSchema(catSchemaFields)
+  catSchemaArgs = _.extend({
+  # TODO(aramk) This should be optional: false, but an update to SimpleSchema is causing edits to
+  # these fields to fail during validation, since cleaning doesn't run for modifier objects.
+    optional: true
+    defaultValue: {}
+  }, args.categoryDefaults, cat, {type: catSchema})
+  autoLabel(catSchemaArgs, catId)
+  delete catSchemaArgs.items
+  catSchemaArgs
+
+# Constructs a SimpleSchema which contains all categories and each category is it's own
+# SimpleSchema.
+createCategoriesSchema = (args) ->
+  args ?= {}
+  cats = args.categories
+  unless cats
+    throw new Error('No categories provided.')
+  # For each category in the schema.
+  catsFields = {}
+  for catId, cat of cats
+    catSchemaArgs = createCategorySchemaObj(cat, catId, args)
+    catsFields[catId] = catSchemaArgs
+  new SimpleSchema(catsFields)
+
+@ParamUtils =
+  _prefix: 'parameters'
+  _rePrefix: /^parameters\./
+  addPrefix: (id) ->
+    if @_rePrefix.test(id)
+      id
+    else
+      @_prefix + '.' + id
+  removePrefix: (id) -> id.replace(@_rePrefix, '')
+  hasPrefix: (id) -> @._rePrefix.test(id)
+
+####################################################################################################
+# PROJECT SCHEMA DEFINITION
+####################################################################################################
+
+descSchema =
+  label: 'Description'
+  type: String
+  optional: true
+
+creatorSchema =
+  label: 'Creator'
+  type: String
+  optional: true
+
+projectCategories =
+  general:
+    label: 'General'
+    items:
+      creator:
+      # TODO(aramk) Integrate this with users.
+        type: String
+        desc: 'Creator of the project or precinct.'
+        optional: false
+  location:
+    label: 'Location'
+    items:
+      country:
+        type: String
+        desc: 'Country of precinct: either Australia or New Zealand.'
+        allowedValues: ['Australia', 'New Zealand']
+        optional: false
+      ste_reg:
+        label: 'State, Territory or Region'
+        type: String
+        desc: 'State, territory or region in which the precinct is situated.'
+        optional: false
+      loc_auth:
+        label: 'Local Government Authority'
+        type: String
+        desc: 'Local government authority in which this precinct predominantly or completely resides.'
+        optional: false
+      suburb:
+        label: 'Suburb'
+        type: String
+        desc: 'Suburb in which this precinct predominantly or completely resides.'
+      post_code:
+        label: 'Post Code'
+        type: Number
+        desc: 'Post code in which this precinct predominantly or completely resides.'
+      sa1_code:
+        label: 'SA1 Code'
+        type: Number
+        desc: 'SA1 in which this precinct predominantly or completely resides.'
+      lat:
+        label: 'Latitude'
+        type: Number
+        decimal: true
+        units: Units.deg
+        desc: 'The latitude coordinate for this precinct'
+      lng:
+        label: 'Longitude'
+        type: Number
+        decimal: true
+        units: Units.deg
+        desc: 'The longitude coordinate for this precinct'
+      cam_elev:
+        label: 'Camera Elevation'
+        type: Number
+        decimal: true
+        units: Units.m
+        desc: 'The starting elevation of the camera when viewing the project.'
+  space:
+    label: 'Space'
+    items:
+      geom_2d:
+        label: 'Geometry'
+        type: String
+        desc: '2D geometry of the precinct envelope.'
+      area:
+        label: 'Precinct Area'
+        type: Number
+        decimal: true
+        desc: 'Total land area of the precinct.'
+        units: Units.m2
+  environment:
+    label: 'Environment'
+    items:
+      climate_zn:
+        label: 'Climate Zone'
+        type: Number
+        decimal: true
+        desc: 'BOM climate zone number to determine available typologies.'
+  operating_carbon:
+    label: 'Operating Carbon'
+    items:
+      elec:
+        label: 'Carbon per kWh - Electricity'
+        type: Number
+        decimal: true
+        units: Units.co2kWh
+        defaultValue: 0.92
+      gas:
+        label: 'Carbon per kWh - Gas'
+        type: Number
+        decimal: true
+        units: Units.co2kWh
+        defaultValue: 0.229
+  renewable_energy:
+    label: 'Renewable Energy'
+    items:
+      pv_output:
+        desc: 'Output of PV per kW'
+        units: Units.kWhday
+        type: Number
+        decimal: true
+        defaultValue: 4.4
+  utilities:
+    label: 'Utilities'
+    items:
+      price_supply_elec:
+        label: 'Electricity Supply Charge'
+        type: Number
+        decimal: true
+        units: Units.$day
+        defaultValue: 1.038
+      price_usage_elec:
+        label: 'Electricity Usage Price per kWh'
+        type: Number
+        decimal: true
+        units: Units.$kWh
+        defaultValue: 0.27
+      price_supply_gas:
+        label: 'Gas Supply Charge'
+        type: Number
+        decimal: true
+        units: Units.$day
+        defaultValue: 0.667
+      price_usage_gas:
+        label: 'Gas Usage Price'
+        type: Number
+        decimal: true
+        units: '$/MJ'
+        defaultValue: 0.024
+      price_supply_water:
+        label: 'Water Supply Charge'
+        type: Number
+        decimal: true
+        units: Units.$day
+        defaultValue: 0.298
+      price_usage_water:
+        label: 'Water Usage Price'
+        type: Number
+        decimal: true
+        units: Units.$kL
+        defaultValue: 0.25
+  external_water:
+    label: 'External Water'
+    items:
+      demand_lawn:
+        label: 'Lawn Water Demand'
+        type: Number
+        decimal: true
+        units: Units.kLm2year
+        defaultValue: 1.0225
+      demand_ap:
+        label: 'Annual Plants Water Demand'
+        type: Number
+        decimal: true
+        units: Units.kLm2year
+        defaultValue: 1.1775
+      demand_hp:
+        label: 'Hardy Plants Water Demand'
+        type: Number
+        decimal: true
+        units: Units.kLm2year
+        defaultValue: 0.7275
+  stormwater:
+    label: 'Stormwater'
+    items:
+      runoff_roof:
+        label: 'Roofed Area Run-Off Coefficient'
+        type: Number
+        decimal: true
+        defaultValue: 1
+      runoff_impervious:
+        label: 'Impervious Area Run-Off Coefficient'
+        type: Number
+        decimal: true
+        defaultValue: 0.9
+      runoff_pervious:
+        label: 'Pervious Area Run-Off Coefficient'
+        type: Number
+        decimal: true
+        defaultValue: 0.16
+      rainfall_intensity:
+        label: 'Rainfall Intensity'
+        type: Number
+        decimal: true
+        units: Units.mm
+        defaultValue: 145
+  financial:
+    label: 'Financial'
+    items:
+      land:
+        label: 'Land'
+        items:
+          price_land:
+            label: 'Land Value'
+            type: Number
+            desc: 'Land Value per Square Metre'
+            units: Units.$m2
+            defaultValue: 500
+      landscaping:
+        label: 'Landscaping'
+        items:
+          price_lawn:
+            label: 'Cost per Sqm - Lawn'
+            type: Number
+            decimal: true
+            units: Units.$m2
+            defaultValue: 40
+          price_annu:
+            label: 'Cost per Sqm - Annual Plants'
+            type: Number
+            decimal: true
+            units: Units.$m2
+            defaultValue: 40
+          price_hardy:
+            label: 'Cost per Sqm - Hardy Plants'
+            type: Number
+            decimal: true
+            units: Units.$m2
+            defaultValue: 50
+          price_imper:
+            label: 'Cost per Sqm - Impermeable'
+            type: Number
+            decimal: true
+            units: Units.$m2
+            defaultValue: 75
+      pathways:
+        label: 'Pathways'
+        items:
+          roads:
+            label: 'Roads'
+            items:
+              price_full_asphalt:
+                label: 'Cost per Sqm - Full Depth Asphalt'
+                type: Number
+                units: Units.$m2
+                defaultValue: 129
+              price_asphalt_cement:
+                label: 'Cost per Sqm - Asphalt Over Cement'
+                type: Number
+                units: Units.$m2
+                defaultValue: 123
+              price_granular_spray:
+                label: 'Cost per Sqm - Granular with Spray Seal'
+                type: Number
+                units: Units.$m2
+                defaultValue: 83
+              price_granular_asphalt:
+                label: 'Cost per Sqm - Granular with Asphalt'
+                type: Number
+                units: Units.$m2
+                defaultValue: 85
+              price_concrete_plain:
+                label: 'Cost per Sqm - Plain Concrete'
+                type: Number
+                units: Units.$m2
+                defaultValue: 96
+              price_concrete_reinforced:
+                label: 'Cost per Sqm - Reinforced Concrete'
+                type: Number
+                units: Units.$m2
+                defaultValue: 116
+          footpaths:
+            label: 'Footpaths'
+            items:
+              price_concrete:
+                label: 'Cost per Sqm - Concrete'
+                type: Number
+                units: Units.$m2
+                defaultValue: 42
+              price_block_paved:
+                label: 'Cost per Sqm - Block Paved'
+                type: Number
+                units: Units.$m2
+                defaultValue: 64
+          bicycle_paths:
+            label: 'Bicycle Paths'
+            items:
+              price_asphalt:
+                label: 'Cost per Sqm - Asphalt'
+                type: Number
+                units: Units.$m2
+                defaultValue: 41
+              price_concrete:
+                label: 'Cost per Sqm - Concrete'
+                type: Number
+                units: Units.$m2
+                defaultValue: 52
+          all:
+            label: 'All'
+            items:
+              price_verge:
+                label: 'Cost per Sqm - Verge'
+                type: Number
+                units: Units.$m2
+                defaultValue: 20
+  embodied_carbon:
+    label: 'Embodied Carbon'
+    items:
+      landscaping:
+        label: 'Landscaping'
+        items:
+          greenspace:
+            label: 'Greenspace'
+            type: Number
+            decimal: true
+            units: Units.kgco2m2
+            defaultValue: -20
+          impermeable:
+            label: 'Impermeable'
+            type: Number
+            decimal: true
+            units: Units.kgco2m2
+            defaultValue: 2.2586
+      pathways:
+        label: 'Pathways'
+        items:
+          full_asphalt:
+            label: 'Full Depth Asphalt'
+            type: Number
+            decimal: true
+            units: Units.kgco2m2
+            defaultValue: 36.04
+          deep_asphalt:
+            label: 'Deep Strength Asphalt'
+            type: Number
+            decimal: true
+            units: Units.kgco2m2
+            defaultValue: 33.8
+          granular_spray:
+            label: 'Granular with Spray Seal'
+            type: Number
+            decimal: true
+            units: Units.kgco2m2
+            defaultValue: 11.35
+          granular_asphalt:
+            label: 'Granular with Asphalt'
+            type: Number
+            decimal: true
+            units: Units.kgco2m2
+            defaultValue: 12.07
+          concrete_plain:
+            label: 'Plain Concrete'
+            type: Number
+            decimal: true
+            units: Units.kgco2m2
+            defaultValue: 51.33
+          concrete_reinforced:
+            label: 'Reinforced Concrete'
+            type: Number
+            decimal: true
+            units: Units.kgco2m2
+            defaultValue: 53.51
+          footpaths:
+            label: 'Footpaths'
+            items:
+              concrete:
+                label: 'Concrete'
+                type: Number
+                decimal: true
+                units: Units.kgco2m2
+                defaultValue: 26.38
+              block_paved:
+                label: 'Block Paved'
+                type: Number
+                decimal: true
+                units: Units.kgco2m2
+                defaultValue: 7.48
+          bicycle_paths:
+            label: 'Bicycle Paths'
+            items:
+              asphalt:
+                label: 'Asphalt'
+                type: Number
+                decimal: true
+                units: Units.kgco2m2
+                defaultValue: 4.85
+              concrete:
+                label: 'Concrete'
+                type: Number
+                decimal: true
+                units: Units.kgco2m2
+                defaultValue: 45.12
+          all:
+            label: 'All'
+            items:
+              verge:
+                label: 'Verge'
+                type: Number
+                decimal: true
+                units: Units.kgco2m2
+                defaultValue: -20
+  energy:
+    label: 'Energy'
+    items:
+      fitout:
+        label: 'Fitout'
+        items:
+          en_elec_oven:
+            label: 'Energy - Electric Oven and Cooktop'
+            type: Number
+            units: Units.MJ
+            defaultValue: 1956
+          en_gas_oven:
+            label: 'Energy - Gas Oven and Cooktop'
+            type: Number
+            units: Units.MJ
+            defaultValue: 3366
+          en_basic_avg_app:
+            label: 'Energy - Basic Avg Perfomance Appliances'
+            type: Number
+            units: Units.MJ
+            defaultValue: 9749
+          en_basic_hp_app:
+            label: 'Energy - Basic High Performance Appliances'
+            type: Number
+            units: Units.MJ
+            defaultValue: 6998
+          en_aff_avg_app:
+            label: 'Energy - Affluenza Avg Performance Appliances'
+            type: Number
+            units: Units.MJ
+            defaultValue: 12442
+          en_aff_hp_app:
+            label: 'Energy - Affluenza High Perfomance Appliances'
+            type: Number
+            units: Units.MJ
+            defaultValue: 10951
+# TODO(aramk) Use these for src_cook.
+#  energy_demand:
+#    label: 'Energy Demand'
+#    items:
+#      en_cook_elec:
+#        label: 'Cooktop and Oven - Electricity Demand'
+#        desc: 'Energy required for cooking in a typology using electricity.'
+#        type: Number
+#        decimal: true
+#        units: Units.MJyear
+#        defaultValue: 1956
+#      en_cook_gas:
+#        label: 'Cooktop and Oven - Gas Demand'
+#        desc: 'Energy required for cooking in a typology using gas.'
+#        type: Number
+#        decimal: true
+#        units: Units.MJyear
+#        defaultValue: 3366
+
+ProjectParametersSchema = createCategoriesSchema
+  categories: projectCategories
+
+ProjectSchema = new SimpleSchema
+  name:
+    label: 'Name'
+    type: String
+    index: true
+    unique: true
+  desc: descSchema
+  creator: creatorSchema
+  parameters:
+    label: 'Parameters'
+    type: ProjectParametersSchema
+    defaultValue: {}
+
+@Projects = new Meteor.Collection 'projects', schema: ProjectSchema
+Projects.attachSchema(ProjectSchema)
+Projects.allow(Collections.allowAll())
+
+Projects.setCurrentId = (id) -> Session.set('projectId', id)
+Projects.getCurrent = ->
+  id = Projects.getCurrentId()
+  Projects.findOne(id)
+#  Session.get('project')
+Projects.getCurrentId = -> Session.get('projectId')
+
+Projects.getLocationAddress = (id) ->
+  project = Projects.findOne(id)
+  location = project.parameters.location
+  components = [location.suburb, location.loc_auth, location.ste_reg, location.country]
+  (_.filter components, (c) -> c?).join(', ')
+
+Projects.getLocationCoords = (id) ->
+  project = if id then Projects.findOne(id) else Projects.getCurrent()
+  location = project.parameters.location
+  {latitude: location.lat, longitude: location.lng, elevation: location.cam_elev}
+
+Projects.setLocationCoords = (id, location) ->
+  id ?= Projects.getCurrentId()
+  Projects.update id, $set:
+    'parameters.location.lat': location.latitude
+    'parameters.location.lng': location.longitude
+
+Projects.getDefaultParameterValues = _.memoize ->
+  values = {}
+  SchemaUtils.forEachFieldSchema ProjectParametersSchema, (fieldSchema, paramId) ->
+    # Default value is stored in the "classes" object to avoid being used by SimpleSchema.
+    defaultValue = fieldSchema.classes?.ALL?.defaultValue
+    if defaultValue?
+      values[paramId] = defaultValue
+  Typologies.unflattenParameters(values, false)
+
+Projects.mergeDefaults = (model) ->
+  defaults = Projects.getDefaultParameterValues()
+  mergeDefaultParameters(model, defaults)
+
+####################################################################################################
+# TYPOLOGY SCHEMA DECLARATION
 ####################################################################################################
 
 TypologyClasses =
@@ -53,34 +683,6 @@ ApplianceTypes =
   'Affluenza - High Performance': 'en_aff_hp_app'
 WaterDemandSources = ['Potable', 'Bore', 'Rainwater Tank', 'On-Site Treated', 'Greywater']
 
-# ^ and _ are converted to superscript and subscript in forms and reports.
-Units =
-  $m2: '$/m^2'
-  $: '$'
-  $day: '$/day'
-  $kWh: '$/kWh'
-  $MJ: '$/MJ'
-  $kL: '$/kL'
-  co2kWh: 'CO2-e/kWh'
-  deg: 'degrees'
-  GJyear: 'GJ/year'
-  ha: 'ha'
-  kgco2: 'kg CO_2-e'
-  kgco2m2: 'kg CO_2-e/m^2'
-  kWhyear: 'kWh/year'
-  kWh: 'kWh'
-  kWhday: 'kWh/day'
-  kL: 'kL'
-  kLm2year: 'kL/m²/year'
-  Lsec: 'L/second'
-  Lyear: 'L/year'
-  m: 'm'
-  m2: 'm^2'
-  mm: 'mm'
-  MLyear: 'ML/year'
-  MJ: 'MJ'
-  MJyear: 'MJ/year'
-
 # Common field schemas shared across collection schemas.
 
 classSchema =
@@ -99,17 +701,7 @@ projectSchema =
   label: 'Project'
   type: String
   index: true
-  collectionType: Projects
-
-descSchema =
-  label: 'Description'
-  type: String
-  optional: true
-
-creatorSchema =
-  label: 'Creator'
-  type: String
-  optional: true
+  collectionType: 'Projects'
 
 calcArea = (id) ->
   entity = AtlasManager.getEntity(id)
@@ -135,9 +727,6 @@ calcEnergyC02 = (sourceParamId, energyParamId) ->
     en * @KWH_TO_MJ(@param('operating_carbon.elec'))
   else if src == 'Gas'
     en * @KWH_TO_MJ(@param('operating_carbon.gas'))
-
-extendSchema = (orig, changes) ->
-  _.extend({}, orig, changes)
 
 typologyCategories =
   general:
@@ -729,88 +1318,6 @@ typologyCategories =
 #      prk_capita:
 
 ####################################################################################################
-# AUXILIARY - MUST BE DEFINED BEFORE USE
-####################################################################################################
-
-# TODO(aramk) Can't use Strings or other utilities outside Meteor.startup since it's not loaded yet
-toTitleCase = (str) ->
-  parts = str.split(/\s+/)
-  title = ''
-  for part, i in parts
-    if part != ''
-      title += part.slice(0, 1).toUpperCase() + part.slice(1, part.length)
-      if i != parts.length - 1 and parts[i + 1] != ''
-        title += ' '
-  title
-
-autoLabel = (field, id) ->
-  label = field.label
-  if label?
-    label
-  else
-    label = id.replace('_', '')
-    toTitleCase(label)
-
-createCategorySchemaObj = (cat, catId, args) ->
-  catSchemaFields = {}
-  # For each field in each category
-  for itemId, item of cat.items
-    if item.items?
-      itemFields = createCategorySchemaObj(item, itemId, args)
-    else
-      # TODO(aramk) Set the default to 0 for numbers.
-      itemFields = _.extend({optional: true}, args.itemDefaults, item)
-      autoLabel(itemFields, itemId)
-      # If defaultValue is used, put it into "classes" to prevent SimpleSchema from storing this
-      # value in the doc. We want to inherit this value at runtime for all classes, but not
-      # persist it in multiple documents in case we want to change it later in the schema.
-      # TODO(aramk) Check if this is intended behaviour.
-      defaultValue = itemFields.defaultValue
-      if defaultValue?
-        classes = itemFields.classes ?= {}
-        allClassOptions = classes.ALL ?= {}
-        if allClassOptions.defaultValue?
-          throw new Error('Default value specified on field and in classOptions - only use one.')
-        allClassOptions.defaultValue = defaultValue
-        delete itemFields.defaultValue
-    catSchemaFields[itemId] = itemFields
-  catSchema = new SimpleSchema(catSchemaFields)
-  catSchemaArgs = _.extend({
-  # TODO(aramk) This should be optional: false, but an update to SimpleSchema is causing edits to
-  # these fields to fail during validation, since cleaning doesn't run for modifier objects.
-    optional: true
-    defaultValue: {}
-  }, args.categoryDefaults, cat, {type: catSchema})
-  autoLabel(catSchemaArgs, catId)
-  delete catSchemaArgs.items
-  catSchemaArgs
-
-# Constructs a SimpleSchema which contains all categories and each category is it's own
-# SimpleSchema.
-createCategoriesSchema = (args) ->
-  args ?= {}
-  cats = args.categories
-  unless cats
-    throw new Error('No categories provided.')
-  # For each category in the schema.
-  catsFields = {}
-  for catId, cat of cats
-    catSchemaArgs = createCategorySchemaObj(cat, catId, args)
-    catsFields[catId] = catSchemaArgs
-  new SimpleSchema(catsFields)
-
-@ParamUtils =
-  _prefix: 'parameters'
-  _rePrefix: /^parameters\./
-  addPrefix: (id) ->
-    if @_rePrefix.test(id)
-      id
-    else
-      @_prefix + '.' + id
-  removePrefix: (id) -> id.replace(@_rePrefix, '')
-  hasPrefix: (id) -> @._rePrefix.test(id)
-
-####################################################################################################
 # TYPOLOGY SCHEMA DEFINITION
 ####################################################################################################
 
@@ -856,7 +1363,17 @@ Typologies.getParameter = (obj, paramId) ->
   paramId = ParamUtils.removePrefix(paramId)
   # Allow obj to contain "parameters" map or be the map itself.
   target = obj.parameters ? obj ?= {}
-  segments = paramId.split('.')
+  Typologies.getModifierProperty(target, paramId)
+
+Typologies.setParameter = (model, paramId, value) ->
+  paramId = ParamUtils.removePrefix(paramId)
+  target = model.parameters ?= {}
+  Typologies.setModifierProperty(target, paramId, value)
+
+# TODO(aramk) Move to objects util.
+Typologies.getModifierProperty = (obj, property) ->
+  target = obj
+  segments = property.split('.')
   unless segments.length > 0
     return undefined
   for key in segments
@@ -865,15 +1382,14 @@ Typologies.getParameter = (obj, paramId) ->
       break
   target
 
-Typologies.setParameter = (model, paramId, value) ->
-  paramId = ParamUtils.removePrefix(paramId)
-  target = model.parameters ?= {}
-  segments = paramId.split('.')
+# TODO(aramk) Move to objects util.
+Typologies.setModifierProperty = (obj, property, value) ->
+  segments = property.split('.')
   unless segments.length > 0
     return false
   lastSegment = segments.pop()
   for key in segments
-    target = target[key] ?= {}
+    target = obj[key] ?= {}
   target[lastSegment] = value
   true
 
@@ -966,106 +1482,6 @@ Typologies.findByClass = (typologyClass, projectId) -> Typologies.find(
 )
 
 ####################################################################################################
-# ENTITY SCHEMA DEFINITION
-####################################################################################################
-
-# Entities don't need the class parameter since they reference the typology.
-entityCategories = lodash.cloneDeep(typologyCategories)
-delete entityCategories.general.items.class
-@EntityParametersSchema = createCategoriesSchema
-  categories: entityCategories
-
-EntitySchema = new SimpleSchema
-  name:
-    label: 'Name'
-    type: String
-    index: true
-  desc: descSchema
-  typology:
-    label: 'Typology'
-    type: String
-    collectionType: Typologies
-# Despite having the "entity" field on lots, when a new entity is created it is rendered
-# reactively and without a lot reference it will fail.
-  lot:
-    label: 'Lot'
-    type: String
-    index: true
-    collectionType: Lots
-  parameters:
-    label: 'Parameters'
-    type: EntityParametersSchema
-  # Necessary to allow required fields within.
-    optional: false
-    defaultValue: {}
-  project: projectSchema
-
-@Entities = new Meteor.Collection 'entities'
-Entities.attachSchema(EntitySchema)
-Entities.allow(Collections.allowAll())
-
-Entities.getFlattened = (id) ->
-  entity = Entities.findOne(id)
-  Entities.mergeTypology(entity)
-  entity
-
-Entities.getAllFlattened = (filter) ->
-  entities = Entities.findByProject().fetch()
-  if filter
-    entities = _.filter entities, filter
-  _.map entities, (entity) -> Entities.getFlattened(entity._id)
-
-Entities.mergeTypology = (entity) ->
-  typologyId = entity.typology
-  if typologyId?
-    typology = entity._typology = Typologies.findOne(typologyId)
-    if typology?
-      Typologies.mergeDefaults(typology)
-      entity.parameters ?= {}
-      Setter.defaults(entity.parameters, typology.parameters)
-      Typologies.filterParameters(entity)
-  entity
-
-Entities.getParameter = (model, paramId) ->
-  Typologies.getParameter(model, paramId)
-
-Entities.setParameter = (model, paramId, value) ->
-  Typologies.setParameter(model, paramId, value)
-
-Entities.findByProject = (projectId) -> findByProject(Entities, projectId)
-
-Entities.getClass = (id) ->
-  typology = Typologies.findOne(Entities.findOne(id).typology)
-  Typologies.getParameter(typology, 'general.class')
-
-# Listen for changes to Entities or Typologies and refresh reports.
-_reportRefreshSubscribed = false
-subscribeRefreshReports = ->
-  return if _reportRefreshSubscribed
-  _.each [
-    {collection: Entities, observe: ['added', 'changed', 'removed']}
-    {collection: Typologies, observe: ['changed']}
-  ], (args) ->
-    collection = args.collection
-    shouldRefresh = false
-    refreshReport = ->
-      if shouldRefresh
-        # TODO(aramk) Report refreshes too soon and geo entity is being reconstructed after an
-        # update. This delay is a quick fix, but we should use promises.
-        setTimeout (-> PubSub.publish('report/refresh')), 1000
-    cursor = collection.find()
-    _.each _.unique(args.observe), (methodName) ->
-      observeArgs = {}
-      observeArgs[methodName] = refreshReport
-      cursor.observe(observeArgs)
-    # TODO(aramk) Temporary solution to prevent refreshing due to added callback firing for all
-    # existing docs.
-    shouldRefresh = true
-    _reportRefreshSubscribed = true
-# Refresh only if a report has been rendered before.
-PubSub.subscribe 'report/rendered', subscribeRefreshReports
-
-####################################################################################################
 # LOT SCHEMA DEFINITION
 ####################################################################################################
 
@@ -1103,7 +1519,7 @@ LotSchema = new SimpleSchema
     type: String
     optional: true
     index: true
-    collectionType: Entities
+    collectionType: 'Entities'
     custom: ->
       classParamId = 'parameters.general.class'
       developFieldId = 'parameters.general.develop'
@@ -1198,511 +1614,104 @@ Lots.createEntity = (lotId, typologyId) ->
   df.promise
 
 ####################################################################################################
-# PROJECT SCHEMA DEFINITION
+# ENTITY SCHEMA DEFINITION
 ####################################################################################################
 
-projectCategories =
-  general:
-    label: 'General'
-    items:
-      creator:
-      # TODO(aramk) Integrate this with users.
-        type: String
-        desc: 'Creator of the project or precinct.'
-        optional: false
-  location:
-    label: 'Location'
-    items:
-      country:
-        type: String
-        desc: 'Country of precinct: either Australia or New Zealand.'
-        allowedValues: ['Australia', 'New Zealand']
-        optional: false
-      ste_reg:
-        label: 'State, Territory or Region'
-        type: String
-        desc: 'State, territory or region in which the precinct is situated.'
-        optional: false
-      loc_auth:
-        label: 'Local Government Authority'
-        type: String
-        desc: 'Local government authority in which this precinct predominantly or completely resides.'
-        optional: false
-      suburb:
-        label: 'Suburb'
-        type: String
-        desc: 'Suburb in which this precinct predominantly or completely resides.'
-      post_code:
-        label: 'Post Code'
-        type: Number
-        desc: 'Post code in which this precinct predominantly or completely resides.'
-      sa1_code:
-        label: 'SA1 Code'
-        type: Number
-        desc: 'SA1 in which this precinct predominantly or completely resides.'
-      lat:
-        label: 'Latitude'
-        type: Number
-        decimal: true
-        units: Units.deg
-        desc: 'The latitude coordinate for this precinct'
-      lng:
-        label: 'Longitude'
-        type: Number
-        decimal: true
-        units: Units.deg
-        desc: 'The longitude coordinate for this precinct'
-      cam_elev:
-        label: 'Camera Elevation'
-        type: Number
-        decimal: true
-        units: Units.m
-        desc: 'The starting elevation of the camera when viewing the project.'
-  space:
-    label: 'Space'
-    items:
-      geom_2d:
-        label: 'Geometry'
-        type: String
-        desc: '2D geometry of the precinct envelope.'
-      area:
-        label: 'Precinct Area'
-        type: Number
-        decimal: true
-        desc: 'Total land area of the precinct.'
-        units: Units.m2
-  environment:
-    label: 'Environment'
-    items:
-      climate_zn:
-        label: 'Climate Zone'
-        type: Number
-        decimal: true
-        desc: 'BOM climate zone number to determine available typologies.'
-  operating_carbon:
-    label: 'Operating Carbon'
-    items:
-      elec:
-        label: 'Carbon per kWh - Electricity'
-        type: Number
-        decimal: true
-        units: Units.co2kWh
-        defaultValue: 0.92
-      gas:
-        label: 'Carbon per kWh - Gas'
-        type: Number
-        decimal: true
-        units: Units.co2kWh
-        defaultValue: 0.229
-  renewable_energy:
-    label: 'Renewable Energy'
-    items:
-      pv_output:
-        desc: 'Output of PV per kW'
-        units: Units.kWhday
-        type: Number
-        decimal: true
-        defaultValue: 4.4
-  utilities:
-    label: 'Utilities'
-    items:
-      price_supply_elec:
-        label: 'Electricity Supply Charge'
-        type: Number
-        decimal: true
-        units: Units.$day
-        defaultValue: 1.038
-      price_usage_elec:
-        label: 'Electricity Usage Price per kWh'
-        type: Number
-        decimal: true
-        units: Units.$kWh
-        defaultValue: 0.27
-      price_supply_gas:
-        label: 'Gas Supply Charge'
-        type: Number
-        decimal: true
-        units: Units.$day
-        defaultValue: 0.667
-      price_usage_gas:
-        label: 'Gas Usage Price'
-        type: Number
-        decimal: true
-        units: '$/MJ'
-        defaultValue: 0.024
-      price_supply_water:
-        label: 'Water Supply Charge'
-        type: Number
-        decimal: true
-        units: Units.$day
-        defaultValue: 0.298
-      price_usage_water:
-        label: 'Water Usage Price'
-        type: Number
-        decimal: true
-        units: Units.$kL
-        defaultValue: 0.25
-  external_water:
-    label: 'External Water'
-    items:
-      demand_lawn:
-        label: 'Lawn Water Demand'
-        type: Number
-        decimal: true
-        units: Units.kLm2year
-        defaultValue: 1.0225
-      demand_ap:
-        label: 'Annual Plants Water Demand'
-        type: Number
-        decimal: true
-        units: Units.kLm2year
-        defaultValue: 1.1775
-      demand_hp:
-        label: 'Hardy Plants Water Demand'
-        type: Number
-        decimal: true
-        units: Units.kLm2year
-        defaultValue: 0.7275
-  stormwater:
-    label: 'Stormwater'
-    items:
-      runoff_roof:
-        label: 'Roofed Area Run-Off Coefficient'
-        type: Number
-        decimal: true
-        defaultValue: 1
-      runoff_impervious:
-        label: 'Impervious Area Run-Off Coefficient'
-        type: Number
-        decimal: true
-        defaultValue: 0.9
-      runoff_pervious:
-        label: 'Pervious Area Run-Off Coefficient'
-        type: Number
-        decimal: true
-        defaultValue: 0.16
-      rainfall_intensity:
-        label: 'Rainfall Intensity'
-        type: Number
-        decimal: true
-        units: Units.mm
-        defaultValue: 145
-  financial:
-    label: 'Financial'
-    items:
-      land:
-        label: 'Land'
-        items:
-          price_land:
-            label: 'Land Value'
-            type: Number
-            desc: 'Land Value per Square Metre'
-            units: Units.$m2
-            defaultValue: 500
-      landscaping:
-        label: 'Landscaping'
-        items:
-          price_lawn:
-            label: 'Cost per Sqm - Lawn'
-            type: Number
-            decimal: true
-            units: Units.$m2
-            defaultValue: 40
-          price_annu:
-            label: 'Cost per Sqm - Annual Plants'
-            type: Number
-            decimal: true
-            units: Units.$m2
-            defaultValue: 40
-          price_hardy:
-            label: 'Cost per Sqm - Hardy Plants'
-            type: Number
-            decimal: true
-            units: Units.$m2
-            defaultValue: 50
-          price_imper:
-            label: 'Cost per Sqm - Impermeable'
-            type: Number
-            decimal: true
-            units: Units.$m2
-            defaultValue: 75
-      pathways:
-        label: 'Pathways'
-        items:
-          roads:
-            label: 'Roads'
-            items:
-              price_full_asphalt:
-                label: 'Cost per Sqm - Full Depth Asphalt'
-                type: Number
-                units: Units.$m2
-                defaultValue: 129
-              price_asphalt_cement:
-                label: 'Cost per Sqm - Asphalt Over Cement'
-                type: Number
-                units: Units.$m2
-                defaultValue: 123
-              price_granular_spray:
-                label: 'Cost per Sqm - Granular with Spray Seal'
-                type: Number
-                units: Units.$m2
-                defaultValue: 83
-              price_granular_asphalt:
-                label: 'Cost per Sqm - Granular with Asphalt'
-                type: Number
-                units: Units.$m2
-                defaultValue: 85
-              price_concrete_plain:
-                label: 'Cost per Sqm - Plain Concrete'
-                type: Number
-                units: Units.$m2
-                defaultValue: 96
-              price_concrete_reinforced:
-                label: 'Cost per Sqm - Reinforced Concrete'
-                type: Number
-                units: Units.$m2
-                defaultValue: 116
-          footpaths:
-            label: 'Footpaths'
-            items:
-              price_concrete:
-                label: 'Cost per Sqm - Concrete'
-                type: Number
-                units: Units.$m2
-                defaultValue: 42
-              price_block_paved:
-                label: 'Cost per Sqm - Block Paved'
-                type: Number
-                units: Units.$m2
-                defaultValue: 64
-          bicycle_paths:
-            label: 'Bicycle Paths'
-            items:
-              price_asphalt:
-                label: 'Cost per Sqm - Asphalt'
-                type: Number
-                units: Units.$m2
-                defaultValue: 41
-              price_concrete:
-                label: 'Cost per Sqm - Concrete'
-                type: Number
-                units: Units.$m2
-                defaultValue: 52
-          all:
-            label: 'All'
-            items:
-              price_verge:
-                label: 'Cost per Sqm - Verge'
-                type: Number
-                units: Units.$m2
-                defaultValue: 20
-  embodied_carbon:
-    label: 'Embodied Carbon'
-    items:
-      landscaping:
-        label: 'Landscaping'
-        items:
-          greenspace:
-            label: 'Greenspace'
-            type: Number
-            decimal: true
-            units: Units.kgco2m2
-            defaultValue: -20
-          impermeable:
-            label: 'Impermeable'
-            type: Number
-            decimal: true
-            units: Units.kgco2m2
-            defaultValue: 2.2586
-      pathways:
-        label: 'Pathways'
-        items:
-          full_asphalt:
-            label: 'Full Depth Asphalt'
-            type: Number
-            decimal: true
-            units: Units.kgco2m2
-            defaultValue: 36.04
-          deep_asphalt:
-            label: 'Deep Strength Asphalt'
-            type: Number
-            decimal: true
-            units: Units.kgco2m2
-            defaultValue: 33.8
-          granular_spray:
-            label: 'Granular with Spray Seal'
-            type: Number
-            decimal: true
-            units: Units.kgco2m2
-            defaultValue: 11.35
-          granular_asphalt:
-            label: 'Granular with Asphalt'
-            type: Number
-            decimal: true
-            units: Units.kgco2m2
-            defaultValue: 12.07
-          concrete_plain:
-            label: 'Plain Concrete'
-            type: Number
-            decimal: true
-            units: Units.kgco2m2
-            defaultValue: 51.33
-          concrete_reinforced:
-            label: 'Reinforced Concrete'
-            type: Number
-            decimal: true
-            units: Units.kgco2m2
-            defaultValue: 53.51
-          footpaths:
-            label: 'Footpaths'
-            items:
-              concrete:
-                label: 'Concrete'
-                type: Number
-                decimal: true
-                units: Units.kgco2m2
-                defaultValue: 26.38
-              block_paved:
-                label: 'Block Paved'
-                type: Number
-                decimal: true
-                units: Units.kgco2m2
-                defaultValue: 7.48
-          bicycle_paths:
-            label: 'Bicycle Paths'
-            items:
-              asphalt:
-                label: 'Asphalt'
-                type: Number
-                decimal: true
-                units: Units.kgco2m2
-                defaultValue: 4.85
-              concrete:
-                label: 'Concrete'
-                type: Number
-                decimal: true
-                units: Units.kgco2m2
-                defaultValue: 45.12
-          all:
-            label: 'All'
-            items:
-              verge:
-                label: 'Verge'
-                type: Number
-                decimal: true
-                units: Units.kgco2m2
-                defaultValue: -20
-  energy:
-    label: 'Energy'
-    items:
-      fitout:
-        label: 'Fitout'
-        items:
-          en_elec_oven:
-            label: 'Energy - Electric Oven and Cooktop'
-            type: Number
-            units: Units.MJ
-            defaultValue: 1956
-          en_gas_oven:
-            label: 'Energy - Gas Oven and Cooktop'
-            type: Number
-            units: Units.MJ
-            defaultValue: 3366
-          en_basic_avg_app:
-            label: 'Energy - Basic Avg Perfomance Appliances'
-            type: Number
-            units: Units.MJ
-            defaultValue: 9749
-          en_basic_hp_app:
-            label: 'Energy - Basic High Performance Appliances'
-            type: Number
-            units: Units.MJ
-            defaultValue: 6998
-          en_aff_avg_app:
-            label: 'Energy - Affluenza Avg Performance Appliances'
-            type: Number
-            units: Units.MJ
-            defaultValue: 12442
-          en_aff_hp_app:
-            label: 'Energy - Affluenza High Perfomance Appliances'
-            type: Number
-            units: Units.MJ
-            defaultValue: 10951
-# TODO(aramk) Use these for src_cook.
-#  energy_demand:
-#    label: 'Energy Demand'
-#    items:
-#      en_cook_elec:
-#        label: 'Cooktop and Oven - Electricity Demand'
-#        desc: 'Energy required for cooking in a typology using electricity.'
-#        type: Number
-#        decimal: true
-#        units: Units.MJyear
-#        defaultValue: 1956
-#      en_cook_gas:
-#        label: 'Cooktop and Oven - Gas Demand'
-#        desc: 'Energy required for cooking in a typology using gas.'
-#        type: Number
-#        decimal: true
-#        units: Units.MJyear
-#        defaultValue: 3366
+# Entities don't need the class parameter since they reference the typology.
+entityCategories = lodash.cloneDeep(typologyCategories)
+delete entityCategories.general.items.class
+@EntityParametersSchema = createCategoriesSchema
+  categories: entityCategories
 
-ProjectParametersSchema = createCategoriesSchema
-  categories: projectCategories
-
-ProjectSchema = new SimpleSchema
+EntitySchema = new SimpleSchema
   name:
     label: 'Name'
     type: String
     index: true
-    unique: true
   desc: descSchema
-  creator: creatorSchema
+  typology:
+    label: 'Typology'
+    type: String
+    collectionType: 'Typologies'
+# Despite having the "entity" field on lots, when a new entity is created it is rendered
+# reactively and without a lot reference it will fail.
+  lot:
+    label: 'Lot'
+    type: String
+    index: true
+    collectionType: 'Lots'
   parameters:
     label: 'Parameters'
-    type: ProjectParametersSchema
+    type: EntityParametersSchema
+  # Necessary to allow required fields within.
+    optional: false
     defaultValue: {}
+  project: projectSchema
 
-@Projects = new Meteor.Collection 'project', schema: ProjectSchema
-Projects.attachSchema(ProjectSchema)
-Projects.allow(Collections.allowAll())
+@Entities = new Meteor.Collection 'entities'
+Entities.attachSchema(EntitySchema)
+Entities.allow(Collections.allowAll())
 
-Projects.setCurrentId = (id) -> Session.set('projectId', id)
-Projects.getCurrent = ->
-  id = Projects.getCurrentId()
-  Projects.findOne(id)
-#  Session.get('project')
-Projects.getCurrentId = -> Session.get('projectId')
+Entities.getFlattened = (id) ->
+  entity = Entities.findOne(id)
+  Entities.mergeTypology(entity)
+  entity
 
-Projects.getLocationAddress = (id) ->
-  project = Projects.findOne(id)
-  location = project.parameters.location
-  components = [location.suburb, location.loc_auth, location.ste_reg, location.country]
-  (_.filter components, (c) -> c?).join(', ')
+Entities.getAllFlattened = (filter) ->
+  entities = Entities.findByProject().fetch()
+  if filter
+    entities = _.filter entities, filter
+  _.map entities, (entity) -> Entities.getFlattened(entity._id)
 
-Projects.getLocationCoords = (id) ->
-  project = if id then Projects.findOne(id) else Projects.getCurrent()
-  location = project.parameters.location
-  {latitude: location.lat, longitude: location.lng, elevation: location.cam_elev}
+Entities.mergeTypology = (entity) ->
+  typologyId = entity.typology
+  if typologyId?
+    typology = entity._typology = Typologies.findOne(typologyId)
+    if typology?
+      Typologies.mergeDefaults(typology)
+      entity.parameters ?= {}
+      Setter.defaults(entity.parameters, typology.parameters)
+      Typologies.filterParameters(entity)
+  entity
 
-Projects.setLocationCoords = (id, location) ->
-  id ?= Projects.getCurrentId()
-  Projects.update id, $set:
-    'parameters.location.lat': location.latitude
-    'parameters.location.lng': location.longitude
+Entities.getParameter = (model, paramId) ->
+  Typologies.getParameter(model, paramId)
 
-Projects.getDefaultParameterValues = _.memoize ->
-  values = {}
-  SchemaUtils.forEachFieldSchema ProjectParametersSchema, (fieldSchema, paramId) ->
-    # Default value is stored in the "classes" object to avoid being used by SimpleSchema.
-    defaultValue = fieldSchema.classes?.ALL?.defaultValue
-    if defaultValue?
-      values[paramId] = defaultValue
-  Typologies.unflattenParameters(values, false)
+Entities.setParameter = (model, paramId, value) ->
+  Typologies.setParameter(model, paramId, value)
 
-Projects.mergeDefaults = (model) ->
-  defaults = Projects.getDefaultParameterValues()
-  mergeDefaultParameters(model, defaults)
+Entities.findByProject = (projectId) -> findByProject(Entities, projectId)
+
+Entities.getClass = (id) ->
+  typology = Typologies.findOne(Entities.findOne(id).typology)
+  Typologies.getParameter(typology, 'general.class')
+
+# Listen for changes to Entities or Typologies and refresh reports.
+_reportRefreshSubscribed = false
+subscribeRefreshReports = ->
+  return if _reportRefreshSubscribed
+  _.each [
+    {collection: Entities, observe: ['added', 'changed', 'removed']}
+    {collection: Typologies, observe: ['changed']}
+  ], (args) ->
+    collection = args.collection
+    shouldRefresh = false
+    refreshReport = ->
+      if shouldRefresh
+        # TODO(aramk) Report refreshes too soon and geo entity is being reconstructed after an
+        # update. This delay is a quick fix, but we should use promises.
+        setTimeout (-> PubSub.publish('report/refresh')), 1000
+    cursor = collection.find()
+    _.each _.unique(args.observe), (methodName) ->
+      observeArgs = {}
+      observeArgs[methodName] = refreshReport
+      cursor.observe(observeArgs)
+    # TODO(aramk) Temporary solution to prevent refreshing due to added callback firing for all
+    # existing docs.
+    shouldRefresh = true
+    _reportRefreshSubscribed = true
+# Refresh only if a report has been rendered before.
+PubSub.subscribe 'report/rendered', subscribeRefreshReports
 
 ####################################################################################################
 # ASSOCIATION MAINTENANCE
