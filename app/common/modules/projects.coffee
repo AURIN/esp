@@ -50,7 +50,10 @@ incrementName = (name) ->
         oldModelId = model._id
         delete model._id
         console.log('model', model)
-        collection.insert model, (err, result) ->
+        # TODO(aramk) Disabling validation is dangerous - only done here to avoid validation
+        # errors which don't have messages at the moment. Improve collection2 to provide the
+        # message returned from the validate method.
+        collection.insert model, {validate: false}, (err, result) ->
           console.log('model insert', err, result)
           if err
             createDf.reject(err)
@@ -74,7 +77,7 @@ incrementName = (name) ->
               if Object.keys(modifier.$set).length > 0
                 refDf = Q.defer()
                 refDfs.push(refDf.promise)
-                collection.update newId, modifier, (err, result) ->
+                collection.update newId, modifier, {validate: false}, (err, result) ->
                   if err
                     refDf.reject(err)
                   else

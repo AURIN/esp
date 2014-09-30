@@ -1529,7 +1529,7 @@ LotSchema = new SimpleSchema
         # TODO(aramk) This isn't guaranteed to work if typology field is not set at same time as
         # entity. Look up the actual value using an ID.
         return 'Class, entity and develop fields must be set together for validation to work, ' +
-          'unless entity is being removed.'
+            'unless entity is being removed.'
       if typologyClassField.operator == '$unset' && @operator != '$unset'
         return 'Class must be present if entity is present.'
       entityId = @value
@@ -1540,7 +1540,7 @@ LotSchema = new SimpleSchema
       typologyClass = typologyClassField.value
       if typologyClassField.operator != '$unset' && @operator != '$unset' && typologyClass != entityClass
         return 'Entity must have the same class as the Lot. Entity has ' + entityClass +
-          ', Lot has ' + typologyClass
+            ', Lot has ' + typologyClass
       if developField.operator != '$unset' && @operator != '$unset' && !developField.value
         return 'Lot which is not for development cannot have Entity assigned.'
   parameters:
@@ -1723,21 +1723,16 @@ Entities.find().observe
     lot = Lots.findByEntity(entity._id)
     Lots.update(lot._id, {$unset: {entity: null}}) if lot?
 
-# Remove the entity when the lot is removed.
 Lots.find().observe
+# TODO(aramk) This logic is still in the lotForm. Remove it from there first.
+#  changed: (oldLot, newLot) ->
+#    # Remove entity if it changes on the lot.
+#    if oldLot.entity != newLot.entity
+#      Entities.remove(oldLot.entity)
   removed: (lot) ->
+    # Remove the entity when the lot is removed.
     entityId = lot.entity
     Entities.remove(entityId) if lot.entity?
-# TODO(aramk) Remove - just for testing. Observe to see if it changes after updating class
-#  changed: (_new, _old) ->
-#    console.log('new', _new)
-#    console.log('old', _old)
-
-# TODO(aramk) Remove - just for testing.
-#lotUpdate = Lots.update
-#Lots.update = ->
-#  console.log('update', @, arguments)
-#  lotUpdate.apply(@, arguments)
 
 # Remove entities when the typology is removed.
 Typologies.find().observe
