@@ -173,7 +173,11 @@ TemplateClass.onAtlasLoad = (template, atlas) ->
     removed: (lot) ->
       unrenderLot(lot._id)
   # Render existing Lots.
-  _.each lots.fetch(), (lot) -> renderLot(lot._id)
+  lotRenderDfs = []
+  _.each lots.fetch(), (lot) -> lotRenderDfs.push(renderLot(lot._id))
+  # If lots exist, zoom into them.
+  if lots.count() != 0
+    Q.all(lotRenderDfs).then -> AtlasManager.zoomToProjectEntities()
 
   # Rendering Entities.
   renderEntity = (id) -> EntityUtils.render(id)
@@ -192,10 +196,6 @@ TemplateClass.onAtlasLoad = (template, atlas) ->
       unrenderEntity(entity._id)
   # Render existing Entities.
   _.each entities.fetch(), (entity) -> renderEntity(entity._id)
-
-  # If entities exist, zoom into them.
-  if entities.length == 0
-    AtlasManager.zoomToProjectEntities()
 
   # Re-render when display mode changes.
   reactiveToDisplayMode = (collection, sessionVarName, getDisplayMode) ->

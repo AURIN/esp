@@ -33,10 +33,10 @@ init()
   zoomToProjectEntities: ->
     cameraManager = atlas._managers.camera
     camera = cameraManager.getCurrentCamera()
-    require ['atlas/model/Collection'], (Collection) ->
+    require ['atlas/model/Collection'], (Collection) =>
       someGeoEntity = null
       geoEntityIds = []
-      lots = Lots.findByProject()
+      lots = Lots.findByProject().fetch()
       _.each lots, (lot) =>
         id = lot._id
         geoEntity = @getEntity(id)
@@ -52,6 +52,10 @@ init()
         camera.zoomTo({
           rectangle: boundingBox
         });
+        # Remove temporary collection but retain the entities contained within by removing them
+        # from the collection first.
+        _.each geoEntityIds, (id) ->
+          collection.removeEntity(id)
         collection.remove()
 
   getCurrentCamera: (args) ->
