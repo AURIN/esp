@@ -276,6 +276,19 @@ module.exports = function(grunt) {
     });
   });
 
+  grunt.registerTask('laika', function() {
+    var done = this.async();
+    process.chdir(APP_DIR);
+    var args = '';
+    for (var i = 0; i < arguments.length; i++) {
+      args += ' --' + arguments[i];
+    }
+    var proc = runProcess('laika --timeout 10000 --debug --debug-brk ' + args);
+    proc.on('exit', function() {
+      done();
+    });
+  });
+
   grunt.registerTask('default', ['install']);
 
   //////////////////////////////////////////////////////////////////////////////////////////////////

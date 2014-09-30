@@ -26,5 +26,17 @@ Meteor.startup ->
       _.each Lots.find().fetch(), (model) -> migrateGeom(model, Lots)
       console.log('Migrated', migratedModelCount, 'models')
 
+  Migrations.add
+    version: 2
+    up: ->
+      migratedModelCount = 0
+      # Schema changes.
+      migrateProject = (model) ->
+        Projects.insert(model)
+        migratedModelCount++
+      OldProjects = new Meteor.Collection 'project'
+      _.each OldProjects.find().fetch(), (model) -> migrateProject(model)
+      console.log('Migrated', migratedModelCount, 'models')
+
   console.log('Migrating to latest version...')
   Migrations.migrateTo('latest')

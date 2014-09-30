@@ -7,3 +7,13 @@ Meteor.methods
     Entities.remove(selector)
     Typologies.remove(selector)
     Lots.remove(selector)
+
+  'projects/duplicate': (id) ->
+    response = Async.runSync (done) ->
+      ProjectUtils.duplicate(id).then (idMaps) ->
+        newProjectId = idMaps[Collections.getName(Projects)][id]
+        done(null, newProjectId)
+    err = response.error
+    if err
+      throw new Error('Duplicating project with ID ' + id + ' failed')
+    response.result

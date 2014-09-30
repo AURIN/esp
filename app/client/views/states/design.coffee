@@ -25,7 +25,7 @@ TemplateClass.created = ->
     console.error('No project found', projectId);
     Router.go('projects')
   else
-    Deps.autorun ->
+    @autorun ->
       project = Projects.findOne(projectId)
       Session.set('stateName', project.name)
   templateInstance = @
@@ -60,6 +60,9 @@ TemplateClass.rendered = ->
     $lotsButtons = $(@find('.' + type + ' .extra.menu')).addClass('item')
     $('.crud.menu', $lotsTable).after($lotsButtons)
 
+  # Remove create button for entities.
+  $(@find('.entities .collection-table .create.item')).remove();
+
 onEditFormPanel = (args) ->
   id = args.ids[0]
   collection = args.collection
@@ -78,10 +81,13 @@ TemplateClass.helpers
       key: 'name'
       label: 'Name'
     ]
-    rowsPerPage: 100000
-    showNavigation: 'never'
+#    rowsPerPage: 100000
+#    showNavigation: 'never'
     onCreate: (args) ->
-      collectionName = Collections.getName(args.collection)
+      collection = args.collection
+      if collection == Entities
+        throw new Error('Cannot directly create an entity - assign a Typology to a Lot.')
+      collectionName = Collections.getName(collection)
       formName = collectionToForm[collectionName]
       console.debug 'onCreate', arguments, collectionName, formName
       TemplateClass.setUpFormPanel templateInstance, Template[formName]
@@ -187,8 +193,8 @@ TemplateClass.onAtlasLoad = (template, atlas) ->
   reactiveToDisplayMode = (collection, sessionVarName, getDisplayMode) ->
     firstRun = true
     Deps.autorun (c) ->
-      Session.get(sessionVarName)
       # Register a dependency on display mode changes.
+      Session.get(sessionVarName)
       getDisplayMode ?= -> Session.get('entityDisplayMode')
       if firstRun
         # Don't run the first time, since we already render through the observe() callback.
