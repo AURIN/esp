@@ -158,7 +158,7 @@ TemplateClass.onAtlasLoad = (template, atlas) ->
   entities = Entities.findByProject()
   typologies = Typologies.findByProject()
   # Listen to changes to Lots and (un)render them as needed.
-  lots.observe
+  Collections.observe lots,
     added: (lot) ->
       renderLot(lot._id)
     changed: (newLot, oldLot) ->
@@ -172,6 +172,8 @@ TemplateClass.onAtlasLoad = (template, atlas) ->
         renderEntity(newEntityId)
     removed: (lot) ->
       unrenderLot(lot._id)
+  # Render existing Lots.
+  _.each lots.fetch(), (lot) -> renderLot(lot._id)
 
   # Rendering Entities.
   renderEntity = (id) -> EntityUtils.render(id)
@@ -180,7 +182,7 @@ TemplateClass.onAtlasLoad = (template, atlas) ->
     unrenderEntity(id)
     renderEntity(id)
   # Listen to changes to Entities and Typologies and (un)render them as needed.
-  entities.observe
+  Collections.observe entities,
     added: (entity) ->
       renderEntity(entity._id)
     changed: (newEntity, oldEntity) ->
@@ -188,6 +190,12 @@ TemplateClass.onAtlasLoad = (template, atlas) ->
       refreshEntity(id)
     removed: (entity) ->
       unrenderEntity(entity._id)
+  # Render existing Entities.
+  _.each entities.fetch(), (entity) -> renderEntity(entity._id)
+
+  # If entities exist, zoom into them.
+  if entities.length == 0
+    AtlasManager.zoomToProjectEntities()
 
   # Re-render when display mode changes.
   reactiveToDisplayMode = (collection, sessionVarName, getDisplayMode) ->

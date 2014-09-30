@@ -30,6 +30,30 @@ init()
       console.debug 'Loading project address', address
       atlas.publish 'camera/zoomTo', {address: address}
 
+  zoomToProjectEntities: ->
+    cameraManager = atlas._managers.camera
+    camera = cameraManager.getCurrentCamera()
+    require ['atlas/model/Collection'], (Collection) ->
+      someGeoEntity = null
+      geoEntityIds = []
+      lots = Lots.findByProject()
+      _.each lots, (lot) =>
+        id = lot._id
+        geoEntity = @getEntity(id)
+        if geoEntity?
+          unless someGeoEntity
+            someGeoEntity = geoEntity
+          geoEntityIds.push(id)
+      if someGeoEntity?
+        # TODO(aramk) Use dependency injection to prevent the need for passing manually.
+        deps = someGeoEntity._bindDependencies({})
+        collection = new Collection('collection-project-zoom', {entities: geoEntityIds}, deps)
+        boundingBox = collection.getBoundingBox().scale(1.5)
+        camera.zoomTo({
+          rectangle: boundingBox
+        });
+        collection.remove()
+
   getCurrentCamera: (args) ->
     atlas.publish('camera/current', args)
 

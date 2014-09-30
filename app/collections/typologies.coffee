@@ -1718,12 +1718,12 @@ PubSub.subscribe 'report/rendered', subscribeRefreshReports
 ####################################################################################################
 
 # Remove the entity from the lot when removing the entity.
-Entities.find().observe
+Collections.observe Entities,
   removed: (entity) ->
     lot = Lots.findByEntity(entity._id)
     Lots.update(lot._id, {$unset: {entity: null}}) if lot?
 
-Lots.find().observe
+Collections.observe Lots,
 # TODO(aramk) This logic is still in the lotForm. Remove it from there first.
 #  changed: (oldLot, newLot) ->
 #    # Remove entity if it changes on the lot.
@@ -1734,15 +1734,9 @@ Lots.find().observe
     entityId = lot.entity
     Entities.remove(entityId) if lot.entity?
 
-# Remove entities when the typology is removed.
-Typologies.find().observe
-  removed: (typology) ->
-    entities = Entities.find({typology: typology._id}).fetch()
-    _.each entities, (entity) -> Entities.remove(entity._id)
-
-# Changing the class of the lots with the typology when changing it on the typology.
-Typologies.find().observe
+Collections.observe Typologies,
   changed: (newTypology, oldTypology) ->
+    # Changing the class of the lots with the typology when changing it on the typology.
     classParamId = 'parameters.general.class'
     newClass = Typologies.getParameter(newTypology, classParamId)
     oldClass = Typologies.getParameter(oldTypology, classParamId)
@@ -1756,3 +1750,7 @@ Typologies.find().observe
         # a successful update.
         Lots.update lot._id, modifier, (err, result) ->
           console.debug('Lots update', err, result)
+  removed: (typology) ->
+    # Remove entities when the typology is removed.
+    entities = Entities.find({typology: typology._id}).fetch()
+    _.each entities, (entity) -> Entities.remove(entity._id)
