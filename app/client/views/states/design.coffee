@@ -18,6 +18,9 @@ collectionToForm =
   typologies: 'typologyForm'
   lots: 'lotForm'
 
+# Various handles which should be removed when the design template is removed
+handles = null
+
 TemplateClass.created = ->
   projectId = Projects.getCurrentId()
   project = Projects.getCurrent()
@@ -32,6 +35,10 @@ TemplateClass.created = ->
   displayModesCollection = Collections.createTemporary()
   _.each DisplayModes, (name, id) ->
     displayModesCollection.insert({value: id, label: name})
+  handles = []
+
+TemplateClass.destroyed = ->
+  _.each handles, (handle) -> handle.stop()
 
 TemplateClass.rendered = ->
   template = @
@@ -160,7 +167,7 @@ TemplateClass.onAtlasLoad = (template, atlas) ->
   entities = Entities.findByProject()
   typologies = Typologies.findByProject()
   # Listen to changes to Lots and (un)render them as needed.
-  Collections.observe lots,
+  handles.push Collections.observe lots,
     added: (lot) ->
       renderLot(lot._id)
     changed: (newLot, oldLot) ->
@@ -184,7 +191,7 @@ TemplateClass.onAtlasLoad = (template, atlas) ->
     unrenderEntity(id)
     renderEntity(id)
   # Listen to changes to Entities and Typologies and (un)render them as needed.
-  Collections.observe entities,
+  handles.push Collections.observe entities,
     added: (entity) ->
       renderEntity(entity._id)
     changed: (newEntity, oldEntity) ->
@@ -218,7 +225,7 @@ TemplateClass.onAtlasLoad = (template, atlas) ->
   reactiveToDisplayMode(Entities, 'entityDisplayMode')
 
   # Re-render entities of a typology when fields affecting visualisation are changed.
-  Collections.observe typologies, {
+  handles.push Collections.observe typologies, {
     changed: (newTypology, oldTypology) ->
       hasParamChanged = (paramName) ->
         newValue = Typologies.getParameter(newTypology, paramName)

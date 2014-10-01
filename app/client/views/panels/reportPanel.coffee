@@ -1,6 +1,9 @@
 global = @
-Reports = null
-ReportTemplates = ['residentialReport', 'precinctReport']
+reports = null
+ReportTemplates = [
+  'residentialReport'
+  #'precinctReport'
+]
 
 currentReportId = null
 currentReportTemplate = null
@@ -16,7 +19,7 @@ renderReport = (id) ->
   if currentReportId == id
     scrollTop = $reportPanelContent.scrollTop()
   currentReportId = id
-  report = Reports.findOne(id)
+  report = reports.findOne(id)
   $currentReport = $('<div class="report-container"></div>')
   if scrollTop?
     # Wait until the report has rendered before setting scroll position.
@@ -73,12 +76,12 @@ PubSub.subscribe 'report/refresh', -> refreshReport()
 
 Template.reportPanel.created = ->
   @data ?= {}
-  Reports = Collections.createTemporary()
+  reports = Collections.createTemporary()
   # Add static reports to a temporary collection for populating the dropdown.
   for name in ReportTemplates
     template = Template[name]
-    Reports.insert({templateName: name, name: template.title})
-  @data.reports = Reports
+    reports.insert({templateName: name, name: template.title})
+  @data.reports = reports
   # Listen for changes to the entity selection and refresh reports.
   AtlasManager.getAtlas().then (atlas) ->
     atlas.subscribe 'entity/selection/change', ->
@@ -97,4 +100,4 @@ Template.reportPanel.rendered = ->
   $reportDropdown.on 'change', doRender
 
 Template.reportPanel.helpers
-  reports: -> Reports
+  reports: -> reports
