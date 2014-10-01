@@ -217,6 +217,7 @@ projectCategories =
         decimal: true
         desc: 'Total land area of the precinct.'
         units: Units.m2
+
   environment:
     label: 'Environment'
     items:
@@ -758,13 +759,21 @@ typologyCategories =
     label: 'Space'
     items:
       geom_2d:
-        label: 'Geometry'
+        label: '2D Geometry'
         type: String
         desc: '2D footprint geometry of the typology.'
       geom_3d:
-        label: 'Mesh'
+        label: '3D Geometry'
         type: String
         desc: '3D mesh representing the typology.'
+      geom_2d_filename:
+        label: '2D Geometry Filename'
+        type: String
+        desc: 'The name of the file representing the 2D geometry.'
+      geom_3d_filename:
+        label: '3D Geometry Filename'
+        type: String
+        desc: 'The name of the file representing the 3D geometry.'
       lotsize: extendSchema(areaSchema, {
         label: 'Lot Size'
         calc: ->

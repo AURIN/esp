@@ -21,16 +21,18 @@
             {{> afQuickField name="parameters.general.climate_zn"}}
 
             <div class="subtitle">Space</div>
-            <label>2D Geometry</label>
-            {{> importField name="parameters.space.geom_2d"}}
+            {{> afFieldLabel name="parameters.space.geom_2d"}}
+            {{> importField name="parameters.space.geom_2d" filename="parameters.space.geom_2d_filename"}}
 
-            <label>3D Geometry</label>
-            {{> importField name="parameters.space.geom_3d"}}
+            {{> afFieldLabel name="parameters.space.geom_3d"}}
+            {{> importField name="parameters.space.geom_3d" filename="parameters.space.geom_3d_filename"}}
 
-            <!-- Hide input fields and control their values using importField template. -->
+            <!-- Hide input fields and set values so they are saved on submit. -->
             <div style="display: none">
               {{> afQuickField name="parameters.space.geom_2d"}}
               {{> afQuickField name="parameters.space.geom_3d"}}
+              {{> afQuickField name="parameters.space.geom_2d_filename"}}
+              {{> afQuickField name="parameters.space.geom_3d_filename"}}
             </div>
 
             {{> afQuickField name="parameters.space.gfa"}}
