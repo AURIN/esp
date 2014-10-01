@@ -5,12 +5,11 @@
       {{> loader text="Uploading"}}
       <div class="inner">
         <div class="ui form segment">
-
-          <!-- TODO(aramk) Integrate dropzone. -->
-          <!--<form class="ui form dropzone"-->
-          <!--action="http://localhost/catalyst-server/assets/upload"></form>-->
-
           <form class="ui form">
+            <div class="form-group">Import an ENVISION Shapefile as a ZIP archive to generate
+              Lots.
+            </div>
+
             <!-- TODO(aramk) Using bootstrap for consistency with autoform for now. -->
             <div class="form-group">
               <label class="control-label">File</label>
@@ -28,7 +27,6 @@
               <button type="submit" class="ui button submit green">Import</button>
             </div>
           </form>
-
         </div>
       </div>
     </div>

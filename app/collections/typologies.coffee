@@ -632,10 +632,13 @@ Projects.getLocationCoords = (id) ->
   {latitude: location.lat, longitude: location.lng, elevation: location.cam_elev}
 
 Projects.setLocationCoords = (id, location) ->
+  df = Q.defer()
   id ?= Projects.getCurrentId()
-  Projects.update id, $set:
+  Projects.update id, $set: {
     'parameters.location.lat': location.latitude
     'parameters.location.lng': location.longitude
+  }, (err, result) -> if err then df.reject(err) else df.resolve(result)
+  df.promise
 
 Projects.getDefaultParameterValues = _.memoize ->
   values = {}

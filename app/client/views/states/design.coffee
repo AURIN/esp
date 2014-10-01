@@ -63,6 +63,9 @@ TemplateClass.rendered = ->
   # Remove create button for entities.
   $(@find('.entities .collection-table .create.item')).remove();
 
+  # Add popups to fields
+  @$('.popup').popup()
+
 onEditFormPanel = (args) ->
   id = args.ids[0]
   collection = args.collection
@@ -145,7 +148,6 @@ TemplateClass.setUpFormPanel = (template, formTemplate, doc, settings) ->
 
 TemplateClass.onAtlasLoad = (template, atlas) ->
   projectId = Projects.getCurrentId()
-  AtlasManager.zoomToProject()
 
   ##################################################################################################
   # VISUALISATION MAINTENANCE
@@ -172,12 +174,8 @@ TemplateClass.onAtlasLoad = (template, atlas) ->
         renderEntity(newEntityId)
     removed: (lot) ->
       unrenderLot(lot._id)
-  # Render existing Lots.
-  lotRenderDfs = []
-  _.each lots.fetch(), (lot) -> lotRenderDfs.push(renderLot(lot._id))
-  # If lots exist, zoom into them.
-  if lots.count() != 0
-    Q.all(lotRenderDfs).then -> AtlasManager.zoomToProjectEntities()
+
+  LotUtils.renderAllAndZoom()
 
   # Rendering Entities.
   renderEntity = (id) -> EntityUtils.render(id)

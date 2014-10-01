@@ -44,34 +44,33 @@ Meteor.startup ->
       if files.length == 0
         console.log('Select a file to upload.')
       else
-        # TODO(aramk) handle multiple files?
-        _.each files, (file) ->
-          importDf = Q.defer()
-          importDfs.push(importDf.promise)
-          Files.upload(file).then (fileObj) ->
-            fileId = fileObj._id
-            Meteor.call 'assets/import', fileId, (err, result) ->
+        file = files[0]
+        importDf = Q.defer()
+        importDfs.push(importDf.promise)
+        Files.upload(file).then (fileObj) ->
+          fileId = fileObj._id
+          Meteor.call 'assets/import', fileId, (err, result) ->
+            if err
+              console.error 'Asset import failed', err, fileObj
+              return
+            console.log 'asset', result
+            assetId = result.id
+            loadAssets = {}
+            loadAssets[assetId] = format
+            Meteor.call 'assets/load', loadAssets, (err, result) ->
               if err
-                console.error 'Asset import failed', err, fileObj
+                console.error 'Loading assets failed', loadAssets, err
                 return
-              console.log 'asset', result
-              assetId = result.id
-              loadAssets = {}
-              loadAssets[assetId] = format
-              Meteor.call 'assets/load', loadAssets, (err, result) ->
-                if err
-                  console.error 'Loading assets failed', loadAssets, err
-                  return
-                else
-                  body = result.body
-                  # Use geoBlobId instead of original assetId to ensure IDs in the c3ml match
-                  # those in the parameter response.
-                  LotUtils.fromAsset({
-                    assetId: body.geoBlobId
-                    c3mlId: body.c3mlId
-                    metaDataId: body.metaDataId
-                  }).then (lotIds) ->
-                    importDf.resolve(lotIds)
+              else
+                body = result.body
+                # Use geoBlobId instead of original assetId to ensure IDs in the c3ml match
+                # those in the parameter response.
+                LotUtils.fromAsset({
+                  assetId: body.geoBlobId
+                  c3mlId: body.c3mlId
+                  metaDataId: body.metaDataId
+                }).then (lotIds) ->
+                  importDf.resolve(lotIds)
         Q.all(importDfs).then ->
-          AtlasManager.zoomToProject()
+          LotUtils.renderAllAndZoom()
           onSuccess?()

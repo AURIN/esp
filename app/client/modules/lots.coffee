@@ -23,6 +23,7 @@
     df.promise
 
   _fromAsset: (args) ->
+    df = Q.defer()
     lotDfs = []
     c3mls = args.c3mls
     metaData = args.metaData
@@ -77,7 +78,8 @@
         if assetPosition?
           console.debug 'Setting project location', assetPosition
           Projects.setLocationCoords(projectId,
-            {longitude: assetPosition.x, latitude: assetPosition.y})
+            {longitude: assetPosition.x, latitude: assetPosition.y}).then(df.resolve, df.reject)
+    df.promise
 
   toGeoEntityArgs: (id) ->
     AtlasConverter.getInstance().then (converter) =>
@@ -147,3 +149,16 @@
       entityDf = Lots.createEntity(lot._id, typology._id)
       dfs.push(entityDf)
     Q.all(dfs).then -> console.debug 'Successfully allocated', dfs.length, 'lots'
+
+  renderAll: ->
+    lotRenderDfs = []
+    lots = Lots.findByProject()
+    _.each lots.fetch(), (lot) => lotRenderDfs.push(@render(lot._id))
+    Q.all(lotRenderDfs)
+
+  renderAllAndZoom: ->
+    lots = Lots.findByProject()
+    AtlasManager.zoomToProject()
+    # If lots exist, zoom into them.
+    if lots.count() != 0
+      @renderAll().then -> AtlasManager.zoomToProjectEntities()
