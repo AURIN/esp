@@ -11,8 +11,8 @@
       displayMode = Session.get('entityDisplayMode')
       converter.toGeoEntityArgs
         id: id
-        vertices: space.geom_2d ? typologySpace.geom_2d
-        height: space.height
+        vertices: space?.geom_2d ? typologySpace?.geom_2d
+        height: space?.height
         zIndex: 1
         displayMode: displayMode
         color: '#666'

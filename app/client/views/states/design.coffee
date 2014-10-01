@@ -124,19 +124,25 @@ getEntityTable = (template) -> $(template.find('.entities .collection-table'))
 getTypologyTable = (template) -> $(template.find('.typologies .collection-table'))
 getLotTable = (template) -> $(template.find('.lots .collection-table'))
 
+currentPanel = null
+
 TemplateClass.addPanel = (template, component) ->
+  if currentPanel
+    TemplateClass.removePanel(template, currentPanel)
   console.debug 'addPanel', template, component
   $container = getSidebar(template)
   $panel = $('<div class="panel"></div>')
   $('>.panel', $container).hide();
   $container.append $panel
   UI.insert component, $panel[0]
+  currentPanel = component
 
 TemplateClass.removePanel = (template, component) ->
   console.debug 'Removing panel', @, template, component
   TemplateUtils.getDom(component).remove()
   $container = getSidebar(template)
   $('>.panel:last', $container).show()
+  currentPanel = null
 
 TemplateClass.setUpPanel = (template, panelTemplate, data) ->
   panel = UI.renderWithData panelTemplate, data

@@ -102,10 +102,20 @@ init()
       df.resolve(items)
     df.promise
 
-  draw: (args) -> atlas.publish('entity/draw', args);
+  draw: (args) -> atlas.publish('entity/draw', args)
 
-  stopDraw: (args) -> atlas.publish('entity/draw/stop', args);
+  stopDraw: (args) -> atlas.publish('entity/draw/stop', args)
 
-  edit: (args) -> atlas.publish('edit/enable', args);
+  edit: (args) -> atlas.publish('edit/enable', args)
 
-  stopEdit: -> atlas.publish('edit/disable');
+  stopEdit: -> atlas.publish('edit/disable')
+
+  selectEntities: (ids) -> atlas.publish('entity/select', {ids: ids})
+
+  deselectEntities: (ids) -> atlas.publish('entity/deselect', {ids: ids})
+
+  deselectAllEntities: -> atlas._managers.selection.clearSelection()
+
+  setSelection: (ids) ->
+    @deselectAllEntities()
+    @selectEntities(ids)

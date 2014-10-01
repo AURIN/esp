@@ -62,7 +62,7 @@ Meteor.startup ->
         currentGeoEntity = AtlasManager.getEntity(id)
         if currentGeoEntity?
           setEditState(EditState.CREATED, true)
-          currentGeoEntity.setSelected(true)
+          AtlasManager.setSelection([id])
         entityId = doc.entity
         if entityId
           addTypologiesForClass(Entities.getClass(entityId), @)
