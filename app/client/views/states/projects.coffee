@@ -11,9 +11,13 @@ TemplateClass.rendered = ->
   $buttons = $('.on-selection-show', $table)
   # Duplicate button
   $btnDuplicate = $('<a class="duplicate item" title="Duplicate"><i class="copy icon"></i></a>')
-  $btnDuplicate.on 'click', () ->
+  $btnDuplicate.on 'click', =>
     id = $('.selected[data-id]', $table).data('id')
-    Meteor.call('projects/duplicate', id)
+    loaderNode = @find('.loader')
+    Template.loader.setActive(loaderNode, true)
+    Meteor.call 'projects/duplicate', id, (err, result) ->
+      Template.loader.setActive(loaderNode, false)
+
   $buttons.append($btnDuplicate)
   # Launch button
   $btnLaunch = $('<a class="launch item" title="Launch"><i class="rocket icon"></i></a>')

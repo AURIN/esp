@@ -33,8 +33,7 @@ Meteor.startup ->
         $submit = $(template.find('.submit'))
         $submit.toggleClass('disabled', loading)
         $submit.prop('disabled', loading)
-        $dimmer = $(template.find('.dimmer'))
-        $dimmer.toggleClass('active', loading)
+        Template.loader.setActive(template.find('.loader'), loading)
       setLoadingState(true)
       onSuccess = ->
         setLoadingState(false)

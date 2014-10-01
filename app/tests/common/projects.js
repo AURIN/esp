@@ -30,7 +30,6 @@ suite('ProjectUtils', function() {
       var json = ProjectUtils.toJson(projectId);
 
       var expectedProject = Projects.findOne(projectId);
-      expectedProject.name = 'Foo 2';
       var expected = {
         projects: [expectedProject],
         typologies: [Typologies.findOne(typologyId)],
@@ -127,7 +126,7 @@ suite('ProjectUtils', function() {
       var oldProject = oldModelMaps.projects[oldProjectId];
       var newProject = newModelMaps.projects[newProjectId];
       assert.notEqual(oldProjectId, newProjectId);
-      assert.equal(newProject.name, "Foo 2");
+      assert.equal(newProject.name, 'Foo 2');
       assert.deepEqual(newProject.parameters, oldProject.parameters);
 
       var oldTypologyId = result.typologyId;

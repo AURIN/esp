@@ -283,7 +283,7 @@ module.exports = function(grunt) {
     for (var i = 0; i < arguments.length; i++) {
       args += ' --' + arguments[i];
     }
-    var proc = runProcess('laika --timeout 10000 --debug --debug-brk ' + args);
+    var proc = runProcess('laika --timeout 10000 --debug-brk ' + args);
     proc.on('exit', function() {
       done();
     });

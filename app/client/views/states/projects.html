@@ -1,6 +1,7 @@
 <template name="projects">
   <div class="projects">
     <div class="container">
+      {{> loader text=""}}
       {{> collectionTable collection="Projects" settings=tableSettings}}
     </div>
     <div class="footer container">

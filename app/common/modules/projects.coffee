@@ -13,7 +13,6 @@ incrementName = (name) ->
 # @returns {Object} JSON serialization of the given project and its models. IDs are unaltered.
   toJson: (id) ->
     project = Projects.findOne(id)
-    project.name = incrementName(project.name)
     unless project
       throw new Error('Project with ID ' + id + ' not found')
     result = {}
@@ -39,6 +38,10 @@ incrementName = (name) ->
     df = Q.defer()
     # A map of collection names to maps of model IDs from the input to the new IDs constructed.
     idMaps = {}
+
+    # Increment the name of Projects to ensure they are unique.
+    _.each json[Collections.getName(Projects)], (project) =>
+      project.name = @getNextAvailableName(project.name)
 
     createDfs = []
     collectionMap = Collections.getMap([Projects, Entities, Typologies, Lots])
@@ -92,6 +95,15 @@ incrementName = (name) ->
       (err) -> df.reject(err)
     )
     df.promise
+
+# @params {String} name
+# @returns {String} The next available name base on the given name with an incremented numerical
+# suffix.
+  getNextAvailableName: (name) ->
+    newName = name
+    while Projects.find({name: newName}).count() != 0
+      newName = incrementName(newName)
+    newName
 
 # @param {String} id - The ID of the project to duplicate.
 # @returns {Object.<String, Object>} A map of collection names to maps of old IDs to new IDs for the
