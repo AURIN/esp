@@ -117,12 +117,22 @@ Meteor.startup ->
       throw new Error('Format not recognised for mime-type: ' + file.type)
     formatId = format.id
     if _.indexOf(acceptedFormats, formatId) >= 0
+      $submitButton = template.$('.submit.button')
       $loader = $(e.target).siblings('.ui.dimmer')
-      $loader.addClass('active')
-      removeLoader = -> $loader.removeClass('active')
+      setSubmitButtonDisabled = (disabled) ->
+        $submitButton.toggleClass('disabled', disabled)
+        $submitButton.prop('disabled', disabled)
+      onUploadStart = ->
+        $loader.addClass('active')
+        setSubmitButtonDisabled(true)
+      onUploadComplete = ->
+        $loader.removeClass('active')
+        setSubmitButtonDisabled(false)
+
+      onUploadStart()
       Files.upload(file).then(
-        (fileObj) -> onUpload(fileObj, formatId, e, template).fin(removeLoader)
-        removeLoader
+        (fileObj) -> onUpload(fileObj, formatId, e, template).fin(onUploadComplete)
+        onUploadComplete
       )
     else
       console.error('File did not match expected format', file, format, acceptedFormats)

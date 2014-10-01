@@ -5,34 +5,36 @@
       <div class="inner">
         <div class="ui form segment">
           {{#autoForm collection=collection id=formName doc=doc type=formType settings=settings}}
-          {{> afQuickField name="name"}}
-          {{> afQuickField name="desc"}}
-          {{> afFieldLabel name="typology"}}
-          <!-- TODO(aramk) Refactor to use autoform field -->
-          {{> dropdown name="typology" items=typologies value=doc.typology}}
+            {{> afQuickField name="name"}}
+            {{> afQuickField name="desc"}}
+            <div class="form-group dropdown">
+              {{> afFieldLabel name="typology"}}
+              <!-- TODO(aramk) Refactor to use autoform field -->
+              {{> dropdown name="typology" items=typologies value=doc.typology}}
+            </div>
 
-          <div class="subtitle">Space</div>
-          <!-- TODO(aramk) Add same widget used in typology schema. -->
-          <!--{{> afQuickField name="parameters.space.geom_2d"}}-->
+            <div class="subtitle">Space</div>
+            <!-- TODO(aramk) Add same widget used in typology schema. -->
+            <!--{{> afQuickField name="parameters.space.geom_2d"}}-->
 
-          {{> afQuickField name="parameters.space.prpn_lawn"}}
-          {{> afQuickField name="parameters.space.prpn_annu"}}
-          {{> afQuickField name="parameters.space.prpn_hardy"}}
-          {{> afQuickField name="parameters.space.prpn_imper"}}
+            {{> afQuickField name="parameters.space.prpn_lawn"}}
+            {{> afQuickField name="parameters.space.prpn_annu"}}
+            {{> afQuickField name="parameters.space.prpn_hardy"}}
+            {{> afQuickField name="parameters.space.prpn_imper"}}
 
-          <div class="subtitle">Energy Demand</div>
-          {{> afQuickField name="parameters.energy_demand.src_cook" options="allowed"}}
-          {{> afQuickField name="parameters.energy_demand.type_app" options="allowed"}}
-          {{> afQuickField name="parameters.energy_demand.size_pv"}}
+            <div class="subtitle">Energy Demand</div>
+            {{> afQuickField name="parameters.energy_demand.src_cook" options="allowed"}}
+            {{> afQuickField name="parameters.energy_demand.type_app" options="allowed"}}
+            {{> afQuickField name="parameters.energy_demand.size_pv"}}
 
-          <div class="subtitle">Water Demand</div>
-          {{> afQuickField name="parameters.water_demand.e_wd_src" options="allowed"}}
+            <div class="subtitle">Water Demand</div>
+            {{> afQuickField name="parameters.water_demand.e_wd_src" options="allowed"}}
 
-          <div class="crud buttons">
-            <button type="button" class="ui red cancel button">Cancel</button>
-            <div class="spacer"></div>
-            <button type="submit" class="ui button submit green">{{submitText}}</button>
-          </div>
+            <div class="crud buttons">
+              <button type="button" class="ui red cancel button">Cancel</button>
+              <div class="spacer"></div>
+              <button type="submit" class="ui button submit green">{{submitText}}</button>
+            </div>
           {{/autoForm}}
         </div>
       </div>

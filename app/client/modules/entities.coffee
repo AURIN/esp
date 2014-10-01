@@ -37,7 +37,10 @@
         return
       # Modify the ID of c3ml entities to allow reusing them for multiple collections.
       c3mls = result.c3mls
-      _.each result.c3mls, (c3ml) -> c3ml.id = id + ':' + c3ml.id
+      _.each result.c3mls, (c3ml) ->
+        # Hide by default and show after translating to the Lot.
+        c3ml.show = false
+        c3ml.id = id + ':' + c3ml.id
       try
         c3mlEntities = AtlasManager.renderEntities(c3mls)
       catch e
@@ -68,7 +71,6 @@
     else
       @toGeoEntityArgs(entityId).then (entityArgs) =>
         entity = Entities.getFlattened(entityId)
-        geoEntity = AtlasManager.renderEntity(entityArgs)
         # If the geoEntity was rendered using the Typology geometry, centre it based on the Lot.
         lot = Lots.findOne(entity.lot)
         unless lot
@@ -79,13 +81,18 @@
           'atlas/model/Feature',
           'atlas/model/Vertex'
         ], (Feature, Vertex) =>
-          # Apply rotation based on the azimuth.
-          azimuth = Entities.getParameter(entity, 'orientation.azimuth')
-          geoEntity.setRotation(new Vertex(0, 0, azimuth)) if azimuth?
           LotUtils.render(lotId).then (lotEntity) =>
+            # Hide the entity initially to avoid showing the transition.
+            entityArgs.show = false
+            # Render the entity once the Lot has been rendered.
+            geoEntity = AtlasManager.renderEntity(entityArgs)
+            # Apply rotation based on the azimuth.
+            azimuth = Entities.getParameter(entity, 'orientation.azimuth')
+            geoEntity.setRotation(new Vertex(0, 0, azimuth)) if azimuth?
             # Mesh has not been rendered yet, so only position extrusion/footprint.
             unless geoEntity.getDisplayMode() == Feature.DisplayMode.MESH
               geoEntity.setCentroid(lotEntity.getCentroid())
+            AtlasManager.showEntity(entityId)
             df.resolve(geoEntity)
             # Render the mesh afterwards to prevent long delays.
             @._buildMeshCollection(entityId).then (collection) ->
@@ -93,5 +100,6 @@
                 return
               meshEntity = collection
               meshEntity.setCentroid(lotEntity.getCentroid())
+              meshEntity.show();
               geoEntity.setForm(Feature.DisplayMode.MESH, meshEntity)
     df.promise

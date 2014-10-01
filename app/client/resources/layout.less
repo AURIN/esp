@@ -119,7 +119,12 @@ body {
     width: 100%;
     padding: 0;
     label {
+      position: relative;
       .value {
+        float: left;
+      }
+      .required:before {
+        margin: 0 5px;
         float: left;
       }
     }
@@ -139,6 +144,41 @@ body {
       margin: 5px 0;
       display: block;
       color: blue;
+    }
+    .form-group.dropdown {
+      label {
+        display: inline-block;
+        width: auto;
+        line-height: 26px;
+        margin-right: 10px;
+        .required:before {
+          margin: 0;
+          float: none;
+          position: absolute;
+          top: 0;
+          right: -8px;
+        }
+      }
+      .control-label {
+        width: auto;
+        display: inline-block;
+      }
+    }
+  }
+  .required:before {
+    content: "*";
+    font-size: 16px;
+    color: red;
+    font-weight: normal;
+  }
+  .footer {
+    padding: 10px;
+    .required:before {
+      position: relative;
+      top: 0;
+      left: 0;
+      float: left;
+      margin-right: 5px;
     }
   }
   > .buttons {

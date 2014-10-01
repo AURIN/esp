@@ -107,22 +107,37 @@
         @schemaInputs = schemaInputs
 
         popupInputs = []
+        hasRequiredField = false
         for key, input of schemaInputs
           $input = $(input.node)
           field = input.field
           desc = field.desc
+          required = field.optional == false
           # Add popups to the inputs contain definitions from the schema.
           if desc?
             popupInputs.push($input.data('desc', desc))
           # Add units into labels
           $label = $input.siblings('label')
+          if $label.length == 0
+            $parent = $input.parent()
+            if $parent.is('.dropdown')
+              $label = $parent.prev('label')
+
           units = field.units
+          $labelContent = $('<div class="value">' + $label.html() + '</div>')
+          $label.empty()
+          $label.append($labelContent);
           if units?
             formattedUnits = Strings.format.scripts(units)
             $units = $('<div class="units">' + formattedUnits + '</div>')
-            $labelContent = $('<div class="value">' + $label.html() + '</div>')
-            $label.empty()
-            $label.append($labelContent).append($units)
+            $label.append($units)
+          if required
+            $requiredContent = $('<div class="required"></div>')
+            $label.append($requiredContent)
+            hasRequiredField = true
+
+        if hasRequiredField
+          @$('.ui.form.segment').append($('<div class="footer"><div class="required"></div>Required field</div>'))
 
         addPopups = =>
           $(popupInputs).each ->

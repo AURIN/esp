@@ -5,39 +5,43 @@
       <div class="inner">
         <div class="ui form segment">
           {{#autoForm collection=collection id=formName doc=doc type=formType settings=settings}}
-          {{> afQuickField name="name"}}
-          {{> afQuickField name="desc"}}
+            {{> afQuickField name="name"}}
+            {{> afQuickField name="desc"}}
 
-          {{#if forDev}}
-          <label>Typology</label>
-          {{> dropdown name="typology" items=typologies value=typology allowEmpty=true}}
-          {{/if}}
+            {{#if forDev}}
+              <div class="form-group dropdown">
+                <label>Typology</label>
+                {{> dropdown name="typology" items=typologies value=typology allowEmpty=true}}
+              </div>
+            {{/if}}
 
-          <div class="subtitle">General</div>
-          {{> afFieldLabel name="parameters.general.class"}}
-          {{> dropdown name="parameters.general.class" items=classes value=classValue
-          allowEmpty=true}}
-          {{> afQuickField name="parameters.general.develop"}}
+            <div class="subtitle">General</div>
+            <div class="form-group dropdown">
+              {{> afFieldLabel name="parameters.general.class"}}
+              {{> dropdown name="parameters.general.class" items=classes value=classValue
+              allowEmpty=true}}
+            </div>
+            {{> afQuickField name="parameters.general.develop"}}
 
-          <div class="subtitle">Space</div>
+            <div class="subtitle">Space</div>
 
-          <label>Footprint</label>
+            <label>Footprint</label>
 
-          <div class="ui footprint tiny buttons">
-            <div class="ui toggle create button {{isCreating}} {{canCreate}}">Create</div>
-            <div class="ui toggle edit button {{isEditing}} {{canEdit}}">Edit</div>
-            <div class="ui delete button {{canDelete}}">Delete</div>
-          </div>
-          <!-- TODO(aramk) -->
-          <!--<label>Mesh</label>-->
+            <div class="ui footprint tiny buttons">
+              <div class="ui toggle create button {{isCreating}} {{canCreate}}">Create</div>
+              <div class="ui toggle edit button {{isEditing}} {{canEdit}}">Edit</div>
+              <div class="ui delete button {{canDelete}}">Delete</div>
+            </div>
+            <!-- TODO(aramk) -->
+            <!--<label>Mesh</label>-->
 
-          {{> afQuickField name="parameters.space.height"}}
+            {{> afQuickField name="parameters.space.height"}}
 
-          <div class="crud buttons">
-            <button type="button" class="ui red cancel button">Cancel</button>
-            <div class="spacer"></div>
-            <button type="submit" class="ui button submit green">{{submitText}}</button>
-          </div>
+            <div class="crud buttons">
+              <button type="button" class="ui red cancel button">Cancel</button>
+              <div class="spacer"></div>
+              <button type="submit" class="ui button submit green">{{submitText}}</button>
+            </div>
           {{/autoForm}}
         </div>
       </div>
