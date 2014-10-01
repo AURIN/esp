@@ -68,7 +68,6 @@
             lotDf.reject(err)
           else
             lotDf.resolve(insertId)
-    console.log('lotDfs', lotDfs)
     Q.all(lotDfs).then ->
       projectId = Projects.getCurrentId()
       # If the project doesn't have lat, lng location, set it as that found in this file.

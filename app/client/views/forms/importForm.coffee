@@ -41,7 +41,7 @@ Meteor.startup ->
       importDfs = []
       console.debug 'files', files, 'format', format
       if files.length == 0
-        console.log('Select a file to upload.')
+        console.error('Select a file to upload.')
       else
         file = files[0]
         importDf = Q.defer()
@@ -52,7 +52,6 @@ Meteor.startup ->
             if err
               console.error 'Asset import failed', err, fileObj
               return
-            console.log 'asset', result
             assetId = result.id
             loadAssets = {}
             loadAssets[assetId] = format

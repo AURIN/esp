@@ -2,9 +2,7 @@
 
   import: (fileId) ->
     buffer = FileUtils.getBuffer(fileId)
-    console.log 'buffer', buffer.length
     fileObj = Files.findOne(fileId)
-    console.log 'fileObj', fileObj
     file = fileObj.original
     args = {
       filename: file.name
@@ -13,12 +11,11 @@
     };
     Catalyst.auth.login()
     asset = Catalyst.assets.upload(buffer, args)
-    console.log 'asset uploaded', asset
     asset
 
   synthesize: (request) ->
     Catalyst.auth.login()
-    console.log 'synthesizing', request
+    console.log 'Synthesizing', request
     result = Catalyst.assets.synthesize(request)
     jobId = result.jobId
     response = Async.runSync (done) ->
@@ -28,9 +25,9 @@
       )
     err = response.error
     if err
-      msg = 'synthesize failed'
-      console.log msg, err
-      throw new Error(msg)
+      msg = 'Synthesize failed'
+      console.error msg, err
+      throw new Error(err)
     response.result
 
   load: (assets) ->
@@ -85,7 +82,6 @@ Meteor.methods
 
   'assets/formats/input': ->
     auth = Catalyst.auth.login()
-    console.log(auth)
     Catalyst.assets.inputFormats()
 
   'assets/formats/output': ->

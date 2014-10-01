@@ -31,7 +31,7 @@ renderReport = (id) ->
     TemplateUtils.getDom(currentReportTemplate).remove()
   templateName = report.templateName
   ReportTemplate = Template[templateName]
-  console.log 'Rendering report', templateName
+  console.debug 'Rendering report', templateName
 
   # TODO(aramk) Filter based on selected entities/typologies with Session.get
 
@@ -41,7 +41,6 @@ renderReport = (id) ->
   typologyClass = ReportTemplate.typologyClass
   typologyFilter = (entityId) ->
     entity = Entities.findOne(entityId)
-    console.log('arguments', arguments)
     typology = Typologies.findOne(entity.typology)
     Typologies.getParameter(typology, 'general.class') == typologyClass
 

@@ -52,31 +52,24 @@ incrementName = (name) ->
         createDfs.push(createDf.promise)
         oldModelId = model._id
         delete model._id
-        console.log('model', model)
         # TODO(aramk) Disabling validation is dangerous - only done here to avoid validation
         # errors which don't have messages at the moment. Improve collection2 to provide the
         # message returned from the validate method.
         collection.insert model, {validate: false}, (err, result) ->
-          console.log('model insert', err, result)
           if err
             createDf.reject(err)
           else
             newModelId = result
             idMap[oldModelId] = newModelId
             createDf.resolve(newModelId)
-    console.log('createDfs', createDfs.length)
     refDfs = []
     Q.all(createDfs).then(Meteor.bindEnvironment(
         ->
-          console.log('idMaps', idMaps)
           _.each idMaps, (idMap, name) ->
             collection = collectionMap[name]
-            console.log('idMap', idMap)
             _.each idMap, (newId, oldId) ->
               newModel = collection.findOne(newId)
-              console.log('newModel', newModel)
               modifier = SchemaUtils.getRefModifier(newModel, collection, idMaps)
-              console.log('modifier', modifier)
               if Object.keys(modifier.$set).length > 0
                 refDf = Q.defer()
                 refDfs.push(refDf.promise)
@@ -85,7 +78,6 @@ incrementName = (name) ->
                     refDf.reject(err)
                   else
                     refDf.resolve(newId)
-          console.log('refDfs', refDfs.length)
           Q.all(refDfs).then(
             -> df.resolve(idMaps)
             # TODO(aramk) Remove added models on failure.

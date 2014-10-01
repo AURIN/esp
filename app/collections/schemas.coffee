@@ -26,12 +26,10 @@ global = @
     $set = {}
     modifier.$set = $set
     refFields = @getSchemaReferenceFields(collection)
-    console.log('refFields', refFields)
     _.each refFields, (field, fieldId) ->
       collectionName = Collections.getName(global[field.collectionType])
       # TODO(aramk) Refactor out logic for looking up fields in modifier format.
       oldId = Typologies.getModifierProperty(model, fieldId)
       newId = idMaps[collectionName][oldId]
-      console.log('fieldId', fieldId)
       $set[fieldId] = newId
     modifier

@@ -5,7 +5,6 @@ class @Poll
     args = _.defaults(args, {
       pollFreq: 1000
     })
-    console.log args
     @pollFreq = args.pollFreq
 
   pollJob: (jobId) ->

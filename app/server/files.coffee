@@ -14,18 +14,3 @@ Meteor.methods
 
   'files/download/string': (id) -> FileUtils.getBuffer(id).toString()
   'files/download/json': (id) -> JSON.parse(FileUtils.getBuffer(id).toString())
-
-#  'files/getReadStream': getReadStream
-#
-#  'files/getBuffer': (fileId) ->
-#
-#    item = Files.findOne(fileId)
-#    unless item
-#      throw new Meteor.Error(404, 'File with ID ' + fileId + ' not found.')
-#    reader = item.createReadStream('files')
-#    console.log 'stream type', Types.getTypeOf(reader)
-#    Buffers.fromStream(reader)
-#
-##    stream = getReadStream(fileId)
-##    console.log 'stream type', Types.getTypeOf(stream)
-##    Buffers.fromStream(stream)

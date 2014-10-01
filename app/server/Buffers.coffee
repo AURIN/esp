@@ -1,7 +1,6 @@
 @Buffers =
 
   fromStream: (stream) ->
-    console.log 'stream', stream, stream.on
     response = Async.runSync (done) ->
       buffers = []
       stream.on 'data', (buffer) ->

@@ -87,7 +87,6 @@ Meteor.startup ->
       isChanged = getEditState(EditState.CHANGED)
       if isChanged
         WKT.fromVertices currentGeoEntity.getVertices(), (wkt) ->
-          console.log('wkt', wkt)
           geomDf.resolve(wkt)
       else
         geomDf.resolve(null)
