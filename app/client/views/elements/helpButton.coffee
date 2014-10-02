@@ -7,7 +7,7 @@ Template.helpButton.rendered = ->
     isActive = $button.hasClass('active')
     setHelpMode(isActive)
 
-  Deps.autorun ->
+  @autorun ->
     # Must use Session directly to ensure reactivity
     isActive = Session.get('helpMode') ? false
     $button.toggleClass('active', isActive)

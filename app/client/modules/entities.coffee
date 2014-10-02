@@ -100,6 +100,5 @@
                 return
               meshEntity = collection
               meshEntity.setCentroid(lotEntity.getCentroid())
-              meshEntity.show();
               geoEntity.setForm(Feature.DisplayMode.MESH, meshEntity)
     df.promise

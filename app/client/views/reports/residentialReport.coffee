@@ -79,8 +79,8 @@ Meteor.startup ->
       {param: 'financial.cost_op_t'}
       {param: 'financial.cost_op_t', label: 'Average Operating Cost', aggregate: 'average'}
 
-      {title: 'Orientation'}
-      {param: 'orientation.azimuth'}
+#      {title: 'Orientation'}
+#      {param: 'orientation.azimuth'}
 
       {title: 'Parking'}
       {param: 'parking.parking_sl'}

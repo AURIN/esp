@@ -211,17 +211,13 @@ TemplateClass.onAtlasLoad = (template, atlas) ->
   # Re-render when display mode changes.
   reactiveToDisplayMode = (collection, sessionVarName, getDisplayMode) ->
     firstRun = true
-    Deps.autorun (c) ->
+    template.autorun (c) ->
       # Register a dependency on display mode changes.
       Session.get(sessionVarName)
-      getDisplayMode ?= -> Session.get('entityDisplayMode')
+      getDisplayMode ?= -> Session.get(sessionVarName)
       if firstRun
         # Don't run the first time, since we already render through the observe() callback.
         firstRun = false
-        return
-      if projectId != Projects.getCurrentId()
-        # Don't handle updates if changing project.
-        c.stop()
         return
       ids = _.map collection.find().fetch(), (doc) -> doc._id
       _.each AtlasManager.getEntitiesByIds(ids), (entity) ->

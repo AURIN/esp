@@ -106,9 +106,9 @@
 
   getDisplayMode: (id) ->
     lot = Lots.findOne(id)
-    isForDevelopment = Lots.getParameter(lot, 'general.develop')
     displayMode = Session.get('lotDisplayMode')
     if displayMode == '_nonDevExtrusion'
+      isForDevelopment = Lots.getParameter(lot, 'general.develop')
       if isForDevelopment then 'footprint' else 'extrusion'
     else
       displayMode

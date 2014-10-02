@@ -148,12 +148,9 @@
         removePopups = =>
           $(popupInputs).popup('destroy')
 
-        Deps.autorun (c) =>
-          if @.isDestroyed?
-            c.stop()
-          else
-            helpMode = Session.get 'helpMode'
-            if helpMode then addPopups() else removePopups()
+        @autorun (c) =>
+          helpMode = Session.get 'helpMode'
+          if helpMode then addPopups() else removePopups()
       formArgs.onRender?.apply(@, arguments)
 
     Form.destroyed = ->
