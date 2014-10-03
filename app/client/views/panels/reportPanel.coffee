@@ -5,6 +5,7 @@ ReportTemplates = [
   #'precinctReport'
 ]
 
+reportPanelTemplate = null
 currentReportId = null
 currentReportTemplate = null
 $reportPanelContent = null
@@ -71,11 +72,22 @@ renderReport = (id) ->
   currentReportTemplate = UI.renderWithData(Template[templateName], reportData)
   UI.insert currentReportTemplate, $currentReport[0]
   PubSub.publish 'report/rendered', $currentReport
+  # Place the header info into the report panel header
+  $report = $(TemplateUtils.getDom(currentReportTemplate))
+  $report.on 'render', ->
+    $info = $('.info', $report)
+    $panelHeader = reportPanelTemplate.$('.panel > .header')
+    # Remove existing info element.
+    $('.info', $panelHeader).detach()
+    # Remove header from report since it's now empty.
+    $('.header', $report).detach()
+    $panelHeader.append($info)
 
 refreshReport = -> renderReport(currentReportId) if currentReportId?
 PubSub.subscribe 'report/refresh', -> refreshReport()
 
 Template.reportPanel.created = ->
+  reportPanelTemplate = @
   @data ?= {}
   reports = Collections.createTemporary()
   # Add static reports to a temporary collection for populating the dropdown.
