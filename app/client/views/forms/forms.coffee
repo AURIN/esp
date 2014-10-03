@@ -62,7 +62,11 @@
       formTitle: ->
         collectionName = Collections.getTitle(formArgs.collection)
         (if @doc then 'Edit' else 'Create') + ' ' + Strings.singular(collectionName)
-      formType: -> if @doc then 'update' else 'insert'
+      formType: ->
+        console.log('doc', @doc)
+        type = if @doc then 'update' else 'insert'
+        console.log('doc', @doc, 'type', type)
+        type
       submitText: -> if @doc then 'Save' else 'Create'
       settings: -> Forms.preventText(@settings) if @settings?
 
@@ -88,69 +92,53 @@
       AutoForm.resetForm(name)
 
       collection = Collections.get(formArgs.collection)
-      schema = collection?.simpleSchema()
-      $schemaInputs = $(@findAll('[data-schema-key]'))
+      @schemaInputs = Forms.getSchemaInputs(@, collection)
 
-      if schema?
-        schemaInputs = {}
-        $schemaInputs.each ->
+      popupInputs = []
+      hasRequiredField = false
+      for key, input of @schemaInputs
+        $input = $(input.node)
+        field = input.field
+        desc = field.desc
+        required = field.optional == false
+        # Add popups to the inputs contain definitions from the schema.
+        if desc?
+          popupInputs.push($input.data('desc', desc))
+        # Add units into labels
+        $label = $input.siblings('label')
+        if $label.length == 0
+          $parent = $input.parent()
+          if $parent.is('.dropdown')
+            $label = $parent.prev('label')
+
+        units = field.units
+        $labelContent = $('<div class="value">' + $label.html() + '</div>')
+        $label.empty()
+        $label.append($labelContent);
+        if units?
+          formattedUnits = Strings.format.scripts(units)
+          $units = $('<div class="units">' + formattedUnits + '</div>')
+          $label.append($units)
+        if required
+          $requiredContent = $('<div class="required"></div>')
+          $label.append($requiredContent)
+          hasRequiredField = true
+
+      if hasRequiredField
+        @$('.ui.form.segment').append($('<div class="footer"><div class="required"></div>Required field</div>'))
+
+      addPopups = =>
+        $(popupInputs).each ->
           $input = $(@)
-          key = $input.attr('data-schema-key')
-          field = schema.schema(key)
-          if field
-            schemaInputs[key] =
-              node: @
-              key: key
-              field: field
-          else
-            console.warn('Unrecognised data-schema-key', key, 'for schema', schema)
-        @schemaInputs = schemaInputs
+          $input.data('desc')
+          $input.popup('setting', delay: 500, content: $input.data('desc'))
 
-        popupInputs = []
-        hasRequiredField = false
-        for key, input of schemaInputs
-          $input = $(input.node)
-          field = input.field
-          desc = field.desc
-          required = field.optional == false
-          # Add popups to the inputs contain definitions from the schema.
-          if desc?
-            popupInputs.push($input.data('desc', desc))
-          # Add units into labels
-          $label = $input.siblings('label')
-          if $label.length == 0
-            $parent = $input.parent()
-            if $parent.is('.dropdown')
-              $label = $parent.prev('label')
+      removePopups = =>
+        $(popupInputs).popup('destroy')
 
-          units = field.units
-          $labelContent = $('<div class="value">' + $label.html() + '</div>')
-          $label.empty()
-          $label.append($labelContent);
-          if units?
-            formattedUnits = Strings.format.scripts(units)
-            $units = $('<div class="units">' + formattedUnits + '</div>')
-            $label.append($units)
-          if required
-            $requiredContent = $('<div class="required"></div>')
-            $label.append($requiredContent)
-            hasRequiredField = true
-
-        if hasRequiredField
-          @$('.ui.form.segment').append($('<div class="footer"><div class="required"></div>Required field</div>'))
-
-        addPopups = =>
-          $(popupInputs).each ->
-            $input = $(@)
-            $input.data('desc')
-            $input.popup('setting', delay: 500, content: $input.data('desc'))
-
-        removePopups = =>
-          $(popupInputs).popup('destroy')
-
-        @autorun (c) =>
-          helpMode = Session.get 'helpMode'
-          if helpMode then addPopups() else removePopups()
+      @autorun (c) =>
+        helpMode = Session.get 'helpMode'
+        if helpMode then addPopups() else removePopups()
       formArgs.onRender?.apply(@, arguments)
 
     Form.destroyed = ->
@@ -169,3 +157,21 @@
 
   findFieldInput: (template, name) ->
     template.find('[name="' + name + '"]')
+
+  getSchemaInputs: (template, collection) ->
+    $schemaInputs = template.$('[data-schema-key]')
+    schema = collection.simpleSchema()
+    schemaInputs = {}
+    if schema?
+      $schemaInputs.each ->
+        $input = $(@)
+        key = $input.attr('data-schema-key')
+        field = schema.schema(key)
+        if field
+          schemaInputs[key] =
+            node: @
+            key: key
+            field: field
+        else
+          console.warn('Unrecognised data-schema-key', key, 'for schema', schema)
+    schemaInputs

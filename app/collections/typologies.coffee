@@ -1533,29 +1533,31 @@ LotSchema = new SimpleSchema
     optional: true
     index: true
     collectionType: 'Entities'
-    custom: ->
-      classParamId = 'parameters.general.class'
-      developFieldId = 'parameters.general.develop'
-      typologyClassField = @siblingField(classParamId)
-      developField = @siblingField(developFieldId)
-      unless (typologyClassField.isSet && this.isSet && developField.isSet) || @operator == '$unset'
-        # TODO(aramk) This isn't guaranteed to work if typology field is not set at same time as
-        # entity. Look up the actual value using an ID.
-        return 'Class, entity and develop fields must be set together for validation to work, ' +
-            'unless entity is being removed.'
-      if typologyClassField.operator == '$unset' && @operator != '$unset'
-        return 'Class must be present if entity is present.'
-      entityId = @value
-      unless entityId
-        return
-      entityTypology = Typologies.findOne(Entities.findOne(entityId).typology)
-      entityClass = Typologies.getParameter(entityTypology, classParamId)
-      typologyClass = typologyClassField.value
-      if typologyClassField.operator != '$unset' && @operator != '$unset' && typologyClass != entityClass
-        return 'Entity must have the same class as the Lot. Entity has ' + entityClass +
-            ', Lot has ' + typologyClass
-      if developField.operator != '$unset' && @operator != '$unset' && !developField.value
-        return 'Lot which is not for development cannot have Entity assigned.'
+# TODO(aramk) Disabled this complex validation for now to avoid it causing issues when
+# creating lots manually.
+#    custom: ->
+#      classParamId = 'parameters.general.class'
+#      developFieldId = 'parameters.general.develop'
+#      typologyClassField = @siblingField(classParamId)
+#      developField = @siblingField(developFieldId)
+#      unless (typologyClassField.isSet && this.isSet && developField.isSet) || @operator == '$unset'
+#        # TODO(aramk) This isn't guaranteed to work if typology field is not set at same time as
+#        # entity. Look up the actual value using an ID.
+#        return 'Class, entity and develop fields must be set together for validation to work, ' +
+#            'unless entity is being removed.'
+#      if typologyClassField.operator == '$unset' && @operator != '$unset'
+#        return 'Class must be present if entity is present.'
+#      entityId = @value
+#      unless entityId
+#        return
+#      entityTypology = Typologies.findOne(Entities.findOne(entityId).typology)
+#      entityClass = Typologies.getParameter(entityTypology, classParamId)
+#      typologyClass = typologyClassField.value
+#      if typologyClassField.operator != '$unset' && @operator != '$unset' && typologyClass != entityClass
+#        return 'Entity must have the same class as the Lot. Entity has ' + entityClass +
+#            ', Lot has ' + typologyClass
+#      if developField.operator != '$unset' && @operator != '$unset' && !developField.value
+#        return 'Lot which is not for development cannot have Entity assigned.'
   parameters:
     label: 'Parameters'
     type: LotParametersSchema

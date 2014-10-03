@@ -7,6 +7,10 @@ Meteor.startup ->
     $('option[value="' + value + '"]', $select)
 
   updateFields = ->
+    # Used to store original copies of DOM nodes which we modify based on the typology class.
+    origInputs = @origInputs
+    unless @origInputs
+      origInputs = @origInputs = {}
     # TODO(aramk) Refactor with entityForm.
     typologyClass = Template.dropdown.getValue(getClassInput.call(@))
     defaultParams = Typologies.getDefaultParameterValues(typologyClass)
@@ -39,10 +43,17 @@ Meteor.startup ->
       unless isParamField
         continue
 
-      # Add "None" option to select fields.
-      if $input.is('select') && !$input.data('isSetUp')
-        typology = @data.doc
-        inputValue = Typologies.getParameter(typology, paramName) if typology
+      if $input.is('select')
+        origInput = origInputs[key]
+        if origInput
+          # This field has been modified before - replace with a clone of the original.
+          $origInput = origInputs[key].clone()
+          $input.replaceWith($origInput)
+          $input = $origInput
+        else
+          # The field is in its original state - store a clone.
+          origInputs[key] = $input.clone()
+
         if defaultValue?
           # Label which option is the default value.
           $defaultOption = getSelectOption(defaultValue, $input)
@@ -53,12 +64,13 @@ Meteor.startup ->
           # override with null yet. It is available only if a value is not set.
           $option = $('<option value="">None</option>')
           $input.prepend($option)
+        typology = @data.doc
+        inputValue = Typologies.getParameter(typology, paramName) if typology
         unless inputValue?
           if defaultValue?
             $input.val(defaultValue)
           else
             $input.val('')
-        $input.data('isSetUp', true)
 
   Form = Forms.defineModelForm
     name: 'typologyForm'

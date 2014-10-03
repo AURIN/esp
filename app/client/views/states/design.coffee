@@ -21,11 +21,14 @@ collectionToForm =
 # Various handles which should be removed when the design template is removed
 handles = null
 
+# The current Blaze.View rendered in the left sidebar.
+currentPanelView = null
+
 TemplateClass.created = ->
   projectId = Projects.getCurrentId()
   project = Projects.getCurrent()
   unless project
-    console.error('No project found', projectId);
+    console.error('No project found', projectId)
     Router.go('projects')
   else
     @autorun ->
@@ -43,6 +46,7 @@ TemplateClass.destroyed = ->
 TemplateClass.rendered = ->
   template = @
   atlasNode = @find('.atlas')
+  currentPanelView = null
 
   # Don't show Atlas viewer if disabled.
   unless Window.getVarBool('atlas') == false
@@ -68,7 +72,7 @@ TemplateClass.rendered = ->
     $('.crud.menu', $lotsTable).after($lotsButtons)
 
   # Remove create button for entities.
-  $(@find('.entities .collection-table .create.item')).remove();
+  $(@find('.entities .collection-table .create.item')).remove()
 
   # Add popups to fields
   @$('.popup').popup()
@@ -80,7 +84,7 @@ onEditFormPanel = (args) ->
   collectionName = Collections.getName(collection)
   formName = collectionToForm[collectionName]
   console.debug 'onEdit', arguments, collectionName, formName
-  TemplateClass.setUpFormPanel templateInstance, Template[formName], model
+  TemplateClass.addFormPanel templateInstance, Template[formName], model
 
 TemplateClass.helpers
   entities: -> Entities.find({project: Projects.getCurrentId()})
@@ -100,7 +104,7 @@ TemplateClass.helpers
       collectionName = Collections.getName(collection)
       formName = collectionToForm[collectionName]
       console.debug 'onCreate', arguments, collectionName, formName
-      TemplateClass.setUpFormPanel templateInstance, Template[formName]
+      TemplateClass.addFormPanel templateInstance, Template[formName]
     onEdit: onEditFormPanel
   displayModes: -> displayModesCollection.find(value: {$not: '_nonDevExtrusion'})
   lotDisplayModes: -> displayModesCollection.find(value: {$not: 'mesh'})
@@ -124,40 +128,37 @@ getEntityTable = (template) -> $(template.find('.entities .collection-table'))
 getTypologyTable = (template) -> $(template.find('.typologies .collection-table'))
 getLotTable = (template) -> $(template.find('.lots .collection-table'))
 
-currentPanel = null
-
-TemplateClass.addPanel = (template, component) ->
-  if currentPanel
-    TemplateClass.removePanel(template, currentPanel)
-  console.debug 'addPanel', template, component
+TemplateClass.addPanel = (template, panelTemplate, data) ->
+  if currentPanelView
+    TemplateClass.removePanel(template)
   $container = getSidebar(template)
   $panel = $('<div class="panel"></div>')
-  $('>.panel', $container).hide();
+#  $('>.panel', $container).hide()
   $container.append $panel
-  UI.insert component, $panel[0]
-  currentPanel = component
+  parentNode = $panel[0]
+  if data
+    currentPanelView = Blaze.renderWithData panelTemplate, data, parentNode
+  else
+    currentPanelView = Blaze.render panelTemplate, parentNode
 
-TemplateClass.removePanel = (template, component) ->
-  console.debug 'Removing panel', @, template, component
-  TemplateUtils.getDom(component).remove()
+TemplateClass.removePanel = (template) ->
+  console.debug 'Removing panel', @, template
+  # Parent node is kept so we need to remove it manually.
+  $panel = $(TemplateUtils.getDom(currentPanelView))
+  Blaze.remove(currentPanelView)
+  $panel.remove()
   $container = getSidebar(template)
   $('>.panel:last', $container).show()
-  currentPanel = null
+  currentPanelView = null
 
-TemplateClass.setUpPanel = (template, panelTemplate, data) ->
-  panel = UI.renderWithData panelTemplate, data
-  TemplateClass.addPanel template, panel
-  panel
-
-TemplateClass.setUpFormPanel = (template, formTemplate, doc, settings) ->
+TemplateClass.addFormPanel = (template, formTemplate, doc, settings) ->
   template ?= templateInstance
   settings ?= {}
   data =
     doc: doc, settings: settings
-  panel = TemplateClass.setUpPanel template, formTemplate, data
-  callback = -> TemplateClass.removePanel template, panel
+  TemplateClass.addPanel template, formTemplate, data
+  callback = -> TemplateClass.removePanel template
   settings.onCancel = settings.onSuccess = callback
-  panel
 
 TemplateClass.onAtlasLoad = (template, atlas) ->
   projectId = Projects.getCurrentId()
@@ -221,7 +222,7 @@ TemplateClass.onAtlasLoad = (template, atlas) ->
         return
       ids = _.map collection.find().fetch(), (doc) -> doc._id
       _.each AtlasManager.getEntitiesByIds(ids), (entity) ->
-        entity.setDisplayMode(getDisplayMode(entity.getId()));
+        entity.setDisplayMode(getDisplayMode(entity.getId()))
 
   reactiveToDisplayMode(Lots, 'lotDisplayMode', LotUtils.getDisplayMode)
   reactiveToDisplayMode(Entities, 'entityDisplayMode')

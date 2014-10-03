@@ -14,7 +14,6 @@ standard-app-packages
 underscore
 
 # PUBLIC
-aldeed:collection2
 cfs:filesystem
 cfs:standard-packages
 cfs:ejson-file
@@ -29,6 +28,13 @@ percolatestudio:percolatestudio-migrations
 raix:handlebar-helpers
 stevezhu:lodash
 
+# PUBLIC-FORKS
+# These are forked repos and added as private packages.
+aldeed:autoform
+aldeed:collection2
+aldeed:simple-schema
+#joshowens:accounts-entry
+
 # PRIVATE
 collection-table
 dropdown
@@ -39,10 +45,3 @@ pubsub
 requirejs
 atlas
 atlas-cesium
-
-# PUBLIC-FORKS
-# These are forked repos and added as private packages.
-aldeed:autoform
-aldeed:collection2
-aldeed:simple-schema
-#joshowens:accounts-entry

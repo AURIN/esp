@@ -14,19 +14,19 @@ crudRoute = (collectionName, controller) ->
   formName = singularName + 'Form'
   console.debug('crud routes', itemRoute, editRoute, formName);
   Router.map ->
-    this.route collectionId, {path: '/' + collectionId, controller: controller, template: collectionId}
-    this.route itemRoute,
+    @route collectionId, {path: '/' + collectionId, controller: controller, template: collectionId}
+    @route itemRoute,
       path: '/' + collectionId + '/create', controller: controller, template: formName
       data: -> {}
-    this.route editRoute,
+    @route editRoute,
       # Reuse the itemRoute for editing.
       path: '/' + collectionId + '/:_id/edit', controller: controller, template: formName
-      data: -> {doc: window[collectionName].findOne(this.params._id)}
+      data: -> {doc: window[collectionName].findOne(@params._id)}
 
 #  onBeforeAction: ->
 # This redirects users to a sign in form.
 # TODO(aramk) Add back when we have auth.
-#    AccountsEntry.signInRequired(this.router)
+#    AccountsEntry.signInRequired(@router)
 
 DesignController = BaseController.extend
   template: 'design'
@@ -42,24 +42,23 @@ ProjectsController = BaseController.extend
   template: 'projects'
   waitOn: -> Meteor.subscribe('projects')
 
-
 crudRoute('Projects')
 
 Router.onBeforeAction (pause) ->
 #  TODO(aramk) Add back when we have auth.
 #  # Empty path is needed for page not found.
 #  whiteList = ['', '/sign-in', '/sign-out', '/sign-up', '/forgot-password']
-#  isWhiteListed = Arrays.trueMap(whiteList)[this.path];
+#  isWhiteListed = Arrays.trueMap(whiteList)[@path];
 #  if !isWhiteListed && !Meteor.user()
-#    this.render('accessDenied')
+#    @render('accessDenied')
 #    pause()
 #  else
-  if this.path == '/' || this.path == ''
+  if @path == '/' || @path == ''
     Router.go('projects')
   Router.initLastPath()
 
 Router.map ->
-  this.route 'design', {
+  @route 'design', {
     path: '/design/:_id'
     waitOn: -> _.map(['projects', 'entities', 'typologies'], (name) -> Meteor.subscribe(name))
     controller: DesignController
