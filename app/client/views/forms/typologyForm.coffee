@@ -1,5 +1,7 @@
 Meteor.startup ->
 
+  collection = Typologies
+
   getClassInput = ->
     $(@.find('[name="parameters.general.class"]')).closest('.dropdown')
 
@@ -15,7 +17,7 @@ Meteor.startup ->
     typologyClass = Template.dropdown.getValue(getClassInput.call(@))
     defaultParams = Typologies.getDefaultParameterValues(typologyClass)
     console.debug 'updateFields', @, arguments, typologyClass
-    for key, input of @schemaInputs
+    for key, input of Forms.getSchemaInputs(@, collection)
       fieldSchema = input.field
       isParamField = ParamUtils.hasPrefix(key)
       paramName = ParamUtils.removePrefix(key) if isParamField
@@ -74,7 +76,7 @@ Meteor.startup ->
 
   Form = Forms.defineModelForm
     name: 'typologyForm'
-    collection: 'Typologies'
+    collection: collection
     onRender: ->
       updateFields.call(@)
       $classInput = getClassInput.call(@)

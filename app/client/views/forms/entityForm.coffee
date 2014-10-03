@@ -1,5 +1,7 @@
 Meteor.startup ->
 
+  collection = Entities
+
   getTypologyInput = ->
     $(@.find('[name="typology"]')).closest('.dropdown')
 
@@ -7,6 +9,10 @@ Meteor.startup ->
     $('option[value="' + value + '"]', $select)
 
   updateFields = ->
+    # Used to store original copies of DOM nodes which we modify based on the typology class.
+    origInputs = @origInputs
+    unless @origInputs
+      origInputs = @origInputs = {}
     # TODO(aramk) Refactor with typeForm.
     typologyId = Template.dropdown.getValue(getTypologyInput.call(@))
     typology = Typologies.findOne(typologyId)
@@ -14,7 +20,7 @@ Meteor.startup ->
     defaultParams = Typologies.getDefaultParameterValues(typologyClass)
     #    defaultParams = Typologies.mergeDefaults(typology ? {})
     console.debug 'updateFields', @, arguments, typologyId, typology, typologyClass
-    for key, input of @schemaInputs
+    for key, input of Forms.getSchemaInputs(@, collection)
       fieldSchema = input.field
       isParamField = ParamUtils.hasPrefix(key)
       paramName = ParamUtils.removePrefix(key) if isParamField
@@ -51,7 +57,17 @@ Meteor.startup ->
         continue
 
       # For a dropdown field, show the inherited or default value with labels.
-      if $input.is('select') && !$input.data('isSetUp')
+      if $input.is('select')
+        origInput = origInputs[key]
+        if origInput
+          # This field has been modified before - replace with a clone of the original.
+          $origInput = origInputs[key].clone()
+          $input.replaceWith($origInput)
+          $input = $origInput
+        else
+          # The field is in its original state - store a clone.
+          origInputs[key] = $input.clone()
+
         if typologyValue?
           $inheritedOption = getSelectOption(typologyValue, $input)
           if $inheritedOption.length > 0
@@ -75,11 +91,10 @@ Meteor.startup ->
             $option = $('<option value="">None</option>')
             $input.prepend($option)
             $input.val('')
-        $input.data('isSetUp', true)
 
   Form = Forms.defineModelForm
     name: 'entityForm'
-    collection: 'Entities'
+    collection: collection
     onRender: ->
       updateFields.call(@)
       $typologyInput = getTypologyInput.call(@)
