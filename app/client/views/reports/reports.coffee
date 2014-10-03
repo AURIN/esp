@@ -60,12 +60,12 @@
         title: title
 
   renderField: (field, data, formatter) ->
-    renderData = @fieldToRenderData(field, data, formatter)
+    renderData = @fieldToRenderData(field, data)
     renderedField =
       data: renderData
-      element: @fieldToRenderElement(renderData)
+      element: @fieldToRenderElement(renderData, formatter)
 
-  fieldToRenderData: (field, data, formatter) ->
+  fieldToRenderData: (field, data) ->
     param = field.param
     unless param?
       return Setter.clone(field)
@@ -74,22 +74,25 @@
       throw new Error('Could not find schema for param: ' + param)
     label = field.label ? paramSchema.label ? Strings.toTitleCase(param)
     units = paramSchema.units
-    decimalPoints = paramSchema.decimalPoints ? 2
-    value = data[field.id] ? 'N/A'
-    if Number.isNaN(value) or !value?
-      value = 'N/A'
-    else if paramSchema.type == Number
-      # Round the value using the formatter to a fixed set of decimal points, otherwise it's hard
-      # to compare values.
-      value = formatter.round(value, {minSigFigs: decimalPoints, maxSigFigs: decimalPoints})
+    value = data[field.id]
+    if Number.isNaN(value)
+      value = null
     Setter.merge(Setter.clone(field), {label: label, value: value, units: units})
 
-  fieldToRenderElement: (field) ->
+  fieldToRenderElement: (field, formatter) ->
     param = field.param
     if param?
       units = field.units
       label = field.label
       value = field.value
+      paramSchema = ParametersSchema.schema(param)
+      decimalPoints = paramSchema.decimalPoints ? 2
+      unless value?
+        value = 'N/A'
+      else if paramSchema.type == Number
+        # Round the value using the formatter to a fixed set of decimal points, otherwise it's hard
+        # to compare values.
+        value = formatter.round(value, {minSigFigs: decimalPoints, maxSigFigs: decimalPoints})
       $field = $('<div class="field"></div>')
       $label = $('<div class="label"><div class="content">' + label + '</div></div>')
       if units?
@@ -101,11 +104,8 @@
       return $('<div class="subtitle">' + field.title + '</div>')
 
   toCSV: (renderedFields) ->
-    rows = []
-    # TODO(aramk) Scale quotes in the cells.
-    cellArrayToString = (cells) -> '"' + cells.join('","') + '"'
-    addRow = (cells) -> rows.push(cellArrayToString(cells))
-    addRow(['ID', 'Label', 'Category', 'Units', 'Value'])
+    csv = new Csv()
+    csv.addRow ['ID', 'Label', 'Category', 'Units', 'Value']
     currentCategory = ''
     _.each renderedFields, (field) ->
       data = field.data
@@ -113,6 +113,6 @@
       if title
         currentCategory = title
         return
-      addRow([data.param, data.label, currentCategory, data.units, data.value])
-    rows.join('\n')
+      csv.addRow [data.param, data.label, currentCategory, data.units, data.value]
+    csv.toString()
 
