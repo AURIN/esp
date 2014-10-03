@@ -74,7 +74,7 @@ renderReport = (id) ->
   UI.insert currentReportTemplate, $currentReport[0]
   PubSub.publish 'report/rendered', $currentReport
   $report = $(TemplateUtils.getDom(currentReportTemplate))
-  $report.on 'render', (args) ->
+  $report.on 'render', (e, args) ->
     renderDf.resolve(args)
     # Place the header info into the report panel header
     $info = $('.info', $report)
@@ -119,7 +119,6 @@ Template.reportPanel.rendered = ->
   $downloadButton.on 'click', ->
     renderDf.promise.then (args) ->
       csv = Reports.toCSV(args.renderedFields)
-      console.log(csv)
       blob = Blobs.fromString(csv, type: 'text/csv;charset=utf-8;')
       report = reports.findOne(currentReportId)
       filename = report.name + '.csv'

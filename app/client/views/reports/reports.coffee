@@ -60,12 +60,12 @@
         title: title
 
   renderField: (field, data, formatter) ->
-    renderObj = @fieldToRenderObject(field, data, formatter)
+    renderData = @fieldToRenderData(field, data, formatter)
     renderedField =
-      obj: renderObj
-      element: @fieldToRenderElement(renderObj)
+      data: renderData
+      element: @fieldToRenderElement(renderData)
 
-  fieldToRenderObject: (field, data, formatter) ->
+  fieldToRenderData: (field, data, formatter) ->
     param = field.param
     unless param?
       return Setter.clone(field)
@@ -101,10 +101,18 @@
       return $('<div class="subtitle">' + field.title + '</div>')
 
   toCSV: (renderedFields) ->
-    # TODO(aramk)
-    [
-      '"1","val1","val2","val3","val4"',
-      '"2","val1","val2","val3","val4"',
-      '"3","val1","val2","val3","val4"'
-    ].join('\n')
+    rows = []
+    # TODO(aramk) Scale quotes in the cells.
+    cellArrayToString = (cells) -> '"' + cells.join('","') + '"'
+    addRow = (cells) -> rows.push(cellArrayToString(cells))
+    addRow(['ID', 'Label', 'Category', 'Units', 'Value'])
+    currentCategory = ''
+    _.each renderedFields, (field) ->
+      data = field.data
+      title = data.title
+      if title
+        currentCategory = title
+        return
+      addRow([data.param, data.label, currentCategory, data.units, data.value])
+    rows.join('\n')
 
