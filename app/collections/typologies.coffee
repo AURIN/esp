@@ -38,11 +38,12 @@ Units =
   ha: 'ha'
   kgco2: 'kg CO_2-e'
   kgco2m2: 'kg CO_2-e/m^2'
-  kWhyear: 'kWh/year'
+  kW: 'kW'
   kWh: 'kWh'
   kWhday: 'kWh/day'
-  kL: 'kL'
-  kLm2year: 'kL/m²/year'
+  kWhyear: 'kWh/year'
+  kLyear: 'kL/year'
+  kLm2year: 'kL/m^2/year'
   Lsec: 'L/second'
   Lyear: 'L/year'
   m: 'm'
@@ -817,7 +818,7 @@ typologyCategories =
         label: 'Plot Ratio'
         desc: 'The building footprint area divided by the lot size.'
         type: Number
-        calc: '$space.fpa / $space.lotsize'
+        calc: '$space.gfa / $space.lotsize'
       occupants:
         label: 'No. Occupants'
         desc: 'Number of occupants in the typology.'
@@ -997,7 +998,7 @@ typologyCategories =
         desc: 'PV system size fitted on the typology.'
         type: Number
         decimal: true
-        units: Units.kWhyear
+        units: Units.kW
         classes:
           RESIDENTIAL:
             defaultValue: 0
@@ -1119,65 +1120,65 @@ typologyCategories =
         desc: 'Internal potable water use of the typology.'
         type: Number
         decimal: true
-        units: Units.kL
+        units: Units.kLyear
       i_wu_bore:
         label: 'Internal Water Use - Bore'
         desc: 'Internal bore water use of the typology.'
         type: Number
         decimal: true
-        units: Units.kL
+        units: Units.kLyear
       i_wu_rain:
         label: 'Internal Water Use - Rain'
         desc: 'Internal rain water use of the typology.'
         type: Number
         decimal: true
-        units: Units.kL
+        units: Units.kLyear
       i_wu_treat:
         label: 'Internal Water Use - Treated'
         desc: 'Internal treated water use of the typology.'
         type: Number
         decimal: true
-        units: Units.kL
+        units: Units.kLyear
       i_wu_grey:
         label: 'Internal Water Use - Grey'
         desc: 'Internal grey water use of the typology.'
         type: Number
         decimal: true
-        units: Units.kL
+        units: Units.kLyear
       i_wu_total:
         label: 'Internal Water Use - Total'
         desc: 'Total internal water use of the typology.'
         type: Number
         decimal: true
-        units: Units.kL
+        units: Units.kLyear
         calc: '$water_demand.i_wu_pot + $water_demand.i_wu_bore + $water_demand.i_wu_rain + $water_demand.i_wu_treat + $water_demand.i_wu_grey'
       e_wd_lawn:
         label: 'External Water Demand - Lawn'
         desc: 'External water demand of lawn.'
         type: Number
         decimal: true
-        units: Units.kL
+        units: Units.kLyear
         calc: '$space.ext_land_l * $external_water.demand_lawn'
       e_wd_ap:
         label: 'External Water Demand - Annual Plants'
         desc: 'External water demand of annual plants.'
         type: Number
         decimal: true
-        units: Units.kL
+        units: Units.kLyear
         calc: '$space.ext_land_a * $external_water.demand_ap'
       e_wd_hp:
         label: 'External Water Demand - Hardy Plants'
         desc: 'External water demand of hardy plants.'
         type: Number
         decimal: true
-        units: Units.kL
+        units: Units.kLyear
         calc: '$space.ext_land_h * $external_water.demand_hp'
       e_wd_total:
         label: 'External Water Demand - Total'
         desc: 'Total external water demand of the typology.'
         type: Number
         decimal: true
-        units: Units.kL
+        units: Units.kLyear
         calc: '$water_demand.e_wd_lawn + $water_demand.e_wd_ap + $water_demand.e_wd_hp'
       e_wd_src:
         label: 'External Water Demand - Source'
@@ -1192,14 +1193,14 @@ typologyCategories =
         desc: 'Total potable water use for internal and external purposes.'
         type: Number
         decimal: true
-        units: Units.kL
+        units: Units.kLyear
         calc: '$water_demand.i_wu_pot + IF($water_demand.e_wd_src == "Potable", $water_demand.e_wd_total, 0)'
       wd_total:
         label: 'Water Demand - Total'
         desc: 'Total water use for internal and external purposes.'
         type: Number
         decimal: true
-        units: Units.kL
+        units: Units.kLyear
         calc: '$water_demand.i_wu_total + $water_demand.e_wd_total'
   stormwater:
     label: 'Stormwater'

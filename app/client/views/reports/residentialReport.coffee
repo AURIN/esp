@@ -10,6 +10,7 @@ Meteor.startup ->
       {param: 'space.extland'}
       {param: 'space.fpa'}
       {param: 'space.gfa'}
+#      {param: 'space.cfa'}
       {param: 'space.plot_ratio'}
       {param: 'space.dwell_dens'}
       {param: 'space.dwell_tot'}

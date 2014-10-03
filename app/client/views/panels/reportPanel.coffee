@@ -14,12 +14,14 @@ precinctReportId = 'precinct'
 renderReport = (id) ->
   unless id?
     throw new Error('No report ID provided for rendering')
+  report = reports.findOne(id)
+  unless report?
+    throw new Error('No such report with ID ' + report)
   # If the same report is rendered, keep the scroll position.
   scrollTop = null
   if currentReportId == id
     scrollTop = $reportPanelContent.scrollTop()
   currentReportId = id
-  report = reports.findOne(id)
   $currentReport = $('<div class="report-container"></div>')
   if scrollTop?
     # Wait until the report has rendered before setting scroll position.
@@ -70,7 +72,7 @@ renderReport = (id) ->
   UI.insert currentReportTemplate, $currentReport[0]
   PubSub.publish 'report/rendered', $currentReport
 
-refreshReport = -> renderReport(currentReportId)
+refreshReport = -> renderReport(currentReportId) if currentReportId?
 PubSub.subscribe 'report/refresh', -> refreshReport()
 
 Template.reportPanel.created = ->
@@ -85,7 +87,7 @@ Template.reportPanel.created = ->
   AtlasManager.getAtlas().then (atlas) ->
     atlas.subscribe 'entity/selection/change', ->
       console.debug('entity/selection/change', @, arguments)
-      refreshReport() if currentReportId?
+      refreshReport()
 
 Template.reportPanel.rendered = ->
   $reportDropdown = $(@find('.report.dropdown'))

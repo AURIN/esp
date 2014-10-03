@@ -181,10 +181,10 @@ TemplateClass.onAtlasLoad = (template, atlas) ->
       oldEntityId = oldLot.entity
       newEntityId = newLot.entity
       unrenderLot(id)
-      renderLot(id)
-      unrenderEntity(oldEntityId)
-      if newEntityId?
-        renderEntity(newEntityId)
+      renderLot(id).then ->
+        unrenderEntity(oldEntityId)
+        if newEntityId?
+          renderEntity(newEntityId)
     removed: (lot) ->
       unrenderLot(lot._id)
 
