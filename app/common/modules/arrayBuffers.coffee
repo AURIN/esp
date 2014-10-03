@@ -1,8 +1,8 @@
 @ArrayBuffers =
 
   stringToBufferArray: (str) ->
-    buf = new ArrayBuffer(str.length * 2) # 2 bytes for each char
-    bufView = new Uint16Array(buf)
+    buffer = new ArrayBuffer(str.length)
+    bytes = new Uint8Array(buffer)
     for i in [0..str.length]
-      bufView[i] = str.charCodeAt(i)
-    buf
+      bytes[i] = str.charCodeAt(i)
+    buffer

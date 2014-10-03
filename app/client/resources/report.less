@@ -7,6 +7,7 @@
       &, > * {
         border-radius: 0 !important;
         box-shadow: none !important;
+        border: none !important;
       }
       &.no-padding {
         padding: 0;
@@ -73,6 +74,13 @@
   overflow: hidden;
   .header {
     flex-shrink: 0;
+    .ui.menu .item:before {
+      display: none;
+    }
+    .tools .button {
+      // Popup adds .visible which is display: block;
+      display: inline-block !important;
+    }
   }
   .content {
     flex-grow: 1;

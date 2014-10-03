@@ -11,6 +11,7 @@ currentReportTemplate = null
 $reportPanelContent = null
 $currentReport = null
 precinctReportId = 'precinct'
+renderDf = null
 
 renderReport = (id) ->
   unless id?
@@ -18,6 +19,8 @@ renderReport = (id) ->
   report = reports.findOne(id)
   unless report?
     throw new Error('No such report with ID ' + report)
+  # A promise for the rendered report fields
+  renderDf = Q.defer()
   # If the same report is rendered, keep the scroll position.
   scrollTop = null
   if currentReportId == id
@@ -34,9 +37,7 @@ renderReport = (id) ->
     TemplateUtils.getDom(currentReportTemplate).remove()
   templateName = report.templateName
   ReportTemplate = Template[templateName]
-  console.debug 'Rendering report', templateName
-
-  # TODO(aramk) Filter based on selected entities/typologies with Session.get
+  console.log 'Rendering report', templateName
 
   evalEngine = new EvaluationEngine(schema: Entities.simpleSchema())
   reportGenerator = new ReportGenerator(evalEngine: evalEngine)
@@ -72,9 +73,10 @@ renderReport = (id) ->
   currentReportTemplate = UI.renderWithData(Template[templateName], reportData)
   UI.insert currentReportTemplate, $currentReport[0]
   PubSub.publish 'report/rendered', $currentReport
-  # Place the header info into the report panel header
   $report = $(TemplateUtils.getDom(currentReportTemplate))
-  $report.on 'render', ->
+  $report.on 'render', (args) ->
+    renderDf.resolve(args)
+    # Place the header info into the report panel header
     $info = $('.info', $report)
     $panelHeader = reportPanelTemplate.$('.panel > .header')
     # Remove existing info element.
@@ -82,6 +84,7 @@ renderReport = (id) ->
     # Remove header from report since it's now empty.
     $('.header', $report).detach()
     $panelHeader.append($info)
+
 
 refreshReport = -> renderReport(currentReportId) if currentReportId?
 PubSub.subscribe 'report/refresh', -> refreshReport()
@@ -102,14 +105,25 @@ Template.reportPanel.created = ->
       refreshReport()
 
 Template.reportPanel.rendered = ->
-  $reportDropdown = $(@find('.report.dropdown'))
-  $refreshButton = $(@find('.refresh.button')).hide()
   $reportPanelContent = $(@find('.content'))
+  $reportDropdown = $(@find('.report.dropdown'))
+  $refreshButton = $(@find('.refresh.button'))
+  $downloadButton = $(@find('.download.button'))
+  $tools = $(@find('.tools')).hide()
   doRender = ->
     id = Template.dropdown.getValue($reportDropdown)
     renderReport(id)
     $refreshButton.show()
+    $tools.show()
   $refreshButton.on 'click', doRender
+  $downloadButton.on 'click', ->
+    renderDf.promise.then (args) ->
+      csv = Reports.toCSV(args.renderedFields)
+      console.log(csv)
+      blob = Blobs.fromString(csv, type: 'text/csv;charset=utf-8;')
+      report = reports.findOne(currentReportId)
+      filename = report.name + '.csv'
+      Blobs.downloadInBrowser(blob, filename)
   $reportDropdown.on 'change', doRender
 
 Template.reportPanel.helpers

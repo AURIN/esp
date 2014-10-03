@@ -6,8 +6,14 @@
         <div class="item dropdown-container no-padding">
           {{> dropdown name="report" items=reports}}
         </div>
-        <div class="ui refresh button icon basic item">
-          <i class="refresh icon"></i>
+        <div class="tools">
+          <div class="ui refresh button icon basic item popup" title="Refresh the report">
+            <i class="refresh icon"></i>
+          </div>
+          <div class="ui download button icon basic item popup" title="Download the report
+           as a CSV file.">
+            <i class="down icon"></i>
+          </div>
         </div>
       </div>
     </div>
