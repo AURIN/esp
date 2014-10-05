@@ -1,3 +1,5 @@
 .env
+programs/server/node_modules
 programs/server/node_modules/fibers
 programs/server/node_modules/bcrypt
+programs/server/npm/npm-bcrypt

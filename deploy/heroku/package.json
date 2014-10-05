@@ -2,9 +2,9 @@
     "name": "aurin-esp",
     "version": "0.0.1",
     "engines": {
-      "node": "0.10.x"
+      "node": "0.10.29"
     },
     "scripts": {
-        "postinstall": "cd programs/server && rm -rf node_modules/fibers node_modules/fibers && npm install fibers@1.0.1 && npm install bcrypt@0.7.7 && cd ../.."
+        "postinstall": "cd programs/server && rm -rf node_modules && npm install && npm install bcrypt@0.7.7 && mkdir -p npm/npm-bcrypt/node_modules && mv node_modules/bcrypt npm/npm-bcrypt/node_modules && cd ../.."
     }
 }

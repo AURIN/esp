@@ -10,6 +10,7 @@ bower_components
 *.swp
 dist/
 dist_tmp/
+/heroku
 
 # Compiled source #
 ###################

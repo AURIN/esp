@@ -15,6 +15,7 @@ module.exports = function(grunt) {
   // The directory to build into before merging with the existing distribution.
   var DIST_TEMP_DIR = 'dist_tmp';
   var HEROKU_DIR = 'heroku';
+  var HEROKU_CONFIG_DIR = path.join('deploy', 'heroku');
   var PUBLIC_DIR = appPath('public');
 
   var DEPLOY_CONFIGS = {
@@ -91,7 +92,18 @@ module.exports = function(grunt) {
             ]
           }
         ]
-      }
+      },
+//      herokuNpmGitIgnores: {
+//        files: [
+//          {
+//            expand: true,
+//            cwd: path.join(HEROKU_DIR, 'programs', 'server', 'npm'),
+//            src: [
+//              path.join('**', '.gitignore')
+//            ]
+//          }
+//        ]
+//      }
     }
   });
 
@@ -173,14 +185,15 @@ module.exports = function(grunt) {
     }
   });
 
-  grunt.registerTask('build', 'Builds the app.', function() {
+  grunt.registerTask('build', 'Builds the app.', function(arg1) {
     mkdir(DIST_DIR);
-    var cmd = 'meteor build --debug --directory ' + path.join('..', DIST_TEMP_DIR);
+    shell.rm('-rf', DIST_DIR, '*');
+    var debug = arg1 === 'debug' ? '--debug' : '';
+    var cmd = 'meteor build ' + debug + ' --directory ' + path.join('..', DIST_TEMP_DIR);
     shell.cd(APP_DIR);
     shell.exec(cmd);
     shell.cd('..');
     // Remove existing files in app directories to prevent conflicts or old files remaining.
-    shell.rm('-rf', path.join(DIST_DIR, 'programs'));
     shell.cp('-Rf', path.join(DIST_TEMP_DIR, 'bundle', '*'), DIST_DIR);
     shell.rm('-rf', DIST_TEMP_DIR);
   });
@@ -190,7 +203,7 @@ module.exports = function(grunt) {
     var done = this.async();
     // TODO(aramk) Run this as a child process since it causes huge CPU lag otherwise.
     if (arg1 === 'heroku') {
-      buildHeroku(done);
+      deployHeroku(done);
     } else if (arg1 === 'meteor') {
       shell.cd(APP_DIR);
       var cmd = 'meteor deploy ' + APP_ID + '.meteor.com';
@@ -204,19 +217,17 @@ module.exports = function(grunt) {
       });
     } else {
       console.log('Deploying locally...');
-      // TODO(aramk) Fix paths for this.
-      throw new Error('Not supported yet.');
       var result = shell.cd(DIST_DIR);
       if (result === null) {
         console.log('Run `grunt build` before deploy.');
         return;
       }
-      shell.cd(path.join('programs', 'server'));
-      shell.rm('-rf', 'node_modules/fibers');
-      shell.rm('-rf', 'node_modules/bcrypt');
-      shell.exec('npm install fibers@1.0.1');
-      shell.exec('npm install bcrypt@0.7.7');
-      shell.cd('../..');
+      if (arg2 !== 'lazy') {
+        shell.cd(path.join('programs', 'server'));
+        // Install all dependencies.
+        shell.exec('npm install');
+        shell.cd('../..');
+      }
       config = DEPLOY_CONFIGS.LOCAL;
       var MONGO_URL = 'mongodb://' + urlAuth(config.MONGO_USER, config.MONGO_PASSWORD) +
           config.MONGO_HOST + ':' + config.MONGO_PORT + '/' +
@@ -264,7 +275,7 @@ module.exports = function(grunt) {
   // AUXILIARY
   //////////////////////////////////////////////////////////////////////////////////////////////////
 
-  function buildHeroku(done) {
+  function deployHeroku(done) {
     if (!fs.existsSync('.git')) {
       console.log('Run `grunt build` before deploy.');
       done();
@@ -279,7 +290,7 @@ module.exports = function(grunt) {
       var runClone = runProcess('git clone ' + herukoGitRepo + ' ' + HEROKU_DIR);
       runClone.on('exit', function() {
         shell.cd(HEROKU_DIR);
-        execAll(['heroku git:remote -a ' + config.APP_NAME, 'git pull heroku master'], function () {
+        execAll(['heroku git:remote -a ' + config.APP_NAME, 'git pull heroku master'], function() {
           shell.cd('..');
           callback();
         });
@@ -287,11 +298,25 @@ module.exports = function(grunt) {
     }
 
     function copyDist() {
+      console.log('Copying build...');
+      // Remove existing files to avoid keeping outdated source files.
+      shell.rm('-rf', path.join(HEROKU_DIR, '*'));
       shell.cp('-Rf', path.join(DIST_DIR, '*'), HEROKU_DIR);
+      // Comment this if we don't want to overwrite config files in heroku git repo.
+      shell.cp('-Rf', path.join(HEROKU_CONFIG_DIR, '*'), HEROKU_DIR);
+      removeNpmGitIgnores();
+    }
+
+    function removeNpmGitIgnores() {
+      console.log('Removing git ignores in npm/...');
+      shell.echo(shell.pwd());
+      var npmPath = path.join(HEROKU_DIR, 'programs', 'server', 'npm');
+      shell.exec('find ' + npmPath + ' -type f -name .gitignore | xargs rm');
     }
 
     function updateHeroku() {
       copyDist();
+      console.log('Updating heroku app...');
       shell.cd(HEROKU_DIR);
       execAll(['git pull heroku master', 'git add -A', 'git commit -am "Deployment."',
         'git push heroku master', 'heroku restart'], function() {

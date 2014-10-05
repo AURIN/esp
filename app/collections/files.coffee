@@ -1,4 +1,8 @@
-@Files = new FS.Collection 'files', stores: [new FS.Store.FileSystem('files')]
+@Files = new FS.Collection 'files', stores: [
+  new FS.Store.FileSystem('files', {
+    path: '/tmp/meteor-files'
+  })
+]
 
 Files.allow
   download: Collections.allow
