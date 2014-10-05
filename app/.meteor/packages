@@ -27,6 +27,7 @@ nooitaf:semantic-ui
 percolatestudio:percolatestudio-migrations
 raix:handlebar-helpers
 stevezhu:lodash
+awatson1978:dropzone
 
 # PUBLIC-FORKS
 # These are forked repos and added as private packages.
