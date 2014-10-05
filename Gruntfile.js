@@ -174,13 +174,13 @@ module.exports = function(grunt) {
 
   grunt.registerTask('build', 'Builds the app.', function() {
     mkdir(DIST_DIR);
-    var cmd = 'meteor bundle --debug --directory ' + path.join('..', DIST_TEMP_DIR);
+    var cmd = 'meteor build --debug --directory ' + path.join('..', DIST_TEMP_DIR);
     shell.cd(APP_DIR);
     shell.exec(cmd);
     shell.cd('..');
     // Remove existing files in app directories to prevent conflicts or old files remaining.
     shell.rm('-rf', path.join(DIST_DIR, 'programs'));
-    shell.cp('-Rf', path.join(DIST_TEMP_DIR, '*'), DIST_DIR);
+    shell.cp('-Rf', path.join(DIST_TEMP_DIR, 'bundle', '*'), DIST_DIR);
     shell.rm('-rf', DIST_TEMP_DIR);
   });
 
@@ -215,7 +215,6 @@ module.exports = function(grunt) {
         var herukoGitRepo = 'git@heroku.com:' + config.APP_NAME + '.git';
         var runClone = runProcess('git', {args: ['clone ' + herukoGitRepo + ' ' + DIST_DIR]});
         runClone.on('exit', function() {
-          shell.exec('git clone ' + herukoGitRepo + ' ' + DIST_DIR);
           shell.cd(DIST_DIR);
           execAll(['heroku git:remote -a ' + config.APP_NAME, 'git pull heroku master'],
               function() {
