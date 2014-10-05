@@ -14,6 +14,7 @@ module.exports = function(grunt) {
   var DIST_DIR = 'dist';
   // The directory to build into before merging with the existing distribution.
   var DIST_TEMP_DIR = 'dist_tmp';
+  var HEROKU_DIR = 'heroku';
   var PUBLIC_DIR = appPath('public');
 
   var DEPLOY_CONFIGS = {
@@ -84,7 +85,7 @@ module.exports = function(grunt) {
         files: [
           {
             expand: true,
-            cwd: DIST_TEMP_DIR,
+            cwd: DIST_DIR,
             src: [
               path.join('**', '*')
             ]
@@ -186,48 +187,10 @@ module.exports = function(grunt) {
 
   grunt.registerTask('deploy', 'Deploys the built app.', function(arg1, arg2) {
     var config;
-    var isMeteor = arg1 === 'meteor';
-    if (!isMeteor) {
-      // All fs, process, shell methods are relative to this directory now.
-      var result = shell.cd(DIST_DIR);
-      if (result === null) {
-        console.log('Run `grunt build` before deploy.');
-        return;
-      }
-    }
     var done = this.async();
     // TODO(aramk) Run this as a child process since it causes huge CPU lag otherwise.
     if (arg1 === 'heroku') {
-      config = DEPLOY_CONFIGS.HEROKU;
-      function updateHeroku() {
-        execAll(['git pull heroku master', 'git add -A', 'git commit -am "Deployment."',
-          'git push heroku master', 'heroku restart'], function() {
-          done();
-        });
-      }
-
-      console.log('Deploying on Heroku...');
-      if (!fs.existsSync('.git')) {
-        console.log('Setting up git repo...');
-        shell.cd('..');
-        shell.rm('-rf', DIST_TEMP_DIR);
-        shell.mv(DIST_DIR, DIST_TEMP_DIR);
-        var herukoGitRepo = 'git@heroku.com:' + config.APP_NAME + '.git';
-        var runClone = runProcess('git', {args: ['clone ' + herukoGitRepo + ' ' + DIST_DIR]});
-        runClone.on('exit', function() {
-          shell.cd(DIST_DIR);
-          execAll(['heroku git:remote -a ' + config.APP_NAME, 'git pull heroku master'],
-              function() {
-                var tmpDistDir = path.join('..', DIST_TEMP_DIR);
-                shell.cp('-Rf', path.join(tmpDistDir, '*'), '.');
-                shell.rm('-rf', tmpDistDir);
-                updateHeroku();
-              });
-        });
-      } else {
-        console.log('Using existing git repo...');
-        updateHeroku();
-      }
+      buildHeroku(done);
     } else if (arg1 === 'meteor') {
       shell.cd(APP_DIR);
       var cmd = 'meteor deploy ' + APP_ID + '.meteor.com';
@@ -241,6 +204,13 @@ module.exports = function(grunt) {
       });
     } else {
       console.log('Deploying locally...');
+      // TODO(aramk) Fix paths for this.
+      throw new Error('Not supported yet.');
+      var result = shell.cd(DIST_DIR);
+      if (result === null) {
+        console.log('Run `grunt build` before deploy.');
+        return;
+      }
       shell.cd(path.join('programs', 'server'));
       shell.rm('-rf', 'node_modules/fibers');
       shell.rm('-rf', 'node_modules/bcrypt');
@@ -293,6 +263,51 @@ module.exports = function(grunt) {
   //////////////////////////////////////////////////////////////////////////////////////////////////
   // AUXILIARY
   //////////////////////////////////////////////////////////////////////////////////////////////////
+
+  function buildHeroku(done) {
+    if (!fs.existsSync('.git')) {
+      console.log('Run `grunt build` before deploy.');
+      done();
+      return;
+    }
+
+    var config = DEPLOY_CONFIGS.HEROKU;
+
+    function setUpGit(callback) {
+      console.log('Setting up git repo...');
+      var herukoGitRepo = 'git@heroku.com:' + config.APP_NAME + '.git';
+      var runClone = runProcess('git clone ' + herukoGitRepo + ' ' + HEROKU_DIR);
+      runClone.on('exit', function() {
+        shell.cd(HEROKU_DIR);
+        execAll(['heroku git:remote -a ' + config.APP_NAME, 'git pull heroku master'], function () {
+          shell.cd('..');
+          callback();
+        });
+      });
+    }
+
+    function copyDist() {
+      shell.cp('-Rf', path.join(DIST_DIR, '*'), HEROKU_DIR);
+    }
+
+    function updateHeroku() {
+      copyDist();
+      shell.cd(HEROKU_DIR);
+      execAll(['git pull heroku master', 'git add -A', 'git commit -am "Deployment."',
+        'git push heroku master', 'heroku restart'], function() {
+        shell.cd('..');
+        done();
+      });
+    }
+
+    console.log('Deploying on Heroku...');
+    if (!fs.existsSync(HEROKU_DIR)) {
+      setUpGit(updateHeroku);
+    } else {
+      console.log('Using existing git repo...');
+      updateHeroku();
+    }
+  }
 
   // PROCESSES
 
