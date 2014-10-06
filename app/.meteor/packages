@@ -17,6 +17,7 @@ underscore
 cfs:filesystem
 cfs:standard-packages
 cfs:ejson-file
+cfs:http-methods
 digilord:roles
 iron:router
 kidovate:tinycolor
@@ -27,6 +28,7 @@ nooitaf:semantic-ui
 percolatestudio:percolatestudio-migrations
 raix:handlebar-helpers
 stevezhu:lodash
+awatson1978:dropzone
 
 # PUBLIC-FORKS
 # These are forked repos and added as private packages.
@@ -45,3 +47,4 @@ pubsub
 requirejs
 atlas
 atlas-cesium
+

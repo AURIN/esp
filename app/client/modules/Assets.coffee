@@ -2,7 +2,7 @@
 
   fromFile: (fileId, args) ->
     df = Q.defer()
-    Meteor.call 'assets/import', fileId, (err, result) ->
+    Meteor.call 'assets/import/file', fileId, (err, result) ->
       if err
         console.error 'Asset import failed', err, fileObj
         return
