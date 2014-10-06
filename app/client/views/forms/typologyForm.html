@@ -13,75 +13,78 @@
               {{> afFieldLabel name="parameters.general.class"}}
               {{> dropdown name="parameters.general.class" items=classes value=classValue}}
             </div>
-            {{> afQuickField name="parameters.general.state"}}
-            {{> afQuickField name="parameters.general.code"}}
-            <!-- TODO(aramk) Dropdown for subclass. -->
-            <!--{{> afQuickField name="parameters.general.subclass"}}-->
-            {{> afQuickField name="parameters.general.type" options="allowed"}}
-            {{> afQuickField name="parameters.general.climate_zn"}}
 
-            <div class="subtitle">Space</div>
-            {{> afFieldLabel name="parameters.space.geom_2d"}}
-            {{> importField name="parameters.space.geom_2d" filename="parameters.space.geom_2d_filename"}}
+            <div class="fields">
+              {{> afQuickField name="parameters.general.state"}}
+              {{> afQuickField name="parameters.general.code"}}
+              <!-- TODO(aramk) Dropdown for subclass. -->
+              <!--{{> afQuickField name="parameters.general.subclass"}}-->
+              {{> afQuickField name="parameters.general.type" options="allowed"}}
+              {{> afQuickField name="parameters.general.climate_zn"}}
 
-            {{> afFieldLabel name="parameters.space.geom_3d"}}
-            {{> importField name="parameters.space.geom_3d" filename="parameters.space.geom_3d_filename"}}
+              <div class="subtitle">Space</div>
+              {{> afFieldLabel name="parameters.space.geom_2d"}}
+              {{> importField name="parameters.space.geom_2d" filename="parameters.space.geom_2d_filename"}}
 
-            <!-- Hide input fields and set values so they are saved on submit. -->
-            <div style="display: none">
-              {{> afQuickField name="parameters.space.geom_2d"}}
-              {{> afQuickField name="parameters.space.geom_3d"}}
-              {{> afQuickField name="parameters.space.geom_2d_filename"}}
-              {{> afQuickField name="parameters.space.geom_3d_filename"}}
+              {{> afFieldLabel name="parameters.space.geom_3d"}}
+              {{> importField name="parameters.space.geom_3d" filename="parameters.space.geom_3d_filename"}}
+
+              <!-- Hide input fields and set values so they are saved on submit. -->
+              <div style="display: none">
+                {{> afQuickField name="parameters.space.geom_2d"}}
+                {{> afQuickField name="parameters.space.geom_3d"}}
+                {{> afQuickField name="parameters.space.geom_2d_filename"}}
+                {{> afQuickField name="parameters.space.geom_3d_filename"}}
+              </div>
+
+              {{> afQuickField name="parameters.space.gfa"}}
+              <!--{{> afQuickField name="parameters.space.cfa"}}-->
+              {{> afQuickField name="parameters.space.storeys"}}
+              {{> afQuickField name="parameters.space.height"}}
+              {{> afQuickField name="parameters.space.occupants"}}
+              {{> afQuickField name="parameters.space.num_0br"}}
+              {{> afQuickField name="parameters.space.num_1br"}}
+              {{> afQuickField name="parameters.space.num_2br"}}
+              {{> afQuickField name="parameters.space.num_3plus"}}
+
+              <div class="subtitle">Energy Demand</div>
+              {{> afQuickField name="parameters.energy_demand.src_heat" options="allowed"}}
+              {{> afQuickField name="parameters.energy_demand.en_heat"}}
+              {{> afQuickField name="parameters.energy_demand.en_cool"}}
+              {{> afQuickField name="parameters.energy_demand.en_light"}}
+              {{> afQuickField name="parameters.energy_demand.src_hwat" options="allowed"}}
+              {{> afQuickField name="parameters.energy_demand.en_hwat"}}
+
+              <!-- NOTE: Fields from entity form. -->
+              {{> afQuickField name="parameters.energy_demand.src_cook" options="allowed"}}
+              {{> afQuickField name="parameters.energy_demand.type_app" options="allowed"}}
+              {{> afQuickField name="parameters.energy_demand.size_pv"}}
+
+              <div class="subtitle">Embodied Carbon</div>
+              {{> afQuickField name="parameters.embodied_carbon.i_co2_emb"}}
+
+              <div class="subtitle">Water Demand</div>
+              {{> afQuickField name="parameters.water_demand.i_wu_pot"}}
+              {{> afQuickField name="parameters.water_demand.i_wu_bore"}}
+              {{> afQuickField name="parameters.water_demand.i_wu_rain"}}
+              {{> afQuickField name="parameters.water_demand.i_wu_treat"}}
+              {{> afQuickField name="parameters.water_demand.i_wu_grey"}}
+
+              <!-- NOTE: Fields from entity form. -->
+              {{> afQuickField name="parameters.water_demand.e_wd_src" options="allowed"}}
+
+              <div class="subtitle">Financial</div>
+              {{> afQuickField name="parameters.financial.cost_con"}}
+
+              <div class="subtitle">Orientation</div>
+              {{> afQuickField name="parameters.orientation.azimuth"}}
+              {{> afQuickField name="parameters.orientation.eq_azmth_h"}}
+              {{> afQuickField name="parameters.orientation.eq_azmth_c"}}
+
+              <div class="subtitle">Parking</div>
+              {{> afQuickField name="parameters.parking.parking_sl"}}
+              {{> afQuickField name="parameters.parking.parking_ug"}}
             </div>
-
-            {{> afQuickField name="parameters.space.gfa"}}
-            <!--{{> afQuickField name="parameters.space.cfa"}}-->
-            {{> afQuickField name="parameters.space.storeys"}}
-            {{> afQuickField name="parameters.space.height"}}
-            {{> afQuickField name="parameters.space.occupants"}}
-            {{> afQuickField name="parameters.space.num_0br"}}
-            {{> afQuickField name="parameters.space.num_1br"}}
-            {{> afQuickField name="parameters.space.num_2br"}}
-            {{> afQuickField name="parameters.space.num_3plus"}}
-
-            <div class="subtitle">Energy Demand</div>
-            {{> afQuickField name="parameters.energy_demand.src_heat" options="allowed"}}
-            {{> afQuickField name="parameters.energy_demand.en_heat"}}
-            {{> afQuickField name="parameters.energy_demand.en_cool"}}
-            {{> afQuickField name="parameters.energy_demand.en_light"}}
-            {{> afQuickField name="parameters.energy_demand.src_hwat" options="allowed"}}
-            {{> afQuickField name="parameters.energy_demand.en_hwat"}}
-
-            <!-- NOTE: Fields from entity form. -->
-            {{> afQuickField name="parameters.energy_demand.src_cook" options="allowed"}}
-            {{> afQuickField name="parameters.energy_demand.type_app" options="allowed"}}
-            {{> afQuickField name="parameters.energy_demand.size_pv"}}
-
-            <div class="subtitle">Embodied Carbon</div>
-            {{> afQuickField name="parameters.embodied_carbon.i_co2_emb"}}
-
-            <div class="subtitle">Water Demand</div>
-            {{> afQuickField name="parameters.water_demand.i_wu_pot"}}
-            {{> afQuickField name="parameters.water_demand.i_wu_bore"}}
-            {{> afQuickField name="parameters.water_demand.i_wu_rain"}}
-            {{> afQuickField name="parameters.water_demand.i_wu_treat"}}
-            {{> afQuickField name="parameters.water_demand.i_wu_grey"}}
-
-            <!-- NOTE: Fields from entity form. -->
-            {{> afQuickField name="parameters.water_demand.e_wd_src" options="allowed"}}
-
-            <div class="subtitle">Financial</div>
-            {{> afQuickField name="parameters.financial.cost_con"}}
-
-            <div class="subtitle">Orientation</div>
-            {{> afQuickField name="parameters.orientation.azimuth"}}
-            {{> afQuickField name="parameters.orientation.eq_azmth_h"}}
-            {{> afQuickField name="parameters.orientation.eq_azmth_c"}}
-
-            <div class="subtitle">Parking</div>
-            {{> afQuickField name="parameters.parking.parking_sl"}}
-            {{> afQuickField name="parameters.parking.parking_ug"}}
 
             <div class="crud buttons">
               <button type="button" class="ui red cancel button">Cancel</button>

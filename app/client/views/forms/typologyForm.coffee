@@ -15,6 +15,8 @@ Meteor.startup ->
       origInputs = @origInputs = {}
     # TODO(aramk) Refactor with entityForm.
     typologyClass = Template.dropdown.getValue(getClassInput.call(@))
+    # Only show fields when a class is selected.
+    @.$('.fields').toggle(!!typologyClass)
     defaultParams = Typologies.getDefaultParameterValues(typologyClass)
     console.debug 'updateFields', @, arguments, typologyClass
     for key, input of Forms.getSchemaInputs(@, collection)

@@ -114,6 +114,9 @@ body {
 .crud.form {
   .ui.form {
     padding: 10px 0;
+    .fields {
+      padding: 0;
+    }
   }
   form {
     width: 100%;
@@ -136,6 +139,7 @@ body {
     > * {
       padding: 0 10px;
       margin-bottom: 10px;
+      width: auto;
       .control-label {
         width: 100%;
         display: block;
@@ -204,23 +208,25 @@ body {
     box-shadow: 0 0 0 1px @color-line-3;
   }
   .subtitle,
-    // Overrides
-  .crud.form form > .subtitle,
-  &.crud.form form > .subtitle {
+  .crud.form form .subtitle {
     padding: 8px;
     background: #eee;
     font-size: 13px;
     margin-bottom: 10px;
   }
   .subsubtitle,
-    // Overrides
-  .crud.form form > .subsubtitle,
-  &.crud.form form > .subsubtitle {
+  .crud.form form > .subsubtitle {
     font-weight: bold;
     background: #f8f8f8;
     padding-bottom: 6px;
     padding-top: 6px;
   }
+}
+
+.crud.form form .fields > * {
+  padding: 0 10px;
+  margin-bottom: 10px;
+  width: auto;
 }
 
 .units {
