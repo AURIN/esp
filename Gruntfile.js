@@ -164,7 +164,7 @@ module.exports = function(grunt) {
     // Replace the path to the cesium style which is now in the app's public folder.
     writeFile(ATLAS_CESIUM_STYLE_FILE, function(data) {
       return data.replace(/(@import\s+["'])[^;]*cesium/,
-              '$1' + path.join(PUBLIC_PARENT_DIR, 'atlas-cesium', 'cesium'));
+          '$1' + path.join(PUBLIC_PARENT_DIR, 'atlas-cesium', 'cesium'));
     });
   });
 
@@ -187,7 +187,7 @@ module.exports = function(grunt) {
 
   grunt.registerTask('build', 'Builds the app.', function(arg1) {
     mkdir(DIST_DIR);
-    shell.rm('-rf', DIST_DIR, '*');
+    shell.rm('-rf', path.join(DIST_DIR, '*'));
     var debug = arg1 === 'debug' ? '--debug' : '';
     var cmd = 'meteor build ' + debug + ' --directory ' + path.join('..', DIST_TEMP_DIR);
     shell.cd(APP_DIR);
@@ -387,8 +387,7 @@ module.exports = function(grunt) {
    * @param {Function} [args.afterAll] - Called after all commands are executed.
    */
   function runProcessSeries(cmds, args) {
-    args = _.extend({
-    }, args);
+    args = _.extend({}, args);
     var processes = [];
     _.each(cmds, function(cmd, i) {
       var callNext = function() {

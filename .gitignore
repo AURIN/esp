@@ -8,8 +8,8 @@ node_modules
 bower_components
 *.lock
 *.swp
-dist/
-dist_tmp/
+/dist
+/dist_tmp
 /heroku
 
 # Compiled source #

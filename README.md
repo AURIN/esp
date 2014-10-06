@@ -7,15 +7,19 @@ Install Grunt and Bower globally:
 
 	$ npm install -g grunt-cli
 	$ npm install -g bower
+	
+Install [Meteor](https://www.meteor.com/):
+
+	$ curl https://install.meteor.com/ | sh
+
+Install [Meteorite](https://github.com/oortcloud/meteorite/):
+
+  $ npm install -g meteorite
 
 Run the following:
 
 	$ npm install
 	$ grunt install
-	
-Install [Meteor](https://www.meteor.com/):
-
-	$ curl https://install.meteor.com/ | sh
 
 Running
 -------
@@ -33,11 +37,15 @@ Deployment settings are found in `Gruntfile.js`.
 
 ### Local
 
-	$ grunt deploy
+	$ grunt deploy:local
 
 ### Heroku
 
 	$ grunt deploy:heroku
+
+### meteor.com
+
+	$ grunt deploy:meteor
 
 Structure
 ------------
