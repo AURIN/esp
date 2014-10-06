@@ -1,18 +1,28 @@
 .asset.form {
-  .dropzone .dz-default.dz-message {
-    width: 100%;
-    position: relative;
-    height: 300px;
-    margin: 0;
-    padding: 0;
-    top: inherit;
-    left: inherit;
-    text-align: center;
-    font-size: 14px;
-    color: #999;
-    background-image: none;
-    span {
-      display: block;
+  .dropzone {
+    padding: 10px;
+    margin: 10px;
+    .dz-preview {
+      display: none;
     }
+    .dz-default.dz-message {
+      background-image: none;
+      position: relative;
+      top: auto;
+      left: auto;
+      height: auto;
+      width: auto;
+      margin: 0;
+      text-align: center;
+      font-size: 1.2rem;
+      color: #777;
+      font-weight: bold;
+      span {
+        display: block;
+      }
+    }
+  }
+  .ui.form.segment {
+    padding-top: 0;
   }
 }

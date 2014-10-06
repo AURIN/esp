@@ -17,6 +17,7 @@ underscore
 cfs:filesystem
 cfs:standard-packages
 cfs:ejson-file
+cfs:http-methods
 digilord:roles
 iron:router
 kidovate:tinycolor
@@ -46,3 +47,4 @@ pubsub
 requirejs
 atlas
 atlas-cesium
+
