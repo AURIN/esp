@@ -36,15 +36,14 @@ aldeed:autoform
 aldeed:collection2
 aldeed:simple-schema
 #joshowens:accounts-entry
+aramk:pubsub
 
 # PRIVATE
 collection-table
 dropdown
 q
 utility
-pubsub
 # These come last so RequireJS doesn't cause issues.
 requirejs
 atlas
 atlas-cesium
-

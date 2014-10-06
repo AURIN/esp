@@ -28,9 +28,6 @@
     "q": {
       "git": "https://github.com/aramk/q.git",
       "branch": "v1"
-    },
-    "pubsub": {
-      "git": "https://github.com/aramk/PubSubJS.git"
     }
   }
 }
