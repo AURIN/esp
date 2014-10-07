@@ -4,10 +4,7 @@
       "git": "https://github.com/aramk/requirejs.git"
     },
     "stevezhu:lodash": {
-      "git": "https://github.com/aramk/meteor-lodash.git"
-    },
-    "utility": {
-      "git": "https://github.com/aramk/meteor-utility.git"
+      "git": "https://github.com/stevezhu/meteor-lodash.git"
     },
     "atlas": {
       "path": "../bower_components/atlas"

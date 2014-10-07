@@ -1633,7 +1633,7 @@ Lots.createEntity = (lotId, typologyId) ->
 ####################################################################################################
 
 # Entities don't need the class parameter since they reference the typology.
-entityCategories = lodash.cloneDeep(typologyCategories)
+entityCategories = Setter.clone(typologyCategories)
 delete entityCategories.general.items.class
 @EntityParametersSchema = createCategoriesSchema
   categories: entityCategories

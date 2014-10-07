@@ -27,7 +27,6 @@ mrt:moment
 nooitaf:semantic-ui
 percolatestudio:percolatestudio-migrations
 raix:handlebar-helpers
-stevezhu:lodash
 awatson1978:dropzone
 
 # PUBLIC-FORKS
@@ -37,12 +36,12 @@ aldeed:collection2
 #aldeed:simple-schema
 #joshowens:accounts-entry
 aramk:pubsub
+aramk:utility
 
 # PRIVATE
 collection-table
 dropdown
 q
-utility
 # These come last so RequireJS doesn't cause issues.
 requirejs
 atlas

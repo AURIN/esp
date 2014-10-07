@@ -77,6 +77,12 @@ TemplateClass.rendered = ->
   # Add popups to fields
   @$('.popup').popup()
 
+  # Use icons for display mode dropdowns
+  _.each ['.lotDisplayMode.dropdown', '.entityDisplayMode.dropdown'], (cls) ->
+    $dropdown = @$(cls)
+    $('.dropdown.icon', $dropdown).attr('class', 'photo icon')
+    $('.text', $dropdown).hide()
+
 onEditFormPanel = (args) ->
   id = args.ids[0]
   collection = args.collection

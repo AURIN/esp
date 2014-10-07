@@ -7,7 +7,7 @@
           {{> collectionTable collection="Entities" items=entities settings=tableSettings}}
           <div class="extra menu">
             {{> dropdown name="entityDisplayMode" items=displayModes value=defaultEntityDisplayMode
-            labelAttr="label" valueAttr="value" text="Display"}}
+            labelAttr="label" valueAttr="value"}}
           </div>
         </div>
         <div class="title">Typologies</div>
@@ -19,7 +19,7 @@
           {{> collectionTable collection="Lots" items=lots settings=tableSettings}}
           <div class="extra menu">
             {{> dropdown name="lotDisplayMode" items=lotDisplayModes value=defaultLotDisplayMode
-            labelAttr="label" valueAttr="value" text="Display"}}
+            labelAttr="label" valueAttr="value"}}
             <a class="allocate item popup" title="Automatically allocate Typologies to
             empty Lots available for development."><i class="magic
             icon"></i></a>
