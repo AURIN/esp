@@ -2,25 +2,46 @@
 
 # Handles a assets/synthesize response to create lots.
   fromAsset: (args) ->
-    df = Q.defer()
-    Meteor.call 'assets/c3ml/download', args.c3mlId, (err, c3mls) ->
-      if err
-        console.error(err)
-        df.reject(err)
-        return
-      Meteor.call 'assets/metaData/download', args.metaDataId, (err, metaData) ->
-        if err
-          console.error(err)
-          df.reject(err)
-          return
-        Meteor.call 'assets/parameters', args.assetId, (err, params) ->
+    existingDf = Q.defer()
+    # If lots already exist in the project, ask the user if they should be removed first.
+    existingLots = Lots.findByProject().fetch()
+    if existingLots.length > 0
+      result = window.confirm('Are you sure you want to replace the existing Lots in the project?')
+      if result
+        removeDfs = _.map existingLots, (lot) ->
+          removeDf = Q.defer()
+          Lots.remove lot._id, (err, result) ->
+            if err then removeDf.reject(err) else removeDf.resolve(result)
+          removeDf.promise
+        Q.all(removeDfs).then(existingDf.resolve, existingDf.reject)
+      else
+        existingDf.reject('Lot creation cancelled')
+    else
+      existingDf.resolve()
+
+    createDf = Q.defer()
+    existingDf.promise.then(
+      ->
+        Meteor.call 'assets/c3ml/download', args.c3mlId, (err, c3mls) ->
           if err
             console.error(err)
-            df.reject(err)
+            createDf.reject(err)
             return
-          _.extend(args, {c3mls: c3mls, metaData: metaData, params: params})
-          LotUtils._fromAsset(args).then(df.resolve, df.reject)
-    df.promise
+          Meteor.call 'assets/metaData/download', args.metaDataId, (err, metaData) ->
+            if err
+              console.error(err)
+              createDf.reject(err)
+              return
+            Meteor.call 'assets/parameters', args.assetId, (err, params) ->
+              if err
+                console.error(err)
+                createDf.reject(err)
+                return
+              _.extend(args, {c3mls: c3mls, metaData: metaData, params: params})
+              LotUtils._fromAsset(args).then(createDf.resolve, createDf.reject)
+      createDf.reject
+    )
+    createDf.promise
 
   _fromAsset: (args) ->
     df = Q.defer()
@@ -68,16 +89,23 @@
             lotDf.reject(err)
           else
             lotDf.resolve(insertId)
-    Q.all(lotDfs).then ->
-      projectId = Projects.getCurrentId()
-      # If the project doesn't have lat, lng location, set it as that found in this file.
-      location = Projects.getLocationCoords(projectId)
-      unless location.latitude? && location.longitude?
-        assetPosition = metaData.lookAt?.position
-        if assetPosition?
-          console.debug 'Setting project location', assetPosition
-          Projects.setLocationCoords(projectId,
-            {longitude: assetPosition.x, latitude: assetPosition.y}).then(df.resolve, df.reject)
+    Q.all(lotDfs).then(
+      ->
+        projectId = Projects.getCurrentId()
+        # If the project doesn't have lat, lng location, set it as that found in this file.
+        location = Projects.getLocationCoords(projectId)
+        if location.latitude? && location.longitude?
+          df.resolve()
+        else
+          assetPosition = metaData.lookAt?.position
+          if assetPosition?
+            console.debug 'Setting project location', assetPosition
+            Projects.setLocationCoords(projectId,
+              {longitude: assetPosition.x, latitude: assetPosition.y}).then(df.resolve, df.reject)
+          else
+            df.resolve()
+      df.reject
+    )
     df.promise
 
   toGeoEntityArgs: (id) ->

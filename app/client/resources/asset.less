@@ -1,11 +1,17 @@
+@dropzone-height: 360px;
+
 .asset.form {
   .dropzone {
+    height: @dropzone-height;
     padding: 10px;
     margin: 10px;
     .dz-preview {
       display: none;
     }
     .dz-default.dz-message {
+      line-height: @dropzone-height * 2/3;
+      // Always show after an upload since we only upload one file at a time.
+      opacity: 1;
       background-image: none;
       position: relative;
       top: auto;
@@ -15,7 +21,7 @@
       margin: 0;
       text-align: center;
       font-size: 1.2rem;
-      color: #777;
+      color: #999;
       font-weight: bold;
       span {
         display: block;

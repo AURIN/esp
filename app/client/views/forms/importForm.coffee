@@ -5,20 +5,26 @@ Meteor.startup ->
     collection: Collections.createTemporary()
     onRender: ->
       template = @
+      isLoading = false
+      setLoadingState = (loading) ->
+        if loading != isLoading
+          $submit = template.$('.submit')
+          $submit.toggleClass('disabled', loading)
+          $submit.prop('disabled', loading)
+          Template.loader.setActive(template.find('.loader'), loading)
+          isLoading = loading
       $dropzone = template.$('.dropzone')
       dropzone = new Dropzone $dropzone[0],
         url: '/assets/upload'
         dictDefaultMessage: 'Drop a file here or click to upload.'
         addRemoveLinks: false
+      dropzone.on 'sending', -> setLoadingState(true)
+      dropzone.on 'error', (file, err) ->
+        console.error 'Uploading assets failed', err
+        setLoadingState(false)
       dropzone.on 'success', (file, result) ->
         console.log('Successful dropdown upload', arguments)
         format = 'shp'
-        setLoadingState = (loading) ->
-          $submit = $(template.find('.submit'))
-          $submit.toggleClass('disabled', loading)
-          $submit.prop('disabled', loading)
-          Template.loader.setActive(template.find('.loader'), loading)
-        setLoadingState(true)
         onSuccess = ->
           setLoadingState(false)
           template.data?.settings?.onSuccess()
@@ -37,14 +43,10 @@ Meteor.startup ->
               assetId: body.geoBlobId
               c3mlId: body.c3mlId
               metaDataId: body.metaDataId
-            }).then(
-              (lotIds) ->
-                LotUtils.renderAllAndZoom()
-                onSuccess?()
-              (err) ->
-                console.error('Failed to import lots', err)
-                setLoadingState(false)
-            )
+            }).then((lotIds) ->
+              LotUtils.renderAllAndZoom()
+              onSuccess?()
+            ).fin -> setLoadingState(false)
 
       dropzone.on 'error', (file, errorMessage) ->
         console.error('Error uploading file', arguments)

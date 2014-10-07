@@ -3,6 +3,10 @@
     "requirejs": {
       "git": "https://github.com/aramk/requirejs.git"
     },
+    "aramk:utility": {
+      "git": "https://github.com/aramk/meteor-utility.git",
+      "branch": "develop"
+    },
     "stevezhu:lodash": {
       "git": "https://github.com/stevezhu/meteor-lodash.git"
     },
