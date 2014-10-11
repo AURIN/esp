@@ -24,7 +24,7 @@ module.exports = function(grunt) {
       MONGO_PASSWORD: null,
       MONGO_HOST: 'localhost',
       MONGO_PORT: '27017',
-      MONGO_DB_NAME: 'aurin-esp',
+      MONGO_DB_NAME: APP_ID,
       DEPLOY_URL: 'http://localhost',
       DEPLOY_PORT: '3000'
     },
@@ -92,18 +92,7 @@ module.exports = function(grunt) {
             ]
           }
         ]
-      },
-//      herokuNpmGitIgnores: {
-//        files: [
-//          {
-//            expand: true,
-//            cwd: path.join(HEROKU_DIR, 'programs', 'server', 'npm'),
-//            src: [
-//              path.join('**', '.gitignore')
-//            ]
-//          }
-//        ]
-//      }
+      }
     }
   });
 

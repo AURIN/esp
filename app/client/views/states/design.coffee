@@ -67,9 +67,9 @@ TemplateClass.rendered = ->
 
   # Move extra buttons into collection tables
   _.each ['lots', 'entities'], (type) =>
-    $lotsTable = $(@find('.' + type + ' .collection-table'))
-    $lotsButtons = $(@find('.' + type + ' .extra.menu')).addClass('item')
-    $('.crud.menu', $lotsTable).after($lotsButtons)
+    $table = $(@find('.' + type + ' .collection-table'))
+    $buttons = $(@find('.' + type + ' .extra.menu')).addClass('item')
+    $('.crud.menu', $table).after($buttons)
 
   # Remove create button for entities.
   $(@find('.entities .collection-table .create.item')).remove()
@@ -93,9 +93,9 @@ onEditFormPanel = (args) ->
   TemplateClass.addFormPanel templateInstance, Template[formName], model
 
 TemplateClass.helpers
-  entities: -> Entities.find({project: Projects.getCurrentId()})
-  lots: -> Lots.find({project: Projects.getCurrentId()})
-  typologies: -> Typologies.find({project: Projects.getCurrentId()})
+  entities: -> Entities.findByProject()
+  lots: -> Lots.findByProject()
+  typologies: -> Typologies.findByProject()
   tableSettings: ->
     fields: [
       key: 'name'
