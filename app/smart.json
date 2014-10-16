@@ -7,7 +7,8 @@
       "git": "https://github.com/aramk/meteor-utility.git"
     },
     "stevezhu:lodash": {
-      "git": "https://github.com/stevezhu/meteor-lodash.git"
+      "git": "https://github.com/stevezhu/meteor-lodash.git",
+      "tag": "v0.2.0"
     },
     "atlas": {
       "path": "../bower_components/atlas"

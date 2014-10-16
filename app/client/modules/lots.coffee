@@ -61,15 +61,14 @@
       idIsNumber = Strings.isNumber(lotId)
       if idIsNumber
         lotId = parseFloat(lotId).toString().replace(/\.\d+$/, '')
-      coords = _.map c3ml.coordinates, (coord) -> {longitude: coord.x, latitude: coord.y}
       # Ignore lots with no geometry.
-      if coords.length == 0
+      if c3ml.coordinates.length == 0
         return
-      name = lotId ? 'Lot #' + (i + 1)
-      classId = Typologies.getClassByName(entityParams.landuse)
       lotDf = Q.defer()
       lotDfs.push(lotDf.promise)
-      WKT.fromVertices coords, (wkt) ->
+      WKT.fromC3ml(c3ml).then (wkt) ->
+        name = lotId ? 'Lot #' + (i + 1)
+        classId = Typologies.getClassByName(entityParams.landuse)
         develop = Booleans.parse(entityParams.develop ? entityParams.redev ? true)
         height = entityParams.height ? c3ml.height
         lot =
@@ -121,7 +120,7 @@
         color = tinycolor(color)
       else
         color = tinycolor('#ccc')
-      borderColor = tinycolor(color.toHexString()).darken(40)
+      borderColor = tinycolor.darken(color, 40)
       space = lot.parameters.space
       displayMode = @getDisplayMode(id)
       converter.toGeoEntityArgs

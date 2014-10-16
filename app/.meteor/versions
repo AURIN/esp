@@ -91,7 +91,6 @@ reactive-dict@1.0.4
 reactive-table@0.4.2
 reactive-var@1.0.3
 reload@1.1.1
-requirejs@0.0.0
 retry@1.0.1
 routepolicy@1.0.2
 service-configuration@1.0.2

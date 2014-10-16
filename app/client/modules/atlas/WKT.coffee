@@ -1,12 +1,25 @@
+toGeoPoint = ->
+
 getWKT = (callback) ->
-  require ['atlas/util/WKT'], (WKT) ->
+  requirejs ['atlas/util/WKT'], (WKT) ->
     callback(WKT.getInstance())
+
+getGeoPoint = (callback) ->
+  requirejs ['atlas/model/GeoPoint'], (GeoPoint) ->
+    callback(GeoPoint)
 
 @WKT =
 
-  fromVertices: (vertices, callback) ->
+  polygonFromVertices: (vertices, callback) ->
     getWKT (wkt) ->
-      wktString = wkt.wktFromVertices(vertices)
+      polygon = wkt.openLayersPolygonFromGeoPoints(vertices)
+      wktString = wkt.parser.extractGeometry(polygon)
+      callback(wktString)
+
+  polylineFromVertices: (vertices, callback) ->
+    getWKT (wkt) ->
+      polyline = wkt.openLayersPolylineFromGeoPoints(vertices)
+      wktString = wkt.parser.extractGeometry(polyline)
       callback(wktString)
 
   fromFile: (fileId, args) ->
@@ -30,12 +43,20 @@ getWKT = (callback) ->
 
   fromC3ml: (c3ml) ->
     df = Q.defer()
-    type = c3ml.type
-    if type != 'polygon'
-      df.reject('c3ml must be polygon, not ' + type)
-      return df.promise
-    coords = _.map c3ml.coordinates, (coord) -> {longitude: coord.x, latitude: coord.y}
-    WKT.fromVertices coords, (wkt) ->
-      df.resolve(wkt)
+    getGeoPoint (GeoPoint) =>
+      type = c3ml.type
+      method = null
+      if type == 'polygon'
+        method = @polygonFromVertices
+      else if type == 'line'
+        method = @polylineFromVertices
+      else
+        df.reject('c3ml must be polygon, not ' + type)
+        return
+      coords = _.map c3ml.coordinates, (coord) ->
+        new GeoPoint(longitude: coord.x, latitude: coord.y)
+      if coords.length == 0
+        df.resolve(null)
+      else
+        method coords, (wkt) -> df.resolve(wkt)
     df.promise
-

@@ -86,7 +86,7 @@ Meteor.startup ->
         return
       isChanged = getEditState(EditState.CHANGED)
       if isChanged
-        WKT.fromVertices currentGeoEntity.getVertices(), (wkt) ->
+        WKT.polygonFromVertices currentGeoEntity.getVertices(), (wkt) ->
           geomDf.resolve(wkt)
       else
         geomDf.resolve(null)
