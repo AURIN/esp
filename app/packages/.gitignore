@@ -39,6 +39,7 @@ iron-router-progress
 /cfs-upload-http
 /cfs-filesaver
 /cfs-storage-adapter
+/cfs:tempstore
 /http-methods
 /numeral
 /data-man

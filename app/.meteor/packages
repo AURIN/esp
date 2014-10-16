@@ -33,6 +33,7 @@ awatson1978:dropzone
 # These are forked repos and added as private packages.
 aldeed:autoform
 aldeed:collection2
+cfs:tempstore
 #aldeed:simple-schema
 #joshowens:accounts-entry
 aramk:pubsub

@@ -104,6 +104,11 @@ Meteor.methods
   'assets/metaData/download': (id) ->
     AssetServer.downloadC3ml(id)
 
+# HTTP SERVER
+
+# Limit buffering size to 100 MB.
+HTTP.methodsMaxDataLength = 1024 * 1024 * 100;
+
 HTTP.methods
 
   'assets/upload':
@@ -133,6 +138,8 @@ HTTP.methods
               })
           form = new IncomingForm()
           reader = new stream.Readable()
+          # Prevent "not implemented" errors.
+          reader._read = ->
           reader.headers = headers
           form.parse reader, (err, fields, files) -> done(err, null) if err
           reader.push(requestData)

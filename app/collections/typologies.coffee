@@ -615,12 +615,12 @@ ProjectSchema = new SimpleSchema
 Projects.attachSchema(ProjectSchema)
 Projects.allow(Collections.allowAll())
 
-Projects.setCurrentId = (id) -> Session.set('projectId', id)
+hasSession = typeof Session != 'undefined'
+Projects.setCurrentId = (id) -> Session.set('projectId', id) if hasSession
 Projects.getCurrent = ->
   id = Projects.getCurrentId()
   Projects.findOne(id)
-#  Session.get('project')
-Projects.getCurrentId = -> Session.get('projectId')
+Projects.getCurrentId = -> Session.get('projectId') if hasSession
 
 Projects.getLocationAddress = (id) ->
   project = Projects.findOne(id)
