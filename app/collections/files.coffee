@@ -1,7 +1,10 @@
+fileSystemArgs = {}
+CLOUD_DIR = process?.env?.CLOUD_DIR
+if CLOUD_DIR?
+  fileSystemArgs.path = CLOUD_DIR
+
 @Files = new FS.Collection 'files', stores: [
-  new FS.Store.FileSystem('files', {
-    path: '/tmp/meteor-files'
-  })
+  new FS.Store.FileSystem('files', fileSystemArgs)
 ]
 
 Files.allow

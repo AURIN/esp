@@ -92,6 +92,17 @@ module.exports = function(grunt) {
             ]
           }
         ]
+      },
+      atlasResources: {
+        files: [
+          {
+            expand: true,
+            cwd: path.join(PUBLIC_PARENT_PATH, 'atlas-cesium', 'cesium', 'Source'),
+            src: [
+              path.join('**', 'package.json')
+            ]
+          }
+        ]
       }
     }
   });
@@ -116,7 +127,7 @@ module.exports = function(grunt) {
         };
     addTasks('install-bower', 'install-npm', 'install-grunt');
     addTasks('build-atlas' + (hasArgs('atlas-lazy') ? ':lazy' : ''));
-    addTasks('fix-atlas-build', 'copy:atlasResources', 'install-mrt');
+    addTasks('fix-atlas-build', 'copy:atlasResources', 'clean:atlasResources', 'install-mrt');
     console.log('Running tasks', tasks);
     tasks.forEach(function(task) {
       grunt.task.run(task);
@@ -153,7 +164,7 @@ module.exports = function(grunt) {
     // Replace the path to the cesium style which is now in the app's public folder.
     writeFile(ATLAS_CESIUM_STYLE_FILE, function(data) {
       return data.replace(/(@import\s+["'])[^;]*cesium/,
-          '$1' + path.join(PUBLIC_PARENT_DIR, 'atlas-cesium', 'cesium'));
+              '$1' + path.join(PUBLIC_PARENT_DIR, 'atlas-cesium', 'cesium'));
     });
   });
 

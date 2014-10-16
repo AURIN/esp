@@ -43,6 +43,6 @@ collection-table
 dropdown
 q
 # These come last so RequireJS doesn't cause issues.
-requirejs
+aramk:requirejs
 atlas
 atlas-cesium

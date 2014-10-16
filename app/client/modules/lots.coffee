@@ -121,7 +121,7 @@
         color = tinycolor(color)
       else
         color = tinycolor('#ccc')
-      borderColor = tinycolor.darken(color, 40)
+      borderColor = tinycolor(color.toHexString()).darken(40)
       space = lot.parameters.space
       displayMode = @getDisplayMode(id)
       converter.toGeoEntityArgs
