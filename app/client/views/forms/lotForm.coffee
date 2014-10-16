@@ -141,11 +141,13 @@ Meteor.startup ->
         modifier = {}
         if wkt?
           modifier[geomParamId] = wkt
-        Lots.update id, {$set: modifier}, (err, result) ->
-          if err
-            reject('Updating lot failed', err, modifier)
-          else
-            formDf.resolve(result)
+          Lots.update id, {$set: modifier}, (err, result) ->
+            if err
+              reject('Updating lot failed', err, modifier)
+            else
+              formDf.resolve(result)
+        else
+          formDf.resolve()
       formDf.promise
 
     onCancel: (template) ->
