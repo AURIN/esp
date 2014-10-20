@@ -49,4 +49,4 @@ Deployment settings are found in `Gruntfile.js`.
 
 Structure
 ------------
-The Meteor app resides in `app/` to allow using Grunt and Bower, which have dependencies stored at the project root directory.
+The Meteor app resides in `app/` to allow using Grunt and Bower, which have dependencies stored at the project root directory. 
