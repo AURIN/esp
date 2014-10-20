@@ -1,3 +1,5 @@
+# TODO(aramk) Add security and ownership.
+
 Meteor.startup ->
   Meteor.call 'config/filesystem/path', (err, filesPath) ->
 
@@ -13,20 +15,6 @@ Meteor.startup ->
     @Files = new FS.Collection 'files', stores: [
       new FS.Store.FileSystem('files', fileSystemArgs)
     ]
-
-    # Override the insert method to ensure a project ID is always added.
-    oldInsert = Files.insert
-    Files.insert = (doc) ->
-      unless doc.project?
-        projectId = Projects.getCurrentId()
-      doc.project = projectId if projectId?
-      oldInsert.apply(Files, arguments)
-
-    if Meteor.isServer
-      # Index the project field for quick lookup.
-      Files.files._ensureIndex(
-        project: 1
-      )
 
     Files.allow
       download: Collections.allow
@@ -73,3 +61,22 @@ Meteor.startup ->
             df.resolve(fileObj)
         handle = setInterval timerHandler, 1000
       df.promise
+
+if Meteor.isServer
+
+  @FileUtils =
+
+    getReadStream: (fileId) ->
+      item = Files.findOne(fileId)
+      unless item
+        throw new Meteor.Error(404, 'File with ID ' + fileId + ' not found.')
+      item.createReadStream('files')
+
+    getBuffer: (fileId) ->
+      reader = @getReadStream(fileId)
+      Buffers.fromStream(reader)
+
+  Meteor.methods
+
+    'files/download/string': (id) -> FileUtils.getBuffer(id).toString()
+    'files/download/json': (id) -> JSON.parse(FileUtils.getBuffer(id).toString())
