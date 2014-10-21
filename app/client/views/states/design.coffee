@@ -83,6 +83,11 @@ TemplateClass.rendered = ->
     $('.dropdown.icon', $dropdown).attr('class', 'photo icon')
     $('.text', $dropdown).hide()
 
+# TODO(aramk) Use a callback for when each row is created in the collection table.
+#  @autorun ->
+#    Typologies.findByProject()
+#
+
 onEditFormPanel = (args) ->
   id = args.ids[0]
   collection = args.collection
@@ -126,6 +131,47 @@ TemplateClass.events
     Session.set('lotDisplayMode', displayMode)
   'click .allocate.item': (e) ->
     LotUtils.autoAllocate()
+  'mousedown .typologies .collection-table tr': (e) ->
+    # Drag typology items from the table onto the globe.
+    console.log('mousedown')
+    $row = $(e.currentTarget)
+    $pin = createDraggableTypology()
+    #    $row.data('pin', $pin)
+    $body = $('body')
+    handles = []
+    handles.push $body.mousemove (moveEvent) ->
+#      $pin.left(moveEvent.clientX)
+#      $pin.top(moveEvent.clientY)
+      $pin.offset(left: moveEvent.clientX, top: moveEvent.clientY)
+    handles.push $body.mouseup (upEvent) ->
+      entity = AtlasManager.getEntitiesAt(x: upEvent.clientX, y:upEvent.clientY)[0]
+      if entity
+        console.log('entity', entity)
+        lot = Lots.findOne(entity.getId())
+        if lot
+          # TODO(aramk) Refactor with the logic in the lot form.
+          if lot.entity
+            replaceExisting = confirm('This Lot already has an Entity - do you want to replace it?')
+            # TODO(aramk) Reuse logic, or add it in collection hooks.
+#            if replaceExisting
+#              Typologies.
+          console.log('allocating', lot)
+
+          # TODO(aramk) Add to lot
+      # If the typology was dragged on the globe, allocate it to any available lots.
+      console.log('mouseup')
+      #      $pin = $row.data('pin')
+      #      unless $pin
+      #        _.each handles, (handle) -> handle.cancel()
+      #      return
+      console.log('handles', handles)
+      console.log('pin', $pin)
+      $pin.remove()
+
+createDraggableTypology = ->
+  $pin = $('<div class="draggable-typology"><i class="building icon"></i></div>')
+  $('body').append($pin)
+  $pin
 
 getSidebar = (template) ->
   $(template.find('.design.container > .sidebar'))
@@ -139,7 +185,7 @@ TemplateClass.addPanel = (template, panelTemplate, data) ->
     TemplateClass.removePanel(template)
   $container = getSidebar(template)
   $panel = $('<div class="panel"></div>')
-#  $('>.panel', $container).hide()
+  #  $('>.panel', $container).hide()
   $container.append $panel
   parentNode = $panel[0]
   if data
