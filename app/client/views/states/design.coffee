@@ -180,7 +180,7 @@ TemplateClass.events
       $pin.remove()
       $body.off('mousemove', mouseMoveHandler)
       $body.off('mouseup', mouseUpHandler)
-      $body.remove('dragging')
+      $body.removeClass('dragging')
     
     $body.mousemove(mouseMoveHandler)
     $body.mouseup(mouseUpHandler)
