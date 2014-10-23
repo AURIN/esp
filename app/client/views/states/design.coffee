@@ -83,6 +83,11 @@ TemplateClass.rendered = ->
     $('.dropdown.icon', $dropdown).attr('class', 'photo icon')
     $('.text', $dropdown).hide()
 
+# TODO(aramk) Use a callback for when each row is created in the collection table.
+#  @autorun ->
+#    Typologies.findByProject()
+#
+
 onEditFormPanel = (args) ->
   id = args.ids[0]
   collection = args.collection
@@ -126,6 +131,64 @@ TemplateClass.events
     Session.set('lotDisplayMode', displayMode)
   'click .allocate.item': (e) ->
     LotUtils.autoAllocate()
+  'mousedown .typologies .collection-table tr': (e) ->
+    # Drag typology items from the table onto the globe.
+    console.log('mousedown')
+    $row = $(e.currentTarget)
+    $pin = createDraggableTypology()
+    #    $row.data('pin', $pin)
+    $body = $('body')
+    $body.addClass('dragging')
+    $viewer = $('.viewer')
+    typologyId = $row.data('id')
+    mouseMoveHandler = (moveEvent) ->
+      margin = {left: -16, top: -38}
+      $pin.offset(left: moveEvent.clientX + margin.left, top: moveEvent.clientY + margin.top)
+    mouseUpHandler = (upEvent) ->
+      viewerPos = $viewer.position()
+      entities = AtlasManager.getEntitiesAt({
+        x: upEvent.clientX - viewerPos.left,
+        y: upEvent.clientY - viewerPos.top
+      })
+      if entities.length > 0
+        console.log('entities', entities)
+        lot = null
+        _.some entities, (entity) ->
+          lot = Lots.findOne(entity.getId())
+          lot
+        console.log 'lot', lot
+        if lot
+          # TODO(aramk) Refactor with the logic in the lot form.
+          if lot.entity
+            console.error('Remove the existing entity before allocating a typology onto this lot.')
+            # replaceExisting = confirm('This Lot already has an Entity - do you want to replace it?')
+            # # TODO(aramk) Reuse logic, or add it in collection hooks.
+            # if replaceExisting
+            #   console.log('replacing')
+            # else
+          else
+            Lots.createEntity(lot._id, typologyId)
+          # TODO(aramk) Add to lot
+      # If the typology was dragged on the globe, allocate it to any available lots.
+      console.log('mouseup')
+      #      $pin = $row.data('pin')
+      #      unless $pin
+      #        _.each handles, (handle) -> handle.cancel()
+      #      return
+      console.log('handles', handles)
+      console.log('pin', $pin)
+      $pin.remove()
+      $body.off('mousemove', mouseMoveHandler)
+      $body.off('mouseup', mouseUpHandler)
+      $body.remove('dragging')
+    
+    $body.mousemove(mouseMoveHandler)
+    $body.mouseup(mouseUpHandler)
+
+createDraggableTypology = ->
+  $pin = $('<div class="draggable-typology"></div>') # <i class="building icon"></i>
+  $('body').append($pin)
+  $pin
 
 getSidebar = (template) ->
   $(template.find('.design.container > .sidebar'))
@@ -139,7 +202,7 @@ TemplateClass.addPanel = (template, panelTemplate, data) ->
     TemplateClass.removePanel(template)
   $container = getSidebar(template)
   $panel = $('<div class="panel"></div>')
-#  $('>.panel', $container).hide()
+  #  $('>.panel', $container).hide()
   $container.append $panel
   parentNode = $panel[0]
   if data

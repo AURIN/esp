@@ -90,6 +90,8 @@ init()
 
   getEntitiesByIds: (ids) -> atlas._managers.entity.getByIds(ids)
 
+  getEntitiesAt: (point) -> atlas._managers.entity.getAt(point)
+
   showEntity: (id) -> atlas.publish 'entity/show', {id: id}
 
   hideEntity: (id) -> atlas.publish 'entity/hide', {id: id}
