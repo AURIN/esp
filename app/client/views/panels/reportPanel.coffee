@@ -2,6 +2,7 @@ global = @
 reports = null
 ReportTemplates = [
   'residentialReport'
+  'openSpaceReport'
   #'precinctReport'
 ]
 

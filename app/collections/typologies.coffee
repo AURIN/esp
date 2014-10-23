@@ -763,10 +763,14 @@ typologyCategories =
         label: '2D Geometry'
         type: String
         desc: '2D footprint geometry of the typology.'
+        classes:
+          RESIDENTIAL: {}
       geom_3d:
         label: '3D Geometry'
         type: String
         desc: '3D mesh representing the typology.'
+        classes:
+          RESIDENTIAL: {}
       geom_2d_filename:
         label: '2D Geometry Filename'
         type: String
@@ -802,18 +806,27 @@ typologyCategories =
         type: Number
         decimal: true
         units: Units.m2
+        classes:
+          RESIDENTIAL: {}
       cfa:
         label: 'Conditioned Floor Area'
         desc: 'Total conditioned area of the typology.'
         type: Number
         decimal: true
         units: Units.m2
+        classes:
+          RESIDENTIAL: {}
       storeys:
         label: 'Storeys'
         desc: 'Number of floors/storeys in the typology.'
         type: Number
         units: 'Floors'
-      height: heightSchema
+        classes:
+          RESIDENTIAL: {}
+      height: extendSchema(heightSchema, {
+        classes:
+          RESIDENTIAL: {}
+        })
       plot_ratio:
         label: 'Plot Ratio'
         desc: 'The building footprint area divided by the lot size.'
@@ -824,26 +837,36 @@ typologyCategories =
         desc: 'Number of occupants in the typology.'
         type: Number
         units: 'Persons'
+        classes:
+          RESIDENTIAL: {}
       num_0br:
         label: 'Dwellings - Studio'
         desc: 'Number of studio units in the typology.'
         type: Number
         units: 'Dwellings'
+        classes:
+          RESIDENTIAL: {}
       num_1br:
         label: 'Dwellings - 1 Bedroom'
         desc: 'Number of 1 bedroom units in the typology.'
         type: Number
         units: 'Dwellings'
+        classes:
+          RESIDENTIAL: {}
       num_2br:
         label: 'Dwellings - 2 Bedroom'
         desc: 'Number of 2 bedroom units in the typology.'
         type: Number
         units: 'Dwellings'
+        classes:
+          RESIDENTIAL: {}
       num_3plus:
         label: 'Dwellings - 3 Bedroom Plus'
         desc: 'Number of 3 bedroom units in the typology.'
         type: Number
         units: 'Dwellings'
+        classes:
+          RESIDENTIAL: {}
       dwell_tot:
         label: 'Dwellings - Total'
         desc: 'Number of total dwellings in the typology.'
@@ -865,6 +888,7 @@ typologyCategories =
         classes:
           RESIDENTIAL:
             defaultValue: 0.15
+          OPEN_SPACE: {}
       prpn_annu:
         label: 'Proportion Extra Land - Annual Plants'
         desc: 'Proportion of extra land covered by annual plants, such as flowers and veggies.'
@@ -873,6 +897,7 @@ typologyCategories =
         classes:
           RESIDENTIAL:
             defaultValue: 0.1
+          OPEN_SPACE: {}
       prpn_hardy:
         label: 'Proportion Extra Land - Hardy Plants'
         desc: 'Proportion of extra land covered by hardy or waterwise plants.'
@@ -881,6 +906,7 @@ typologyCategories =
         classes:
           RESIDENTIAL:
             defaultValue: 0.35
+          OPEN_SPACE: {}
       prpn_imper:
         label: 'Proportion Extra Land - Impermeable'
         desc: 'Proportion of extra land covered by pavement or another impermeable surface.'
@@ -889,6 +915,7 @@ typologyCategories =
         classes:
           RESIDENTIAL:
             defaultValue: 0.4
+          OPEN_SPACE: {}
       ext_land_l:
         label: 'Extra Land - Lawn'
         desc: 'Area of extra land covered by lawn.'
@@ -926,29 +953,39 @@ typologyCategories =
         type: Number
         decimal: true
         units: Units.MJyear
+        classes:
+          RESIDENTIAL: {}
       src_heat:
         label: 'Heating Source'
         desc: 'Energy source in the typology used for heating.'
         type: String
         allowedValues: EnergySources
+        classes:
+          RESIDENTIAL: {}
       en_cool:
         label: 'Cooling'
         desc: 'Energy required for cooling the typology.'
         type: Number
         decimal: true
         units: Units.MJyear
+        classes:
+          RESIDENTIAL: {}
       en_light:
         label: 'Lighting'
         desc: 'Energy required for lighting the typology.'
         type: Number
         decimal: true
         units: Units.kWhyear
+        classes:
+          RESIDENTIAL: {}
       en_hwat:
         label: 'Hot Water'
         desc: 'Energy required for hot water heating in the typology.'
         type: Number
         decimal: true
         units: Units.GJyear
+        classes:
+          RESIDENTIAL: {}
       src_hwat:
         label: 'Hot Water Source'
         desc: 'Energy source in the typology used for hot water heating. Used to calculated CO2-e.'
@@ -964,6 +1001,8 @@ typologyCategories =
         decimal: true
         units: Units.MJyear
         calc: 'IF($energy_demand.src_cook=="Electricity", $energy.fitout.en_elec_oven, IF($energy_demand.src_cook=="Gas", $energy.fitout.en_gas_oven)) * ($space.num_0br + $space.num_1br + $space.num_2br + $space.num_3plus)'
+        classes:
+          RESIDENTIAL: {}
     # TODO(aramk) Default value should be based on src_cook.
       src_cook:
         label: 'Cooktop and Oven Source'
@@ -1044,6 +1083,8 @@ typologyCategories =
         desc: 'CO2 embodied in the materials of the typology.'
         type: Number
         units: Units.kgco2
+        classes:
+          RESIDENTIAL: {}
       t_co2_emb:
         label: 'Total Embodied'
         desc: 'Total CO2 embodied in the property.'
@@ -1116,37 +1157,47 @@ typologyCategories =
     label: 'Water Demand'
     items:
       i_wu_pot:
-        label: 'Internal Water Use - Potable'
+        label: 'Internal Potable Water Use'
         desc: 'Internal potable water use of the typology.'
         type: Number
         decimal: true
         units: Units.kLyear
+        classes:
+          RESIDENTIAL: {}
       i_wu_bore:
-        label: 'Internal Water Use - Bore'
+        label: 'Internal Bore Water Use'
         desc: 'Internal bore water use of the typology.'
         type: Number
         decimal: true
         units: Units.kLyear
+        classes:
+          RESIDENTIAL: {}
       i_wu_rain:
-        label: 'Internal Water Use - Rain'
+        label: 'Internal Rain Water Use'
         desc: 'Internal rain water use of the typology.'
         type: Number
         decimal: true
         units: Units.kLyear
+        classes:
+          RESIDENTIAL: {}
       i_wu_treat:
-        label: 'Internal Water Use - Treated'
+        label: 'Internal Treated Water Use'
         desc: 'Internal treated water use of the typology.'
         type: Number
         decimal: true
         units: Units.kLyear
+        classes:
+          RESIDENTIAL: {}
       i_wu_grey:
-        label: 'Internal Water Use - Grey'
+        label: 'Internal Grey Water Use'
         desc: 'Internal grey water use of the typology.'
         type: Number
         decimal: true
         units: Units.kLyear
+        classes:
+          RESIDENTIAL: {}
       i_wu_total:
-        label: 'Internal Water Use - Total'
+        label: 'Internal Total Water Use'
         desc: 'Total internal water use of the typology.'
         type: Number
         decimal: true
@@ -1180,23 +1231,86 @@ typologyCategories =
         decimal: true
         units: Units.kLyear
         calc: '$water_demand.e_wd_lawn + $water_demand.e_wd_ap + $water_demand.e_wd_hp'
-      e_wd_src:
-        label: 'External Water Demand - Source'
-        desc: 'Source of water for external water demand.'
-        type: String
-        allowedValues: WaterDemandSources
+      prpn_pot:
+        label: 'Proportion Potable Water'
+        type: Number
+        decimal: true
+        desc: 'Proportion of water as potable water.'
         classes:
-          RESIDENTIAL:
-            defaultValue: 'Potable'
+          OPEN_SPACE:
+            defaultValue: 1
+      prpn_bore:
+        label: 'Proportion Bore Water'
+        type: Number
+        decimal: true
+        desc: 'Proportion of irrigation as bore water.'
+        classes:
+          OPEN_SPACE:
+            defaultValue: 0
+      prpn_storm:
+        label: 'Proportion Stormwater Water'
+        type: Number
+        decimal: true
+        desc: 'Proportion of irrigation as stormwater.'
+        classes:
+          OPEN_SPACE:
+            defaultValue: 0
+      prpn_treat:
+        label: 'Proportion Treated Water'
+        type: Number
+        decimal: true
+        desc: 'Proportion of irrigation as treated/recycled.'
+        classes:
+          OPEN_SPACE:
+            defaultValue: 0
+      prpn_grey:
+        label: 'Proportion Grey Water'
+        type: Number
+        decimal: true
+        desc: 'Proportion of irrigation as grey.'
+        classes:
+          OPEN_SPACE:
+            defaultValue: 0
+      e_wu_pot:
+        label: 'Potable Water Use'
+        type: Number
+        desc: 'Potable water use for irrigation.'
+        units: Units.kLyear
+        calc: '$water_demand.e_wd_total * $water_demand.prpn_pot'
+      e_wu_bore:
+        label: 'Bore Water Use'
+        type: Number
+        desc: 'Bore water use for irrigation.'
+        units: Units.kLyear
+        calc: '$water_demand.e_wd_total * $water_demand.prpn_bore'
+      e_wu_storm:
+        label: 'Stormwater Water Use'
+        type: Number
+        desc: 'Stormwater use for irrigation.'
+        units: Units.kLyear
+        calc: '$water_demand.e_wd_total * $water_demand.prpn_storm'
+      e_wu_treat:
+        label: 'Treated Water Use'
+        type: Number
+        desc: 'Treated water use for irrigation.'
+        units: Units.kLyear
+        calc: '$water_demand.e_wd_total * $water_demand.prpn_treat'
+      e_wu_grey:
+        label: 'Grey Water Use'
+        type: Number
+        desc: 'Grey water use for irrigation.'
+        units: Units.kLyear
+        calc: '$water_demand.wd_total * $water_demand.prpn_grey'
+      # TODO(aramk) Migrate this for the residential schema to use those above.
       wu_pot_tot:
-        label: 'Water Use - Total Potable'
+        label: 'Total Potable Water Use'
         desc: 'Total potable water use for internal and external purposes.'
         type: Number
         decimal: true
         units: Units.kLyear
-        calc: '$water_demand.i_wu_pot + IF($water_demand.e_wd_src == "Potable", $water_demand.e_wd_total, 0)'
+        calc: '$water_demand.i_wu_pot + $water_demand.e_wu_pot'
       wd_total:
-        label: 'Water Demand - Total'
+        label: 'Total Water Demand'
         desc: 'Total water use for internal and external purposes.'
         type: Number
         decimal: true
@@ -1256,6 +1370,8 @@ typologyCategories =
         desc: 'Cost of constructing the typology estimated using the Rawlinson’s Construction Handbook.'
         type: Number
         units: Units.$
+        classes:
+          RESIDENTIAL: {}
       cost_prop:
         label: 'Cost - Property'
         desc: 'Total cost of the developing the property.'
@@ -1299,16 +1415,20 @@ typologyCategories =
         type: Number
         decimal: true
         units: 'Degrees'
-      # TODO(aramk) Implement a function to get this
-        calc: '0'
+        classes:
+          RESIDENTIAL: {}
       eq_azmth_h:
         label: 'Azimuth Heating Energy Array'
         desc: 'Equation to predict heating energy use as a function of degrees azimuth.'
         type: String
+        classes:
+          RESIDENTIAL: {}
       eq_azmth_c:
         label: 'Azimuth Cooling Energy Array'
         desc: 'Equation to predict cooling energy use as a function of degrees azimuth.'
         type: String
+        classes:
+          RESIDENTIAL: {}
   parking:
     label: 'Parking'
     items:
@@ -1317,11 +1437,15 @@ typologyCategories =
         desc: 'Number of street-level parking spaces.'
         type: Number
         units: 'Spaces'
+        classes:
+          RESIDENTIAL: {}
       parking_ug:
         label: 'Parking Spaces - Underground'
         desc: 'Number of underground parking spaces.'
         type: Number
         units: 'Spaces'
+        classes:
+          RESIDENTIAL: {}
       parking_t:
         label: 'Parking Spaces - Total'
         desc: 'Total number of parking spaces.'

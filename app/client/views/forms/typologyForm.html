@@ -47,6 +47,11 @@
               {{> afQuickField name="parameters.space.num_2br"}}
               {{> afQuickField name="parameters.space.num_3plus"}}
 
+              {{> afQuickField name="parameters.space.prpn_lawn"}}
+              {{> afQuickField name="parameters.space.prpn_annu"}}
+              {{> afQuickField name="parameters.space.prpn_hardy"}}
+              {{> afQuickField name="parameters.space.prpn_imper"}}
+
               <div class="subtitle">Energy Demand</div>
               {{> afQuickField name="parameters.energy_demand.src_heat" options="allowed"}}
               {{> afQuickField name="parameters.energy_demand.en_heat"}}
@@ -71,7 +76,12 @@
               {{> afQuickField name="parameters.water_demand.i_wu_grey"}}
 
               <!-- NOTE: Fields from entity form. -->
-              {{> afQuickField name="parameters.water_demand.e_wd_src" options="allowed"}}
+              <!-- {{> afQuickField name="parameters.water_demand.e_wd_src" options="allowed"}} -->
+              {{> afQuickField name="parameters.water_demand.prpn_pot"}}
+              {{> afQuickField name="parameters.water_demand.prpn_bore"}}
+              {{> afQuickField name="parameters.water_demand.prpn_storm"}}
+              {{> afQuickField name="parameters.water_demand.prpn_treat"}}
+              {{> afQuickField name="parameters.water_demand.prpn_grey"}}
 
               <div class="subtitle">Financial</div>
               {{> afQuickField name="parameters.financial.cost_con"}}

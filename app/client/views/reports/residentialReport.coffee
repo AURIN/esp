@@ -7,6 +7,10 @@ Meteor.startup ->
     fields: [
       {title: 'Space'}
       {param: 'space.lotsize'}
+      {param: 'space.ext_land_l'}
+      {param: 'space.ext_land_a'}
+      {param: 'space.ext_land_h'}
+      {param: 'space.ext_land_i'}
       {param: 'space.extland'}
       {param: 'space.fpa'}
       {param: 'space.gfa'}
@@ -15,11 +19,6 @@ Meteor.startup ->
       {param: 'space.dwell_dens'}
       {param: 'space.dwell_tot'}
       {param: 'space.occupants'}
-
-      {param: 'space.ext_land_l'}
-      {param: 'space.ext_land_a'}
-      {param: 'space.ext_land_h'}
-      {param: 'space.ext_land_i'}
 
       {title: 'Energy Demand'}
       {param: 'energy_demand.en_heat'}
@@ -54,6 +53,13 @@ Meteor.startup ->
       {param: 'water_demand.i_wu_treat'}
       {param: 'water_demand.i_wu_grey'}
       {param: 'water_demand.i_wu_total'}
+      
+      {param: 'water_demand.e_wu_pot'}
+      {param: 'water_demand.e_wu_bore'}
+      {param: 'water_demand.e_wu_storm'}
+      {param: 'water_demand.e_wu_treat'}
+      {param: 'water_demand.e_wu_grey'}
+
       {param: 'water_demand.e_wd_lawn'}
       {param: 'water_demand.e_wd_ap'}
       {param: 'water_demand.e_wd_hp'}
