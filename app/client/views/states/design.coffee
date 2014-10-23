@@ -138,25 +138,34 @@ TemplateClass.events
     $pin = createDraggableTypology()
     #    $row.data('pin', $pin)
     $body = $('body')
-    handles = []
-    handles.push $body.mousemove (moveEvent) ->
-#      $pin.left(moveEvent.clientX)
-#      $pin.top(moveEvent.clientY)
+    $viewer = $('.viewer')
+    typologyId = $row.data('id')
+    mouseMoveHandler = (moveEvent) ->
       $pin.offset(left: moveEvent.clientX, top: moveEvent.clientY)
-    handles.push $body.mouseup (upEvent) ->
-      entity = AtlasManager.getEntitiesAt(x: upEvent.clientX, y:upEvent.clientY)[0]
-      if entity
-        console.log('entity', entity)
-        lot = Lots.findOne(entity.getId())
+    mouseUpHandler = (upEvent) ->
+      viewerPos = $viewer.position()
+      entities = AtlasManager.getEntitiesAt({
+        x: upEvent.clientX - viewerPos.left,
+        y: upEvent.clientY - viewerPos.top
+      })
+      if entities.length > 0
+        console.log('entities', entities)
+        lot = null
+        _.some entities, (entity) ->
+          lot = Lots.findOne(entity.getId())
+          lot
+        console.log 'lot', lot
         if lot
           # TODO(aramk) Refactor with the logic in the lot form.
           if lot.entity
-            replaceExisting = confirm('This Lot already has an Entity - do you want to replace it?')
-            # TODO(aramk) Reuse logic, or add it in collection hooks.
-#            if replaceExisting
-#              Typologies.
-          console.log('allocating', lot)
-
+            console.error('Remove the existing entity before allocating a typology onto this lot.')
+            # replaceExisting = confirm('This Lot already has an Entity - do you want to replace it?')
+            # # TODO(aramk) Reuse logic, or add it in collection hooks.
+            # if replaceExisting
+            #   console.log('replacing')
+            # else
+          console.log('allocating')
+          Lots.createEntity(lot._id, typologyId)
           # TODO(aramk) Add to lot
       # If the typology was dragged on the globe, allocate it to any available lots.
       console.log('mouseup')
@@ -167,6 +176,11 @@ TemplateClass.events
       console.log('handles', handles)
       console.log('pin', $pin)
       $pin.remove()
+      $body.off('mousemove', mouseMoveHandler)
+      $body.off('mouseup', mouseUpHandler)
+    
+    $body.mousemove(mouseMoveHandler)
+    $body.mouseup(mouseUpHandler)
 
 createDraggableTypology = ->
   $pin = $('<div class="draggable-typology"><i class="building icon"></i></div>')
