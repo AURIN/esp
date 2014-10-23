@@ -138,10 +138,12 @@ TemplateClass.events
     $pin = createDraggableTypology()
     #    $row.data('pin', $pin)
     $body = $('body')
+    $body.addClass('dragging')
     $viewer = $('.viewer')
     typologyId = $row.data('id')
     mouseMoveHandler = (moveEvent) ->
-      $pin.offset(left: moveEvent.clientX, top: moveEvent.clientY)
+      margin = {left: -16, top: -38}
+      $pin.offset(left: moveEvent.clientX + margin.left, top: moveEvent.clientY + margin.top)
     mouseUpHandler = (upEvent) ->
       viewerPos = $viewer.position()
       entities = AtlasManager.getEntitiesAt({
@@ -164,8 +166,8 @@ TemplateClass.events
             # if replaceExisting
             #   console.log('replacing')
             # else
-          console.log('allocating')
-          Lots.createEntity(lot._id, typologyId)
+          else
+            Lots.createEntity(lot._id, typologyId)
           # TODO(aramk) Add to lot
       # If the typology was dragged on the globe, allocate it to any available lots.
       console.log('mouseup')
@@ -178,12 +180,13 @@ TemplateClass.events
       $pin.remove()
       $body.off('mousemove', mouseMoveHandler)
       $body.off('mouseup', mouseUpHandler)
+      $body.remove('dragging')
     
     $body.mousemove(mouseMoveHandler)
     $body.mouseup(mouseUpHandler)
 
 createDraggableTypology = ->
-  $pin = $('<div class="draggable-typology"><i class="building icon"></i></div>')
+  $pin = $('<div class="draggable-typology"></div>') # <i class="building icon"></i>
   $('body').append($pin)
   $pin
 
