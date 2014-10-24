@@ -678,7 +678,7 @@ TypologyClasses =
 
 ClassNames = Object.keys(TypologyClasses)
 
-TypologyTypes = ['Basic', 'Energy Efficient']
+TypologyTypes = ['Basic', 'Efficient', 'Advanced']
 EnergySources = ['Electricity', 'Gas']
 # Appliance type to the project parameter storing its energy usage.
 ApplianceTypes =
@@ -752,10 +752,14 @@ typologyCategories =
         desc: 'BOM climate zone number.'
         label: 'Climate Zone'
         type: Number
+        classes:
+          RESIDENTIAL: {}
       type:
         type: String
         desc: 'Version of the subclass.'
         allowedValues: TypologyTypes
+        classes:
+          RESIDENTIAL: {}
   space:
     label: 'Space'
     items:

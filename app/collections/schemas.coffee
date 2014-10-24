@@ -2,6 +2,8 @@ global = @
 
 @SchemaUtils =
 
+  getField: (fieldId, collection) -> collection.simpleSchema().schema(fieldId)
+
 # Traverse the given schema and call the given callback with the field schema and ID.
   forEachFieldSchema: (schema, callback) ->
     fieldIds = schema._schemaKeys

@@ -16,7 +16,7 @@ Meteor.startup ->
     # TODO(aramk) Refactor with entityForm.
     typologyClass = Template.dropdown.getValue(getClassInput.call(@))
     # Only show fields when a class is selected.
-    @.$('.fields').toggle(!!typologyClass)
+    @$('.fields').toggle(!!typologyClass)
     defaultParams = Typologies.getDefaultParameterValues(typologyClass)
     console.debug 'updateFields', @, arguments, typologyClass
     for key, input of Forms.getSchemaInputs(@, collection)
@@ -75,6 +75,12 @@ Meteor.startup ->
             $input.val(defaultValue)
           else
             $input.val('')
+    # Toggle visibility of geometry inputs.
+    geomVisible = true
+    geom2dClasses = SchemaUtils.getField('parameters.space.geom_2d', Typologies).classes
+    if geom2dClasses && !geom2dClasses[typologyClass]
+      geomVisible = false
+    @$('.geom').toggle(geomVisible)
 
   Form = Forms.defineModelForm
     name: 'typologyForm'
