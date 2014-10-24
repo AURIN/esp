@@ -43,7 +43,7 @@
         deferCallback(result, callback)
 
       onError: (operation, error, template) ->
-        console.error('Error submitting form', operation, error, template);
+        console.error('Error submitting form', operation, error, template)
         throw new Error(error)
 
       before:

@@ -90,13 +90,13 @@ Meteor.startup ->
       else
         geomDf.resolve(null)
 
-      # Handle saving entity.
+      # If not for development, there is no dropdown.
       $typologyDropdown = getTypologyDropdown(template)
       if $typologyDropdown.length > 0
         newTypologyId = Template.dropdown.getValue($typologyDropdown)
+        Lots.createOrReplaceEntity(id, newTypologyId).then(entityDf.resolve, entityDf.reject)
       else
-        newTypologyId = null
-      entityPromise = Lots.createOrReplaceEntity(id, newTypologyId)
+        entityDf.resolve(null)
 
       developParamId = 'parameters.general.develop'
       geomParamId = 'parameters.space.geom_2d'
@@ -105,7 +105,9 @@ Meteor.startup ->
       reject = (err) ->
         console.error.apply(console, arguments)
         formDf.reject(err)
-      Q.all([entityPromise, geomDf.promise]).then (results) ->
+      Q.all([
+        entityDf,
+        geomDf.promise]).then (results) ->
         wkt = results[1]
         modifier = {}
         if wkt?
@@ -133,11 +135,31 @@ Meteor.startup ->
       LotUtils.render(id) if id
 
     hooks:
+      before:
+        insert: (doc, template) ->
+          setTypologyValue(doc, true, template)
+        update: (docId, modifier, template) ->
+          setTypologyValue(modifier, false, template)
       formToDoc: (doc) ->
         doc.project = Projects.getCurrentId()
         doc
 
   isButtonActive = (node) -> $(node).hasClass('active')
+
+  # Without this method, changing the class doesn't unset the typology in the document.
+  setTypologyValue = (doc, isInserting, template) ->
+    # If not for development, there is no dropdown.
+    $typologyDropdown = getTypologyDropdown(template)
+    newTypologyId = null
+    if $typologyDropdown.length > 0
+      newTypologyId = Template.dropdown.getValue($typologyDropdown)
+    unless newTypologyId
+      if isInserting
+        doc.entity = undefined
+      else
+        doc.$unset ?= {}
+        doc.$unset.entity = null
+    doc
 
   Form.events
     'click .footprint.buttons .create': (e, template) ->

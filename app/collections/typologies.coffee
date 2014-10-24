@@ -1717,10 +1717,11 @@ Lots.findForDevelopment = (projectId) ->
 Lots.findAvailable = (projectId) ->
   _.filter Lots.findForDevelopment(projectId), (lot) -> !lot.entity
 
-Lots.createEntity = (lotId, typologyId) ->
+Lots.createEntity = (lotId, typologyId, allowReplace) ->
+  allowReplace ?= false
   df = Q.defer()
   lot = Lots.findOne(lotId)
-  if lot.entity
+  if lot.entity && !allowReplace
     throw new Error('Cannot replace entity on existing Lot with ID ' + lotId)
   typology = Typologies.findOne(typologyId)
   if !lot
@@ -1765,36 +1766,21 @@ Lots.createEntity = (lotId, typologyId) ->
   df.promise
 
 Lots.createOrReplaceEntity = (lotId, newTypologyId) ->
-  oldEntityId = doc.entity
+  entityDf = Q.defer()
+  lot = Lots.findOne(lotId)
+  oldEntityId = lot.entity
   oldTypologyId = oldEntityId && Entities.findOne(oldEntityId).typology
-  removeOldEntity = ->
-    df = Q.defer()
-    if oldEntityId?
-      Entities.remove oldEntityId, (err, result) ->
-        if err
-          df.reject('Removing old entity failed')
-          console.error(err)
-        else
-          df.resolve(true)
-    else
-      df.resolve(false)
-    df.promise
-
-  if !newTypologyId
-    # Remove the existing entity for the lot.
-    removeOldEntity().then (-> entityDf.resolve(null)), entityDf.reject
-  else if oldTypologyId != newTypologyId
+  if newTypologyId && oldTypologyId != newTypologyId
     # Create a new entity for the lot, removing the old one.
-    Lots.createEntity(id, newTypologyId).then(
-      (newEntityId) -> removeOldEntity().then(
-        -> entityDf.resolve(newEntityId)
-        entityDf.reject
-      )
-      (err) -> reject('Updating entity of lot failed', err)
+    Lots.createEntity(lotId, newTypologyId, true).then(
+      (newEntityId) -> entityDf.resolve(newEntityId)
+      (err) -> entityDf.reject(err)
     )
   else
     entityDf.resolve(oldEntityId)
   entityDf.promise
+
+# TODO(aramk) Add validation support to Collections and move this code.
 
 # TODO(aramk) Move this to Collections.
 simulateModifierUpdate = (doc, modifier) ->
@@ -1807,12 +1793,14 @@ simulateModifierUpdate = (doc, modifier) ->
 
 Lots.validate = (lot) ->
   entityId = lot.entity
+  # Avoid an exception preventing a collection method from being called - especially if it's to
+  # delete invalid collections.
   try
-    if entityId
-      entityTypology = Typologies.findOne(Entities.findOne(entityId).typology)
-      validateTypology = Lots.validateTypology(lot, entityTypology._id)
-      if validateTypology
-        return validateTypology
+    entityTypology = entityId && Typologies.findOne(Entities.findOne(entityId).typology)
+    entityTypologyId = entityTypology && entityTypology._id
+    validateTypology = Lots.validateTypology(lot, entityTypologyId)
+    if validateTypology
+      return validateTypology
   catch e
     console.error('Lot could not be validated', lot, e)
 
@@ -1820,9 +1808,6 @@ Lots.validateTypology = (lot, typologyId) ->
   typology = Typologies.findOne(typologyId)
   unless typology
     throw new Error('Cannot find typology with ID ' + typologyId)
-  # lot = Lots.findOne(lotId)
-  # unless lot
-  #   throw new Error('Cannot find lot with ID ' + lotId)
   classParamId = 'parameters.general.class'
   lotClass = Lots.getParameter(lot, classParamId)
   typologyClass = Typologies.getParameter(typology, classParamId)
@@ -1834,20 +1819,45 @@ Lots.validateTypology = (lot, typologyId) ->
 # Add validation through collection hooks to prevent changing the entity of a lot to an incorrect
 # value.
 Lots.before.insert (userId, doc) ->
-  console.log 'insert', doc
   inValid = Lots.validate(doc)
   if inValid
-    # return false
     throw new Error(inValid)
 
 Lots.before.update (userId, doc, fieldNames, modifier) ->
-  console.log 'before update', doc
   doc = simulateModifierUpdate(doc, modifier)
-  console.log 'after update', doc
   inValid = Lots.validate(doc)
   if inValid
-    # return false
     throw new Error(inValid)
+
+# TODO(aramk) Disabled this for now until validation is cleaner to define. Logic is still in
+# typologyForm.
+# Typologies.validate = (typology) ->
+#   # When changing the class, if there is an existing entity, prevent the change if it doesn't match
+#   # the same class.
+#   classParamId = 'parameters.general.class'
+#   newClass = modifier.$set[classParamId]
+#   if newClass
+#     oldTypology = Typologies.findOne(docId)
+#     oldClass = Typologies.getParameter(oldTypology, classParamId)
+#     if newClass != oldClass
+#       lots = Lots.findByTypology(docId)
+#       lotCount = lots.length
+#       if lotCount > 0
+#         lotNames = (_.map lots, (lot) -> lot.name).join(', ')
+#         alert('These Lots are using this Typology: ' + lotNames + '. Remove this Typology' +
+#           ' from the Lot first before changing its class.')
+#         @result(false)
+
+# Typologies.before.insert (userId, doc) ->
+#   inValid = Typologies.validate(doc)
+#   if inValid
+#     throw new Error(inValid)
+
+# Typologies.before.update (userId, doc, fieldNames, modifier) ->
+#   doc = simulateModifierUpdate(doc, modifier)
+#   isInvalid = Typologies.validate(doc)
+#   if inValid
+#     throw new Error(inValid)
 
 ####################################################################################################
 # ENTITY SCHEMA DEFINITION
@@ -1960,11 +1970,12 @@ Collections.observe Entities,
     Lots.update(lot._id, {$unset: {entity: null}}) if lot?
 
 Collections.observe Lots,
-# TODO(aramk) This logic is still in the lotForm. Remove it from there first.
-#  changed: (oldLot, newLot) ->
-#    # Remove entity if it changes on the lot.
-#    if oldLot.entity != newLot.entity
-#      Entities.remove(oldLot.entity)
+  # TODO(aramk) This logic is still in the lotForm. Remove it from there first.
+  changed: (newLot, oldLot) ->
+    # Remove entity if it changes on the lot.
+    oldId = oldLot.entity
+    if oldId && oldId != newLot.entity
+      Entities.remove(oldId)
   removed: (lot) ->
     # Remove the entity when the lot is removed.
     entityId = lot.entity
