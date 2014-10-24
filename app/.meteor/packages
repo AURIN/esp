@@ -14,6 +14,7 @@ standard-app-packages
 underscore
 
 # PUBLIC
+awatson1978:dropzone
 cfs:filesystem
 cfs:standard-packages
 cfs:ejson-file
@@ -22,12 +23,12 @@ digilord:roles
 iron:router
 kidovate:tinycolor
 meteorhacks:npm
+matb33:collection-hooks
 npm-container
 mrt:moment
 nooitaf:semantic-ui
 percolatestudio:percolatestudio-migrations
 raix:handlebar-helpers
-awatson1978:dropzone
 
 # PUBLIC-FORKS
 # These are forked repos and added as private packages.

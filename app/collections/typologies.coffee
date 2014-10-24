@@ -1231,44 +1231,54 @@ typologyCategories =
         decimal: true
         units: Units.kLyear
         calc: '$water_demand.e_wd_lawn + $water_demand.e_wd_ap + $water_demand.e_wd_hp'
-      prpn_pot:
-        label: 'Proportion Potable Water'
+      e_prpn_pot:
+        label: 'External Proportion Potable Water'
         type: Number
         decimal: true
         desc: 'Proportion of water as potable water.'
         classes:
+          RESIDENTIAL:
+            defaultValue: 1
           OPEN_SPACE:
             defaultValue: 1
-      prpn_bore:
-        label: 'Proportion Bore Water'
+      e_prpn_bore:
+        label: 'External Proportion Bore Water'
         type: Number
         decimal: true
         desc: 'Proportion of irrigation as bore water.'
         classes:
+          RESIDENTIAL:
+            defaultValue: 0
           OPEN_SPACE:
             defaultValue: 0
-      prpn_storm:
-        label: 'Proportion Stormwater Water'
+      e_prpn_storm:
+        label: 'External Proportion Stormwater Water'
         type: Number
         decimal: true
         desc: 'Proportion of irrigation as stormwater.'
         classes:
+          RESIDENTIAL:
+            defaultValue: 0
           OPEN_SPACE:
             defaultValue: 0
-      prpn_treat:
-        label: 'Proportion Treated Water'
+      e_prpn_treat:
+        label: 'External Proportion Treated Water'
         type: Number
         decimal: true
         desc: 'Proportion of irrigation as treated/recycled.'
         classes:
+          RESIDENTIAL:
+            defaultValue: 0
           OPEN_SPACE:
             defaultValue: 0
-      prpn_grey:
-        label: 'Proportion Grey Water'
+      e_prpn_grey:
+        label: 'External Proportion Grey Water'
         type: Number
         decimal: true
         desc: 'Proportion of irrigation as grey.'
         classes:
+          RESIDENTIAL:
+            defaultValue: 0
           OPEN_SPACE:
             defaultValue: 0
       e_wu_pot:
@@ -1276,31 +1286,31 @@ typologyCategories =
         type: Number
         desc: 'Potable water use for irrigation.'
         units: Units.kLyear
-        calc: '$water_demand.e_wd_total * $water_demand.prpn_pot'
+        calc: '$water_demand.e_wd_total * $water_demand.e_prpn_pot'
       e_wu_bore:
         label: 'Bore Water Use'
         type: Number
         desc: 'Bore water use for irrigation.'
         units: Units.kLyear
-        calc: '$water_demand.e_wd_total * $water_demand.prpn_bore'
+        calc: '$water_demand.e_wd_total * $water_demand.e_prpn_bore'
       e_wu_storm:
         label: 'Stormwater Water Use'
         type: Number
         desc: 'Stormwater use for irrigation.'
         units: Units.kLyear
-        calc: '$water_demand.e_wd_total * $water_demand.prpn_storm'
+        calc: '$water_demand.e_wd_total * $water_demand.e_prpn_storm'
       e_wu_treat:
         label: 'Treated Water Use'
         type: Number
         desc: 'Treated water use for irrigation.'
         units: Units.kLyear
-        calc: '$water_demand.e_wd_total * $water_demand.prpn_treat'
+        calc: '$water_demand.e_wd_total * $water_demand.e_prpn_treat'
       e_wu_grey:
         label: 'Grey Water Use'
         type: Number
         desc: 'Grey water use for irrigation.'
         units: Units.kLyear
-        calc: '$water_demand.wd_total * $water_demand.prpn_grey'
+        calc: '$water_demand.e_wd_total * $water_demand.e_prpn_grey'
       # TODO(aramk) Migrate this for the residential schema to use those above.
       wu_pot_tot:
         label: 'Total Potable Water Use'
@@ -1710,6 +1720,8 @@ Lots.findAvailable = (projectId) ->
 Lots.createEntity = (lotId, typologyId) ->
   df = Q.defer()
   lot = Lots.findOne(lotId)
+  if lot.entity
+    throw new Error('Cannot replace entity on existing Lot with ID ' + lotId)
   typology = Typologies.findOne(typologyId)
   if !lot
     throw new Error('No Lot with ID ' + id)
@@ -1751,6 +1763,91 @@ Lots.createEntity = (lotId, typologyId) ->
       else
         df.resolve(newEntityId)
   df.promise
+
+Lots.createOrReplaceEntity = (lotId, newTypologyId) ->
+  oldEntityId = doc.entity
+  oldTypologyId = oldEntityId && Entities.findOne(oldEntityId).typology
+  removeOldEntity = ->
+    df = Q.defer()
+    if oldEntityId?
+      Entities.remove oldEntityId, (err, result) ->
+        if err
+          df.reject('Removing old entity failed')
+          console.error(err)
+        else
+          df.resolve(true)
+    else
+      df.resolve(false)
+    df.promise
+
+  if !newTypologyId
+    # Remove the existing entity for the lot.
+    removeOldEntity().then (-> entityDf.resolve(null)), entityDf.reject
+  else if oldTypologyId != newTypologyId
+    # Create a new entity for the lot, removing the old one.
+    Lots.createEntity(id, newTypologyId).then(
+      (newEntityId) -> removeOldEntity().then(
+        -> entityDf.resolve(newEntityId)
+        entityDf.reject
+      )
+      (err) -> reject('Updating entity of lot failed', err)
+    )
+  else
+    entityDf.resolve(oldEntityId)
+  entityDf.promise
+
+# TODO(aramk) Move this to Collections.
+simulateModifierUpdate = (doc, modifier) ->
+  tmpCollection = Collections.createTemporary()
+  doc = Setter.clone(doc)
+  # This is synchronous since it's a local collection.
+  insertedId = tmpCollection.insert(doc)
+  tmpCollection.update(insertedId, modifier)
+  tmpCollection.findOne(insertedId)
+
+Lots.validate = (lot) ->
+  entityId = lot.entity
+  try
+    if entityId
+      entityTypology = Typologies.findOne(Entities.findOne(entityId).typology)
+      validateTypology = Lots.validateTypology(lot, entityTypology._id)
+      if validateTypology
+        return validateTypology
+  catch e
+    console.error('Lot could not be validated', lot, e)
+
+Lots.validateTypology = (lot, typologyId) ->
+  typology = Typologies.findOne(typologyId)
+  unless typology
+    throw new Error('Cannot find typology with ID ' + typologyId)
+  # lot = Lots.findOne(lotId)
+  # unless lot
+  #   throw new Error('Cannot find lot with ID ' + lotId)
+  classParamId = 'parameters.general.class'
+  lotClass = Lots.getParameter(lot, classParamId)
+  typologyClass = Typologies.getParameter(typology, classParamId)
+  unless lotClass
+    'Lot does not have a Typology class assigned.'
+  unless typologyClass == lotClass
+    'Lot does not have same Typology class as the Typology being assigned.'
+
+# Add validation through collection hooks to prevent changing the entity of a lot to an incorrect
+# value.
+Lots.before.insert (userId, doc) ->
+  console.log 'insert', doc
+  inValid = Lots.validate(doc)
+  if inValid
+    # return false
+    throw new Error(inValid)
+
+Lots.before.update (userId, doc, fieldNames, modifier) ->
+  console.log 'before update', doc
+  doc = simulateModifierUpdate(doc, modifier)
+  console.log 'after update', doc
+  inValid = Lots.validate(doc)
+  if inValid
+    # return false
+    throw new Error(inValid)
 
 ####################################################################################################
 # ENTITY SCHEMA DEFINITION

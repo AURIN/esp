@@ -89,6 +89,8 @@ Meteor.startup ->
         doc
       before:
         update: (docId, modifier, template) ->
+          # When changing the class, if there is an existing entity, prevent the change if it
+          # doesn't match the same class.
           classParamId = 'parameters.general.class'
           newClass = modifier.$set[classParamId]
           if newClass

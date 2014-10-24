@@ -29,6 +29,10 @@
       "git": "https://github.com/aramk/meteor-autoform.git",
       "branch": "develop"
     },
+    "matb33:collection-hooks": {
+      "git": "https://github.com/aramk/meteor-collection-hooks.git",
+      "branch": "feature/exceptions"
+    },
     "q": {
       "git": "https://github.com/aramk/q.git",
       "branch": "v1"

@@ -74,7 +74,6 @@ Meteor.startup ->
       data = template.data
       id = if operation == 'insert' then result else data.doc._id
       doc = Lots.findOne(id)
-      #      settings = data.settings || {}
       entityDf = Q.defer()
       geomDf = Q.defer()
 
@@ -92,51 +91,21 @@ Meteor.startup ->
         geomDf.resolve(null)
 
       # Handle saving entity.
-      oldEntityId = doc.entity
-      oldTypologyId = getTypologyId(doc)
       $typologyDropdown = getTypologyDropdown(template)
       if $typologyDropdown.length > 0
         newTypologyId = Template.dropdown.getValue($typologyDropdown)
       else
         newTypologyId = null
-      classParamId = 'parameters.general.class'
+      entityPromise = Lots.createOrReplaceEntity(id, newTypologyId)
+
       developParamId = 'parameters.general.develop'
       geomParamId = 'parameters.space.geom_2d'
-      lotClass = Lots.getParameter(doc, classParamId)
-      isForDevelopment = Lots.getParameter(doc, developParamId)
 
-      removeOldEntity = ->
-        df = Q.defer()
-        if oldEntityId?
-          Entities.remove oldEntityId, (err, result) ->
-            if err
-              df.reject('Removing old entity failed')
-              console.error(err)
-            else
-              df.resolve(true)
-        else
-          df.resolve(false)
-        df.promise
-
-      if !newTypologyId
-        # Remove the existing entity for the lot.
-        removeOldEntity().then (-> entityDf.resolve(null)), entityDf.reject
-      else if oldTypologyId != newTypologyId
-        # Create a new entity for the lot, removing the old one.
-        Lots.createEntity(id, newTypologyId).then(
-          (newEntityId) -> removeOldEntity().then(
-            -> entityDf.resolve(newEntityId)
-            entityDf.reject
-          )
-          (err) -> reject('Updating entity of lot failed', err)
-        )
-      else
-        entityDf.resolve(oldEntityId)
       formDf = Q.defer()
       reject = (err) ->
         console.error.apply(console, arguments)
         formDf.reject(err)
-      Q.all([entityDf.promise, geomDf.promise]).then (results) ->
+      Q.all([entityPromise, geomDf.promise]).then (results) ->
         wkt = results[1]
         modifier = {}
         if wkt?
