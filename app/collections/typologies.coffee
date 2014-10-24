@@ -53,8 +53,7 @@ Units =
   MJ: 'MJ'
   MJyear: 'MJ/year'
 
-extendSchema = (orig, changes) ->
-  _.extend({}, orig, changes)
+extendSchema = (orig, changes) -> _.extend({}, orig, changes)
 
 # TODO(aramk) Can't use Strings or other utilities outside Meteor.startup since it's not loaded yet
 toTitleCase = (str) ->
@@ -1800,25 +1799,30 @@ Lots.validate = (lot) ->
   # Avoid an exception preventing a collection method from being called - especially if it's to
   # delete invalid collections.
   try
-    entityTypology = entityId && Typologies.findOne(Entities.findOne(entityId).typology)
-    entityTypologyId = entityTypology && entityTypology._id
-    validateTypology = Lots.validateTypology(lot, entityTypologyId)
+    typology = entityId && Typologies.findOne(Entities.findOne(entityId).typology)
+    typologyId = typology && typology._id
+    validateTypology = typologyId && Lots.validateTypology(lot, typologyId)
     if validateTypology
       return validateTypology
   catch e
     console.error('Lot could not be validated', lot, e)
 
 Lots.validateTypology = (lot, typologyId) ->
+  # Validates whether adding the given typology is valid on the given lot.
   typology = Typologies.findOne(typologyId)
   unless typology
     throw new Error('Cannot find typology with ID ' + typologyId)
   classParamId = 'parameters.general.class'
+  developParamId = 'parameters.general.develop'
   lotClass = Lots.getParameter(lot, classParamId)
   typologyClass = Typologies.getParameter(typology, classParamId)
+  isForDevelopment = Lots.getParameter(lot, developParamId)
+  if typologyId && !isForDevelopment
+    return 'Lot is not for development - cannot assign typology.'
   unless lotClass
-    'Lot does not have a Typology class assigned.'
+    return 'Lot does not have a Typology class assigned.'
   unless typologyClass == lotClass
-    'Lot does not have same Typology class as the Typology being assigned.'
+    return 'Lot does not have same Typology class as the Typology being assigned.'
 
 # Add validation through collection hooks to prevent changing the entity of a lot to an incorrect
 # value.
