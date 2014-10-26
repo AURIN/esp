@@ -240,7 +240,7 @@ module.exports = function(grunt) {
       for (var name in env) {
         shell.env[name] = env[name];
       }
-      var runNode = runProcess('node', {args: ['main.js']});
+      var runNode = runProcess('node', ['main.js']);
       runNode.on('exit', function() {
         done();
       });
@@ -340,17 +340,20 @@ module.exports = function(grunt) {
    * Runs a child process; prints stdout and stderr.
    * @param {String} cmd - A single command name. If it contains spaces, they are treated as
    * arguments.
-   * @param {Object} [args]
-   * @param {Array} [args.args] The arguments invoked on the given command.
-   * @param {Object} [args.options] The options passed to child_process.spawn().
-   * @param {Function} [args.data] Invoked with the response data when the command responds with
+   * @param {Object|Array} [args] - If given as an array, this becomes args.args.
+   * @param {Array} [args.args] - The arguments invoked on the given command.
+   * @param {Object} [args.options] - The options passed to child_process.spawn().
+   * @param {Function} [args.data] - Invoked with the response data when the command responds with
    * data.
-   * @param {Function} [args.error] Invoked with the response data when the command has
+   * @param {Function} [args.error] - Invoked with the response data when the command has
    * completed with an error.
-   * @param {Function} [args.exit] Invoked when the command has completed successfully.
+   * @param {Function} [args.exit] - Invoked when the command has completed successfully.
    * @returns {ChildProcess}
    */
   function runProcess(cmd, args) {
+    if (args && args.length !== undefined) {
+      args = {args: args};
+    }
     args = _.extend({
       args: [],
       options: {}
