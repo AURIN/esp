@@ -1,3 +1,7 @@
+_renderQueue = null
+Meteor.startup ->
+  _renderQueue = new DeferredQueueMap()
+
 @LotUtils =
 
 # Handles a assets/synthesize response to create lots.
@@ -142,7 +146,10 @@
 
 # TODO(aramk) Abstract this rendering for Entities as well.
 # TODO(aramk) This class has grown too generic - refactor.
-  render: (id) ->
+  
+  render: (id) -> _renderQueue.add(id, => @_render(id))
+
+  _render: (id) ->
     df = Q.defer()
     entity = AtlasManager.getEntity(id)
     if entity

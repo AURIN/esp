@@ -53,7 +53,7 @@ TemplateClass.rendered = ->
     require([
         'atlas-cesium/core/CesiumAtlas',
         'atlas/lib/utility/Log'
-      ], (CesiumAtlas, Log) =>
+      ], (CesiumAtlas, Log) ->
       Log.setLevel('debug')
       console.debug('Creating Atlas...')
       cesiumAtlas = new CesiumAtlas()
@@ -156,7 +156,6 @@ TemplateClass.events
         _.some entities, (entity) ->
           lot = Lots.findOne(entity.getId())
           lot
-        console.log 'lot', lot
         if lot
           # TODO(aramk) Refactor with the logic in the lot form.
           if lot.entity
@@ -279,7 +278,7 @@ TemplateClass.onAtlasLoad = (template, atlas) ->
   _.each entities.fetch(), (entity) -> renderEntity(entity._id)
 
   # Re-render when display mode changes.
-  reactiveToDisplayMode = (collection, sessionVarName, getDisplayMode) ->
+  reactiveToDisplayMode = (cursor, sessionVarName, getDisplayMode) ->
     firstRun = true
     template.autorun (c) ->
       # Register a dependency on display mode changes.
@@ -289,12 +288,12 @@ TemplateClass.onAtlasLoad = (template, atlas) ->
         # Don't run the first time, since we already render through the observe() callback.
         firstRun = false
         return
-      ids = _.map collection.find().fetch(), (doc) -> doc._id
+      ids = _.map cursor.fetch(), (doc) -> doc._id
       _.each AtlasManager.getEntitiesByIds(ids), (entity) ->
         entity.setDisplayMode(getDisplayMode(entity.getId()))
 
-  reactiveToDisplayMode(Lots, 'lotDisplayMode', LotUtils.getDisplayMode)
-  reactiveToDisplayMode(Entities, 'entityDisplayMode')
+  reactiveToDisplayMode(Lots.findByProject(), 'lotDisplayMode', LotUtils.getDisplayMode)
+  reactiveToDisplayMode(Entities.findByProject(), 'entityDisplayMode')
 
   # Re-render entities of a typology when fields affecting visualisation are changed.
   handles.push Collections.observe typologies, {
