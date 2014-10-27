@@ -75,6 +75,7 @@ Meteor.startup ->
     else
       @toGeoEntityArgs(id).then (entityArgs) =>
         entity = Entities.getFlattened(id)
+        azimuth = Entities.getParameter(entity, 'orientation.azimuth')
         # If the geoEntity was rendered using the Typology geometry, centre it based on the Lot.
         lot = Lots.findOne(entity.lot)
         unless lot
@@ -90,9 +91,6 @@ Meteor.startup ->
             entityArgs.show = false
             # Render the entity once the Lot has been rendered.
             geoEntity = AtlasManager.renderEntity(entityArgs)
-            # Apply rotation based on the azimuth.
-            azimuth = Entities.getParameter(entity, 'orientation.azimuth')
-            geoEntity.setRotation(new Vertex(0, 0, azimuth)) if azimuth?
             # Mesh has not been rendered yet, so only position extrusion/footprint.
             # unless geoEntity.getDisplayMode() == Feature.DisplayMode.MESH
             #   geoEntity.setCentroid(lotEntity.getCentroid())
@@ -105,6 +103,9 @@ Meteor.startup ->
               # Ensure all forms have the same centroid.
               _.each Feature.DisplayMode, (displayMode) ->
                 form = geoEntity.getForm(displayMode)
-                form.setCentroid(lotEntity.getCentroid()) if form
+                if form
+                  form.setCentroid(lotEntity.getCentroid())
+                  # Apply rotation based on the azimuth.
+                  form.setRotation(new Vertex(0, 0, azimuth)) if azimuth?
               df.resolve(geoEntity)
     df.promise
