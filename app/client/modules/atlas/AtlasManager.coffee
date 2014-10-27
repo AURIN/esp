@@ -1,22 +1,25 @@
-atlas = null
-atlasDf = null
+atlas = atlasDf = null
 
-init = ->
+resetAtlas = ->
   atlas = null
   atlasDf = Q.defer()
-init()
+resetAtlas()
 
 @AtlasManager =
 
-  getAtlas: -> atlasDf.promise
+  getAtlas: ->
+    console.log('getting atlas', atlas)
+    atlasDf.promise
 
   setAtlas: (_instance) ->
-    @removeAtlas()
+    if atlas
+      throw new Error('Atlas is already set - remove it first.')
     atlas = _instance
     atlasDf.resolve(atlas)
+    # Add a reference to the window for debugging.
+    window.atlas = atlas
 
-  removeAtlas: ->
-    init()
+  removeAtlas: -> resetAtlas()
 
   zoomToProject: ->
     projectId = Projects.getCurrentId()

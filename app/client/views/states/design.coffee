@@ -42,6 +42,7 @@ TemplateClass.created = ->
 
 TemplateClass.destroyed = ->
   _.each handles, (handle) -> handle.stop()
+  AtlasManager.removeAtlas()
 
 TemplateClass.rendered = ->
   template = @
