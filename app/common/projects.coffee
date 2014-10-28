@@ -103,3 +103,9 @@ incrementName = (name) ->
   duplicate: (id) ->
     json = @toJson(id)
     @fromJson(json)
+
+  downloadInBrowser: (id) ->
+    console.log 'Exporting project', id
+    json = @toJson(id)
+    blob = Blobs.fromString(JSON.stringify(json), {type: 'application/json'})
+    Blobs.downloadInBrowser(blob, 'project-' + id + '.json')
