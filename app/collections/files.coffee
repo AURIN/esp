@@ -32,7 +32,7 @@ Meteor.startup ->
       cacheDf = fileCache[fileId]
       unless cacheDf
         cacheDf = fileCache[fileId] = Q.defer()
-        Meteor.call method, fileId, (err, data) =>
+        Meteor.call method, fileId, (err, data) ->
           if err
             cacheDf.reject(err)
           else

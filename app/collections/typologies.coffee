@@ -678,6 +678,7 @@ TypologyClasses =
 ClassNames = Object.keys(TypologyClasses)
 
 TypologyTypes = ['Basic', 'Efficient', 'Advanced']
+TypologySubclasses = ['Single House', 'Attached House', 'Walkup', 'Medium Rise', 'High Rise']
 EnergySources = ['Electricity', 'Gas']
 # Appliance type to the project parameter storing its energy usage.
 ApplianceTypes =
@@ -746,7 +747,11 @@ typologyCategories =
       class: classSchema
       subclass:
         type: String
-        desc: 'Typology within a class. Ex. "Community Garden", "Park" or "Public Plaza".'
+        desc: 'Typology within a class.'
+        allowedValues: TypologySubclasses
+        optional: false
+        classes:
+          RESIDENTIAL: {}
       climate_zn:
         desc: 'BOM climate zone number.'
         label: 'Climate Zone'

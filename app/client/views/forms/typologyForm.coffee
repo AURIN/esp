@@ -125,6 +125,7 @@ Meteor.startup ->
       importFieldHandler(e, template, ['shp'])
     'change [data-name="parameters.space.geom_3d"] input': (e, template) ->
       importFieldHandler(e, template, ['kmz'])
+    'change .azimuth-array.'
 
   # UPLOADING
 
