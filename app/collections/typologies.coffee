@@ -749,7 +749,7 @@ typologyCategories =
         type: String
         desc: 'Typology within a class.'
         allowedValues: TypologySubclasses
-        optional: false
+        # optional: false
         classes:
           RESIDENTIAL: {}
       climate_zn:
@@ -1977,23 +1977,36 @@ PubSub.subscribe 'report/rendered', subscribeRefreshReports
 # AZIMUTH ARRAY ENERGY DEMAND
 ####################################################################################################
 
-# Update the energy demand based on the azimuth array.
+# A set of IDs for docs which are currently being updated. Used to prevent infinite loops when
+# updating documents in the update hook.
+# updatingAzimuthDocIds = {}
 
 Typologies.calcOutputFromAzimuth = (array, azimuth) ->
   input = azimuth % 360
   Maths.calcUniformBinValue(array, input, 360)
 
-updateAzimuthEnergyDemand = (userId, doc) ->
-  parameters = doc.parameters
-  isEntity = Entites.findOne(id)?
-  collection = Typologies
-  if isEntity
-    parameters = Entities.getFlattened(doc._id).parameters
-    collection = Entities
-  eq_azmth_h = parameters.orientation?.eq_azmth_h
-  eq_azmth_c = parameters.orientation?.eq_azmth_c
-  azimuth = parameters.orientation?.azimuth ? 0
-  cfa = parameters.space?.cfa
+azimuthArrayDependencyFieldIds = ['parameters.space.cfa', 'parameters.orientation.azimuth',
+  'parameters.orientation.eq_azmth_h', 'parameters.orientation.eq_azmth_c']
+
+# Update the energy demand based on the azimuth array.
+updateAzimuthEnergyDemand = (userId, doc, fieldNames, modifier) ->
+  isUpdating = modifier?
+  if isUpdating
+    # Add modified values to doc to ensure we use the latest values in calculations.
+    fullDoc = simulateModifierUpdate(doc, modifier)
+    # If no dependencies are being updated, the energy demands won't change, so we can quit early.
+    hasDependencyUpdates = _.some azimuthArrayDependencyFieldIds, (fieldId) ->
+      modifier.$set?[fieldId]? || modifier.$unset?[fieldId]
+    unless hasDependencyUpdates
+      return
+  else
+    fullDoc = Setter.clone(doc)
+  isEntity = doc.typology?
+  Entities.mergeTypology(fullDoc) if isEntity
+  eq_azmth_h = Entities.getParameter(fullDoc, 'parameters.orientation.eq_azmth_h')
+  eq_azmth_c = Entities.getParameter(fullDoc, 'parameters.orientation.eq_azmth_c')
+  azimuth = Entities.getParameter(fullDoc, 'parameters.orientation.azimuth') ? 0
+  cfa = Entities.getParameter(fullDoc, 'parameters.space.cfa')
   return unless cfa? && azimuth?
   $set = {}
   items = [
@@ -2002,19 +2015,27 @@ updateAzimuthEnergyDemand = (userId, doc) ->
   ]
   _.each items, (item) ->
     array = item.array
-    array = if array != '' then JSON.parse(array) else null
+    array = if array then JSON.parse(array) else null
     return unless array?
     hasNullValue = _.some array, (value) -> value == null
     if !hasNullValue
       energyM2 = Typologies.calcOutputFromAzimuth(array, azimuth)
       $set[item.energyParamId] = energyM2 * cfa
   return if Object.keys($set).length == 0
-  collection.update(doc._id, {$set: $set})
+  # If we updated properties
+  modifier ?= {}
+  $existingSet = modifier.$set
+  if $existingSet?
+    Setter.merge($existingSet, $set)
+  else
+    modifier.$set = $set
+  unless isUpdating
+    Setter.merge(doc, simulateModifierUpdate(doc, modifier))
 
-Entities.after.insert(updateAzimuthEnergyDemand)
-Entities.after.update(updateAzimuthEnergyDemand)
-Typologies.after.insert(updateAzimuthEnergyDemand)
-Typologies.after.update(updateAzimuthEnergyDemand)
+Entities.before.insert(updateAzimuthEnergyDemand)
+Entities.before.update(updateAzimuthEnergyDemand)
+Typologies.before.insert(updateAzimuthEnergyDemand)
+Typologies.before.update(updateAzimuthEnergyDemand)
 
 ####################################################################################################
 # ASSOCIATION MAINTENANCE

@@ -152,7 +152,7 @@ Meteor.startup ->
       $output = item.$output
       array = Template.azimuthArray.getValueArray($input)
       hasNullValue = _.some array, (value) -> value == null
-      if !hasNullValue && cfa?
+      if !hasNullValue && cfa? && !isNaN(cfa)
         energyM2 = Template.azimuthArray.getOutputFromAzimuth(item.$input, azimuth)
       $output.parent().toggle(!energyM2?)
       if energyM2

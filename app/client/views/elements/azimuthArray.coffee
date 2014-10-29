@@ -44,7 +44,7 @@ TemplateClass.getValue = (elem) ->
 
 TemplateClass.getValueArray = (elem) ->
   array = TemplateClass.getValue(elem)
-  if array != '' then JSON.parse(array) else null
+  if array then JSON.parse(array) else null
 
 # TODO(aramk) Use this for setting the custom value on the form element when loaded.
 TemplateClass.setValue = (elem, value) ->
@@ -59,4 +59,4 @@ TemplateClass.setValue = (elem, value) ->
 TemplateClass.getOutputFromAzimuth = (elem, azimuth) ->
   array = TemplateClass.getValueArray(elem)
   return null unless array
-  Typlogies.calcOutputFromAzimuth(array, azimuth)
+  Typologies.calcOutputFromAzimuth(array, azimuth)
