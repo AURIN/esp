@@ -9,6 +9,9 @@
     binFloat = input / binSize
     lowerBinIndex = Math.floor(binFloat)
     upperBinIndex = Math.ceil(binFloat)
+    # If the upper bin exceeds the number of bins, use the first bin to form a cycle.
+    if upperBinIndex >= binCount
+      upperBinIndex = 0
     binRatio = binFloat - lowerBinIndex
     lowerBinValue = bins[lowerBinIndex]
     upperBinValue = bins[upperBinIndex]

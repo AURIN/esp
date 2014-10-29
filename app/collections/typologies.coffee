@@ -1977,10 +1977,6 @@ PubSub.subscribe 'report/rendered', subscribeRefreshReports
 # AZIMUTH ARRAY ENERGY DEMAND
 ####################################################################################################
 
-# A set of IDs for docs which are currently being updated. Used to prevent infinite loops when
-# updating documents in the update hook.
-# updatingAzimuthDocIds = {}
-
 Typologies.calcOutputFromAzimuth = (array, azimuth) ->
   input = azimuth % 360
   Maths.calcUniformBinValue(array, input, 360)

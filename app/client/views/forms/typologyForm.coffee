@@ -76,11 +76,11 @@ Meteor.startup ->
           else
             $input.val('')
     # Toggle visibility of geometry inputs.
-    geomVisible = true
     geom2dClasses = SchemaUtils.getField('parameters.space.geom_2d', Typologies).classes
-    if geom2dClasses && !geom2dClasses[typologyClass]
-      geomVisible = false
-    @$('.geom').toggle(geomVisible)
+    @$('.geom').toggle(!!geom2dClasses[typologyClass])
+    # Toggle visibility of azimuth array inputs.
+    azimuthClasses = SchemaUtils.getField('parameters.orientation.azimuth', Typologies).classes
+    @$('.azimuth-array').toggle(!!azimuthClasses[typologyClass])
 
   Form = Forms.defineModelForm
     name: 'typologyForm'
