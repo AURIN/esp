@@ -1433,6 +1433,7 @@ typologyCategories =
         type: Number
         decimal: true
         units: 'Degrees'
+        # defaultValue: 0
         classes:
           RESIDENTIAL: {}
       eq_azmth_h:
@@ -1971,6 +1972,49 @@ subscribeRefreshReports = ->
     _reportRefreshSubscribed = true
 # Refresh only if a report has been rendered before.
 PubSub.subscribe 'report/rendered', subscribeRefreshReports
+
+####################################################################################################
+# AZIMUTH ARRAY ENERGY DEMAND
+####################################################################################################
+
+# Update the energy demand based on the azimuth array.
+
+Typologies.calcOutputFromAzimuth = (array, azimuth) ->
+  input = azimuth % 360
+  Maths.calcUniformBinValue(array, input, 360)
+
+updateAzimuthEnergyDemand = (userId, doc) ->
+  parameters = doc.parameters
+  isEntity = Entites.findOne(id)?
+  collection = Typologies
+  if isEntity
+    parameters = Entities.getFlattened(doc._id).parameters
+    collection = Entities
+  eq_azmth_h = parameters.orientation?.eq_azmth_h
+  eq_azmth_c = parameters.orientation?.eq_azmth_c
+  azimuth = parameters.orientation?.azimuth ? 0
+  cfa = parameters.space?.cfa
+  return unless cfa? && azimuth?
+  $set = {}
+  items = [
+    {array: eq_azmth_h, energyParamId: 'parameters.energy_demand.en_heat'}
+    {array: eq_azmth_c, energyParamId: 'parameters.energy_demand.en_cool'}
+  ]
+  _.each items, (item) ->
+    array = item.array
+    array = if array != '' then JSON.parse(array) else null
+    return unless array?
+    hasNullValue = _.some array, (value) -> value == null
+    if !hasNullValue
+      energyM2 = Typologies.calcOutputFromAzimuth(array, azimuth)
+      $set[item.energyParamId] = energyM2 * cfa
+  return if Object.keys($set).length == 0
+  collection.update(doc._id, {$set: $set})
+
+Entities.after.insert(updateAzimuthEnergyDemand)
+Entities.after.update(updateAzimuthEnergyDemand)
+Typologies.after.insert(updateAzimuthEnergyDemand)
+Typologies.after.update(updateAzimuthEnergyDemand)
 
 ####################################################################################################
 # ASSOCIATION MAINTENANCE

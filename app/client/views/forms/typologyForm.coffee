@@ -91,15 +91,16 @@ Meteor.startup ->
       $classInput.on 'change', => updateFields.call(@)
       # Set values for azimuth fields.
       # TODO(aramk) Remove this with newer versions of Autoform.
-      items = getAzimuthItems(@)
+      items = Form.getAzimuthItems(@)
       heating = items.heating
       cooling = items.cooling
       Template.azimuthArray.setValue(heating.$input, heating.value)
       Template.azimuthArray.setValue(cooling.$input, cooling.value)
       # Bind change events to azimuth fields.
-      onAzimuthChange = _.debounce (=> updateAzimuthArray(@)), 300
-      $('.azimuth-array input').add('[name="parameters.orientation.azimuth"]').on('change keyup',
-        onAzimuthChange)
+      onAzimuthChange = _.debounce (=> Form.updateAzimuthArray(@)), 300
+      $('.azimuth-array input').add('[name="parameters.orientation.azimuth"]')
+        .add('[name="parameters.space.cfa"]').on('change keyup', onAzimuthChange)
+      onAzimuthChange()
     hooks:
       formToDoc: (doc) ->
         doc.project = Projects.getCurrentId()
@@ -136,32 +137,40 @@ Meteor.startup ->
       importFieldHandler(e, template, ['shp'])
     'change [data-name="parameters.space.geom_3d"] input': (e, template) ->
       importFieldHandler(e, template, ['kmz'])
-    # 'change .azimuth-array': (e, template) -> updateAzimuthArray(template)
-    # 'change [name="parameters.orientation.azimuth"]': (e, template) -> updateAzimuthArray(template)
 
   # AZIMUTH ARRAY
   
-  updateAzimuthArray = (template) ->
-    items = getAzimuthItems(template)
+  Form.updateAzimuthArray = (template) ->
+    items = Form.getAzimuthItems(template)
     heating = items.heating
     cooling = items.cooling
-    $azimuth = getAzimuthInput(template)
-    azimuth = parseFloat($azimuth.val())
-    return if isNaN(azimuth)
+    azimuth = parseFloat(getAzimuthInput(template).val()) || 0
+    $cfa = items.cfa.$cfa
+    cfa = if $cfa? then parseFloat($cfa.val()) else items.cfa.value
     _.each [heating, cooling], (item) ->
       $input = item.$input
-      outputValue = Template.azimuthArray.getOutputFromAzimuth(item.$input, azimuth)
-      item.$output.val(outputValue) if outputValue?
+      $output = item.$output
+      array = Template.azimuthArray.getValueArray($input)
+      hasNullValue = _.some array, (value) -> value == null
+      if !hasNullValue && cfa?
+        energyM2 = Template.azimuthArray.getOutputFromAzimuth(item.$input, azimuth)
+      $output.parent().toggle(!energyM2?)
+      if energyM2
+        outputValue = energyM2 * cfa
+        $output.val(outputValue) if outputValue?
 
-  getAzimuthItems = (template) ->
+  Form.getAzimuthItems = (template) ->
     parameters = template.data.doc?.parameters ? {}
     eq_azmth_h = parameters.orientation?.eq_azmth_h
     eq_azmth_c = parameters.orientation?.eq_azmth_c
+    cfa = parameters.space?.cfa
     $heating = template.$('[data-name="parameters.orientation.eq_azmth_h"]')
     $cooling = template.$('[data-name="parameters.orientation.eq_azmth_c"]')
     $heatingOutput = template.$('[name="parameters.energy_demand.en_heat"]')
     $coolingOutput = template.$('[name="parameters.energy_demand.en_cool"]')
+    $cfa = template.$('[name="parameters.space.cfa"]')
     {
+      cfa: {value: cfa, $cfa: $cfa}
       heating: {value: eq_azmth_h, $input: $heating, $output: $heatingOutput}
       cooling: {value: eq_azmth_c, $input: $cooling, $output: $coolingOutput}
     }
