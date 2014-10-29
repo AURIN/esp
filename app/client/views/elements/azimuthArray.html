@@ -1,17 +1,16 @@
 <template name="azimuthArray">
-  <div class="azimuth-array {{name}}">
+  <div class="azimuth-array" data-name="{{name}}">
     <label>{{label}}</label>
-
     <table>
       <tr class="labels">
-        <td>0/360&degrees;</td>
-        <td>45&degrees;</td>
-        <td>90&degrees;</td>
-        <td>135&degrees;</td>
-        <td>180&degrees;</td>
-        <td>225&degrees;</td>
-        <td>270&degrees;</td>
-        <td>315&degrees;</td>
+        <td>0/360&deg;</td>
+        <td>45&deg;</td>
+        <td>90&deg;</td>
+        <td>135&deg;</td>
+        <td>180&deg;</td>
+        <td>225&deg;</td>
+        <td>270&deg;</td>
+        <td>315&deg;</td>
       </tr>
       <tr class="values">
         <td><input type="text" name="azimuth_0"/></td>
@@ -24,6 +23,5 @@
         <td><input type="text" name="azimuth_315"/></td>
       </tr>
     </table>
-
   </div>
 </template>

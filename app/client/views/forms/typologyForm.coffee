@@ -89,6 +89,17 @@ Meteor.startup ->
       updateFields.call(@)
       $classInput = getClassInput.call(@)
       $classInput.on 'change', => updateFields.call(@)
+      # Set values for azimuth fields.
+      # TODO(aramk) Remove this with newer versions of Autoform.
+      items = getAzimuthItems(@)
+      heating = items.heating
+      cooling = items.cooling
+      Template.azimuthArray.setValue(heating.$input, heating.value)
+      Template.azimuthArray.setValue(cooling.$input, cooling.value)
+      # Bind change events to azimuth fields.
+      onAzimuthChange = _.debounce (=> updateAzimuthArray(@)), 300
+      $('.azimuth-array input').add('[name="parameters.orientation.azimuth"]').on('change keyup',
+        onAzimuthChange)
     hooks:
       formToDoc: (doc) ->
         doc.project = Projects.getCurrentId()
@@ -125,7 +136,37 @@ Meteor.startup ->
       importFieldHandler(e, template, ['shp'])
     'change [data-name="parameters.space.geom_3d"] input': (e, template) ->
       importFieldHandler(e, template, ['kmz'])
-    'change .azimuth-array.'
+    # 'change .azimuth-array': (e, template) -> updateAzimuthArray(template)
+    # 'change [name="parameters.orientation.azimuth"]': (e, template) -> updateAzimuthArray(template)
+
+  # AZIMUTH ARRAY
+  
+  updateAzimuthArray = (template) ->
+    items = getAzimuthItems(template)
+    heating = items.heating
+    cooling = items.cooling
+    $azimuth = getAzimuthInput(template)
+    azimuth = parseFloat($azimuth.val())
+    return if isNaN(azimuth)
+    _.each [heating, cooling], (item) ->
+      $input = item.$input
+      outputValue = Template.azimuthArray.getOutputFromAzimuth(item.$input, azimuth)
+      item.$output.val(outputValue) if outputValue?
+
+  getAzimuthItems = (template) ->
+    parameters = template.data.doc?.parameters ? {}
+    eq_azmth_h = parameters.orientation?.eq_azmth_h
+    eq_azmth_c = parameters.orientation?.eq_azmth_c
+    $heating = template.$('[data-name="parameters.orientation.eq_azmth_h"]')
+    $cooling = template.$('[data-name="parameters.orientation.eq_azmth_c"]')
+    $heatingOutput = template.$('[name="parameters.energy_demand.en_heat"]')
+    $coolingOutput = template.$('[name="parameters.energy_demand.en_cool"]')
+    {
+      heating: {value: eq_azmth_h, $input: $heating, $output: $heatingOutput}
+      cooling: {value: eq_azmth_c, $input: $cooling, $output: $coolingOutput}
+    }
+
+  getAzimuthInput = (template) -> template.$('[name="parameters.orientation.azimuth"]')
 
   # UPLOADING
 

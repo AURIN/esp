@@ -87,9 +87,13 @@
               {{> afQuickField name="parameters.financial.cost_con"}}
 
               <div class="subtitle">Orientation</div>
+              <div>
+              Providing both the Azimuth and an Azimuth Array calculates the corresponding value 
+              (Heating/Cooling Energy Demand) based on the given Azimuth.
+              </div>
               {{> afQuickField name="parameters.orientation.azimuth"}}
-              {{> azimuthArray name="energy" label="Azimuth Heating Energy Array"}}
-              {{> azimuthArray name="cooling" label="Azimuth Cooling Energy Array"}}
+              {{> azimuthArray name="parameters.orientation.eq_azmth_h" label="Azimuth Heating Energy Array"}}
+              {{> azimuthArray name="parameters.orientation.eq_azmth_c" label="Azimuth Cooling Energy Array"}}
               <!-- {{> afQuickField name="parameters.orientation.eq_azmth_h"}} -->
               <!-- {{> afQuickField name="parameters.orientation.eq_azmth_c"}} -->
 
