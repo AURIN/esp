@@ -40,7 +40,6 @@ TemplateClass.getValue = (elem) ->
     else
       hasNonEmptyValue = true
     array.push(value)
-  console.log 'azimuth array', array
   if hasNonEmptyValue then JSON.stringify(array) else ''
 
 # TODO(aramk) Use this for setting the custom value on the form element when loaded.
@@ -50,7 +49,6 @@ TemplateClass.setValue = (elem, value) ->
     value = JSON.parse(value)
   catch e
     return
-  console.log 'setValue', elem, value
   $('.values input', elem).each ->
     $(this).val(value.shift())
 

@@ -352,6 +352,12 @@ TemplateClass.onAtlasLoad = (template, atlas) ->
   atlas.subscribe 'entity/dblclick', (args) ->
     collection = Entities
     id = args.id
+    # When clicking on children of a GeoEntity collection, take the prefix as the ID of the
+    # underlying Entity.
+    reChildEntityId = /(^[^:]+):[^:]+$/
+    idParts = id.match(reChildEntityId)
+    if idParts
+      id = idParts[1]
     unless collection.findOne(id)
       collection = Lots
     unless collection.findOne(id)
