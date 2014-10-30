@@ -161,7 +161,20 @@ Meteor.startup ->
         df.resolve(entity)
     df.promise
 
-# Find all unallocated development lots and allocate appropriate typologies for them.
+  renderAll: ->
+    lotRenderDfs = []
+    lots = Lots.findByProject()
+    _.each lots.fetch(), (lot) => lotRenderDfs.push(@render(lot._id))
+    Q.all(lotRenderDfs)
+
+  renderAllAndZoom: ->
+    lots = Lots.findByProject()
+    AtlasManager.zoomToProject()
+    # If lots exist, zoom into them.
+    if lots.count() != 0
+      @renderAll().then -> AtlasManager.zoomToProjectEntities()
+
+  # Find all unallocated development lots and allocate appropriate typologies for them.
   autoAllocate: ->
     console.debug 'Automatically allocating typologies to lots...'
     dfs = []
@@ -183,15 +196,52 @@ Meteor.startup ->
       dfs.push(entityDf)
     Q.all(dfs).then -> console.debug 'Successfully allocated', dfs.length, 'lots'
 
-  renderAll: ->
-    lotRenderDfs = []
-    lots = Lots.findByProject()
-    _.each lots.fetch(), (lot) => lotRenderDfs.push(@render(lot._id))
-    Q.all(lotRenderDfs)
+  amalgamate: (ids) ->
+    df = Q.defer()
+    if ids.length < 2
+      throw new Error('At least two lots are needed to amalgamate.')
+    lots = Lots.find({_id: {$in: ids}}).fetch()
+    someHaveEntities = _.some lots, (lot) -> lot.entity?
+    if someHaveEntities
+      throw new Error('Cannot amalgamate Lots which have Entities.')
+    require ['Polygon'], (Polygon) =>
+      WKT.getWKT (wkt) =>
+        polygons = []
+        _.each lots, (lot) ->
+          geom_2d = Lots.getParameter(lot, 'space.geom_2d')
+          vertices = wkt.verticesFromWKT(geom_2d)[0]
+          polygon = new Polygon(vertices, {
+            sortPoints: false, smoothPoints: false, removeDuplicatePoints: true})
+          unless polygons.length == 0
+            someTouching = _.some polygons, (otherPolygon) -> polygon.isOnPerimeter(otherPolygon)
+            unless someTouching
+              throw new Error('Lots must be contiguous to amalgamate.')
+          polygon._lotId = lot._id
+          # polygons[lot._id] = polygon
+          polygons.push(polygon)
+        console.log 'polygons', polygons
+        combinedPolygon = polygons.shift()
+        _.each polygons, (polygon) ->
+          combinedPolygon = combinedPolygon.combine(polygon)
+        combinedLot = Lots.findOne(ids[0])
+        delete combinedLot._id
+        combinedVertices = combinedPolygon.getPoints()
+        combinedWkt = wkt.wktFromVertices(combinedVertices)
+        combinedLot.parameters.space.geom_2d = combinedWkt
+        Lots.insert combinedLot, (err, result) =>
+          if err
+            df.reject(err)
+          else
+            # Remove original lots after amalgamation.
+            @removeByIds(ids).then(df.resolve, df.reject)
+    df.promise
 
-  renderAllAndZoom: ->
-    lots = Lots.findByProject()
-    AtlasManager.zoomToProject()
-    # If lots exist, zoom into them.
-    if lots.count() != 0
-      @renderAll().then -> AtlasManager.zoomToProjectEntities()
+  removeByIds: (ids) ->
+    dfs = []
+    _.each ids, (id) ->
+      df = Q.defer()
+      dfs.push(df.promise)
+      Lots.remove id, (err, result) ->
+        if err then df.reject(err) else df.resolve(result)
+    Q.all(dfs)
+

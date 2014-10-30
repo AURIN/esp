@@ -1715,6 +1715,7 @@ LotSchema = new SimpleSchema
   parameters:
     label: 'Parameters'
     type: LotParametersSchema
+    defaultValue: {}
   project: projectSchema
 
 @Lots = new Meteor.Collection 'lots'

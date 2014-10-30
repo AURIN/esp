@@ -10,6 +10,9 @@
       "git": "https://github.com/stevezhu/meteor-lodash.git",
       "tag": "v0.2.0"
     },
+    "urbanetic:subdiv": {
+      "git": "https://github.com/Urbanetic/subdiv.git"
+    },
     "cfs:tempstore": {
       "git": "https://github.com/aramk/Meteor-cfs-tempstore.git"
     },

@@ -89,16 +89,12 @@ Meteor.startup ->
           LotUtils.render(lotId).then (lotEntity) =>
             # Hide the entity initially to avoid showing the transition.
             entityArgs.show = false
-            # Render the entity once the Lot has been rendered.
+            # Render the Entity once the Lot has been rendered.
             geoEntity = AtlasManager.renderEntity(entityArgs)
-            # Mesh has not been rendered yet, so only position extrusion/footprint.
-            # unless geoEntity.getDisplayMode() == Feature.DisplayMode.MESH
-            #   geoEntity.setCentroid(lotEntity.getCentroid())
             AtlasManager.showEntity(id)
             @._buildMeshCollection(id).then (collection) ->
               if collection
                 meshEntity = collection
-                # meshEntity.setCentroid(lotEntity.getCentroid())
                 geoEntity.setForm(Feature.DisplayMode.MESH, meshEntity)
               # Ensure all forms have the same centroid.
               _.each Feature.DisplayMode, (displayMode) ->

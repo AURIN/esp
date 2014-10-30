@@ -91,6 +91,8 @@ resetAtlas()
     _.filter atlas._managers.selection.getSelectionIds(), (id) ->
       atlas._managers.entity.getById(id).getForm?
 
+  getSelectedLots: -> _.filter @getSelectedFeatureIds(), (id) -> Lots.findOne(id)
+
   getEntitiesByIds: (ids) -> atlas._managers.entity.getByIds(ids)
 
   getEntitiesAt: (point) -> atlas._managers.entity.getAt(point)

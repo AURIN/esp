@@ -84,6 +84,25 @@ TemplateClass.rendered = ->
     $('.dropdown.icon', $dropdown).attr('class', 'photo icon')
     $('.text', $dropdown).hide()
 
+  # Bind atlas event to show/hide the amalgamation button and handle the click event.
+
+  firstSelectedLotId = null
+  $amalgamateButton = @$('.amalgamate.item').hide()
+  $amalgamateButton.click ->
+    ids = AtlasManager.getSelectedLots()
+    # TODO(aramk) Make sure firstSelectedLotId is the first.
+    LotUtils.amalgamate(ids)
+
+  AtlasManager.getAtlas().then (atlas) ->
+    atlas.subscribe 'entity/selection/change', ->
+      ids = AtlasManager.getSelectedLots()
+      idCount = ids.length
+      if idCount == 0
+        firstSelectedLotId = null
+      else if idCount == 1
+        firstSelectedLotId = ids[0]
+      $amalgamateButton.toggle(idCount > 1)
+
 # TODO(aramk) Use a callback for when each row is created in the collection table.
 #  @autorun ->
 #    Typologies.findByProject()
