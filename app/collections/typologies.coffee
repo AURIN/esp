@@ -122,6 +122,17 @@ createCategoriesSchema = (args) ->
     catsFields[catId] = catSchemaArgs
   new SimpleSchema(catsFields)
 
+forEachCategoryField = (category, callback) ->
+  for itemId, item of category.items
+    if item.items?
+      forEachCategoryField(item, callback)
+    else
+      callback(itemId, item, category)
+
+forEachCategoriesField = (categories, callback) ->
+  for catId, category of categories
+    forEachCategoryField(category, callback)
+
 @ParamUtils =
   _prefix: 'parameters'
   _rePrefix: /^parameters\./
@@ -749,7 +760,7 @@ typologyCategories =
         type: String
         desc: 'Typology within a class.'
         allowedValues: TypologySubclasses
-        # optional: false
+        optional: false
         classes:
           RESIDENTIAL: {}
       climate_zn:
@@ -1877,8 +1888,14 @@ Lots.before.update (userId, doc, fieldNames, modifier) ->
 # ENTITY SCHEMA DEFINITION
 ####################################################################################################
 
-# Entities don't need the class parameter since they reference the typology.
 entityCategories = Setter.clone(typologyCategories)
+# Entities have the same parameters as typologies, so any required fields are expected to exist on
+# the typology and are no longer required for the entities, so we remove them here.
+removeRequiredPropertyFromCategories = (categories) ->
+  forEachCategoriesField categories, (fieldId, field, cat) ->
+    delete field.optional
+removeRequiredPropertyFromCategories(entityCategories)
+# Entities don't need the class parameter since they reference the typology.
 delete entityCategories.general.items.class
 @EntityParametersSchema = createCategoriesSchema
   categories: entityCategories
