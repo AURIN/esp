@@ -41,37 +41,41 @@ Router.route '/', -> @render('projects')
 
 crudRoute('Projects', ProjectsController)
 
-Router.onBeforeAction ->
-  Router.initLastPath()
-  @next()
-
 Router.route 'design',
   path: '/design/:_id'
   waitOn: -> _.map(['projects', 'entities', 'typologies'], (name) -> Meteor.subscribe(name))
   controller: DesignController
 
+Router.onBeforeAction ->
+  Router.initLastPath()
+  @next()
+
 # Allow storing the last route visited and switching back.
 origGoFunc = Router.go
 _lastPath = null
-Router.setLastPath = (name, params) ->
-  _lastPath = {name: name, params: params}
+Router.setLastPath = (path, params) ->
+  _lastPath = {path: path, params: params}
   console.debug('last router path', _lastPath)
 Router.getLastPath = -> _lastPath
 Router.goToLastPath = ->
-  name = _lastPath.name
+  path = _lastPath.path
   current = Router.current()
-  if _lastPath? and current.route.name != name
-    origGoFunc.call(Router, name, _lastPath.params)
+  if _lastPath? and Router.getCurrentPath() != path
+    origGoFunc.call(Router, path, _lastPath.params)
     true
   else
     false
 
 Router.setLastPathAsCurrent = ->
   current = Router.current()
+  path = current.url
+  return unless path
+  Router.setLastPath(path, current.params)
+
+Router.getCurrentPath = ->
+  current = Router.current()
   return unless current
-  routeName = current.route?.name
-  return unless routeName
-  Router.setLastPath(routeName, current.params)
+  current.url
 
 # When switching, remember the last route.
 Router.go = ->
