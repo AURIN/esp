@@ -2044,6 +2044,12 @@ updateAzimuthEnergyDemand = (userId, doc, fieldNames, modifier) ->
     modifier.$set = $set
   unless isUpdating
     Setter.merge(doc, simulateModifierUpdate(doc, modifier))
+  # If updating a typology, ensure all entities have their energy demand values updated as well.
+  if isUpdating
+    _.each Entities.find(typology: doc._id).fetch(), (entity) ->
+      entityModifier = updateAzimuthEnergyDemand(userId, entity)
+      Entities.update(entity._id, entityModifier)
+  modifier
 
 Entities.before.insert(updateAzimuthEnergyDemand)
 Entities.before.update(updateAzimuthEnergyDemand)
