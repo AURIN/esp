@@ -12,21 +12,15 @@ crudRoute = (collectionName, controller) ->
   itemRoute = singularName + 'Item'
   editRoute = singularName + 'Edit'
   formName = singularName + 'Form'
-  console.debug('crud routes', itemRoute, editRoute, formName);
-  Router.map ->
-    @route collectionId, {path: '/' + collectionId, controller: controller, template: collectionId}
-    @route itemRoute,
-      path: '/' + collectionId + '/create', controller: controller, template: formName
-      data: -> {}
-    @route editRoute,
-      # Reuse the itemRoute for editing.
-      path: '/' + collectionId + '/:_id/edit', controller: controller, template: formName
-      data: -> {doc: window[collectionName].findOne(@params._id)}
-
-#  onBeforeAction: ->
-# This redirects users to a sign in form.
-# TODO(aramk) Add back when we have auth.
-#    AccountsEntry.signInRequired(@router)
+  console.debug('crud routes', itemRoute, editRoute, formName)
+  Router.route collectionId,
+    path: '/' + collectionId, controller: controller, template: collectionId
+  Router.route itemRoute,
+    path: '/' + collectionId + '/create', controller: controller, template: formName, data: -> {}
+  Router.route editRoute,
+    # Reuse the itemRoute for editing.
+    path: '/' + collectionId + '/:_id/edit', controller: controller, template: formName,
+    data: -> {doc: window[collectionName].findOne(@params._id)}
 
 DesignController = BaseController.extend
   template: 'design'
@@ -37,32 +31,24 @@ DesignController = BaseController.extend
   onBeforeAction: ->
     id = @.params._id
     Projects.setCurrentId(id)
+    @next()
 
 ProjectsController = BaseController.extend
   template: 'projects'
   waitOn: -> Meteor.subscribe('projects')
 
-crudRoute('Projects')
+Router.route '/', -> @render('projects')
 
-Router.onBeforeAction (pause) ->
-#  TODO(aramk) Add back when we have auth.
-#  # Empty path is needed for page not found.
-#  whiteList = ['', '/sign-in', '/sign-out', '/sign-up', '/forgot-password']
-#  isWhiteListed = Arrays.trueMap(whiteList)[@path];
-#  if !isWhiteListed && !Meteor.user()
-#    @render('accessDenied')
-#    pause()
-#  else
-  if @path == '/' || @path == ''
-    Router.go('projects')
+crudRoute('Projects', ProjectsController)
+
+Router.onBeforeAction ->
   Router.initLastPath()
+  @next()
 
-Router.map ->
-  @route 'design', {
-    path: '/design/:_id'
-    waitOn: -> _.map(['projects', 'entities', 'typologies'], (name) -> Meteor.subscribe(name))
-    controller: DesignController
-  }
+Router.route 'design',
+  path: '/design/:_id'
+  waitOn: -> _.map(['projects', 'entities', 'typologies'], (name) -> Meteor.subscribe(name))
+  controller: DesignController
 
 # Allow storing the last route visited and switching back.
 origGoFunc = Router.go
@@ -82,8 +68,10 @@ Router.goToLastPath = ->
 
 Router.setLastPathAsCurrent = ->
   current = Router.current()
-  if current
-    Router.setLastPath(current.route.name, current.params)
+  return unless current
+  routeName = current.route?.name
+  return unless routeName
+  Router.setLastPath(routeName, current.params)
 
 # When switching, remember the last route.
 Router.go = ->
