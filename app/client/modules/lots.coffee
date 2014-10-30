@@ -213,22 +213,22 @@ Meteor.startup ->
           polygon = new Polygon(vertices, {
             sortPoints: false, smoothPoints: false, removeDuplicatePoints: true})
           unless polygons.length == 0
-            someTouching = _.some polygons, (otherPolygon) -> polygon.isOnPerimeter(otherPolygon)
+            # Each Lot must be touching at least one other Lot.
+            someTouching = _.some polygons, (otherPolygon) -> polygon.intersects(otherPolygon)
             unless someTouching
               throw new Error('Lots must be contiguous to amalgamate.')
-          polygon._lotId = lot._id
-          # polygons[lot._id] = polygon
           polygons.push(polygon)
-        console.log 'polygons', polygons
         combinedPolygon = polygons.shift()
         _.each polygons, (polygon) ->
-          combinedPolygon = combinedPolygon.combine(polygon)
+          combinedPolygon = combinedPolygon.union(polygon).concaveHull()
         combinedLot = Lots.findOne(ids[0])
         delete combinedLot._id
         combinedVertices = combinedPolygon.getPoints()
         combinedWkt = wkt.wktFromVertices(combinedVertices)
         combinedLot.parameters.space.geom_2d = combinedWkt
+        console.log 'Inserting combined lot...', combinedLot
         Lots.insert combinedLot, (err, result) =>
+          console.log 'Inserted combined lot', err, result
           if err
             df.reject(err)
           else
@@ -237,6 +237,7 @@ Meteor.startup ->
     df.promise
 
   removeByIds: (ids) ->
+    console.log 'removeByIds', ids
     dfs = []
     _.each ids, (id) ->
       df = Q.defer()
