@@ -1,8 +1,9 @@
 # TODO(aramk) Refactor with LotUtils
 
 _renderQueue = null
-Meteor.startup ->
-  _renderQueue = new DeferredQueueMap()
+resetRenderQueue = -> _renderQueue = new DeferredQueueMap()
+
+Meteor.startup -> resetRenderQueue()
 
 @EntityUtils =
 
@@ -32,36 +33,44 @@ Meteor.startup ->
       meshDf.resolve(null)
       meshDf.promise
 
-  _buildMeshCollection: (id) ->
+  _buildMeshCollection: (id, centroid) ->
     df = Q.defer()
     geoEntity = AtlasManager.getEntity(id)
-    @_getMesh(id).then (result) ->
-      unless result
-        df.resolve(null)
-        return
-      # Modify the ID of c3ml entities to allow reusing them for multiple collections.
-      c3mls = result.c3mls
-      _.each c3mls, (c3ml) ->
-        # Hide by default and show after translating to the Lot.
-        c3ml.show = false
-        c3ml.id = id + ':' + c3ml.id
-      try
-        c3mlEntities = AtlasManager.renderEntities(c3mls)
-      catch e
-        console.error('Error when rendering mesh entities', e)
-      ids = []
-      _.each c3mlEntities, (c3mlEntity) ->
-        mesh = null
-        if c3mlEntity.getForm
-          mesh = c3mlEntity.getForm()
-          ids.push(c3mlEntity.getId()) if mesh
-      # Add c3mls to a single collection and use it as the mesh display mode for the
-      # feature.
-      require ['atlas/model/Collection'], (Collection) ->
-        # TODO(aramk) Use dependency injection to prevent the need for passing manually.
-        deps = geoEntity._bindDependencies({})
-        collection = new Collection('collection-' + id, {entities: ids}, deps)
-        df.resolve(collection)
+    require ['atlas/model/GeoPoint'], (GeoPoint) =>
+      @_getMesh(id).then (result) ->
+        unless result
+          df.resolve(null)
+          return
+        # Modify the ID of c3ml entities to allow reusing them for multiple collections.
+        c3mls = result.c3mls
+        # Translate the geoLocation of all meshes by a fixed amount to bring it closer to the given
+        # centroid in order to prevent an underlying bug with matrix transformations which is more
+        # pronounced the further we need to move the meshes after construction. Use the first valid
+        # geoLocation as a rough measure.
+        someGeoLocation = _.find(c3mls, (c3ml) -> c3ml.geoLocation).geoLocation
+        centroidDiff = new GeoPoint(centroid).subtract(new GeoPoint(someGeoLocation))
+        _.each c3mls, (c3ml) ->
+          c3ml.id = id + ':' + c3ml.id
+          geoLocation = c3ml.geoLocation
+          if geoLocation
+            c3ml.geoLocation = new GeoPoint(geoLocation).translate(centroidDiff).toArray()
+        try
+          c3mlEntities = AtlasManager.renderEntities(c3mls)
+        catch e
+          console.error('Error when rendering mesh entities', e)
+        ids = []
+        _.each c3mlEntities, (c3mlEntity) ->
+          mesh = null
+          if c3mlEntity.getForm
+            mesh = c3mlEntity.getForm()
+            ids.push(c3mlEntity.getId()) if mesh
+        # Add c3mls to a single collection and use it as the mesh display mode for the
+        # feature.
+        require ['atlas/model/Collection'], (Collection) ->
+          # TODO(aramk) Use dependency injection to prevent the need for passing manually.
+          deps = geoEntity._bindDependencies({})
+          collection = new Collection('collection-' + id, {entities: ids}, deps)
+          df.resolve(collection)
     df.promise
 
   render: (id) -> _renderQueue.add(id, => @_render(id))
@@ -87,12 +96,13 @@ Meteor.startup ->
           'atlas/model/Vertex'
         ], (Feature, Vertex) =>
           LotUtils.render(lotId).then (lotEntity) =>
+            lotCentroid = lotEntity.getCentroid()
             # Hide the entity initially to avoid showing the transition.
             entityArgs.show = false
             # Render the Entity once the Lot has been rendered.
             geoEntity = AtlasManager.renderEntity(entityArgs)
             AtlasManager.showEntity(id)
-            @._buildMeshCollection(id).then (collection) ->
+            @._buildMeshCollection(id, lotCentroid).then (collection) ->
               if collection
                 meshEntity = collection
                 geoEntity.setForm(Feature.DisplayMode.MESH, meshEntity)
@@ -100,8 +110,10 @@ Meteor.startup ->
               _.each Feature.DisplayMode, (displayMode) ->
                 form = geoEntity.getForm(displayMode)
                 if form
-                  form.setCentroid(lotEntity.getCentroid())
+                  form.setCentroid(lotCentroid)
                   # Apply rotation based on the azimuth.
                   form.setRotation(new Vertex(0, 0, azimuth)) if azimuth?
               df.resolve(geoEntity)
     df.promise
+
+  beforeAtlasUnload: -> resetRenderQueue()

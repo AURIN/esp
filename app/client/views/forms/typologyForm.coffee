@@ -98,9 +98,13 @@ Meteor.startup ->
       Template.azimuthArray.setValue(cooling.$input, cooling.value)
       # Bind change events to azimuth fields.
       onAzimuthChange = _.debounce (=> Form.updateAzimuthArray(@)), 300
-      $('.azimuth-array input').add('[name="parameters.orientation.azimuth"]')
-        .add('[name="parameters.space.cfa"]').on('change keyup', onAzimuthChange)
+      @$('.azimuth-array input').add(getAzimuthInput(@)).add(getCfaInput(@))
+        .on('change keyup', onAzimuthChange)
       onAzimuthChange()
+      # Bind event to build quality dropdown
+      onBuildQualityChange = => Form.updateBuildQuality(@)
+      getBuildQualitySelect(@).on('change', onBuildQualityChange)
+      onBuildQualityChange()
     hooks:
       formToDoc: (doc) ->
         doc.project = Projects.getCurrentId()
@@ -168,7 +172,7 @@ Meteor.startup ->
     $cooling = template.$('[data-name="parameters.orientation.eq_azmth_c"]')
     $heatingOutput = template.$('[name="parameters.energy_demand.en_heat"]')
     $coolingOutput = template.$('[name="parameters.energy_demand.en_cool"]')
-    $cfa = template.$('[name="parameters.space.cfa"]')
+    $cfa = getCfaInput(template)
     {
       cfa: {value: cfa, $cfa: $cfa}
       heating: {value: eq_azmth_h, $input: $heating, $output: $heatingOutput}
@@ -176,6 +180,21 @@ Meteor.startup ->
     }
 
   getAzimuthInput = (template) -> template.$('[name="parameters.orientation.azimuth"]')
+  getCfaInput = (template) -> template.$('[name="parameters.space.cfa"]')
+
+  # BUILD QUALITY
+
+  Form.updateBuildQuality = (template) ->
+    $buildQualitySelect = getBuildQualitySelect(template)
+    $subclassSelect = getSubclassSelect(template)
+    buildQuality = $buildQualitySelect.val()
+    subclass = $subclassSelect.val()
+    buildQualityParamId = Typologies.buildQualityMap[buildQuality]?[subclass]
+    getCostOfConstructionInput(template).parent().toggle(!buildQualityParamId?)
+
+  getBuildQualitySelect = (template) -> template.$('[name="parameters.financial.build_quality"]')
+  getSubclassSelect = (template) -> template.$('[name="parameters.general.subclass"]')
+  getCostOfConstructionInput = (template) -> template.$('[name="parameters.financial.cost_con"]')
 
   # UPLOADING
 

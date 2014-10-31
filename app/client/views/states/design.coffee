@@ -42,6 +42,8 @@ TemplateClass.created = ->
 
 TemplateClass.destroyed = ->
   _.each handles, (handle) -> handle.stop()
+  EntityUtils.beforeAtlasUnload()
+  LotUtils.beforeAtlasUnload()
   AtlasManager.removeAtlas()
 
 TemplateClass.rendered = ->

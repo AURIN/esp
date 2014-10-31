@@ -357,6 +357,49 @@ projectCategories =
             desc: 'Land Value per Square Metre'
             units: Units.$m2
             defaultValue: 500
+      building:
+        label: 'Building'
+        items:
+          single_house_std:
+            label: 'Single House - Standard'
+            type: Number
+            units: Units.$m2
+            defaultValue: 1100
+          single_house_hq:
+            label: 'Single House - High Quality'
+            type: Number
+            units: Units.$m2
+            defaultValue: 1950
+          attached_house_std:
+            label: 'Attached House - Standard'
+            type: Number
+            units: Units.$m2
+            defaultValue: 1810
+          attached_house_hq:
+            label: 'Attached House - High Quality'
+            type: Number
+            units: Units.$m2
+            defaultValue: 2060
+          walkup_std:
+            label: 'Walkup - Standard'
+            type: Number
+            units: Units.$m2
+            defaultValue: 1785
+          walkup_hq:
+            label: 'Walkup - High Quality'
+            type: Number
+            units: Units.$m2
+            defaultValue: 1985
+          highrise_std:
+            label: 'High Rise - Standard'
+            type: Number
+            units: Units.$m2
+            defaultValue: 2090
+          highrise_hq:
+            label: 'High Rise - High Quality'
+            type: Number
+            units: Units.$m2
+            defaultValue: 2815
       landscaping:
         label: 'Landscaping'
         items:
@@ -689,8 +732,18 @@ TypologyClasses =
 ClassNames = Object.keys(TypologyClasses)
 
 TypologyTypes = ['Basic', 'Efficient', 'Advanced']
-TypologySubclasses = ['Single House', 'Attached House', 'Walkup', 'Medium Rise', 'High Rise']
+TypologySubclasses = ['Single House', 'Attached House', 'Walkup', 'High Rise']
 EnergySources = ['Electricity', 'Gas']
+TypologyBuildQualityMap =
+  'Custom': null
+  'Standard Quality Build':
+    'Single House': 'single_house_std'
+    'Attached House': 'attached_house_std'
+  'High Quality Build':
+    'Single House': 'single_house_hq'
+    'Attached House': 'attached_house_hq'
+TypologyBuildQualities = Object.keys(TypologyBuildQualityMap)
+  
 # Appliance type to the project parameter storing its energy usage.
 ApplianceTypes =
   'Basic - Avg Performance': 'en_basic_avg_app'
@@ -1357,6 +1410,13 @@ typologyCategories =
   financial:
     label: 'Financial'
     items:
+      build_quality:
+        label: 'Build Quality'
+        type: String
+        desc: 'The build quality of the typology.'
+        allowedValues: TypologyBuildQualities
+        classes:
+          RESIDENTIAL: {defaultValue: 'Custom'}
       cost_land:
         label: 'Cost - Land Parcel'
         type: Number
@@ -1511,6 +1571,7 @@ TypologySchema = new SimpleSchema
 Typologies.attachSchema(TypologySchema)
 Typologies.classes = TypologyClasses
 Typologies.units = Units
+Typologies.buildQualityMap = TypologyBuildQualityMap
 Typologies.allow(Collections.allowAll())
 
 Typologies.getClassByName = _.memoize (name) ->
@@ -1995,6 +2056,32 @@ PubSub.subscribe 'report/rendered', subscribeRefreshReports
 # AZIMUTH ARRAY ENERGY DEMAND
 ####################################################################################################
 
+getModifiedDocWithDeps = (doc, modifier, depParamIds) ->
+  isUpdating = modifier?
+  if isUpdating
+    # Add modified values to doc to ensure we use the latest values in calculations.
+    fullDoc = simulateModifierUpdate(doc, modifier)
+    # If no dependencies are being updated, the energy demands won't change, so we can quit early.
+    hasDependencyUpdates = _.some depParamIds, (fieldId) ->
+      modifier.$set?[fieldId]? || modifier.$unset?[fieldId]
+    unless hasDependencyUpdates
+      return
+  else
+    fullDoc = Setter.clone(doc)
+  fullDoc
+
+applyModifierSet = (doc, modifier, $set) ->
+  isUpdating = modifier?
+  modifier ?= {}
+  $existingSet = modifier.$set
+  if $existingSet?
+    Setter.merge($existingSet, $set)
+  else
+    modifier.$set = $set
+  unless isUpdating
+    Setter.merge(doc, simulateModifierUpdate(doc, modifier))
+  modifier
+
 Typologies.calcOutputFromAzimuth = (array, azimuth) ->
   input = azimuth % 360
   Maths.calcUniformBinValue(array, input, 360)
@@ -2004,17 +2091,8 @@ azimuthArrayDependencyFieldIds = ['parameters.space.cfa', 'parameters.orientatio
 
 # Update the energy demand based on the azimuth array.
 updateAzimuthEnergyDemand = (userId, doc, fieldNames, modifier) ->
-  isUpdating = modifier?
-  if isUpdating
-    # Add modified values to doc to ensure we use the latest values in calculations.
-    fullDoc = simulateModifierUpdate(doc, modifier)
-    # If no dependencies are being updated, the energy demands won't change, so we can quit early.
-    hasDependencyUpdates = _.some azimuthArrayDependencyFieldIds, (fieldId) ->
-      modifier.$set?[fieldId]? || modifier.$unset?[fieldId]
-    unless hasDependencyUpdates
-      return
-  else
-    fullDoc = Setter.clone(doc)
+  isUpdating = modifier? 
+  fullDoc = getModifiedDocWithDeps(doc, azimuthArrayDependencyFieldIds, modifier)
   isEntity = doc.typology?
   Entities.mergeTypology(fullDoc) if isEntity
   eq_azmth_h = Entities.getParameter(fullDoc, 'parameters.orientation.eq_azmth_h')
@@ -2036,15 +2114,7 @@ updateAzimuthEnergyDemand = (userId, doc, fieldNames, modifier) ->
       energyM2 = Typologies.calcOutputFromAzimuth(array, azimuth)
       $set[item.energyParamId] = energyM2 * cfa
   return if Object.keys($set).length == 0
-  # If we updated properties
-  modifier ?= {}
-  $existingSet = modifier.$set
-  if $existingSet?
-    Setter.merge($existingSet, $set)
-  else
-    modifier.$set = $set
-  unless isUpdating
-    Setter.merge(doc, simulateModifierUpdate(doc, modifier))
+  modifier = applyModifierSet(doc, modifier, $set)
   # If updating a typology, ensure all entities have their energy demand values updated as well.
   if isUpdating
     _.each Entities.find(typology: doc._id).fetch(), (entity) ->
@@ -2056,6 +2126,30 @@ Entities.before.insert(updateAzimuthEnergyDemand)
 Entities.before.update(updateAzimuthEnergyDemand)
 Typologies.before.insert(updateAzimuthEnergyDemand)
 Typologies.before.update(updateAzimuthEnergyDemand)
+
+####################################################################################################
+# BUILD QUALITY
+####################################################################################################
+
+buildQualityDependencyFieldIds = ['parameters.financial.build_quality',
+  'parameters.general.subclass', 'parameters.space.cfa']
+
+updateBuildQuality = (userId, doc, fileNames, modifier) ->
+  fullDoc = getModifiedDocWithDeps(doc, modifier)
+  build_quality = Typologies.getParameter(fullDoc, 'parameters.financial.build_quality')
+  subclass = Typologies.getParameter(fullDoc, 'parameters.general.subclass')
+  cost_con = Typologies.getParameter(fullDoc, 'parameters.financial.cost_con')
+  cfa = Typologies.getParameter(fullDoc, 'parameters.space.cfa')
+  $set = {}
+  return unless build_quality? && build_quality != 'Custom' && subclass? && cfa?
+  buildQualityParamSuffix = Typologies.buildQualityMap[build_quality]?[subclass]
+  buildQualityParamId = 'parameters.financial.building.' + buildQualityParamSuffix
+  buildParamValue = Typologies.getParameter(fullDoc, buildQualityParamId)
+  $set['parameters.financial.cost_con'] = buildParamValue * cfa
+  applyModifierSet(doc, modifier, $set)
+
+Typologies.before.insert(updateBuildQuality)
+Typologies.before.update(updateBuildQuality)
 
 ####################################################################################################
 # ASSOCIATION MAINTENANCE

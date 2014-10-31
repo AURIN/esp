@@ -1,6 +1,7 @@
 _renderQueue = null
-Meteor.startup ->
-  _renderQueue = new DeferredQueueMap()
+resetRenderQueue = -> _renderQueue = new DeferredQueueMap()
+
+Meteor.startup -> resetRenderQueue()
 
 @LotUtils =
 
@@ -245,4 +246,6 @@ Meteor.startup ->
       Lots.remove id, (err, result) ->
         if err then df.reject(err) else df.resolve(result)
     Q.all(dfs)
+
+  beforeAtlasUnload: -> resetRenderQueue()
 
