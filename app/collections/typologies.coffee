@@ -739,9 +739,13 @@ TypologyBuildQualityMap =
   'Standard Quality Build':
     'Single House': 'single_house_std'
     'Attached House': 'attached_house_std'
+    'Walkup': 'walkup_std'
+    'High Rise': 'highrise_std'
   'High Quality Build':
     'Single House': 'single_house_hq'
     'Attached House': 'attached_house_hq'
+    'Walkup': 'walkup_hq'
+    'High Rise': 'highrise_hq'
 TypologyBuildQualities = Object.keys(TypologyBuildQualityMap)
   
 # Appliance type to the project parameter storing its energy usage.
@@ -2058,17 +2062,16 @@ PubSub.subscribe 'report/rendered', subscribeRefreshReports
 
 getModifiedDocWithDeps = (doc, modifier, depParamIds) ->
   isUpdating = modifier?
+  hasDependencyUpdates = false
   if isUpdating
     # Add modified values to doc to ensure we use the latest values in calculations.
     fullDoc = simulateModifierUpdate(doc, modifier)
     # If no dependencies are being updated, the energy demands won't change, so we can quit early.
     hasDependencyUpdates = _.some depParamIds, (fieldId) ->
       modifier.$set?[fieldId]? || modifier.$unset?[fieldId]
-    unless hasDependencyUpdates
-      return
   else
     fullDoc = Setter.clone(doc)
-  fullDoc
+  {fullDoc: fullDoc, hasDependencyUpdates: hasDependencyUpdates}
 
 applyModifierSet = (doc, modifier, $set) ->
   isUpdating = modifier?
@@ -2080,6 +2083,11 @@ applyModifierSet = (doc, modifier, $set) ->
     modifier.$set = $set
   unless isUpdating
     Setter.merge(doc, simulateModifierUpdate(doc, modifier))
+  # Remove parameters in the new $set that are present in the original $unset.
+  $unset = modifier.$unset
+  if $unset
+    _.each $set, (value, fieldId) ->
+      delete $unset[fieldId]
   modifier
 
 Typologies.calcOutputFromAzimuth = (array, azimuth) ->
@@ -2091,8 +2099,10 @@ azimuthArrayDependencyFieldIds = ['parameters.space.cfa', 'parameters.orientatio
 
 # Update the energy demand based on the azimuth array.
 updateAzimuthEnergyDemand = (userId, doc, fieldNames, modifier) ->
-  isUpdating = modifier? 
-  fullDoc = getModifiedDocWithDeps(doc, azimuthArrayDependencyFieldIds, modifier)
+  isUpdating = modifier?
+  depResult = getModifiedDocWithDeps(doc, modifier, azimuthArrayDependencyFieldIds)
+  fullDoc = depResult.fullDoc
+  return unless depResult.hasDependencyUpdates
   isEntity = doc.typology?
   Entities.mergeTypology(fullDoc) if isEntity
   eq_azmth_h = Entities.getParameter(fullDoc, 'parameters.orientation.eq_azmth_h')
@@ -2135,7 +2145,10 @@ buildQualityDependencyFieldIds = ['parameters.financial.build_quality',
   'parameters.general.subclass', 'parameters.space.cfa']
 
 updateBuildQuality = (userId, doc, fileNames, modifier) ->
-  fullDoc = getModifiedDocWithDeps(doc, modifier)
+  depResult = getModifiedDocWithDeps(doc, modifier, buildQualityDependencyFieldIds)
+  fullDoc = depResult.fullDoc
+  project = Projects.mergeDefaults(Projects.findOne(fullDoc.project))
+  return unless depResult.hasDependencyUpdates
   build_quality = Typologies.getParameter(fullDoc, 'parameters.financial.build_quality')
   subclass = Typologies.getParameter(fullDoc, 'parameters.general.subclass')
   cost_con = Typologies.getParameter(fullDoc, 'parameters.financial.cost_con')
@@ -2144,7 +2157,7 @@ updateBuildQuality = (userId, doc, fileNames, modifier) ->
   return unless build_quality? && build_quality != 'Custom' && subclass? && cfa?
   buildQualityParamSuffix = Typologies.buildQualityMap[build_quality]?[subclass]
   buildQualityParamId = 'parameters.financial.building.' + buildQualityParamSuffix
-  buildParamValue = Typologies.getParameter(fullDoc, buildQualityParamId)
+  buildParamValue = Typologies.getParameter(project, buildQualityParamId)
   $set['parameters.financial.cost_con'] = buildParamValue * cfa
   applyModifierSet(doc, modifier, $set)
 

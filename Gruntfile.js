@@ -247,10 +247,21 @@ module.exports = function(grunt) {
     }
   });
 
-  grunt.registerTask('meteor', function() {
+  grunt.registerTask('meteor', function(arg1) {
     var done = this.async();
     process.chdir(APP_DIR);
-    var proc = runProcess('meteor');
+    var proc;
+    if (arg1 === 'debug') {
+      proc = runProcess('meteor', {
+        options: {
+          env: _.extend({
+            NODE_OPTIONS: '--debug-brk'
+          }, process.env)
+        }
+      });
+    } else {
+      proc = runProcess('meteor');
+    }
     proc.on('exit', function() {
       done();
     });
