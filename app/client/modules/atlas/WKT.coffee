@@ -57,5 +57,5 @@ getGeoPoint = (callback) ->
       if coords.length == 0
         df.resolve(null)
       else
-        method coords, (wkt) -> df.resolve(wkt)
+        method.call(@, coords, (wkt) -> df.resolve(wkt))
     df.promise
