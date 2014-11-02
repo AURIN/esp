@@ -15,10 +15,12 @@
             </div>
 
             <div class="fields">
-              {{> afQuickField name="parameters.general.subclass" options="allowed"}}
+              <div class="form-group dropdown">
+                {{> afFieldLabel name="parameters.general.subclass"}}
+                {{> dropdown name="parameters.general.subclass" items=subclasses value=subclassValue}}
+              </div>
               {{> afQuickField name="parameters.general.state"}}
               {{> afQuickField name="parameters.general.code"}}
-              <!-- TODO(aramk) Dropdown for subclass. -->
               {{> afQuickField name="parameters.general.type" options="allowed"}}
               {{> afQuickField name="parameters.general.climate_zn"}}
 
@@ -26,7 +28,6 @@
               <div class="geom">
                 {{> afFieldLabel name="parameters.space.geom_2d"}}
                 {{> importField name="parameters.space.geom_2d" filename="parameters.space.geom_2d_filename"}}
-
                 {{> afFieldLabel name="parameters.space.geom_3d"}}
                 {{> importField name="parameters.space.geom_3d" filename="parameters.space.geom_3d_filename"}}
               </div>

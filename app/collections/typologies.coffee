@@ -732,7 +732,7 @@ TypologyClasses =
 ClassNames = Object.keys(TypologyClasses)
 
 TypologyTypes = ['Basic', 'Efficient', 'Advanced']
-TypologySubclasses = ['Single House', 'Attached House', 'Walkup', 'High Rise']
+ResidentialSubclasses = ['Single House', 'Attached House', 'Walkup', 'High Rise']
 EnergySources = ['Electricity', 'Gas']
 TypologyBuildQualityMap =
   'Custom': null
@@ -816,10 +816,8 @@ typologyCategories =
       subclass:
         type: String
         desc: 'Typology within a class.'
-        allowedValues: TypologySubclasses
-        optional: false
         classes:
-          RESIDENTIAL: {}
+          RESIDENTIAL: {allowedValues: ResidentialSubclasses, optional: false}
       climate_zn:
         desc: 'BOM climate zone number.'
         label: 'Climate Zone'
@@ -1589,6 +1587,12 @@ Typologies.getClassByName = _.memoize (name) ->
 
 Typologies.getClassItems = ->
   _.map Typologies.classes, (cls, id) -> Setter.merge(Setter.clone(cls), {_id: id})
+
+Typologies.getSubclassItems = (typologyClass) ->
+  subclassField = SchemaUtils.getField('parameters.general.subclass', Typologies)
+  options = subclassField?.classes[typologyClass]
+  allowedValues = options?.allowedValues ? []
+  _.map allowedValues, (value) -> {_id: value, name: value}
 
 Typologies.getParameter = (obj, paramId) ->
   # Allow paramId to optionally contain the prefix.

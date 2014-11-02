@@ -87,12 +87,11 @@
     Form.rendered = ->
       console.debug 'Rendered form', @, arguments
       # Move the buttons to the same level as the title and content to allow using flex-layout.
-      $buttons = $(@find('.crud.buttons'))
-      $crudForm = $(@find('.flex-panel'))
+      $buttons = @$('.crud.buttons')
+      $crudForm = @$('.flex-panel')
       if $buttons.length > 0 && $crudForm.length > 0
         $crudForm.append($buttons)
-      $('[type="submit"]', $buttons).click ->
-        $('form', $crudForm).submit()
+      @$('[type="submit"]', $buttons).click => @$('form', $crudForm).submit()
       AutoForm.resetForm(name)
 
       collection = Collections.get(formArgs.collection)
@@ -104,12 +103,11 @@
         $input = $(input.node)
         field = input.field
         desc = field.desc
-        required = field.optional == false
         # Add popups to the inputs contain definitions from the schema.
         if desc?
           popupInputs.push($input.data('desc', desc))
         # Add units into labels
-        $label = $input.siblings('label')
+        $label = @$('label[for="' + key + '"]')
         if $label.length == 0
           $parent = $input.parent()
           if $parent.is('.dropdown')
@@ -118,14 +116,14 @@
         units = field.units
         $labelContent = $('<div class="value">' + $label.html() + '</div>')
         $label.empty()
-        $label.append($labelContent);
+        $label.append($labelContent)
         if units?
           formattedUnits = Strings.format.scripts(units)
           $units = $('<div class="units">' + formattedUnits + '</div>')
           $label.append($units)
+        required = field.optional == false
         if required
-          $requiredContent = $('<div class="required"></div>')
-          $label.append($requiredContent)
+          Forms.addRequiredLabel($label)
           hasRequiredField = true
 
       if hasRequiredField
@@ -151,7 +149,11 @@
       template.isDestroyed = true
       formArgs.onDestroy?.apply(@, arguments)
 
-    Form
+    return Form
+
+  addRequiredLabel: ($label) ->
+    $requiredContent = $('<div class="required"></div>')
+    $label.append($requiredContent)
 
 # We may pass the temporary collection as an attribute to autoform templates, so we need to
 # define this to avoid errors since it is passed into the actual <form> HTML object.

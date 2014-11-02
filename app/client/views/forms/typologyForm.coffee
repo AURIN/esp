@@ -1,6 +1,7 @@
 Meteor.startup ->
 
   collection = Typologies
+  subclasses = Collections.createTemporary()
 
   getClassInput = ->
     $(@.find('[name="parameters.general.class"]')).closest('.dropdown')
@@ -30,6 +31,7 @@ Meteor.startup ->
         classOptions = _.extend(allClassOptions, classOptions)
 
       $input = $(input.node)
+      $label = @$('label[for="' + key + '"]')
       $wrapper = $input.closest(Forms.FIELD_SELECTOR)
       # Hide fields which have classes specified which don't contain the current class.
       $wrapper[if classes and not classOptions then 'hide' else 'show']()
@@ -43,6 +45,8 @@ Meteor.startup ->
       # Add placeholders for default values
       if defaultValue?
         $input.attr('placeholder', defaultValue)
+
+      Forms.addRequiredLabel($label) if classOptions?.optional == false
 
       unless isParamField
         continue
@@ -75,6 +79,9 @@ Meteor.startup ->
             $input.val(defaultValue)
           else
             $input.val('')
+    # Populate available subclasses.
+    Collections.removeAllDocs(subclasses)
+    _.each Typologies.getSubclassItems(typologyClass), (item) -> subclasses.insert(item)
     # Toggle visibility of geometry inputs.
     geom2dClasses = SchemaUtils.getField('parameters.space.geom_2d', Typologies).classes
     @$('.geom').toggle(!!geom2dClasses[typologyClass])
@@ -134,7 +141,9 @@ Meteor.startup ->
 
   Form.helpers
     classes: -> Typologies.getClassItems()
+    subclasses: -> subclasses
     classValue: -> @doc?.parameters?.general?.class
+    subclassValue: -> @doc?.parameters?.general?.subclass
 
   Form.events
     'change [data-name="parameters.space.geom_2d"] input': (e, template) ->
