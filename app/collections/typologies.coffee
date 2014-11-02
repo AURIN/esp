@@ -1717,6 +1717,23 @@ Typologies.findByClass = (typologyClass, projectId) -> Typologies.find(
   project: projectId || Projects.getCurrentId()
 )
 
+# @returns the fields that are required for the given typology class. Excludes fields which are
+# required by all classes.
+Typologies.getRequiredFieldsForClass = _.memoize (typologyClass) ->
+  fields = []
+  SchemaUtils.forEachFieldSchema Typologies.simpleSchema(), (fieldSchema, fieldId) ->
+    optional = fieldSchema.classes?[typologyClass]?.optional
+    fields.push(fieldId) if optional == false
+  fields
+
+Typologies.validate = (typology) ->
+  typologyClass = Typologies.getParameter(typology, 'parameters.general.class')
+  _.each Typologies.getRequiredFieldsForClass(typologyClass), (fieldId) ->
+    throw new Error('Field ' + fieldId + ' is required for Typologies with class ' +
+      typologyClass) unless Typologies.getParameter(typology, fieldId)?
+
+Collections.addValidation(Typologies, Typologies.validate)
+
 ####################################################################################################
 # LOT SCHEMA DEFINITION
 ####################################################################################################
@@ -1870,17 +1887,6 @@ Lots.createOrReplaceEntity = (lotId, newTypologyId) ->
     entityDf.resolve(oldEntityId)
   entityDf.promise
 
-# TODO(aramk) Add validation support to Collections and move this code.
-
-# TODO(aramk) Move this to Collections.
-simulateModifierUpdate = (doc, modifier) ->
-  tmpCollection = Collections.createTemporary()
-  doc = Setter.clone(doc)
-  # This is synchronous since it's a local collection.
-  insertedId = tmpCollection.insert(doc)
-  tmpCollection.update(insertedId, modifier)
-  tmpCollection.findOne(insertedId)
-
 Lots.validate = (lot) ->
   entityId = lot.entity
   # Avoid an exception preventing a collection method from being called - especially if it's to
@@ -1911,18 +1917,7 @@ Lots.validateTypology = (lot, typologyId) ->
   unless typologyClass == lotClass
     return 'Lot does not have same Typology class as the Typology being assigned.'
 
-# Add validation through collection hooks to prevent changing the entity of a lot to an incorrect
-# value.
-Lots.before.insert (userId, doc) ->
-  inValid = Lots.validate(doc)
-  if inValid
-    throw new Error(inValid)
-
-Lots.before.update (userId, doc, fieldNames, modifier) ->
-  doc = simulateModifierUpdate(doc, modifier)
-  inValid = Lots.validate(doc)
-  if inValid
-    throw new Error(inValid)
+Collections.addValidation(Lots, Lots.validate)
 
 # TODO(aramk) Disabled this for now until validation is cleaner to define. Logic is still in
 # typologyForm.
@@ -2069,7 +2064,7 @@ getModifiedDocWithDeps = (doc, modifier, depParamIds) ->
   hasDependencyUpdates = false
   if isUpdating
     # Add modified values to doc to ensure we use the latest values in calculations.
-    fullDoc = simulateModifierUpdate(doc, modifier)
+    fullDoc = Collections.simulateModifierUpdate(doc, modifier)
     # If no dependencies are being updated, the energy demands won't change, so we can quit early.
     hasDependencyUpdates = _.some depParamIds, (fieldId) ->
       modifier.$set?[fieldId]? || modifier.$unset?[fieldId]
@@ -2086,7 +2081,7 @@ applyModifierSet = (doc, modifier, $set) ->
   else
     modifier.$set = $set
   unless isUpdating
-    Setter.merge(doc, simulateModifierUpdate(doc, modifier))
+    Setter.merge(doc, Collections.simulateModifierUpdate(doc, modifier))
   # Remove parameters in the new $set that are present in the original $unset.
   $unset = modifier.$unset
   if $unset
