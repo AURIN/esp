@@ -3,8 +3,6 @@ Meteor.startup ->
   EditState =
     CHANGED: 'changed'
     CREATED: 'created'
-#    EDITED: 'edited'
-#    DELETED: 'deleted'
     CREATING: 'creating'
     EDITING: 'editing'
 
@@ -119,6 +117,11 @@ Meteor.startup ->
               formDf.resolve(result)
         else
           formDf.resolve()
+      formDf.promise.fin ->
+        # Remove the drawn/edited Lot if it's temporary.
+        return unless currentGeoEntity?
+        unless Lots.findOne(currentGeoEntity.getId())
+          currentGeoEntity.remove()
       formDf.promise
 
     onCancel: (template) ->

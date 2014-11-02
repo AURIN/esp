@@ -99,9 +99,9 @@ Meteor.startup -> resetRenderQueue()
             lotCentroid = lotEntity.getCentroid()
             # Hide the entity initially to avoid showing the transition.
             entityArgs.show = false
+            delete entityArgs.displayMode
             # Render the Entity once the Lot has been rendered.
             geoEntity = AtlasManager.renderEntity(entityArgs)
-            AtlasManager.showEntity(id)
             @._buildMeshCollection(id, lotCentroid).then (collection) ->
               if collection
                 meshEntity = collection
@@ -113,6 +113,8 @@ Meteor.startup -> resetRenderQueue()
                   form.setCentroid(lotCentroid)
                   # Apply rotation based on the azimuth.
                   form.setRotation(new Vertex(0, 0, azimuth)) if azimuth?
+              geoEntity.setDisplayMode(Session.get('entityDisplayMode'))
+              AtlasManager.showEntity(id)
               df.resolve(geoEntity)
     df.promise
 
