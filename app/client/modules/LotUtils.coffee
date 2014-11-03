@@ -169,11 +169,14 @@ Meteor.startup -> resetRenderQueue()
     Q.all(lotRenderDfs)
 
   renderAllAndZoom: ->
-    lots = Lots.findByProject()
-    AtlasManager.zoomToProject()
-    # If lots exist, zoom into them.
-    if lots.count() != 0
-      @renderAll().then -> AtlasManager.zoomToProjectEntities()
+    if Lots.findByProject().count() != 0
+      @renderAll().then => @_zoomToEntities()
+    else
+      ProjectUtils.zoomTo()
+
+  _zoomToEntities: ->
+    ids = _.map Lots.findByProject().fetch(), (entity) -> entity._id
+    AtlasManager.zoomToEntities(ids)
 
   # Find all unallocated development lots and allocate appropriate typologies for them.
   autoAllocate: ->

@@ -41,11 +41,12 @@ aramk:pubsub
 aramk:utility
 
 # PRIVATE
+urbanetic:atlas
 collection-table
 dropdown
 q
 # These come last so RequireJS doesn't cause issues.
 aramk:requirejs
-atlas
-atlas-cesium
 urbanetic:subdiv
+urbanetic:atlas
+urbanetic:atlas-cesium

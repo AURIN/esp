@@ -109,3 +109,16 @@ incrementName = (name) ->
     json = @toJson(id)
     blob = Blobs.fromString(JSON.stringify(json), {type: 'application/json'})
     Blobs.downloadInBrowser(blob, 'project-' + id + '.json')
+
+  zoomTo: ->
+    projectId = Projects.getCurrentId()
+    location = Projects.getLocationCoords(projectId)
+    if location.latitude? and location.longitude?
+      location.elevation ?= 20000
+      console.debug 'Loading project location', location
+      AtlasManager.zoomTo {position: location}
+    else
+      address = Projects.getLocationAddress(projectId)
+      console.debug 'Loading project address', address
+      AtlasManager.zoomTo {address: address}
+
