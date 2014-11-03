@@ -24,10 +24,6 @@ crudRoute = (collectionName, controller) ->
 
 DesignController = BaseController.extend
   template: 'design'
-# TODO(aramk) Add action to the base controller and remove from routes.
-#  waitOn: ->
-#    _.map(['projects', 'entities', 'typologies'], (name) -> Meteor.subscribe(name))
-#  action : -> @render() if @ready()
   onBeforeAction: ->
     id = @.params._id
     Projects.setCurrentId(id)
@@ -43,6 +39,7 @@ crudRoute('Projects', ProjectsController)
 
 Router.route 'design',
   path: '/design/:_id'
+  # TODO(aramk) Add action to the base controller and remove from routes.
   waitOn: -> _.map(['projects', 'entities', 'typologies'], (name) -> Meteor.subscribe(name))
   controller: DesignController
 
@@ -59,7 +56,6 @@ Router.setLastPath = (path, params) ->
 Router.getLastPath = -> _lastPath
 Router.goToLastPath = ->
   path = _lastPath.path
-  current = Router.current()
   if _lastPath? and Router.getCurrentPath() != path
     origGoFunc.call(Router, path, _lastPath.params)
     true
@@ -72,10 +68,7 @@ Router.setLastPathAsCurrent = ->
   return unless path
   Router.setLastPath(path, current.params)
 
-Router.getCurrentPath = ->
-  current = Router.current()
-  return unless current
-  current.url
+Router.getCurrentPath = -> Iron.Location.get().path
 
 # When switching, remember the last route.
 Router.go = ->
