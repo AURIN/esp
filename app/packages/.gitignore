@@ -70,3 +70,6 @@ iron-router-progress
 /aramk:utility
 /matb33:collection-hooks
 /urbanetic:subdiv
+/urbanetic:atlas
+/urbanetic:atlas-cesium
+/urbanetic:atlas-util

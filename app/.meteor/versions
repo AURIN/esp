@@ -8,10 +8,9 @@ aldeed:simple-schema@1.0.3
 anti:i18n@0.4.3
 application-configuration@1.0.3
 aramk:pubsub@1.5.0
+aramk:q@1.0.1
 aramk:requirejs@2.1.15
 aramk:utility@0.2.1
-atlas-cesium@0.0.0
-atlas@0.0.0
 autoupdate@1.1.3
 awatson1978:dropzone@1.0.2
 base64@1.0.1
@@ -111,6 +110,9 @@ templating@1.0.9
 tracker@1.0.3
 ui@1.0.4
 underscore@1.0.1
+urbanetic:atlas-cesium@0.1.0
+urbanetic:atlas-util@0.1.0
+urbanetic:atlas@0.1.0
 urbanetic:subdiv@0.0.0
 url@1.0.2
 webapp-hashing@1.0.1

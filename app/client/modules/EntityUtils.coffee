@@ -20,7 +20,7 @@ Meteor.startup -> resetRenderQueue()
         height: space?.height
         zIndex: 1
         displayMode: displayMode
-        color: '#666'
+        fillColor: '#666'
         borderColor: '#000'
 
   _getMesh: (id) ->

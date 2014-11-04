@@ -50,3 +50,4 @@ aramk:requirejs
 urbanetic:subdiv
 urbanetic:atlas
 urbanetic:atlas-cesium
+urbanetic:atlas-util
