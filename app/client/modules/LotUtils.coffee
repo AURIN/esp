@@ -162,6 +162,12 @@ Meteor.startup -> resetRenderQueue()
         df.resolve(entity)
     df.promise
 
+  unrender: (id) -> _renderQueue.add id, ->
+    df = Q.defer()
+    AtlasManager.unrenderEntity(id)
+    df.resolve()
+    df.promise
+
   renderAll: ->
     lotRenderDfs = []
     lots = Lots.findByProject()

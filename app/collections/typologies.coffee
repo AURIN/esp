@@ -2104,6 +2104,15 @@ Typologies.calcOutputFromAzimuth = (array, azimuth) ->
 azimuthArrayDependencyFieldIds = ['parameters.space.cfa', 'parameters.orientation.azimuth',
   'parameters.orientation.eq_azmth_h', 'parameters.orientation.eq_azmth_c']
 
+# A queue of entity IDs which should be updated with blank modifiers so their azimuth-based values
+# are updated. This must take place after the typology is modified so that it inherits the updated
+# values.
+entityUpdateQueue = []
+updateQueuedEntities = ->
+  while entityUpdateQueue.length > 0
+    entityId = entityUpdateQueue.pop()
+    Entities.update(entityId, {$set: {}})
+
 # Update the energy demand based on the azimuth array.
 updateAzimuthEnergyDemand = (userId, doc, fieldNames, modifier) ->
   isUpdating = modifier?
@@ -2111,11 +2120,7 @@ updateAzimuthEnergyDemand = (userId, doc, fieldNames, modifier) ->
   fullDoc = depResult.fullDoc
   isEntity = doc.typology?
   return unless depResult.hasDependencyUpdates || isEntity
-  if isEntity
-    # if typology?
-    #   Entities.mergeTypologyObj(fullDoc, typology)
-    # else
-    Entities.mergeTypology(fullDoc)
+  Entities.mergeTypology(fullDoc) if isEntity
   eq_azmth_h = Entities.getParameter(fullDoc, 'parameters.orientation.eq_azmth_h')
   eq_azmth_c = Entities.getParameter(fullDoc, 'parameters.orientation.eq_azmth_c')
   azimuth = Entities.getParameter(fullDoc, 'parameters.orientation.azimuth') ? 0
@@ -2138,18 +2143,15 @@ updateAzimuthEnergyDemand = (userId, doc, fieldNames, modifier) ->
   modifier = applyModifierSet(doc, modifier, $set)
   # If updating a typology, ensure all entities have their energy demand values updated as well.
   if isUpdating && !isEntity
-    typology = Collections.simulateModifierUpdate(doc, modifier)
-    console.error('typology update', doc, modifier, typology)
-    _.each Entities.find(typology: doc._id).fetch(), (entity) ->
-      Entities.mergeTypologyObj(entity, typology)
-      entityModifier = updateAzimuthEnergyDemand(userId, entity, null, {$set: {}})
-      Entities.update(entity._id, entityModifier) if entityModifier?
+    _.each Entities.find(typology: doc._id).fetch(), (entity) -> entityUpdateQueue.push(entity._id)
   modifier
 
 Entities.before.insert(updateAzimuthEnergyDemand)
 Entities.before.update(updateAzimuthEnergyDemand)
 Typologies.before.insert(updateAzimuthEnergyDemand)
 Typologies.before.update(updateAzimuthEnergyDemand)
+Typologies.after.insert(updateQueuedEntities)
+Typologies.after.update(updateQueuedEntities)
 
 ####################################################################################################
 # BUILD QUALITY

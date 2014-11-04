@@ -88,7 +88,7 @@ Meteor.startup -> resetRenderQueue()
         # If the geoEntity was rendered using the Typology geometry, centre it based on the Lot.
         lot = Lots.findOne(entity.lot)
         unless lot
-          AtlasManager.unrenderEntity(id)
+          EntityUtils.unrender(id)
           throw new Error('Rendered geoEntity does not have an accompanying lot.')
         lotId = lot._id
         require [
@@ -116,6 +116,12 @@ Meteor.startup -> resetRenderQueue()
               geoEntity.setDisplayMode(Session.get('entityDisplayMode'))
               AtlasManager.showEntity(id)
               df.resolve(geoEntity)
+    df.promise
+
+  unrender: (id) -> _renderQueue.add id, ->
+    df = Q.defer()
+    AtlasManager.unrenderEntity(id)
+    df.resolve()
     df.promise
 
   beforeAtlasUnload: -> resetRenderQueue()

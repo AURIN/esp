@@ -196,7 +196,7 @@ Meteor.startup ->
     'click .footprint.buttons .delete': (e, template) ->
       stopEditing()
       stopCreating()
-      AtlasManager.unrenderEntity(currentGeoEntity.getId())
+      LotUtils.unrender(currentGeoEntity.getId())
       setEditState(EditState.CREATING, false)
       setEditState(EditState.EDITING, false)
       setEditState(EditState.CREATED, false)

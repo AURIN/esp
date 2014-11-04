@@ -259,7 +259,7 @@ TemplateClass.onAtlasLoad = (template, atlas) ->
 
   # Rendering Lots.
   renderLot = (id) -> LotUtils.render(id)
-  unrenderLot = (id) -> AtlasManager.unrenderEntity(id)
+  unrenderLot = (id) -> LotUtils.unrender(id)
   lots = Lots.findByProject()
   entities = Entities.findByProject()
   typologies = Typologies.findByProject()
@@ -283,7 +283,7 @@ TemplateClass.onAtlasLoad = (template, atlas) ->
 
   # Rendering Entities.
   renderEntity = (id) -> EntityUtils.render(id)
-  unrenderEntity = (id) -> AtlasManager.unrenderEntity(id)
+  unrenderEntity = (id) -> EntityUtils.unrender(id)
   refreshEntity = (id) ->
     unrenderEntity(id)
     renderEntity(id)
