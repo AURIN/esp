@@ -779,9 +779,15 @@ projectSchema =
   collectionType: 'Projects'
 
 calcArea = (id) ->
-  entity = AtlasManager.getEntity(id)
-  if entity
-    entity.getArea()
+  feature = AtlasManager.getEntity(id)
+  if feature
+    target = feature.getForm('footprint')
+    unless target
+      target = feature.getForm('mesh')
+    unless target
+      throw new Error('GeoEntity was found but no footprint or mesh exists - cannot calculate ' +
+        'area.')
+    target.getArea()
   else
     throw new Error('GeoEntity not found - cannot calculate area.')
 
@@ -1674,7 +1680,6 @@ mergeDefaultParameters = (model, defaults) ->
   model
 
 Typologies.mergeDefaults = (model) ->
-  console.error('model', model)
   typologyClass = model.parameters.general?.class
   defaults = if typologyClass then Typologies.getDefaultParameterValues(typologyClass) else null
   mergeDefaultParameters(model, defaults)

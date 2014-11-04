@@ -331,7 +331,9 @@ TemplateClass.onAtlasLoad = (template, atlas) ->
           refreshEntity(entity._id)
   }
 
-  # Listen to selections from Atlas.
+  ##################################################################################################
+  # SELECTION
+  ##################################################################################################
 
   # Listen to selections in tables.
   tables = [getEntityTable(template), getLotTable(template)]
@@ -359,12 +361,11 @@ TemplateClass.onAtlasLoad = (template, atlas) ->
     # Always deselect the typologies table to avoid its logic from interfering.
     typologyTableId = Template.collectionTable.getDomTableId(getTypologyTable(template))
     Template.collectionTable.deselectAll(typologyTableId)
-
-    id = args.ids[0]
+    id = resolveModelId(args.ids[0])
     tableId = Template.collectionTable.getDomTableId(getTable(id))
     Template.collectionTable.addSelection(tableId, id) if tableId
   atlas.subscribe 'entity/deselect', (args) ->
-    id = args.ids[0]
+    id = resolveModelId(args.ids[0])
     if id
       tableId = Template.collectionTable.getDomTableId(getTable(id))
       Template.collectionTable.removeSelection(tableId, id) if tableId
@@ -372,15 +373,21 @@ TemplateClass.onAtlasLoad = (template, atlas) ->
   # Listen to double clicks from Atlas.
   atlas.subscribe 'entity/dblclick', (args) ->
     collection = Entities
-    id = args.id
+    id = resolveModelId(args.id)
+    unless collection.findOne(id)
+      collection = Lots
+    # Ignore this event when clicking on entities we don't manage in collections.
+    return unless collection.findOne(id)
+    onEditFormPanel ids: [id], collection: collection
+
+  resolveModelId = (id) ->
     # When clicking on children of a GeoEntity collection, take the prefix as the ID of the
     # underlying Entity.
     reChildEntityId = /(^[^:]+):[^:]+$/
     idParts = id.match(reChildEntityId)
     if idParts
       id = idParts[1]
-    unless collection.findOne(id)
-      collection = Lots
-    unless collection.findOne(id)
-      throw new Error('Cannot find model with ID ' + id + ' in a collection.')
-    onEditFormPanel ids: [id], collection: collection
+    id
+
+  getIdFromCollectionEntity: () ->
+
