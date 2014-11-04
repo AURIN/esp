@@ -3,23 +3,19 @@ Meteor.startup ->
   collection = Typologies
   subclasses = Collections.createTemporary()
 
-  getClassInput = ->
-    $(@.find('[name="parameters.general.class"]')).closest('.dropdown')
-
-  getSelectOption = (value, $select) ->
-    $('option[value="' + value + '"]', $select)
-
   updateFields = ->
     # Used to store original copies of DOM nodes which we modify based on the typology class.
     origInputs = @origInputs
     unless @origInputs
       origInputs = @origInputs = {}
     # TODO(aramk) Refactor with entityForm.
-    typologyClass = Template.dropdown.getValue(getClassInput.call(@))
+    typologyClass = Template.dropdown.getValue(getClassInput(@))
     # Only show fields when a class is selected.
     @$('.fields').toggle(!!typologyClass)
     defaultParams = Typologies.getDefaultParameterValues(typologyClass)
     console.debug 'updateFields', @, arguments, typologyClass
+    $paramInputs = []
+    $wrappers = {show: [], hide: []}
     for key, input of Forms.getSchemaInputs(@, collection)
       fieldSchema = input.field
       isParamField = ParamUtils.hasPrefix(key)
@@ -29,12 +25,14 @@ Meteor.startup ->
       allClassOptions = classes?.ALL
       if allClassOptions?
         classOptions = _.extend(allClassOptions, classOptions)
+      isHiddenField = classes and not classOptions
 
       $input = $(input.node)
       $label = @$('label[for="' + key + '"]')
       $wrapper = $input.closest(Forms.FIELD_SELECTOR)
+      $wrappers[if isHiddenField then 'hide' else 'show'].push($wrapper)
       # Hide fields which have classes specified which don't contain the current class.
-      $wrapper[if classes and not classOptions then 'hide' else 'show']()
+      # $wrapper[if isHiddenField then 'hide' else 'show']()
 
       if isParamField
         defaultValue = Typologies.getParameter(defaultParams, key)
@@ -48,19 +46,19 @@ Meteor.startup ->
 
       Forms.addRequiredLabel($label) if classOptions?.optional == false
 
-      unless isParamField
-        continue
+      continue unless isParamField
 
       if $input.is('select')
         origInput = origInputs[key]
         if origInput
           # This field has been modified before - replace with a clone of the original.
-          $origInput = origInputs[key].clone()
+          $origInput = origInputs[key].clone(true)
           $input.replaceWith($origInput)
+          $origInput.val($input.val())
           $input = $origInput
         else
           # The field is in its original state - store a clone.
-          origInputs[key] = $input.clone()
+          origInputs[key] = $input.clone(true)
 
         if defaultValue?
           # Label which option is the default value.
@@ -79,6 +77,28 @@ Meteor.startup ->
             $input.val(defaultValue)
           else
             $input.val('')
+      # Avoid triggering a change event on the class input, which will trigger this method.
+      $paramInputs.push($input) unless key == 'parameters.general.class'
+    
+    getVisibility = ($inputs) ->
+      visible = []
+      hidden = []
+      _.each $inputs, ($input) -> (if $input.is(':visible') then visible else hidden).push($input)
+      {visible: visible, hidden: hidden}
+
+    markVisibility = ($inputs) -> _.each $inputs, ($input) ->
+      $input.data('visibleBeforeChanges', $input.is(':visible'))
+    
+    # visiblityBeforeChanges = getVisibility($wrappers)
+    _.each ['show', 'hide'], (visibility) -> _.each $wrappers[visibility], ($w) -> $w[visibility]()
+    # Trigger changes in all fields so change event handlers are called.
+    _.each $paramInputs, ($input) -> $input.trigger('change')
+    # visiblityAfterChanges = getVisibility($wrappers)
+    # Hide fields unavailable for this class. Perform this after the change handlers are called
+    # to ensure they don't show inputs that should be hidden.
+    #_.each ['show', 'hide'], (visibility) -> _.each $wrappers[visibility], ($w) -> $w[visibility]()
+        # $w[visibility]() unless $w.data('visibleBeforeChanges') && !$w.is('visible')
+    _.each $wrappers.hide, ($w) -> $w.hide()
     # Populate available subclasses.
     Collections.removeAllDocs(subclasses)
     _.each Typologies.getSubclassItems(typologyClass), (item) -> subclasses.insert(item)
@@ -89,12 +109,24 @@ Meteor.startup ->
     azimuthClasses = SchemaUtils.getField('parameters.orientation.azimuth', Typologies).classes
     @$('.azimuth-array').toggle(!!azimuthClasses[typologyClass])
 
+  bindEvents = ->
+    # Bind change events to azimuth fields.
+    onAzimuthChange = _.debounce (=> Form.updateAzimuthArray(@)), 300
+    @$('.azimuth-array input').add(getAzimuthInput(@)).add(getCfaInput(@))
+      .on('change keyup', onAzimuthChange)
+    # onAzimuthChange()
+    # Bind event to build quality dropdown
+    onBuildQualityChange = => Form.updateBuildQuality(@)
+    getBuildQualitySelect(@).on('change', onBuildQualityChange)
+    # onBuildQualityChange()
+
   Form = Forms.defineModelForm
     name: 'typologyForm'
     collection: collection
     onRender: ->
+      bindEvents.call(@)
       updateFields.call(@)
-      $classInput = getClassInput.call(@)
+      $classInput = getClassInput(@)
       $classInput.on 'change', => updateFields.call(@)
       # Set values for azimuth fields.
       # TODO(aramk) Remove this with newer versions of Autoform.
@@ -103,15 +135,6 @@ Meteor.startup ->
       cooling = items.cooling
       Template.azimuthArray.setValue(heating.$input, heating.value)
       Template.azimuthArray.setValue(cooling.$input, cooling.value)
-      # Bind change events to azimuth fields.
-      onAzimuthChange = _.debounce (=> Form.updateAzimuthArray(@)), 300
-      @$('.azimuth-array input').add(getAzimuthInput(@)).add(getCfaInput(@))
-        .on('change keyup', onAzimuthChange)
-      onAzimuthChange()
-      # Bind event to build quality dropdown
-      onBuildQualityChange = => Form.updateBuildQuality(@)
-      getBuildQualitySelect(@).on('change', onBuildQualityChange)
-      onBuildQualityChange()
     hooks:
       formToDoc: (doc) ->
         doc.project = Projects.getCurrentId()
@@ -194,15 +217,19 @@ Meteor.startup ->
   # BUILD QUALITY
 
   Form.updateBuildQuality = (template) ->
-    $buildQualitySelect = getBuildQualitySelect(template)
-    $subclassSelect = getSubclassSelect(template)
-    buildQuality = $buildQualitySelect.val()
-    subclass = $subclassSelect.val()
-    buildQualityParamId = Typologies.buildQualityMap[buildQuality]?[subclass]
-    getCostOfConstructionInput(template).parent().toggle(!buildQualityParamId?)
+    buildQuality = getBuildQualityValue(template)
+    # subclass = getSubclassValue(template)
+    # buildQualityParamId = Typologies.buildQualityMap[buildQuality]?[subclass]
+    # getCostOfConstructionInput(template).parent().toggle(!buildQualityParamId?)
+    getCostOfConstructionInput(template).parent().toggle(buildQuality == 'Custom')
 
+  getClassInput = (template) -> template.$('[name="parameters.general.class"]').closest('.dropdown')
+  getSelectOption = (value, $select) -> $('option[value="' + value + '"]', $select)
+  getSubclassSelect = (template) ->
+    template.$('[name="parameters.general.subclass"]').closest('.dropdown')
+  getSubclassValue = (template) -> Template.dropdown.getValue(getSubclassSelect(template))
   getBuildQualitySelect = (template) -> template.$('[name="parameters.financial.build_quality"]')
-  getSubclassSelect = (template) -> template.$('[name="parameters.general.subclass"]')
+  getBuildQualityValue = (template) -> getBuildQualitySelect(template).val()
   getCostOfConstructionInput = (template) -> template.$('[name="parameters.financial.cost_con"]')
 
   # UPLOADING

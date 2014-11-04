@@ -1674,6 +1674,7 @@ mergeDefaultParameters = (model, defaults) ->
   model
 
 Typologies.mergeDefaults = (model) ->
+  console.error('model', model)
   typologyClass = model.parameters.general?.class
   defaults = if typologyClass then Typologies.getDefaultParameterValues(typologyClass) else null
   mergeDefaultParameters(model, defaults)
@@ -2010,12 +2011,17 @@ Entities.getAllFlattened = (filter) ->
 Entities.mergeTypology = (entity) ->
   typologyId = entity.typology
   if typologyId?
-    typology = entity._typology = Typologies.findOne(typologyId)
-    if typology?
-      Typologies.mergeDefaults(typology)
-      entity.parameters ?= {}
-      Setter.defaults(entity.parameters, typology.parameters)
-      Typologies.filterParameters(entity)
+    typology = Typologies.findOne(typologyId)
+    Entities.mergeTypologyObj(entity, typology)
+  entity
+
+Entities.mergeTypologyObj = (entity, typology) ->
+  if typology?
+    entity._typology = typology
+    Typologies.mergeDefaults(typology)
+    entity.parameters ?= {}
+    Setter.defaults(entity.parameters, typology.parameters)
+    Typologies.filterParameters(entity)
   entity
 
 Entities.getParameter = (model, paramId) ->
@@ -2103,9 +2109,13 @@ updateAzimuthEnergyDemand = (userId, doc, fieldNames, modifier) ->
   isUpdating = modifier?
   depResult = getModifiedDocWithDeps(doc, modifier, azimuthArrayDependencyFieldIds)
   fullDoc = depResult.fullDoc
-  return unless depResult.hasDependencyUpdates
   isEntity = doc.typology?
-  Entities.mergeTypology(fullDoc) if isEntity
+  return unless depResult.hasDependencyUpdates || isEntity
+  if isEntity
+    # if typology?
+    #   Entities.mergeTypologyObj(fullDoc, typology)
+    # else
+    Entities.mergeTypology(fullDoc)
   eq_azmth_h = Entities.getParameter(fullDoc, 'parameters.orientation.eq_azmth_h')
   eq_azmth_c = Entities.getParameter(fullDoc, 'parameters.orientation.eq_azmth_c')
   azimuth = Entities.getParameter(fullDoc, 'parameters.orientation.azimuth') ? 0
@@ -2127,10 +2137,13 @@ updateAzimuthEnergyDemand = (userId, doc, fieldNames, modifier) ->
   return if Object.keys($set).length == 0
   modifier = applyModifierSet(doc, modifier, $set)
   # If updating a typology, ensure all entities have their energy demand values updated as well.
-  if isUpdating
+  if isUpdating && !isEntity
+    typology = Collections.simulateModifierUpdate(doc, modifier)
+    console.error('typology update', doc, modifier, typology)
     _.each Entities.find(typology: doc._id).fetch(), (entity) ->
-      entityModifier = updateAzimuthEnergyDemand(userId, entity)
-      Entities.update(entity._id, entityModifier)
+      Entities.mergeTypologyObj(entity, typology)
+      entityModifier = updateAzimuthEnergyDemand(userId, entity, null, {$set: {}})
+      Entities.update(entity._id, entityModifier) if entityModifier?
   modifier
 
 Entities.before.insert(updateAzimuthEnergyDemand)
