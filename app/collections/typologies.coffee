@@ -2007,7 +2007,7 @@ Entities.getFlattened = (id) ->
   Entities.mergeTypology(entity)
   entity
 
-Entities.getAllFlattened = (filter) ->
+Entities.getAllFlattenedInProject = (filter) ->
   entities = Entities.findByProject().fetch()
   if filter
     entities = _.filter entities, filter

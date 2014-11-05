@@ -96,7 +96,7 @@ TemplateClass.rendered = ->
     LotUtils.amalgamate(ids)
 
   AtlasManager.getAtlas().then (atlas) ->
-    atlas.subscribe 'entity/selection/change', ->
+    atlas.subscribe 'entity/selection/change', (args) ->
       ids = AtlasManager.getSelectedLots()
       idCount = ids.length
       if idCount == 0

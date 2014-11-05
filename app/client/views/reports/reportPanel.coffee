@@ -62,7 +62,7 @@ renderReport = (id) ->
         return
     entities = _.map entityIds, (id) -> Entities.getFlattened(id)
   else
-    entities = Entities.getAllFlattened()
+    entities = Entities.getAllFlattenedInProject()
     if typologyClass?
       entities = _.filter entities, (entity) -> typologyFilter(entity._id)
 
