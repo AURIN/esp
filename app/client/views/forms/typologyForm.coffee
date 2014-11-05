@@ -79,25 +79,13 @@ Meteor.startup ->
             $input.val('')
       # Avoid triggering a change event on the class input, which will trigger this method.
       $paramInputs.push($input) unless key == 'parameters.general.class'
-    
-    getVisibility = ($inputs) ->
-      visible = []
-      hidden = []
-      _.each $inputs, ($input) -> (if $input.is(':visible') then visible else hidden).push($input)
-      {visible: visible, hidden: hidden}
 
-    markVisibility = ($inputs) -> _.each $inputs, ($input) ->
-      $input.data('visibleBeforeChanges', $input.is(':visible'))
-    
-    # visiblityBeforeChanges = getVisibility($wrappers)
     _.each ['show', 'hide'], (visibility) -> _.each $wrappers[visibility], ($w) -> $w[visibility]()
-    # Trigger changes in all fields so change event handlers are called.
+    # Trigger changes in all fields so change event handlers are called. This assumes they are
+    # synchronous.
     _.each $paramInputs, ($input) -> $input.trigger('change')
-    # visiblityAfterChanges = getVisibility($wrappers)
     # Hide fields unavailable for this class. Perform this after the change handlers are called
     # to ensure they don't show inputs that should be hidden.
-    #_.each ['show', 'hide'], (visibility) -> _.each $wrappers[visibility], ($w) -> $w[visibility]()
-        # $w[visibility]() unless $w.data('visibleBeforeChanges') && !$w.is('visible')
     _.each $wrappers.hide, ($w) -> $w.hide()
     # Populate available subclasses.
     Collections.removeAllDocs(subclasses)
@@ -111,14 +99,13 @@ Meteor.startup ->
 
   bindEvents = ->
     # Bind change events to azimuth fields.
-    onAzimuthChange = _.debounce (=> Form.updateAzimuthArray(@)), 300
-    @$('.azimuth-array input').add(getAzimuthInput(@)).add(getCfaInput(@))
-      .on('change keyup', onAzimuthChange)
-    # onAzimuthChange()
+    onAzimuthChange = => Form.updateAzimuthArray(@)
+    $azimuthFields = @$('.azimuth-array input').add(getAzimuthInput(@)).add(getCfaInput(@))
+    $azimuthFields.on('change', onAzimuthChange)
+    $azimuthFields.on('keyup', _.debounce(onAzimuthChange, 300))
     # Bind event to build quality dropdown
     onBuildQualityChange = => Form.updateBuildQuality(@)
     getBuildQualitySelect(@).on('change', onBuildQualityChange)
-    # onBuildQualityChange()
 
   Form = Forms.defineModelForm
     name: 'typologyForm'
