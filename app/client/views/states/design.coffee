@@ -176,7 +176,8 @@ TemplateClass.events
         console.log('entities', entities)
         lot = null
         _.some entities, (entity) ->
-          lot = Lots.findOne(entity.getId())
+          feature = entity.getParent()
+          lot = Lots.findOne(feature.getId())
           lot
         if lot
           # TODO(aramk) Refactor with the logic in the lot form.
@@ -337,17 +338,26 @@ TemplateClass.onAtlasLoad = (template, atlas) ->
 
   # Listen to selections in tables.
   tables = [getEntityTable(template), getLotTable(template)]
+  tableSelectionEnabled = true
   _.each tables, ($table) ->
-    $table.on 'select', (e, id) -> atlas.publish('entity/select', ids: [id])
-    $table.on 'deselect', (e, id) -> atlas.publish('entity/deselect', ids: [id])
+    $table.on 'select', (e, id) ->
+      atlas.publish('entity/select', ids: [id]) if tableSelectionEnabled
+    $table.on 'deselect', (e, id) ->
+      atlas.publish('entity/deselect', ids: [id]) if tableSelectionEnabled
   # Clicking on a typology selects all entities of that typology.
   $typologyTable = getTypologyTable(template)
   getEntityIdsByTypologyId = (typologyId) ->
+    # Prevent selections from triggering the table event handlers above, which will cause
+    # deselections and infinite loops.
     _.map Entities.find(typology: typologyId).fetch(), (entity) -> entity._id
   $typologyTable.on 'select', (e, id) ->
+    tableSelectionEnabled = false
     atlas.publish('entity/select', ids: getEntityIdsByTypologyId(id))
+    tableSelectionEnabled = true
   $typologyTable.on 'deselect', (e, id) ->
+    tableSelectionEnabled = false
     atlas.publish('entity/deselect', ids: getEntityIdsByTypologyId(id))
+    tableSelectionEnabled = true
 
   # Determine what table should be used for the given doc type.
   getTable = (docId) ->
