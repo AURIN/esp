@@ -39,7 +39,7 @@ cfs:upload-http@0.0.2
 cfs:worker@0.0.0
 check@1.0.2
 coffeescript@1.0.4
-collection-table@0.0.0
+collection-table@0.1.0
 ctl-helper@1.0.4
 ctl@1.0.2
 ddp@1.0.11

@@ -336,8 +336,17 @@ TemplateClass.onAtlasLoad = (template, atlas) ->
   # SELECTION
   ##################################################################################################
 
+  # Determine what table should be used for the given doc type.
+  getTable = (docId) ->
+    if Entities.findOne(docId)
+      getEntityTable(template)
+    else if Lots.findOne(docId)
+      getLotTable(template)
+
   # Listen to selections in tables.
   tables = [getEntityTable(template), getLotTable(template)]
+  # Prevent bulk selections of entities when selecting the typology table from needlessly triggering
+  # the table event handlers below or causing infinite loops.
   tableSelectionEnabled = true
   _.each tables, ($table) ->
     $table.on 'select', (e, id) ->
@@ -347,8 +356,6 @@ TemplateClass.onAtlasLoad = (template, atlas) ->
   # Clicking on a typology selects all entities of that typology.
   $typologyTable = getTypologyTable(template)
   getEntityIdsByTypologyId = (typologyId) ->
-    # Prevent selections from triggering the table event handlers above, which will cause
-    # deselections and infinite loops.
     _.map Entities.find(typology: typologyId).fetch(), (entity) -> entity._id
   $typologyTable.on 'select', (e, id) ->
     tableSelectionEnabled = false
@@ -359,26 +366,19 @@ TemplateClass.onAtlasLoad = (template, atlas) ->
     atlas.publish('entity/deselect', ids: getEntityIdsByTypologyId(id))
     tableSelectionEnabled = true
 
-  # Determine what table should be used for the given doc type.
-  getTable = (docId) ->
-    if Entities.findOne(docId)
-      getEntityTable(template)
-    else if Lots.findOne(docId)
-      getLotTable(template)
-
   # Select the item in the table when clicking on the globe.
   atlas.subscribe 'entity/select', (args) ->
-    # Always deselect the typologies table to avoid its logic from interfering.
-    typologyTableId = Template.collectionTable.getDomTableId(getTypologyTable(template))
-    Template.collectionTable.deselectAll(typologyTableId)
-    id = resolveModelId(args.ids[0])
-    tableId = Template.collectionTable.getDomTableId(getTable(id))
-    Template.collectionTable.addSelection(tableId, id) if tableId
+    tableSelectionEnabled = false
+    ids = _.map args.ids, (id) -> resolveModelId(id)
+    tableId = Template.collectionTable.getDomTableId(getTable(ids[0]))
+    Template.collectionTable.addSelection(tableId, ids) if tableId
+    tableSelectionEnabled = true
   atlas.subscribe 'entity/deselect', (args) ->
-    id = resolveModelId(args.ids[0])
-    if id
-      tableId = Template.collectionTable.getDomTableId(getTable(id))
-      Template.collectionTable.removeSelection(tableId, id) if tableId
+    tableSelectionEnabled = false
+    ids = _.map args.ids, (id) -> resolveModelId(id)
+    tableId = Template.collectionTable.getDomTableId(getTable(ids[0]))
+    Template.collectionTable.removeSelection(tableId, ids) if tableId
+    tableSelectionEnabled = true
 
   # Listen to double clicks from Atlas.
   atlas.subscribe 'entity/dblclick', (args) ->
