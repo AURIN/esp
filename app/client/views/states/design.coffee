@@ -322,8 +322,8 @@ TemplateClass.onAtlasLoad = (template, atlas) ->
   handles.push Collections.observe typologies, {
     changed: (newTypology, oldTypology) ->
       hasParamChanged = (paramName) ->
-        newValue = Typologies.getParameter(newTypology, paramName)
-        oldValue = Typologies.getParameter(oldTypology, paramName)
+        newValue = SchemaUtils.getParameterValue(newTypology, paramName)
+        oldValue = SchemaUtils.getParameterValue(oldTypology, paramName)
         newValue != oldValue
       hasChanged = _.some ['general.class', 'space.geom_2d', 'space.geom_3d', 'space.height',
                            'orientation.azimuth'], (paramName) -> hasParamChanged(paramName)

@@ -135,17 +135,6 @@ forEachCategoriesField = (categories, callback) ->
   for catId, category of categories
     forEachCategoryField(category, callback)
 
-@ParamUtils =
-  _prefix: 'parameters'
-  _rePrefix: /^parameters\./
-  addPrefix: (id) ->
-    if @_rePrefix.test(id)
-      id
-    else
-      @_prefix + '.' + id
-  removePrefix: (id) -> id.replace(@_rePrefix, '')
-  hasPrefix: (id) -> @._rePrefix.test(id)
-
 ####################################################################################################
 # PROJECT SCHEMA DEFINITION
 ####################################################################################################
@@ -1602,18 +1591,6 @@ Typologies.getSubclassItems = (typologyClass) ->
   allowedValues = options?.allowedValues ? []
   _.map allowedValues, (value) -> {_id: value, name: value}
 
-Typologies.getParameter = (obj, paramId) ->
-  # Allow paramId to optionally contain the prefix.
-  paramId = ParamUtils.removePrefix(paramId)
-  # Allow obj to contain "parameters" map or be the map itself.
-  target = obj.parameters ? obj ?= {}
-  Typologies.getModifierProperty(target, paramId)
-
-Typologies.setParameter = (model, paramId, value) ->
-  paramId = ParamUtils.removePrefix(paramId)
-  target = model.parameters ?= {}
-  Typologies.setModifierProperty(target, paramId, value)
-
 # TODO(aramk) Move to objects util.
 Typologies.getModifierProperty = (obj, property) ->
   target = obj
@@ -1702,20 +1679,13 @@ Typologies.filterParameters = (model) ->
       delete modelCategory[paramName]
   model
 
-findByProject = (collection, projectId) ->
-  projectId ?= Projects.getCurrentId()
-  if projectId
-    collection.find({project: projectId})
-  else
-    throw new Error('Project ID not provided - cannot retrieve models.')
-
-Typologies.findByProject = (projectId) -> findByProject(Typologies, projectId)
+Typologies.findByProject = (projectId) -> SchemaUtils.findByProject(Typologies, projectId)
 
 Typologies.getClassMap = (projectId) ->
   typologies = Typologies.findByProject(projectId).fetch()
   typologyMap = {}
   _.each typologies, (typology) ->
-    typologyClass = Typologies.getParameter(typology, 'general.class')
+    typologyClass = SchemaUtils.getParameterValue(typology, 'general.class')
     map = typologyMap[typologyClass] ?= []
     map.push(typology)
   typologyMap
@@ -1735,10 +1705,10 @@ Typologies.getRequiredFieldsForClass = _.memoize (typologyClass) ->
   fields
 
 Typologies.validate = (typology) ->
-  typologyClass = Typologies.getParameter(typology, 'parameters.general.class')
+  typologyClass = SchemaUtils.getParameterValue(typology, 'parameters.general.class')
   _.each Typologies.getRequiredFieldsForClass(typologyClass), (fieldId) ->
     throw new Error('Field ' + fieldId + ' is required for Typologies with class ' +
-      typologyClass) unless Typologies.getParameter(typology, fieldId)?
+      typologyClass) unless SchemaUtils.getParameterValue(typology, fieldId)?
 
 Collections.addValidation(Typologies, Typologies.validate)
 
@@ -1799,7 +1769,7 @@ LotSchema = new SimpleSchema
 #      unless entityId
 #        return
 #      entityTypology = Typologies.findOne(Entities.findOne(entityId).typology)
-#      entityClass = Typologies.getParameter(entityTypology, classParamId)
+#      entityClass = SchemaUtils.getParameterValue(entityTypology, classParamId)
 #      typologyClass = typologyClassField.value
 #      if typologyClassField.operator != '$unset' && @operator != '$unset' && typologyClass != entityClass
 #        return 'Entity must have the same class as the Lot. Entity has ' + entityClass +
@@ -1816,19 +1786,13 @@ LotSchema = new SimpleSchema
 Lots.attachSchema(LotSchema)
 Lots.allow(Collections.allowAll())
 
-Lots.getParameter = (model, paramId) ->
-  Typologies.getParameter(model, paramId)
-
-Lots.setParameter = (model, paramId, value) ->
-  Typologies.setParameter(model, paramId, value)
-
-Lots.findByProject = (projectId) -> findByProject(Lots, projectId)
+Lots.findByProject = (projectId) -> SchemaUtils.findByProject(Lots, projectId)
 Lots.findByEntity = (entityId) -> Lots.findOne({entity: entityId})
 Lots.findByTypology = (typologyId) ->
   _.map Entities.find(typology: typologyId).fetch(), (entity) -> Lots.findByEntity(entity._id)
 Lots.findForDevelopment = (projectId) ->
   _.filter Lots.findByProject(projectId).fetch(), (lot) ->
-    Lots.getParameter(lot, 'general.develop')
+    SchemaUtils.getParameterValue(lot, 'general.develop')
 Lots.findAvailable = (projectId) ->
   _.filter Lots.findForDevelopment(projectId), (lot) -> !lot.entity
 
@@ -1848,11 +1812,11 @@ Lots.createEntity = (lotId, typologyId, allowReplace) ->
   #    throw new Error('Lot with ID ' + id + ' already has entity')
   classParamId = 'parameters.general.class'
   developParamId = 'parameters.general.develop'
-  lotClass = Lots.getParameter(lot, classParamId)
-  isForDevelopment = Lots.getParameter(lot, developParamId)
+  lotClass = SchemaUtils.getParameterValue(lot, classParamId)
+  isForDevelopment = SchemaUtils.getParameterValue(lot, developParamId)
   # If no class is provided, use the class of the entity's typology.
   unless lotClass
-    lotClass = Typologies.getParameter(typology, classParamId)
+    lotClass = SchemaUtils.getParameterValue(typology, classParamId)
 
   # Create a new entity for this lot-typology combination and remove the existing one
   # (if any). Name of the entity matches that of the lot.
@@ -1915,9 +1879,9 @@ Lots.validateTypology = (lot, typologyId) ->
     throw new Error('Cannot find typology with ID ' + typologyId)
   classParamId = 'parameters.general.class'
   developParamId = 'parameters.general.develop'
-  lotClass = Lots.getParameter(lot, classParamId)
-  typologyClass = Typologies.getParameter(typology, classParamId)
-  isForDevelopment = Lots.getParameter(lot, developParamId)
+  lotClass = SchemaUtils.getParameterValue(lot, classParamId)
+  typologyClass = SchemaUtils.getParameterValue(typology, classParamId)
+  isForDevelopment = SchemaUtils.getParameterValue(lot, developParamId)
   if typologyId && !isForDevelopment
     return 'Lot is not for development - cannot assign typology.'
   unless lotClass
@@ -1936,7 +1900,7 @@ Collections.addValidation(Lots, Lots.validate)
 #   newClass = modifier.$set[classParamId]
 #   if newClass
 #     oldTypology = Typologies.findOne(docId)
-#     oldClass = Typologies.getParameter(oldTypology, classParamId)
+#     oldClass = SchemaUtils.getParameterValue(oldTypology, classParamId)
 #     if newClass != oldClass
 #       lots = Lots.findByTypology(docId)
 #       lotCount = lots.length
@@ -2029,17 +1993,11 @@ Entities.mergeTypologyObj = (entity, typology) ->
     Typologies.filterParameters(entity)
   entity
 
-Entities.getParameter = (model, paramId) ->
-  Typologies.getParameter(model, paramId)
-
-Entities.setParameter = (model, paramId, value) ->
-  Typologies.setParameter(model, paramId, value)
-
-Entities.findByProject = (projectId) -> findByProject(Entities, projectId)
+Entities.findByProject = (projectId) -> SchemaUtils.findByProject(Entities, projectId)
 
 Entities.getClass = (id) ->
   typology = Typologies.findOne(Entities.findOne(id).typology)
-  Typologies.getParameter(typology, 'general.class')
+  SchemaUtils.getParameterValue(typology, 'general.class')
 
 # Listen for changes to Entities or Typologies and refresh reports.
 _reportRefreshSubscribed = false
@@ -2126,10 +2084,10 @@ updateAzimuthEnergyDemand = (userId, doc, fieldNames, modifier) ->
   isEntity = doc.typology?
   return unless depResult.hasDependencyUpdates || isEntity
   Entities.mergeTypology(fullDoc) if isEntity
-  eq_azmth_h = Entities.getParameter(fullDoc, 'parameters.orientation.eq_azmth_h')
-  eq_azmth_c = Entities.getParameter(fullDoc, 'parameters.orientation.eq_azmth_c')
-  azimuth = Entities.getParameter(fullDoc, 'parameters.orientation.azimuth') ? 0
-  cfa = Entities.getParameter(fullDoc, 'parameters.space.cfa')
+  eq_azmth_h = SchemaUtils.getParameterValue(fullDoc, 'parameters.orientation.eq_azmth_h')
+  eq_azmth_c = SchemaUtils.getParameterValue(fullDoc, 'parameters.orientation.eq_azmth_c')
+  azimuth = SchemaUtils.getParameterValue(fullDoc, 'parameters.orientation.azimuth') ? 0
+  cfa = SchemaUtils.getParameterValue(fullDoc, 'parameters.space.cfa')
   return unless cfa? && azimuth?
   $set = {}
   items = [
@@ -2170,15 +2128,15 @@ updateBuildQuality = (userId, doc, fileNames, modifier) ->
   fullDoc = depResult.fullDoc
   project = Projects.mergeDefaults(Projects.findOne(fullDoc.project))
   return unless depResult.hasDependencyUpdates
-  build_quality = Typologies.getParameter(fullDoc, 'parameters.financial.build_quality')
-  subclass = Typologies.getParameter(fullDoc, 'parameters.general.subclass')
-  cost_con = Typologies.getParameter(fullDoc, 'parameters.financial.cost_con')
-  cfa = Typologies.getParameter(fullDoc, 'parameters.space.cfa')
+  build_quality = SchemaUtils.getParameterValue(fullDoc, 'parameters.financial.build_quality')
+  subclass = SchemaUtils.getParameterValue(fullDoc, 'parameters.general.subclass')
+  cost_con = SchemaUtils.getParameterValue(fullDoc, 'parameters.financial.cost_con')
+  cfa = SchemaUtils.getParameterValue(fullDoc, 'parameters.space.cfa')
   $set = {}
   return unless build_quality? && build_quality != 'Custom' && subclass? && cfa?
   buildQualityParamSuffix = Typologies.buildQualityMap[build_quality]?[subclass]
   buildQualityParamId = 'parameters.financial.building.' + buildQualityParamSuffix
-  buildParamValue = Typologies.getParameter(project, buildQualityParamId)
+  buildParamValue = SchemaUtils.getParameterValue(project, buildQualityParamId)
   $set['parameters.financial.cost_con'] = buildParamValue * cfa
   applyModifierSet(doc, modifier, $set)
 
@@ -2211,8 +2169,8 @@ Collections.observe Typologies,
   changed: (newTypology, oldTypology) ->
     # Changing the class of the lots with the typology when changing it on the typology.
     classParamId = 'parameters.general.class'
-    newClass = Typologies.getParameter(newTypology, classParamId)
-    oldClass = Typologies.getParameter(oldTypology, classParamId)
+    newClass = SchemaUtils.getParameterValue(newTypology, classParamId)
+    oldClass = SchemaUtils.getParameterValue(oldTypology, classParamId)
     if newClass != oldClass
       lots = Lots.findByTypology(newTypology._id)
       console.debug('Updating class of Lots', lots, 'from', oldClass, 'to', newClass)

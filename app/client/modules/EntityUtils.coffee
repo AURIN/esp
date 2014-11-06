@@ -25,7 +25,7 @@ Meteor.startup -> resetRenderQueue()
 
   _getMesh: (id) ->
     entity = Entities.getFlattened(id)
-    meshFileId = Entities.getParameter(entity, 'space.geom_3d')
+    meshFileId = SchemaUtils.getParameterValue(entity, 'space.geom_3d')
     if meshFileId
       Files.downloadJson(meshFileId)
     else
@@ -84,7 +84,7 @@ Meteor.startup -> resetRenderQueue()
     else
       @toGeoEntityArgs(id).then (entityArgs) =>
         entity = Entities.getFlattened(id)
-        azimuth = Entities.getParameter(entity, 'orientation.azimuth')
+        azimuth = SchemaUtils.getParameterValue(entity, 'orientation.azimuth')
         # If the geoEntity was rendered using the Typology geometry, centre it based on the Lot.
         lot = Lots.findOne(entity.lot)
         unless lot
@@ -102,7 +102,7 @@ Meteor.startup -> resetRenderQueue()
             delete entityArgs.displayMode
             # Render the Entity once the Lot has been rendered.
             geoEntity = AtlasManager.renderEntity(entityArgs)
-            @._buildMeshCollection(id, lotCentroid).then (collection) ->
+            @._buildMeshCollection(id, lotCentroid).then (collection) =>
               if collection
                 meshEntity = collection
                 geoEntity.setForm(Feature.DisplayMode.MESH, meshEntity)
@@ -115,8 +115,36 @@ Meteor.startup -> resetRenderQueue()
                   form.setRotation(new Vertex(0, 0, azimuth)) if azimuth?
               geoEntity.setDisplayMode(Session.get('entityDisplayMode'))
               AtlasManager.showEntity(id)
+              @_setUpPopup(geoEntity)
               df.resolve(geoEntity)
     df.promise
+
+  _setUpPopup: (geoEntity) ->
+    entity = Entities.getFlattened(geoEntity.getId())
+    typologyClassId = SchemaUtils.getParameterValue(entity, 'general.class')
+    typologyClass = Typologies.classes[typologyClassId]
+    subclass = SchemaUtils.getParameterValue(entity, 'general.subclass')
+    AtlasManager.getAtlas().then (atlas) ->
+      atlas.publish('popup/onSelection', {
+        entity: geoEntity
+        content: ->
+          content = '<div class="types">' +
+            '<div class="typology-class">' + typologyClass.name + '</div>'
+          if subclass
+            content += '<div class="subclass">' + subclass + '</div>'
+          content += '</div>'
+          content
+        title: ->
+          title = ''
+          _.each ['name'], (attr) ->
+            value = (entity[attr] ? '').trim()
+            if value
+              title += '<div class="' + attr + '">' + value + '</div>'
+          title
+        onCreate: (popup) ->
+          $popup = $(popup.getDom())
+          $('.title', $popup).css('color', typologyClass.color)
+      })
 
   unrender: (id) -> _renderQueue.add id, ->
     df = Q.defer()

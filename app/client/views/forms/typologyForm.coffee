@@ -35,7 +35,7 @@ Meteor.startup ->
       # $wrapper[if isHiddenField then 'hide' else 'show']()
 
       if isParamField
-        defaultValue = Typologies.getParameter(defaultParams, key)
+        defaultValue = SchemaUtils.getParameterValue(defaultParams, key)
       else
         # Regular field - not a parameter.
         defaultValue = fieldSchema.defaultValue
@@ -71,7 +71,7 @@ Meteor.startup ->
           $option = $('<option value="">None</option>')
           $input.prepend($option)
         typology = @data.doc
-        inputValue = Typologies.getParameter(typology, paramName) if typology
+        inputValue = SchemaUtils.getParameterValue(typology, paramName) if typology
         unless inputValue?
           if defaultValue?
             $input.val(defaultValue)
@@ -132,7 +132,7 @@ Meteor.startup ->
           newClass = modifier.$set[classParamId]
           if newClass
             oldTypology = Typologies.findOne(docId)
-            oldClass = Typologies.getParameter(oldTypology, classParamId)
+            oldClass = SchemaUtils.getParameterValue(oldTypology, classParamId)
             if newClass != oldClass
               lots = Lots.findByTypology(docId)
               lotCount = lots.length

@@ -39,9 +39,9 @@ Meteor.startup ->
       # typology values that will be inherited by the entity.
       typologyValue = null
       if typology && isParamField
-        typologyValue = Typologies.getParameter(typology, paramName)
+        typologyValue = SchemaUtils.getParameterValue(typology, paramName)
       if isParamField
-        defaultValue = Typologies.getParameter(defaultParams, key)
+        defaultValue = SchemaUtils.getParameterValue(defaultParams, key)
       else
         # Regular field - not a parameter.
         defaultValue = fieldSchema.defaultValue
@@ -78,7 +78,7 @@ Meteor.startup ->
           if $defaultOption.length > 0
             $defaultOption.text($defaultOption.text() + ' (Default)')
         entity = @data.doc
-        entityValue = Entities.getParameter(entity, paramName) if entity
+        entityValue = SchemaUtils.getParameterValue(entity, paramName) if entity
           # Only show None if we don't have a set or inherited value
         unless entityValue?
           if typologyValue?

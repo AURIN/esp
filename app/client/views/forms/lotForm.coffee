@@ -64,7 +64,7 @@ Meteor.startup ->
         entityId = doc.entity
         if entityId
           addTypologiesForClass(Entities.getClass(entityId), @)
-      Session.set('_forDev', if doc then Lots.getParameter(doc, 'general.develop') else true)
+      Session.set('_forDev', if doc then SchemaUtils.getParameterValue(doc, 'general.develop') else true)
 
     onRender: -> $(@findAll('.ui.toggle.button')).state()
 

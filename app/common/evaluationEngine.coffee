@@ -41,12 +41,12 @@ class @EvaluationEngine
           Types.getTypeOf(calc))
 
     getValue = (paramId) =>
-      value = Entities.getParameter(model, paramId)
+      value = SchemaUtils.getParameterValue(model, paramId)
       unless value?
         value = getGlobalValue(paramId)
       value
 
-    getGlobalValue = (paramId) -> Entities.getParameter(project, paramId)
+    getGlobalValue = (paramId) -> SchemaUtils.getParameterValue(project, paramId)
 
     buildEvalFunc = (args) ->
       expr = args.expr
@@ -97,7 +97,7 @@ class @EvaluationEngine
     schemas
 
   setResult: (model, paramId, value) ->
-    Entities.setParameter(model, paramId, value)
+    SchemaUtils.setParameterValue(model, paramId, value)
 
   getParamSchema: (paramId) -> @schema.schema(ParamUtils.addPrefix(paramId))
 

@@ -10,8 +10,8 @@ Meteor.startup ->
       migratedModelCount = 0
       # Schema changes.
       migrateGeom = (model, collection) ->
-        geom = collection.getParameter(model, 'space.geom')
-        mesh = collection.getParameter(model, 'space.mesh')
+        geom = SchemaUtils.getParameterValue(model, 'space.geom')
+        mesh = SchemaUtils.getParameterValue(model, 'space.mesh')
         if geom? || mesh?
           collection.update(model._id, {
             $rename:

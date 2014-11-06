@@ -47,7 +47,7 @@ renderReport = (id) ->
   typologyFilter = (entityId) ->
     entity = Entities.findOne(entityId)
     typology = Typologies.findOne(entity.typology)
-    Typologies.getParameter(typology, 'general.class') == typologyClass
+    SchemaUtils.getParameterValue(typology, 'general.class') == typologyClass
 
   # Use the selected entities, or all entities in the project.
   entityIds = AtlasManager.getSelectedFeatureIds()

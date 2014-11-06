@@ -115,8 +115,8 @@ Meteor.startup -> resetRenderQueue()
   toGeoEntityArgs: (id) ->
     AtlasConverter.getInstance().then (converter) =>
       lot = Lots.findOne(id)
-      className = Lots.getParameter(lot, 'general.class')
-      isForDevelopment = Lots.getParameter(lot, 'general.develop')
+      className = SchemaUtils.getParameterValue(lot, 'general.class')
+      isForDevelopment = SchemaUtils.getParameterValue(lot, 'general.develop')
       typologyClass = Typologies.classes[className]
       # Reduce saturation of non-develop lots. Ensure full saturation for develop lots.
       if typologyClass
@@ -140,7 +140,7 @@ Meteor.startup -> resetRenderQueue()
     lot = Lots.findOne(id)
     displayMode = Session.get('lotDisplayMode')
     if displayMode == '_nonDevExtrusion'
-      isForDevelopment = Lots.getParameter(lot, 'general.develop')
+      isForDevelopment = SchemaUtils.getParameterValue(lot, 'general.develop')
       if isForDevelopment then 'footprint' else 'extrusion'
     else
       displayMode
@@ -191,7 +191,7 @@ Meteor.startup -> resetRenderQueue()
     typologyMap = Typologies.getClassMap()
     typologies = Typologies.findByProject().fetch()
     _.each Lots.findAvailable(), (lot) ->
-      typologyClass = Lots.getParameter(lot, 'general.class')
+      typologyClass = SchemaUtils.getParameterValue(lot, 'general.class')
       if typologyClass?
         classTypologies = typologyMap[typologyClass] ? []
       else
@@ -218,7 +218,7 @@ Meteor.startup -> resetRenderQueue()
       WKT.getWKT (wkt) =>
         polygons = []
         _.each lots, (lot) ->
-          geom_2d = Lots.getParameter(lot, 'space.geom_2d')
+          geom_2d = SchemaUtils.getParameterValue(lot, 'space.geom_2d')
           vertices = wkt.verticesFromWKT(geom_2d)[0]
           polygon = new Polygon(vertices, {
             sortPoints: false, smoothPoints: false, removeDuplicatePoints: true})
