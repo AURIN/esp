@@ -2,12 +2,14 @@
 
   importFieldHandler: (e, template, acceptedFormats) ->
     fileNode = e.target
+    $fileNode = $(fileNode)
     file = fileNode.files[0]
     unless file
       throw new Error('No file selected for uploading')
     mimeType = file.type
     format = _.find Assets.formats, (format) -> format.mimeType == mimeType
     unless format
+      $fileNode.val(null)
       throw new Error('Format not recognised for mime-type: ' + file.type)
     formatId = format.id
     if _.indexOf(acceptedFormats, formatId) >= 0
@@ -22,7 +24,6 @@
       onUploadComplete = ->
         $loader.removeClass('active')
         setSubmitButtonDisabled(false)
-
       onUploadStart()
       Files.upload(file).then(
         (fileObj) => @onUpload(fileObj, formatId, e, template).fin(onUploadComplete)
@@ -30,6 +31,7 @@
       )
     else
       console.error('File did not match expected format', file, format, acceptedFormats)
+      $fileNode.val(null)
 
   onUpload: (fileObj, format, e, template) ->
     console.debug 'uploaded', fileObj

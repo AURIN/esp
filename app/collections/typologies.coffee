@@ -870,6 +870,17 @@ typologyCategories =
       fpa: extendSchema(areaSchema, {
         label: 'Footprint Area'
         desc: 'Area of the building footprint.'
+        calc: ->
+          id = @model._id
+          entity = Entities.findOne(id)
+          if entity
+            typology = Typologies.findOne(entity.typology)
+            typologyClass = SchemaUtils.getParameterValue(typology, 'general.class')
+            if typologyClass == 'OPEN_SPACE'
+              # Open space typologies don't have geometries since they occupy the Lot itself, so
+              # they don't have any FPA.
+              return 0
+          calcArea(id)
       })
       gfa:
         label: 'Gross Floor Area'
