@@ -202,18 +202,14 @@ Meteor.startup -> resetRenderQueue()
         return
       return unless classTypologies.length > 0
 
-      # TODO(aramk) Perhaps rely on validation instead to ensure typology is never larger than the
-      # lot, and us this to fail creating entities on lots that cannot contain them.
-
       entityDf = Q.defer()
       dfs.push(entityDf.promise)
 
+      # Find the area of all possible typologies to prevent placing a typology which does not fit.
       areaDfs = []
       getArea = (model) ->
         areaDf = Q.defer()
-        geom_2d = SchemaUtils.getParameterValue(model, 'general.geom_2d')
-        # return unless geom_2d?
-        # areaDfs.push(areaDf.promise)
+        geom_2d = SchemaUtils.getParameterValue(model, 'space.geom_2d')
         if geom_2d
           GeometryUtils.getWktArea(geom_2d).then(
             (area) -> areaDf.resolve({area: area, model: model})
@@ -230,10 +226,10 @@ Meteor.startup -> resetRenderQueue()
       Q.all(areaDfs).then (results) ->
         lotArea = results.pop().area
         areaResults = _.filter results, (result) -> result.area <= lotArea
-        # TODO(aramk) Check size
-        typology = Arrays.getRandomItem(areaResults).model
-        console.debug 'Allocating typology', typology, 'to lot', lot
-        entityDf = Lots.createEntity(lot._id, typology._id)
+        if areaResults.length > 0
+          typology = Arrays.getRandomItem(areaResults).model
+          console.debug 'Allocating typology', typology, 'to lot', lot
+          Lots.createEntity(lot._id, typology._id).then(entityDf.resolve, entityDf.reject)
         entityDf.resolve()
     Q.all(dfs).then -> console.debug 'Successfully allocated', dfs.length, 'lots'
 
