@@ -1,47 +1,19 @@
 {
   "packages": {
-    "aramk:requirejs": {
-      "git": "https://github.com/aramk/requirejs.git"
+    "aldeed:autoform": {
+      "git": "https://github.com/aramk/meteor-autoform.git",
+      "branch": "develop"
     },
-    "aramk:utility": {
-      "git": "https://github.com/aramk/meteor-utility.git"
-    },
-    "stevezhu:lodash": {
-      "git": "https://github.com/stevezhu/meteor-lodash.git",
-      "tag": "v0.2.0"
-    },
-    "urbanetic:subdiv": {
-      "git": "https://github.com/Urbanetic/subdiv.git"
-    },
-    "urbanetic:atlas-util": {
-      "git": "https://github.com/urbanetic/meteor-atlas-util.git"
+    "aslagle:reactive-table": {
+      "git": "https://github.com/aramk/reactive-table",
+      "branch": "develop"
     },
     "cfs:tempstore": {
       "git": "https://github.com/aramk/Meteor-cfs-tempstore.git"
     },
-    "atlas": {
-      "path": "../bower_components/atlas"
-    },
-    "atlas-cesium": {
-      "path": "../bower_components/atlas-cesium"
-    },
-    "collection-table": {
-      "git": "https://github.com/aramk/meteor-collection-table.git"
-    },
-    "dropdown": {
-      "git": "https://github.com/aramk/meteor-dropdown.git"
-    },
-    "autoform": {
-      "git": "https://github.com/aramk/meteor-autoform.git",
-      "branch": "develop"
-    },
     "matb33:collection-hooks": {
       "git": "https://github.com/aramk/meteor-collection-hooks.git",
       "branch": "feature/exceptions"
-    },
-    "q": {
-      "git": "https://github.com/aramk/q.git",
-      "branch": "v1"
     }
   }
 }

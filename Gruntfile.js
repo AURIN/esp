@@ -45,12 +45,13 @@ module.exports = function(grunt) {
   var ATLAS_CESIUM_RESOURCES_PATH = path.join(ATLAS_CESIUM_PATH, 'dist', 'cesium');
   var ATLAS_CESIUM_STYLE_FILE = path.join(ATLAS_CESIUM_BUILD_PATH, 'resources',
       'atlas-cesium.min.css');
+  var ATLAS_RESOURCES_REPO = 'https://bitbucket.org/mutopia/atlas-resources.git';
   var PUBLIC_PARENT_DIR = 'design';
   var PUBLIC_PARENT_PATH = publicPath(PUBLIC_PARENT_DIR);
 
-  var bowerPaths = [ATLAS_PATH, ATLAS_CESIUM_PATH];
-  var npmPaths = [ATLAS_PATH, ATLAS_CESIUM_PATH];
-  var gruntPaths = [ATLAS_PATH, ATLAS_CESIUM_PATH];
+  var bowerPaths = [];
+  var npmPaths = [];
+  var gruntPaths = [];
 
   //////////////////////////////////////////////////////////////////////////////////////////////////
   // CONFIG
@@ -125,9 +126,8 @@ module.exports = function(grunt) {
             return value === arg;
           });
         };
-    addTasks('install-bower', 'install-npm', 'install-grunt');
-    addTasks('build-atlas' + (hasArgs('atlas-lazy') ? ':lazy' : ''));
-    addTasks('fix-atlas-build', 'copy:atlasResources', 'clean:atlasResources', 'install-mrt');
+      addTasks('install-bower', 'install-npm', 'install-grunt', 'install-mrt',
+        'setup-atlas-resources');
     console.log('Running tasks', tasks);
     tasks.forEach(function(task) {
       grunt.task.run(task);
@@ -135,10 +135,11 @@ module.exports = function(grunt) {
   });
 
   grunt.registerTask('install-bower', 'Gets all bower dependencies', function() {
-    ['.'].concat(bowerPaths).forEach(function(dir) {
-      grunt.log.writeln(dir + ': running bower install');
-      shell.exec('cd ' + dir + ' && bower install');
-    });
+    // NOTE: No longer necessary since all dependencies are managed with Meteor.
+    // ['.'].concat(bowerPaths).forEach(function(dir) {
+    //   grunt.log.writeln(dir + ': running bower install');
+    //   shell.exec('cd ' + dir + ' && bower install');
+    // });
   });
 
   grunt.registerTask('install-npm', 'Gets all node dependencies', function() {
@@ -160,14 +161,6 @@ module.exports = function(grunt) {
     shell.exec('cd ' + APP_DIR + ' && mrt install');
   });
 
-  grunt.registerTask('fix-atlas-build', 'Fixes the Atlas build.', function(arg1) {
-    // Replace the path to the cesium style which is now in the app's public folder.
-    writeFile(ATLAS_CESIUM_STYLE_FILE, function(data) {
-      return data.replace(/(@import\s+["'])[^;]*cesium/,
-              '$1' + path.join(PUBLIC_PARENT_DIR, 'atlas-cesium', 'cesium'));
-    });
-  });
-
   grunt.registerTask('build-atlas', 'Builds Atlas.', function(arg1) {
     var isLazy = arg1 === 'lazy';
     var dirname = __dirname;
@@ -183,6 +176,28 @@ module.exports = function(grunt) {
       shell.exec('grunt build');
       shell.cd(dirname);
     }
+  });
+
+  grunt.registerTask('setup-atlas-resources', 'Sets up the static resources for Atlas.',
+    function() {
+      var done = this.async();
+      if (fs.existsSync(PUBLIC_PARENT_PATH)) {
+        // Update the git repo for Atlas resources.
+        shell.cd(PUBLIC_PARENT_PATH);
+        runProcess('git pull', {
+          exit: function() {
+            done();
+          }
+        });
+      } else {
+        // Clone the git repo for Atlas resources.
+        shell.cd(PUBLIC_DIR);
+        runProcess('git clone ' + ATLAS_RESOURCES_REPO + ' ' + PUBLIC_PARENT_DIR, {
+          exit: function() {
+            done();
+          }
+        });
+      }
   });
 
   grunt.registerTask('build', 'Builds the app.', function(arg1) {
