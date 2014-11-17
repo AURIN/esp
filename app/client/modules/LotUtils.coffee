@@ -207,20 +207,8 @@ Meteor.startup -> resetRenderQueue()
 
       # Find the area of all possible typologies to prevent placing a typology which does not fit.
       areaDfs = []
-      getArea = (model) ->
-        areaDf = Q.defer()
-        geom_2d = SchemaUtils.getParameterValue(model, 'space.geom_2d')
-        if geom_2d
-          GeometryUtils.getWktArea(geom_2d).then(
-            (area) -> areaDf.resolve({area: area, model: model})
-            areaDf.reject
-          )
-        else
-          areaDf.resolve(null)
-        areaDf.promise
-
-      _.each classTypologies, (typology) -> areaDfs.push(getArea(typology))
-      lotAreaDf = getArea(lot)
+      _.each classTypologies, (typology) -> areaDfs.push(GeometryUtils.getModelArea(typology))
+      lotAreaDf = GeometryUtils.getModelArea(lot)
       areaDfs.push(lotAreaDf)
 
       Q.all(areaDfs).then (results) ->

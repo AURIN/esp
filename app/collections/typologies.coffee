@@ -1828,31 +1828,35 @@ Lots.createEntity = (lotId, typologyId, allowReplace) ->
   # If no class is provided, use the class of the entity's typology.
   unless lotClass
     lotClass = SchemaUtils.getParameterValue(typology, classParamId)
-
-  # Create a new entity for this lot-typology combination and remove the existing one
-  # (if any). Name of the entity matches that of the lot.
-  newEntity =
-    name: lot.name
-    typology: typologyId
-    project: Projects.getCurrentId()
-    lot: lotId
-  Entities.insert newEntity, (err, newEntityId) ->
-    if err
-      df.reject(err)
+  Lots.validateTypology(lot, typologyId).then (result) ->
+    if result
+      console.error('Cannot create Entity on Lot:', result)
+      df.reject(result)
       return
-    lotModifier = {entity: newEntityId}
-    # These are necessary to ensure validation has all fields available.
-    lotModifier[classParamId] = lotClass
-    lotModifier[developParamId] = isForDevelopment
-    Lots.update lotId, {$set: lotModifier}, (err, result) ->
+    # Create a new entity for this lot-typology combination and remove the existing one
+    # (if any). Name of the entity matches that of the lot.
+    newEntity =
+      name: lot.name
+      typology: typologyId
+      project: Projects.getCurrentId()
+      lot: lotId
+    Entities.insert newEntity, (err, newEntityId) ->
       if err
-        Entities.remove newEntityId, (removeErr, result) ->
-          if removeErr
-            df.reject(removeErr)
-          else
-            df.reject(err)
-      else
-        df.resolve(newEntityId)
+        df.reject(err)
+        return
+      lotModifier = {entity: newEntityId}
+      # These are necessary to ensure validation has all fields available.
+      lotModifier[classParamId] = lotClass
+      lotModifier[developParamId] = isForDevelopment
+      Lots.update lotId, {$set: lotModifier}, (err, result) ->
+        if err
+          Entities.remove newEntityId, (removeErr, result) ->
+            if removeErr
+              df.reject(removeErr)
+            else
+              df.reject(err)
+        else
+          df.resolve(newEntityId)
   df.promise
 
 Lots.createOrReplaceEntity = (lotId, newTypologyId) ->
@@ -1884,21 +1888,34 @@ Lots.validate = (lot) ->
     console.error('Lot could not be validated', lot, e)
 
 Lots.validateTypology = (lot, typologyId) ->
+  df = Q.defer()
   # Validates whether adding the given typology is valid on the given lot.
   typology = Typologies.findOne(typologyId)
   unless typology
-    throw new Error('Cannot find typology with ID ' + typologyId)
+    df.reject('Cannot find typology with ID ' + typologyId)
+    return df.promise
   classParamId = 'parameters.general.class'
   developParamId = 'parameters.general.develop'
   lotClass = SchemaUtils.getParameterValue(lot, classParamId)
   typologyClass = SchemaUtils.getParameterValue(typology, classParamId)
   isForDevelopment = SchemaUtils.getParameterValue(lot, developParamId)
   if typologyId && !isForDevelopment
-    return 'Lot is not for development - cannot assign typology.'
-  unless lotClass
-    return 'Lot does not have a Typology class assigned.'
-  unless typologyClass == lotClass
-    return 'Lot does not have same Typology class as the Typology being assigned.'
+    df.resolve('Lot is not for development - cannot assign typology.')
+  else if !lotClass
+    df.resolve('Lot does not have a Typology class assigned.')
+  else if typologyClass != lotClass
+    df.resolve('Lot does not have same Typology class as the Typology being assigned.')
+  else
+    # Ensure the geometry of the typology will fit in the lot.
+    areaDfs = [GeometryUtils.getModelArea(typology), GeometryUtils.getModelArea(lot)]
+    Q.all(areaDfs).then (results) ->
+      lotArea = results.pop().area
+      typologyArea = results.pop().area
+      if lotArea <= typologyArea
+        df.resolve('Typology must have area less than or equal to the Lot.')
+      else
+        df.resolve()
+  df.promise
 
 Collections.addValidation(Lots, Lots.validate)
 
