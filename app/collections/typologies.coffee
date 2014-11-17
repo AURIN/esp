@@ -1280,7 +1280,7 @@ typologyCategories =
             calc: '$composition.ve_area * $embodied_carbon.all.verge'
           co2_embod:
             desc: 'Total embodied carbon of the drawn pathway.'
-            label: 'Embodied Carbon'
+            label: 'Total Carbon'
             type: Number
             decimal: true
             units: Units.kgco2
