@@ -72,7 +72,11 @@ csv.parse(csvData, {columns: true}, function(err, output) {
     items[fieldName] = field;
   };
   _.each(output, function(row) {
-    var fieldName = row[nameField].trim();
+    var fieldName = row[nameField];
+    if (!fieldName) {
+      return;
+    }
+    fieldName = fieldName.trim();
     if (fieldName.length === 0) {
       console.log('Ignoring field with empty name', row);
       return;

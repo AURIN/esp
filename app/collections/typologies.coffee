@@ -54,6 +54,9 @@ Units =
   MLyear: 'ML/year'
   MJ: 'MJ'
   MJyear: 'MJ/year'
+  spaces: 'Spaces'
+  spacesm: 'spaces/m'
+  lanes: 'Lanes'
 
 extendSchema = (orig, changes) -> _.extend({}, orig, changes)
 
@@ -509,42 +512,43 @@ projectCategories =
       pathways:
         label: 'Pathways'
         items:
-          full_asphalt:
-            label: 'Full Depth Asphalt'
-            type: Number
-            decimal: true
-            units: Units.kgco2m2
-            defaultValue: 36.04
-          deep_asphalt:
-            label: 'Deep Strength Asphalt'
-            type: Number
-            decimal: true
-            units: Units.kgco2m2
-            defaultValue: 33.8
-          granular_spray:
-            label: 'Granular with Spray Seal'
-            type: Number
-            decimal: true
-            units: Units.kgco2m2
-            defaultValue: 11.35
-          granular_asphalt:
-            label: 'Granular with Asphalt'
-            type: Number
-            decimal: true
-            units: Units.kgco2m2
-            defaultValue: 12.07
-          concrete_plain:
-            label: 'Plain Concrete'
-            type: Number
-            decimal: true
-            units: Units.kgco2m2
-            defaultValue: 51.33
-          concrete_reinforced:
-            label: 'Reinforced Concrete'
-            type: Number
-            decimal: true
-            units: Units.kgco2m2
-            defaultValue: 53.51
+          roads:
+            full_asphalt:
+              label: 'Full Depth Asphalt'
+              type: Number
+              decimal: true
+              units: Units.kgco2m2
+              defaultValue: 36.04
+            deep_asphalt:
+              label: 'Deep Strength Asphalt'
+              type: Number
+              decimal: true
+              units: Units.kgco2m2
+              defaultValue: 33.8
+            granular_spray:
+              label: 'Granular with Spray Seal'
+              type: Number
+              decimal: true
+              units: Units.kgco2m2
+              defaultValue: 11.35
+            granular_asphalt:
+              label: 'Granular with Asphalt'
+              type: Number
+              decimal: true
+              units: Units.kgco2m2
+              defaultValue: 12.07
+            concrete_plain:
+              label: 'Plain Concrete'
+              type: Number
+              decimal: true
+              units: Units.kgco2m2
+              defaultValue: 51.33
+            concrete_reinforced:
+              label: 'Reinforced Concrete'
+              type: Number
+              decimal: true
+              units: Units.kgco2m2
+              defaultValue: 53.51
           footpaths:
             label: 'Footpaths'
             items:
@@ -724,6 +728,7 @@ ClassNames = Object.keys(TypologyClasses)
 
 TypologyTypes = ['Basic', 'Efficient', 'Advanced']
 ResidentialSubclasses = ['Single House', 'Attached House', 'Walkup', 'High Rise']
+PathwaySubclasses = ['Freeway', 'Highway', 'Street', 'Footpath', 'Bicycle Path']
 EnergySources = ['Electricity', 'Gas']
 TypologyBuildQualityMap =
   'Custom': null
@@ -746,6 +751,22 @@ ApplianceTypes =
   'Affluenza - Avg Performance': 'en_aff_avg_app'
   'Affluenza - High Performance': 'en_aff_hp_app'
 WaterDemandSources = ['Potable', 'Bore', 'Rainwater Tank', 'On-Site Treated', 'Greywater']
+
+RoadMaterialTypes =
+  'Full Depth Asphalt': 'full_asphalt'
+  'Deep Strength Asphalt': 'deep_asphalt'
+  'Granular with Spray Seal': 'granular_spray'
+  'Granular with Asphalt': 'granular_asphalt'
+  'Plain Concrete': 'concrete_plain'
+  'Reinforced Concrete': 'concrete_reinforced'
+
+FootpathMaterialTypes =
+  'Concrete': 'concrete'
+  'Block Paved': 'block_paved'
+
+BicyclePathMaterialTypes =
+  'Asphalt': 'asphalt'
+  'Concrete': 'concrete'
 
 # Common field schemas shared across collection schemas.
 
@@ -815,6 +836,7 @@ typologyCategories =
         desc: 'Typology within a class.'
         classes:
           RESIDENTIAL: {allowedValues: ResidentialSubclasses, optional: false}
+          PATHWAY: {allowedValues: PathwaySubclasses, optional: false}
       climate_zn:
         desc: 'BOM climate zone number.'
         label: 'Climate Zone'
@@ -909,6 +931,31 @@ typologyCategories =
         classes:
           RESIDENTIAL: {}
         })
+      length:
+        label: 'Total Path Length'
+        desc: 'Total length of drawn pathway'
+        type: Number
+        decimal: true
+        units: Units.m
+        classes:
+          PATHWAY: {}
+      width:
+        label: 'Total Path Width'
+        desc: 'Total width of drawn pathway'
+        type: Number
+        decimal: true
+        units: Units.m
+        calc: -> 0 # TODO
+        classes:
+          PATHWAY: {}
+      area:
+        label: 'Total Path Area'
+        type: Number
+        decimal: true
+        units: Units.m2
+        calc: '$space.width * $space.length'
+        classes:
+          PATHWAY: {}
       plot_ratio:
         label: 'Plot Ratio'
         desc: 'The building footprint area divided by the lot size.'
@@ -1173,6 +1220,73 @@ typologyCategories =
         type: Number
         units: Units.kgco2
         calc: '$embodied_carbon.e_co2_emb + $embodied_carbon.i_co2_emb'
+    pathways:
+      label: 'Pathways'
+      items:
+        co2_rd:
+          desc: 'Carbon embodied in the road surface.'
+          label: 'Road'
+          type: Number
+          decimal: true
+          units: Units.kgco2
+          calc: ->
+            area = @param('composition.rd_area')
+            mat = @param('composition.rd_mat')
+            embodied_carbon = @param('embodied_carbon.pathways.roads.' + RoadMaterialTypes[mat])
+            area * embodied_carbon
+        co2_prk:
+          desc: 'Carbon embodied in the parking surface.'
+          label: 'Parking'
+          type: Number
+          decimal: true
+          units: Units.kgco2
+          calc: ->
+            area = @param('composition.prk_area')
+            mat = @param('composition.prk_mat')
+            embodied_carbon = @param('embodied_carbon.pathways.roads.' + RoadMaterialTypes[mat])
+            area * embodied_carbon
+        co2_fp:
+          desc: 'Carbon embodied in the footpath surface.'
+          label: 'Footpath'
+          type: Number
+          decimal: true
+          units: Units.kgco2
+          calc: ->
+            area = @param('composition.fp_area')
+            mat = @param('composition.fp_mat')
+            embodied_carbon = @param('embodied_carbon.pathways.footpaths.' +
+              FootpathMaterialTypes[mat])
+            area * embodied_carbon
+        co2_bp:
+          desc: 'Carbon embodied in the bicycle path surface.'
+          label: 'Bicycle Path'
+          type: Number
+          decimal: true
+          units: Units.kgco2
+          calc: ->
+            area = @param('composition.bp_area')
+            mat = @param('composition.bp_mat')
+            embodied_carbon = @param('embodied_carbon.pathways.bicycle_paths.' +
+              BicyclePathMaterialTypes[mat])
+            area * embodied_carbon
+        co2_ve:
+          desc: 'Carbon embodied in the verge surface.'
+          label: 'Verge'
+          type: Number
+          decimal: true
+          units: Units.kgco2
+          calc: '$composition.ve_area * $embodied_carbon.all.verge'
+        co2_embod:
+          desc: 'Total embodied carbon of the drawn pathway.'
+          label: 'Embodied Carbon'
+          type: Number
+          decimal: true
+          units: Units.kgco2
+          calc: ->
+            sum = 0
+            _.each ['rd', 'prk', 'fp',  'bp', 've'], (paramId) =>
+              sum += @param('embodied_carbon.pathways.co2_' + paramId)
+            sum
   operating_carbon:
     label: 'Operating Carbon'
     items:
@@ -1417,6 +1531,12 @@ typologyCategories =
         type: Number
         units: Units.Lsec
         calc: '($space.fpa * $stormwater.runoff_roof + $space.ext_land_i * $stormwater.runoff_impervious + ($space.ext_land_l + $space.ext_land_a + $space.ext_land_h) * $stormwater.runoff_pervious) * $stormwater.rainfall_intensity / 3600'
+      runoff_rd:
+        label: 'Stormwater Runoff'
+        desc: 'Stormwater run-off during an extreme storm event.'
+        type: Number
+        units: Units.Lsec
+        calc: '(($composition.rd_area + $composition.prk_area + $composition.fp_area + $composition.bp_area) * $stormwater.runoff_impervious + $composition.ve_area * $stormwater.runoff_pervious) * $stormwater.rainfall_intensity / 3600'
   financial:
     label: 'Financial'
     items:
@@ -1505,6 +1625,75 @@ typologyCategories =
         decimal: true
         units: Units.$
         calc: '$financial.cost_op_e + $financial.cost_op_g'
+    pathways:
+      cost_land:
+        desc: 'Value of the area of land.'
+        label: 'Cost - Land'
+        type: Number
+        units: Units.$
+        calc: '$space.area * $financial.land.price_land'
+      cost_rd:
+        desc: 'Road surface cost.'
+        label: 'Cost - Road'
+        type: Number
+        units: Units.$
+        calc: ->
+          area = @param('composition.rd_area')
+          mat = @param('composition.rd_mat')
+          price = @param('financial.pathways.roads.price_' + RoadMaterialTypes[mat])
+          area * price
+      cost_prk:
+        desc: 'Parking surface cost.'
+        label: 'Cost - Parking'
+        type: Number
+        units: Units.$
+        calc: ->
+          area = @param('composition.prk_area')
+          mat = @param('composition.prk_mat')
+          price = @param('financial.pathways.roads.price_' + RoadMaterialTypes[mat])
+          area * price
+      cost_fp:
+        desc: 'Footpath surface cost.'
+        label: 'Cost - Footpath'
+        type: Number
+        units: Units.$
+        calc: ->
+          area = @param('composition.fp_area')
+          mat = @param('composition.fp_mat')
+          price = @param('financial.pathways.footpaths.price_' + FootpathMaterialTypes[mat])
+          area * price
+      cost_bp:
+        desc: 'Bicycle path surface cost.'
+        label: 'Cost - Bicycle Path'
+        type: Number
+        units: Units.$
+        calc: ->
+          area = @param('composition.bp_area')
+          mat = @param('composition.bp_mat')
+          price = @param('financial.pathways.bicycle_paths.price_' + BicyclePathMaterialTypes[mat])
+          area * price
+      cost_ve:
+        desc: 'Verge surface cost.'
+        label: 'Cost - Verge'
+        type: Number
+        units: Units.$
+        calc: '$composition.ve_area * $financial.pathways.all.price_verge'
+      cost_con:
+        desc: 'Total cost of constructing the pathway.'
+        label: 'Cost - Construction'
+        type: Number
+        units: Units.$
+        calc: ->
+          sum = 0
+          _.each ['rd', 'prk', 'fp',  'bp', 've'], (paramId) =>
+            sum += @param('financial.pathways.cost_' + paramId)
+          sum
+      cost_total:
+        desc: 'Total cost of the drawn pathway including land and construction.'
+        label: 'Cost - Total'
+        type: Number
+        units: Units.$
+        calc: '$financial.pathways.cost_con * $financial.pathways.cost_land'
   orientation:
     label: 'Orientation'
     items:
@@ -1536,23 +1725,196 @@ typologyCategories =
         label: 'Parking Spaces - Street Level'
         desc: 'Number of street-level parking spaces.'
         type: Number
-        units: 'Spaces'
+        units: Units.spaces
         classes:
           RESIDENTIAL: {}
       parking_ug:
         label: 'Parking Spaces - Underground'
         desc: 'Number of underground parking spaces.'
         type: Number
-        units: 'Spaces'
+        units: Units.spaces
         classes:
           RESIDENTIAL: {}
       parking_t:
         label: 'Parking Spaces - Total'
         desc: 'Total number of parking spaces.'
         type: Number
-        units: 'Spaces'
+        units: Units.spaces
         calc: '$parking.parking_sl + $parking.parking_ug'
-#      prk_capita:
+      parking_rd:
+        label: 'Parking Spaces per Metre'
+        desc: 'Number of parking spaces per metre length of pathway.'
+        type: Number
+        units: Units.spacesm
+        classes:
+          PATHWAY: {}
+      parking_rd_total:
+        label: 'Total Parking Spaces'
+        desc: 'Total number of parking spaces of the drawn pathway.'
+        type: Number
+        units: Units.spaces
+        calc: '$space.length * $parking.parking_rd'
+  composition:
+    label: 'Composition'
+    items:
+      rd_lanes:
+        desc: 'Number of road lanes for vehicular movement.'
+        label: 'No. Road Lanes'
+        type: Number
+        units: Units.lanes
+        classes:
+          PATHWAY:
+            defaultValue: 0
+      rd_width:
+        desc: 'Width of the road for vehicular movement.'
+        label: 'Road Width'
+        type: Number
+        decimal: true
+        units: Units.m
+        classes:
+          PATHWAY:
+            defaultValue: 3.5
+      rd_area:
+        desc: 'Area of the drawn road for vehicular movement.'
+        label: 'Road Area'
+        type: Number
+        decimal: true
+        units: Units.m2
+        calc: '$composition.rd_lanes * $composition.rd_width * $space.length'
+      rd_mat:
+        desc: 'Material used in the construction of the road surface.'
+        label: 'Road Profile'
+        type: String
+        classes:
+          PATHWAY:
+            allowedValues: Object.keys(RoadMaterialTypes)
+            defaultValue: 'Full Depth Asphalt'
+      prk_lanes:
+        desc: 'Number of lanes for vehicle parking.'
+        label: 'No. Parking Lanes'
+        type: Number
+        units: Units.lanes
+        classes:
+          PATHWAY:
+            defaultValue: 0
+      prk_width:
+        desc: 'Width of the drawn pathway for vehicle parking.'
+        label: 'Parking Width'
+        type: Number
+        decimal: true
+        units: Units.m
+        classes:
+          PATHWAY:
+            defaultValue: 4
+      prk_area:
+        desc: 'Area of a drawn pathway for vehicle parking.'
+        label: 'Parking Area'
+        type: Number
+        decimal: true
+        units: Units.m2
+        calc: '$composition.prk_lanes * $composition.prk_width * $space.length'
+      prk_mat:
+        desc: 'Material used in the construction of the parking surface.'
+        label: 'Parking Profile'
+        type: String
+        classes:
+          PATHWAY:
+            allowedValues: Object.keys(RoadMaterialTypes)
+            defaultValue: 'Full Depth Asphalt'
+      fp_lanes:
+        desc: 'Number of footpath lanes for pedestrian movement.'
+        label: 'No. Footpath Lanes'
+        type: Number
+        units: Units.lanes
+        classes:
+          PATHWAY:
+            defaultValue: 0
+      fp_width:
+        desc: 'Width of a footpath for pedestrian movement.'
+        label: 'Footpath Width'
+        type: Number
+        decimal: true
+        units: Units.m
+        classes:
+          PATHWAY:
+            defaultValue: 2
+      fp_area:
+        desc: 'Area of the drawn pedestrian footpath.'
+        label: 'Footpath Area'
+        type: Number
+        decimal: true
+        units: Units.m2
+        calc: '$composition.fp_lanes * $composition.fp_width * $area.length'
+      fp_mat:
+        desc: 'Material used in the construction of the footpath surface.'
+        label: 'Footpath Profile'
+        type: String
+        classes:
+          PATHWAY:
+            allowedValues: Object.keys(FootpathMaterialTypes)
+            defaultValue: 'Concrete'
+      bp_lanes:
+        desc: 'Number of bicycle path lanes for cyclist movement.'
+        label: 'No. Bicycle Path Lanes'
+        type: Number
+        units: Units.lanes
+        classes:
+          PATHWAY:
+            defaultValue: 0
+      bp_width:
+        desc: 'Width of a bicycle path lane for cyclist movement.'
+        label: 'Bicycle Path Width'
+        type: Number
+        decimal: true
+        units: Units.m
+        classes:
+          PATHWAY:
+            defaultValue: 3
+      bp_area:
+        desc: 'Area of the drawn bicycle path.'
+        label: 'Bicycle Path Area'
+        type: Number
+        decimal: true
+        units: Units.m2
+        calc: '$composition.bp_lanes * $composition.bp_width * space.length'
+      bp_mat:
+        desc: 'Material used in the construction of the bicycle path surface.'
+        label: 'Bicycle Path Profile'
+        type: String
+        classes:
+          PATHWAY:
+            defaultValue: 'Asphalt'
+      ve_strips:
+        desc: 'Number of verge strips as a buffer for the pathway.'
+        label: 'No. Verge Strips'
+        type: Number
+        units: 'Lanes'
+        classes:
+          PATHWAY:
+            defaultValue: 2
+      ve_width:
+        desc: 'Width of verge as a buffer for the pathway.'
+        label: 'Verge Width'
+        type: Number
+        decimal: true
+        units: 'm'
+        classes:
+          PATHWAY:
+            defaultValue: 2
+      ve_area:
+        desc: 'Area of the drawn verge.'
+        label: 'Verge Area'
+        type: Number
+        decimal: true
+        units: Units.m2
+        calc: '$composition.ve_strips * $composition.ve_width * $space.length'
+      area_tot:
+        desc: 'Total area of the pathway.'
+        label: 'Total Pathway Area'
+        type: Number
+        decimal: true
+        units: Units.m2
+        calc: '$composition.rd_area + $composition.prk_area + $composition.fp_area + $composition.bp_area + $composition.ve_area'
 
 ####################################################################################################
 # TYPOLOGY SCHEMA DEFINITION
