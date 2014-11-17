@@ -44,6 +44,7 @@
               {{> afQuickField name="parameters.space.cfa"}}
               {{> afQuickField name="parameters.space.storeys"}}
               {{> afQuickField name="parameters.space.height"}}
+              {{> afQuickField name="parameters.space.length"}}
               {{> afQuickField name="parameters.space.occupants"}}
               {{> afQuickField name="parameters.space.num_0br"}}
               {{> afQuickField name="parameters.space.num_1br"}}
@@ -55,6 +56,21 @@
               {{> afQuickField name="parameters.space.prpn_hardy"}}
               {{> afQuickField name="parameters.space.prpn_imper"}}
 
+              <div class="subtitle">Composition</div>
+              {{> afQuickField name="parameters.composition.rd_lanes"}}
+              {{> afQuickField name="parameters.composition.rd_width"}}
+              {{> afQuickField name="parameters.composition.rd_mat" options="allowed"}}
+              {{> afQuickField name="parameters.composition.prk_lanes"}}
+              {{> afQuickField name="parameters.composition.prk_width"}}
+              {{> afQuickField name="parameters.composition.prk_mat" options="allowed"}}
+              {{> afQuickField name="parameters.composition.fp_lanes"}}
+              {{> afQuickField name="parameters.composition.fp_width"}}
+              {{> afQuickField name="parameters.composition.fp_mat" options="allowed"}}
+              {{> afQuickField name="parameters.composition.bp_lanes"}}
+              {{> afQuickField name="parameters.composition.bp_width"}}
+              {{> afQuickField name="parameters.composition.bp_mat" options="allowed"}}
+              {{> afQuickField name="parameters.composition.ve_strips"}}
+              {{> afQuickField name="parameters.composition.ve_width"}}
               <div class="subtitle">Orientation</div>
               {{> afQuickField name="parameters.orientation.azimuth"}}
 
@@ -96,6 +112,7 @@
               <div class="subtitle">Parking</div>
               {{> afQuickField name="parameters.parking.parking_sl"}}
               {{> afQuickField name="parameters.parking.parking_ug"}}
+              {{> afQuickField name="parameters.parking.parking_rd"}}
             </div>
 
             <div class="crud buttons">

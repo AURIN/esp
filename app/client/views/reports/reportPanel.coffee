@@ -3,6 +3,7 @@ reports = null
 ReportTemplates = [
   'residentialReport'
   'openSpaceReport'
+  'pathwayReport'
   #'precinctReport'
 ]
 
