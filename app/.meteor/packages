@@ -38,13 +38,12 @@ cfs:tempstore
 #aldeed:simple-schema
 #joshowens:accounts-entry
 aramk:pubsub
-aramk:utility
+aramk:q
 
 # PRIVATE
-urbanetic:atlas
-collection-table
-dropdown
-q
+aramk:utility
+aramk:collection-table
+aramk:dropdown
 # These come last so RequireJS doesn't cause issues.
 aramk:requirejs
 urbanetic:subdiv

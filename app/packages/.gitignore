@@ -73,3 +73,5 @@ iron-router-progress
 /urbanetic:atlas
 /urbanetic:atlas-cesium
 /urbanetic:atlas-util
+/aldeed:autoform
+/aslagle:reactive-table

@@ -200,10 +200,25 @@ Meteor.startup -> resetRenderQueue()
       unless classTypologies.length > 0
         console.warn 'Could not find suitable typology for lot', lot
         return
-      typology = Arrays.getRandomItem(classTypologies)
-      console.debug 'Allocating typology', typology, 'to lot', lot
-      entityDf = Lots.createEntity(lot._id, typology._id)
-      dfs.push(entityDf)
+      return unless classTypologies.length > 0
+
+      entityDf = Q.defer()
+      dfs.push(entityDf.promise)
+
+      # Find the area of all possible typologies to prevent placing a typology which does not fit.
+      areaDfs = []
+      _.each classTypologies, (typology) -> areaDfs.push(GeometryUtils.getModelArea(typology))
+      lotAreaDf = GeometryUtils.getModelArea(lot)
+      areaDfs.push(lotAreaDf)
+
+      Q.all(areaDfs).then (results) ->
+        lotArea = results.pop().area
+        areaResults = _.filter results, (result) -> result.area <= lotArea
+        if areaResults.length > 0
+          typology = Arrays.getRandomItem(areaResults).model
+          console.debug 'Allocating typology', typology, 'to lot', lot
+          Lots.createEntity(lot._id, typology._id).then(entityDf.resolve, entityDf.reject)
+        entityDf.resolve()
     Q.all(dfs).then -> console.debug 'Successfully allocated', dfs.length, 'lots'
 
   amalgamate: (ids) ->
