@@ -107,7 +107,7 @@ Meteor.methods
 # HTTP SERVER
 
 # Limit buffering size to 100 MB.
-HTTP.methodsMaxDataLength = 1024 * 1024 * 100;
+HTTP.methodsMaxDataLength = 1024 * 1024 * 100
 
 HTTP.methods
 

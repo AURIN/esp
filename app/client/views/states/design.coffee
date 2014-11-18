@@ -427,35 +427,38 @@ TemplateClass.onAtlasLoad = (template, atlas) ->
 
   $pathwayDrawButton.on 'click', ->
     isActive = $pathwayDrawButton.hasClass('active')
+    registerDrawEvents = ->
+      atlas.publish 'entity/draw', {
+        displayMode: 'line'
+        create: (args) ->
+          typology = getSelectedPathwayTypology()
+          subclass = SchemaUtils.getParameterValue(typology, 'general.subclass')
+          # TODO(aramk) Generate an incremented name.
+          name = subclass
+          feature = args.feature
+          id = feature.getId()
+          vertices = feature.getForm().getVertices()
+          AtlasManager.unrenderEntity(id)
+          console.log(vertices)
+          WKT.polylineFromVertices vertices, (wktStr) ->
+            console.log('wktStr', wktStr)
+            Entities.insert
+              name: name
+              typology: typology._id
+              project: Projects.getCurrentId()
+              parameters:
+                space:
+                  geom_2d: wktStr
+          registerDrawEvents()
+        cancel: ->
+          console.log('Drawing cancelled', arguments)
+          feature = args.feature
+          id = feature.getId()
+          AtlasManager.unrenderEntity(id)
+      }
     AtlasManager.getAtlas().then (atlas) ->
       if isActive
-        atlas.publish 'entity/draw', {
-          displayMode: 'line'
-          create: (args) ->
-            typology = getSelectedPathwayTypology()
-            subclass = SchemaUtils.getParameterValue(typology, 'general.subclass')
-            # TODO(aramk) Generate an incremented name.
-            name = subclass
-            feature = args.feature
-            id = feature.getId()
-            vertices = feature.getForm().getVertices()
-            AtlasManager.unrenderEntity(id)
-            console.log(vertices)
-            WKT.polylineFromVertices vertices, (wktStr) ->
-              console.log('wktStr', wktStr)
-              Entities.insert
-                name: name
-                typology: typology._id
-                project: Projects.getCurrentId()
-                parameters:
-                  space:
-                    geom_2d: wktStr
-          cancel: ->
-            console.log('Drawing cancelled', arguments)
-            feature = args.feature
-            id = feature.getId()
-            AtlasManager.unrenderEntity(id)
-        }
+        registerDrawEvents()
       else
         atlas.publish('entity/draw/stop')
 

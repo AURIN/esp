@@ -93,7 +93,7 @@ Meteor.startup -> resetRenderQueue()
         typology = Typologies.findOne(entity.typology)
         typologyClass = SchemaUtils.getParameterValue(typology, 'general.class')
 
-        doRender = (id, geoEntity) ->
+        doRender = (id, geoEntity) =>
           AtlasManager.showEntity(id)
           @_setUpPopup(geoEntity)
           df.resolve(geoEntity)
