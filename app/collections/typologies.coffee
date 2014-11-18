@@ -860,6 +860,7 @@ typologyCategories =
         desc: '2D footprint geometry of the typology.'
         classes:
           RESIDENTIAL: {}
+          PATHWAY: {}
       geom_3d:
         label: '3D Geometry'
         type: String
@@ -947,7 +948,7 @@ typologyCategories =
         type: Number
         decimal: true
         units: Units.m
-        calc: -> 0 # TODO
+        calc: -> 5
         classes:
           PATHWAY: {}
       area:
@@ -2348,6 +2349,8 @@ EntitySchema = new SimpleSchema
     type: String
     index: true
     collectionType: 'Lots'
+    # Not necessary for PATHWAY type.
+    optional: true
   parameters:
     label: 'Parameters'
     type: EntityParametersSchema

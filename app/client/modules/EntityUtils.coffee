@@ -11,10 +11,10 @@ Meteor.startup -> resetRenderQueue()
     AtlasConverter.getInstance().then (converter) ->
       entity = Entities.getFlattened(id)
       typology = Typologies.findOne(entity.typology)
+      typologyClass = SchemaUtils.getParameterValue(typology, 'general.class')
       space = entity.parameters.space
       typologySpace = typology.parameters.space
-      displayMode = Session.get('entityDisplayMode')
-      converter.toGeoEntityArgs
+      args =
         id: id
         vertices: space?.geom_2d ? typologySpace?.geom_2d
         height: space?.height
@@ -22,6 +22,12 @@ Meteor.startup -> resetRenderQueue()
         displayMode: displayMode
         fillColor: '#666'
         borderColor: '#000'
+      if typologyClass == 'PATHWAY'
+        args.width = SchemaUtils.getParameterValue(typology, 'space.width')
+        displayMode = 'line'
+      else
+        displayMode = Session.get('entityDisplayMode')
+      converter.toGeoEntityArgs(args)
 
   _getMesh: (id) ->
     entity = Entities.getFlattened(id)
@@ -84,6 +90,19 @@ Meteor.startup -> resetRenderQueue()
     else
       @toGeoEntityArgs(id).then (entityArgs) =>
         entity = Entities.getFlattened(id)
+        typology = Typologies.findOne(entity.typology)
+        typologyClass = SchemaUtils.getParameterValue(typology, 'general.class')
+
+        doRender = (id, geoEntity) ->
+          AtlasManager.showEntity(id)
+          @_setUpPopup(geoEntity)
+          df.resolve(geoEntity)
+
+        if typologyClass == 'PATHWAY'
+          geoEntity = AtlasManager.renderEntity(entityArgs)
+          doRender(id, geoEntity)
+          return
+
         azimuth = SchemaUtils.getParameterValue(entity, 'orientation.azimuth')
         # If the geoEntity was rendered using the Typology geometry, centre it based on the Lot.
         lot = Lots.findOne(entity.lot)
@@ -114,9 +133,7 @@ Meteor.startup -> resetRenderQueue()
                   # Apply rotation based on the azimuth.
                   form.setRotation(new Vertex(0, 0, azimuth)) if azimuth?
               geoEntity.setDisplayMode(Session.get('entityDisplayMode'))
-              AtlasManager.showEntity(id)
-              @_setUpPopup(geoEntity)
-              df.resolve(geoEntity)
+              doRender(id, geoEntity)
     df.promise
 
   _setUpPopup: (geoEntity) ->
