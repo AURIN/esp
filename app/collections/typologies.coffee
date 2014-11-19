@@ -803,6 +803,13 @@ calcArea = (id) ->
   else
     throw new Error('GeoEntity not found - cannot calculate area.')
 
+calcLength = (id) ->
+  feature = AtlasManager.getEntity(id)
+  line = feature.getForm('line')
+  unless line
+    throw new Error('Cannot calculate length of non-line GeoEntity.')
+  line.getLength()
+
 areaSchema =
   label: 'Area'
   type: Number
@@ -940,8 +947,7 @@ typologyCategories =
         type: Number
         decimal: true
         units: Units.m
-        classes:
-          PATHWAY: {}
+        calc: -> calcLength(@model._id)
       width:
         label: 'Total Path Width'
         desc: 'Total width of drawn pathway'
