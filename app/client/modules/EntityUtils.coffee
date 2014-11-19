@@ -2,8 +2,11 @@
 
 _renderQueue = null
 resetRenderQueue = -> _renderQueue = new DeferredQueueMap()
+evalEngine = null
 
-Meteor.startup -> resetRenderQueue()
+Meteor.startup ->
+  evalEngine = new EvaluationEngine(schema: Entities.simpleSchema())
+  resetRenderQueue()
 
 @EntityUtils =
 
@@ -23,7 +26,9 @@ Meteor.startup -> resetRenderQueue()
         fillColor: '#666'
         borderColor: '#000'
       if typologyClass == 'PATHWAY'
-        args.width = SchemaUtils.getParameterValue(typology, 'space.width')
+        widthParamId = 'space.width'
+        evalEngine.evaluate(model: entity, paramIds: [widthParamId])
+        args.width = SchemaUtils.getParameterValue(entity, widthParamId)
         displayMode = 'line'
       else
         displayMode = Session.get('entityDisplayMode')

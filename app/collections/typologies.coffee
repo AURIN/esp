@@ -725,6 +725,9 @@ TypologyClasses =
   PATHWAY:
     name: 'Pathway'
     color: 'black'
+  INSTITUTIONAL:
+    name: 'Institutional'
+    color: 'orange'
 
 ClassNames = Object.keys(TypologyClasses)
 
@@ -1707,7 +1710,7 @@ typologyCategories =
             label: 'Cost - Total'
             type: Number
             units: Units.$
-            calc: '$financial.pathways.cost_con * $financial.pathways.cost_land'
+            calc: '$financial.pathways.cost_con + $financial.pathways.cost_land'
   orientation:
     label: 'Orientation'
     items:
