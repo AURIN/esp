@@ -1926,13 +1926,6 @@ typologyCategories =
         decimal: true
         units: Units.m2
         calc: '$composition.ve_lanes * $composition.ve_width * $space.length'
-      area_tot:
-        desc: 'Total area of the pathway.'
-        label: 'Total Pathway Area'
-        type: Number
-        decimal: true
-        units: Units.m2
-        calc: '$composition.rd_area + $composition.prk_area + $composition.fp_area + $composition.bp_area + $composition.ve_area'
 
 ####################################################################################################
 # TYPOLOGY SCHEMA DEFINITION
