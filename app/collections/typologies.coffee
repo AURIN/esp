@@ -948,7 +948,11 @@ typologyCategories =
         type: Number
         decimal: true
         units: Units.m
-        calc: -> 5
+        calc: ->
+          sum = 0
+          _.each ['rd', 'prk', 'fp', 'bp', 've'], (prefix) =>
+            sum += @param('composition.' + prefix + '_lanes') * @param('composition.' + prefix + '_width')
+          sum
         classes:
           PATHWAY: {}
       area:
@@ -1278,7 +1282,7 @@ typologyCategories =
             type: Number
             decimal: true
             units: Units.kgco2
-            calc: '$composition.ve_area * $embodied_carbon.all.verge'
+            calc: '$composition.ve_area * $embodied_carbon.pathways.all.verge'
           co2_embod:
             desc: 'Total embodied carbon of the drawn pathway.'
             label: 'Total Carbon'
@@ -1848,7 +1852,7 @@ typologyCategories =
         type: Number
         decimal: true
         units: Units.m2
-        calc: '$composition.fp_lanes * $composition.fp_width * $area.length'
+        calc: '$composition.fp_lanes * $composition.fp_width * $space.length'
       fp_mat:
         desc: 'Material used in the construction of the footpath surface.'
         label: 'Footpath Profile'
@@ -1880,7 +1884,7 @@ typologyCategories =
         type: Number
         decimal: true
         units: Units.m2
-        calc: '$composition.bp_lanes * $composition.bp_width * space.length'
+        calc: '$composition.bp_lanes * $composition.bp_width * $space.length'
       bp_mat:
         desc: 'Material used in the construction of the bicycle path surface.'
         label: 'Bicycle Path Profile'
@@ -1889,7 +1893,7 @@ typologyCategories =
         classes:
           PATHWAY:
             defaultValue: 'Asphalt'
-      ve_strips:
+      ve_lanes:
         desc: 'Number of verge strips as a buffer for the pathway.'
         label: 'No. Verge Strips'
         type: Number
@@ -1912,7 +1916,7 @@ typologyCategories =
         type: Number
         decimal: true
         units: Units.m2
-        calc: '$composition.ve_strips * $composition.ve_width * $space.length'
+        calc: '$composition.ve_lanes * $composition.ve_width * $space.length'
       area_tot:
         desc: 'Total area of the pathway.'
         label: 'Total Pathway Area'
