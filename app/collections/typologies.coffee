@@ -2079,6 +2079,10 @@ Typologies.findByClass = (typologyClass, projectId) -> Typologies.find(
   project: projectId || Projects.getCurrentId()
 )
 
+Typologies.getTypologyClass = (id) ->
+  typology = Typologies.findOne(id)
+  SchemaUtils.getParameterValue(typology, 'general.class')
+
 # @returns the fields that are required for the given typology class. Excludes fields which are
 # required by all classes.
 Typologies.getRequiredFieldsForClass = _.memoize (typologyClass) ->
@@ -2398,9 +2402,9 @@ Entities.mergeTypologyObj = (entity, typology) ->
 
 Entities.findByProject = (projectId) -> SchemaUtils.findByProject(Entities, projectId)
 
-Entities.getClass = (id) ->
-  typology = Typologies.findOne(Entities.findOne(id).typology)
-  SchemaUtils.getParameterValue(typology, 'general.class')
+Entities.getTypologyClass = (id) ->
+  typologyId = Entities.findOne(id).typology
+  Typologies.getTypologyClass(typologyId) if typologyId?
 
 # Listen for changes to Entities or Typologies and refresh reports.
 _reportRefreshSubscribed = false

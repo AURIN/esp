@@ -392,8 +392,12 @@ TemplateClass.onAtlasLoad = (template, atlas) ->
     unless collection.findOne(id)
       collection = Lots
     # Ignore this event when clicking on entities we don't manage in collections.
-    return unless collection.findOne(id)
+    entity = collection.findOne(id)
+    return unless entity
     onEditFormPanel ids: [id], collection: collection
+    # If double clicking a pathway, switch to edit mode.
+    typologyClass = Entities.getTypologyClass(id)
+    editGeoEntity(id) if typologyClass == 'PATHWAY'
 
   resolveModelId = (id) ->
     # When clicking on children of a GeoEntity collection, take the prefix as the ID of the
@@ -421,7 +425,7 @@ TemplateClass.onAtlasLoad = (template, atlas) ->
   getSelectedPathwayTypology = ->
     typology = getSelectedTypology()
     return null unless typology?
-    typologyClass = SchemaUtils.getParameterValue(typology, 'general.class')
+    typologyClass = Typologies.getTypologyClass(typology._id)
     if typologyClass == 'PATHWAY' then typology else null
 
   onTypologySelectionChange = ->
@@ -472,4 +476,9 @@ TemplateClass.onAtlasLoad = (template, atlas) ->
         registerDrawEvents()
       else
         atlas.publish('entity/draw/stop', {validate: false})
+
+  editGeoEntity = (id) ->
+    AtlasManager.getAtlas().then (atlas) ->
+      atlas.publish('edit/disable')
+      atlas.publish('edit/enable', {ids: [id]});
 

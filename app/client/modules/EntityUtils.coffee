@@ -14,7 +14,7 @@ Meteor.startup ->
     AtlasConverter.getInstance().then (converter) ->
       entity = Entities.getFlattened(id)
       typology = Typologies.findOne(entity.typology)
-      typologyClass = SchemaUtils.getParameterValue(typology, 'general.class')
+      typologyClass = Entities.getTypologyClass(id)
       space = entity.parameters.space
       typologySpace = typology.parameters.space
       args =
@@ -95,8 +95,7 @@ Meteor.startup ->
     else
       @toGeoEntityArgs(id).then (entityArgs) =>
         entity = Entities.getFlattened(id)
-        typology = Typologies.findOne(entity.typology)
-        typologyClass = SchemaUtils.getParameterValue(typology, 'general.class')
+        typologyClass = Entities.getTypologyClass(id)
 
         doRender = (id, geoEntity) =>
           AtlasManager.showEntity(id)
