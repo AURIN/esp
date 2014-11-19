@@ -448,16 +448,19 @@ TemplateClass.onAtlasLoad = (template, atlas) ->
           vertices = feature.getForm().getVertices()
           AtlasManager.unrenderEntity(id)
           console.log(vertices)
-          WKT.polylineFromVertices vertices, (wktStr) ->
-            console.log('wktStr', wktStr)
-            Entities.insert
-              name: name
-              typology: typology._id
-              project: Projects.getCurrentId()
-              parameters:
-                space:
-                  geom_2d: wktStr
-          registerDrawEvents()
+          if vertices.length > 2 || !vertices[0].equals(vertices[1])
+            WKT.polylineFromVertices vertices, (wktStr) ->
+              console.log('wktStr', wktStr)
+              Entities.insert
+                name: name
+                typology: typology._id
+                project: Projects.getCurrentId()
+                parameters:
+                  space:
+                    geom_2d: wktStr
+          # Continue drawing if the button is active.
+          isActive = $pathwayDrawButton.hasClass('active')
+          registerDrawEvents() if isActive
         cancel: ->
           console.log('Drawing cancelled', arguments)
           feature = args.feature
@@ -468,5 +471,5 @@ TemplateClass.onAtlasLoad = (template, atlas) ->
       if isActive
         registerDrawEvents()
       else
-        atlas.publish('entity/draw/stop')
+        atlas.publish('entity/draw/stop', {validate: false})
 
