@@ -831,6 +831,34 @@ calcEnergyC02 = (sourceParamId, energyParamId) ->
   else if src == 'Gas'
     en * @KWH_TO_MJ(@param('operating_carbon.gas'))
 
+calcEnergyCost = (source, suffix) ->
+  supply_price = @param('utilities.price_supply_' + suffix)
+  usage_price = @param('utilities.price_usage_' + suffix)
+  if source == 'Gas'
+    usage_price = @KWH_TO_MJ(usage_price)
+  src_heat = @param('energy_demand.src_heat')
+  src_hwat = @param('energy_demand.src_hwat')
+  src_cook = @param('energy_demand.src_cook')
+  en_heat = @param('energy_demand.en_heat')
+  en_hwat = @param('energy_demand.en_hwat')
+  en_cook = @param('energy_demand.en_cook')
+  en_app = @param('energy_demand.en_app')
+  en_light = @param('energy_demand.en_light')
+  pv_output = @param('renewable_energy.pv_output')
+  size_pv = @param('energy_demand.size_pv')
+  usage_cost = 0
+  if src_heat == source
+    usage_cost += en_heat * usage_price
+  if src_hwat == source
+    usage_cost += en_hwat * 1000 * usage_price
+  if src_cook == source
+    usage_cost += en_cook * usage_price
+  if source == 'Electricity'
+    usage_cost += en_app * usage_price
+    usage_cost += en_light * usage_price
+    usage_cost -= 365 * pv_output * size_pv * usage_price
+  365 * supply_price + usage_cost
+
 typologyCategories =
   general:
     label: 'General'
@@ -1619,14 +1647,14 @@ typologyCategories =
         type: Number
         decimal: true
         units: Units.$
-        calc: '365 * $utilities.price_supply_elec + IF($energy_demand.src_heat=="Electricity",$energy_demand.en_heat,IF($energy_demand.src_heat=="Gas",0)) * KWH_TO_MJ($utilities.price_supply_elec) + IF($energy_demand.src_hwat=="Electricity",$energy_demand.en_hwat,IF($energy_demand.src_hwat=="Gas",0)) * 1000 * KWH_TO_MJ($utilities.price_supply_elec) + IF($energy_demand.src_cook=="Electricity",$energy_demand.en_cook,IF($energy_demand.src_cook=="Gas",0)) * KWH_TO_MJ($utilities.price_supply_elec) + $energy_demand.en_light * $utilities.price_supply_elec + $energy_demand.en_app * KWH_TO_MJ($utilities.price_supply_elec)'
+        calc: -> calcEnergyCost.call(@, 'Electricity', 'elec')
       cost_op_g:
         label: 'Cost - Gas Usage'
         desc: 'Operating costs due to gas usage.'
         type: Number
         decimal: true
         units: Units.$
-        calc: '365 * $utilities.price_supply_gas + IF($energy_demand.src_heat=="Electricity",0,IF($energy_demand.src_heat=="Gas",$energy_demand.en_heat)) * $utilities.price_usage_gas + IF($energy_demand.src_hwat=="Electricity",0,IF($energy_demand.src_hwat=="Gas",$energy_demand.en_hwat)) * 1000 * $utilities.price_usage_gas + IF($energy_demand.src_cook=="Electricity",0,IF($energy_demand.src_cook=="Gas",$energy_demand.en_cook)) * $utilities.price_usage_gas'
+        calc: -> calcEnergyCost.call(@, 'Gas', 'gas')
       cost_op_w:
         label: 'Cost - Water Usage'
         desc: 'Operating costs due to water usage.'
@@ -1640,7 +1668,7 @@ typologyCategories =
         type: Number
         decimal: true
         units: Units.$
-        calc: '$financial.cost_op_e + $financial.cost_op_g'
+        calc: '$financial.cost_op_e + $financial.cost_op_g + $financial.cost_op_w'
       pathways:
         items:
           cost_land:
