@@ -50,6 +50,7 @@ Units =
   Lyear: 'L/year'
   m: 'm'
   m2: 'm^2'
+  m2vehicle: 'm^2/vehicle'
   mm: 'mm'
   MLyear: 'ML/year'
   MJ: 'MJ'
@@ -527,6 +528,14 @@ projectCategories =
                 type: Number
                 units: Units.$m2
                 defaultValue: 20
+      parking:
+        label: 'Parking'
+        items:
+          cost_ug_park:
+            label: 'Cost per Underground Parking Space'
+            type: Number
+            units: Units.$
+            defaultValue: 48400
   embodied_carbon:
     label: 'Embodied Carbon'
     items:
@@ -662,6 +671,14 @@ projectCategories =
             type: Number
             units: Units.MJ
             defaultValue: 10951
+  parking:
+    label: 'Parking'
+    items:
+      prk_area_veh:
+        label: 'Parking Area per Vehicle'
+        type: Number
+        units: Units.m2vehicle
+        defaultValue: 23
 # TODO(aramk) Use these for src_cook.
 #  energy_demand:
 #    label: 'Energy Demand'
@@ -1106,36 +1123,44 @@ typologyCategories =
         type: Number
         decimal: true
         classes:
-          RESIDENTIAL:
-            defaultValue: 0.15
+          RESIDENTIAL: {defaultValue: 0.15}
+          COMMERCIAL: {defaultValue: 0.1}
+          MIXED_USE: {defaultValue: 0.15}
           OPEN_SPACE: {}
+          INSTITUTIONAL: {defaultValue: 0.1}
       prpn_annu:
         label: 'Proportion Extra Land - Annual Plants'
         desc: 'Proportion of extra land covered by annual plants, such as flowers and veggies.'
         type: Number
         decimal: true
         classes:
-          RESIDENTIAL:
-            defaultValue: 0.1
+          RESIDENTIAL: {defaultValue: 0.1}
+          COMMERCIAL: {defaultValue: 0}
+          MIXED_USE: {defaultValue: 0.1}
           OPEN_SPACE: {}
+          INSTITUTIONAL: {defaultValue: 0}
       prpn_hardy:
         label: 'Proportion Extra Land - Hardy Plants'
         desc: 'Proportion of extra land covered by hardy or waterwise plants.'
         type: Number
         decimal: true
         classes:
-          RESIDENTIAL:
-            defaultValue: 0.35
+          RESIDENTIAL: {defaultValue: 0.35}
+          COMMERCIAL: {defaultValue: 0}
+          MIXED_USE: {defaultValue: 0.15}
           OPEN_SPACE: {}
+          INSTITUTIONAL: {defaultValue: 0}
       prpn_imper:
         label: 'Proportion Extra Land - Impermeable'
         desc: 'Proportion of extra land covered by pavement or another impermeable surface.'
         type: Number
         decimal: true
         classes:
-          RESIDENTIAL:
-            defaultValue: 0.4
+          RESIDENTIAL: {defaultValue: 0.4}
+          COMMERCIAL: {defaultValue: 0.9}
+          MIXED_USE: {defaultValue: 0.6}
           OPEN_SPACE: {}
+          INSTITUTIONAL: {defaultValue: 0.9}
       ext_land_l:
         label: 'Extra Land - Lawn'
         desc: 'Area of extra land covered by lawn.'
@@ -1645,7 +1670,7 @@ typologyCategories =
         decimal: true
         desc: 'Value of the parcel of land.'
         units: Units.$
-        calc: -> @param('space.lotsize') && calcLandPrice.call(@)
+        calc: -> @param('space.lotsize') * calcLandPrice.call(@)
       cost_lawn:
         label: 'Cost - Lawn'
         desc: 'Cost of installing lawn.'
@@ -1724,7 +1749,7 @@ typologyCategories =
             label: 'Cost - Land'
             type: Number
             units: Units.$
-            calc: -> @param('space.area') && calcLandPrice.call(@)
+            calc: -> @param('space.area') * calcLandPrice.call(@)
           cost_rd:
             desc: 'Road surface cost.'
             label: 'Cost - Road'
@@ -1814,9 +1839,9 @@ typologyCategories =
   parking:
     label: 'Parking'
     items:
-      parking_sl:
-        label: 'Parking Spaces - Street Level'
-        desc: 'Number of street-level parking spaces.'
+      parking_ga:
+        label: 'Parking Spaces - Garage'
+        desc: 'Number of garage parking spaces.'
         type: Number
         units: Units.spaces
         classes:
@@ -1828,12 +1853,19 @@ typologyCategories =
         units: Units.spaces
         classes:
           RESIDENTIAL: {}
+          COMMERCIAL: {}
+      parking_sl:
+        label: 'Parking Spaces - Street Level'
+        desc: 'Number of street level parking spaces.'
+        type: Number
+        units: Units.spaces
+        calc: '$space.ext_land_i * $parking.parking_land / $parking.prk_area_veh'
       parking_t:
         label: 'Parking Spaces - Total'
         desc: 'Total number of parking spaces.'
         type: Number
         units: Units.spaces
-        calc: '$parking.parking_sl + $parking.parking_ug'
+        calc: '$parking.parking_ga + $parking.parking_sl + $parking.parking_ug'
       parking_rd:
         label: 'Parking Spaces per Metre'
         desc: 'Number of parking spaces per metre length of pathway.'
@@ -1847,6 +1879,16 @@ typologyCategories =
         type: Number
         units: Units.spaces
         calc: '$space.length * $parking.parking_rd'
+      parking_land:
+        label: 'Parking Land Ratio'
+        desc: 'Proportion of impervious land available for parking.'
+        type: Number
+        decimal: true
+        classes:
+          RESIDENTIAL: {defaultValue: 0.2}
+          COMMERCIAL: {defaultValue: 0.9}
+          MIXED_USE: {defaultValue: 0.8}
+          INSTITUTIONAL: {defaultValue: 0.9}
   composition:
     label: 'Composition'
     items:
@@ -2609,23 +2651,27 @@ Typologies.after.update(updateQueuedEntities)
 ####################################################################################################
 
 buildQualityDependencyFieldIds = ['parameters.financial.build_quality',
-  'parameters.general.subclass', 'parameters.space.cfa']
+  'parameters.general.subclass', 'parameters.space.gfa']
 
 updateBuildQuality = (userId, doc, fileNames, modifier) ->
   depResult = getModifiedDocWithDeps(doc, modifier, buildQualityDependencyFieldIds)
   fullDoc = depResult.fullDoc
+  Typologies.mergeDefaults(fullDoc)
   project = Projects.mergeDefaults(Projects.findOne(fullDoc.project))
   return unless depResult.hasDependencyUpdates
-  build_quality = SchemaUtils.getParameterValue(fullDoc, 'parameters.financial.build_quality')
-  subclass = SchemaUtils.getParameterValue(fullDoc, 'parameters.general.subclass')
-  cost_con = SchemaUtils.getParameterValue(fullDoc, 'parameters.financial.cost_con')
-  cfa = SchemaUtils.getParameterValue(fullDoc, 'parameters.space.cfa')
+  build_quality = SchemaUtils.getParameterValue(fullDoc, 'financial.build_quality')
+  subclass = SchemaUtils.getParameterValue(fullDoc, 'general.subclass')
+  cost_con = SchemaUtils.getParameterValue(fullDoc, 'financial.cost_con')
+  gfa = SchemaUtils.getParameterValue(fullDoc, 'space.gfa')
   $set = {}
-  return unless build_quality? && build_quality != 'Custom' && subclass? && cfa?
+  return unless build_quality? && build_quality != 'Custom' && subclass? && gfa?
   buildQualityParamSuffix = Typologies.buildQualityMap[build_quality]?[subclass]
   buildQualityParamId = 'parameters.financial.building.' + buildQualityParamSuffix
   buildParamValue = SchemaUtils.getParameterValue(project, buildQualityParamId)
-  $set['parameters.financial.cost_con'] = buildParamValue * cfa
+  cost_ug_park = SchemaUtils.getParameterValue(project, 'financial.parking.cost_ug_park')
+  parking_ug = SchemaUtils.getParameterValue(fullDoc, 'parking.parking_ug')
+  parkingCost = cost_ug_park * parking_ug
+  $set['parameters.financial.cost_con'] = buildParamValue * gfa + parkingCost
   applyModifierSet(doc, modifier, $set)
 
 Typologies.before.insert(updateBuildQuality)

@@ -142,6 +142,7 @@ Meteor.startup ->
 
   _setUpPopup: (geoEntity) ->
     entity = Entities.getFlattened(geoEntity.getId())
+    typology = Typologies.findOne(entity.typology)
     typologyClassId = SchemaUtils.getParameterValue(entity, 'general.class')
     typologyClass = Typologies.classes[typologyClassId]
     subclass = SchemaUtils.getParameterValue(entity, 'general.subclass')
@@ -149,12 +150,7 @@ Meteor.startup ->
       atlas.publish('popup/onSelection', {
         entity: geoEntity
         content: ->
-          content = '<div class="types">' +
-            '<div class="typology-class">' + typologyClass.name + '</div>'
-          if subclass
-            content += '<div class="subclass">' + subclass + '</div>'
-          content += '</div>'
-          content
+          '<div class="typology-name">' + typology.name + '</div>'
         title: ->
           title = ''
           _.each ['name'], (attr) ->

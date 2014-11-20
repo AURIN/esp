@@ -107,7 +107,12 @@ class @EvaluationEngine
 
   sanitizeParamValue: (paramId, value) ->
     schema = @getParamSchema(paramId)
-    if schema && schema.type == Number && (!value? || isNaN(value)) then NULL_VALUE else value
+    if schema && schema.type == Number
+      value = if (!value? || isNaN(value)) then NULL_VALUE else value
+      # Round non-decimal values up.
+      unless schema.decimal
+        value = Math.round(value)
+    value
 
   isGlobalParam: (paramId) -> Projects.simpleSchema().schema(ParamUtils.addPrefix(paramId))
 
