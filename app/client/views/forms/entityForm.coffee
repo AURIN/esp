@@ -107,8 +107,12 @@ Meteor.startup ->
         update: (docId, modifier, template) ->
           # Prevent the the lack of space fields from causing them to be removed.
           delete modifier.$unset?['parameters.space']
-          modifier
-
+          # Disable editing to ensure changes are saved before re-rendering removes them.
+          AtlasManager.getAtlas().then (atlas) =>
+            atlas.publish('edit/disable')
+            @result(modifier)
+          # Ensure this hook is asynchronous
+          return undefined
 
   Form.helpers
     typologies: -> Typologies.findByProject()

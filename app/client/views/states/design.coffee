@@ -480,5 +480,12 @@ TemplateClass.onAtlasLoad = (template, atlas) ->
   editGeoEntity = (id) ->
     AtlasManager.getAtlas().then (atlas) ->
       atlas.publish('edit/disable')
-      atlas.publish('edit/enable', {ids: [id]});
-
+      atlas.publish('edit/enable', {
+        ids: [id]
+        complete: ->
+          feature = AtlasManager.getEntity(id)
+          WKT.featureToWkt feature, (wktStr) ->
+            Entities.update id, {$set: {'parameters.space.geom_2d': wktStr}}, (err, result) ->
+              refreshEntity(id)
+        cancel: -> refreshEntity(id)
+      })
