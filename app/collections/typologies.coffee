@@ -345,12 +345,48 @@ projectCategories =
       land:
         label: 'Land'
         items:
-          price_land:
-            label: 'Land Value'
+          # price_land:
+          #   label: 'Land Value'
+          #   type: Number
+          #   desc: 'Land Value per Square Metre'
+          #   units: Units.$m2
+          #   defaultValue: 500
+          price_land_r:
+            label: 'Residential Land Value'
             type: Number
             desc: 'Land Value per Square Metre'
             units: Units.$m2
             defaultValue: 500
+          price_land_c:
+            label: 'Commercial Land Value'
+            type: Number
+            desc: 'Land Value per Square Metre'
+            units: Units.$m2
+            defaultValue: 600
+          price_land_mu:
+            label: 'Mixed Use Land Value'
+            type: Number
+            desc: 'Land Value per Square Metre'
+            units: Units.$m2
+            defaultValue: 550
+          price_land_os:
+            label: 'Open Space Land Value'
+            type: Number
+            desc: 'Land Value per Square Metre'
+            units: Units.$m2
+            defaultValue: 50
+          price_land_pw:
+            label: 'Pathway Land Value'
+            type: Number
+            desc: 'Land Value per Square Metre'
+            units: Units.$m2
+            defaultValue: 30
+          price_land_i:
+            label: 'Institutional Land Value'
+            type: Number
+            desc: 'Land Value per Square Metre'
+            units: Units.$m2
+            defaultValue: 150
       building:
         label: 'Building'
         items:
@@ -713,21 +749,27 @@ TypologyClasses =
   RESIDENTIAL:
     name: 'Residential'
     color: '#009cff' # Blue
+    abbr: 'r'
   COMMERCIAL:
     name: 'Commercial'
     color: 'red'
+    abbr: 'c'
   MIXED_USE:
     name: 'Mixed Use'
     color: '#c000ff' # Purple
+    abbr: 'mu'
   OPEN_SPACE:
     name: 'Open Space'
     color: '#7ed700' # Green
+    abbr: 'os'
   PATHWAY:
     name: 'Pathway'
     color: 'black'
+    abbr: 'pw'
   INSTITUTIONAL:
     name: 'Institutional'
     color: 'orange'
+    abbr: 'i'
 
 ClassNames = Object.keys(TypologyClasses)
 
@@ -858,6 +900,11 @@ calcEnergyCost = (source, suffix) ->
     usage_cost += en_light * usage_price
     usage_cost -= 365 * pv_output * size_pv * usage_price
   365 * supply_price + usage_cost
+
+calcLandPrice = ->
+  typologyClass = Entities.getTypologyClass(@model._id)
+  abbr = TypologyClasses[typologyClass].abbr
+  @param('financial.land.price_land_' + abbr)
 
 typologyCategories =
   general:
@@ -1134,7 +1181,8 @@ typologyCategories =
         type: String
         allowedValues: EnergySources
         classes:
-          RESIDENTIAL: {}
+          RESIDENTIAL:
+            defaultValue: 'Gas'
       en_cool:
         label: 'Cooling'
         desc: 'Energy required for cooling the typology.'
@@ -1597,7 +1645,7 @@ typologyCategories =
         decimal: true
         desc: 'Value of the parcel of land.'
         units: Units.$
-        calc: '$space.lotsize * $financial.land.price_land'
+        calc: -> @param('space.lotsize') && calcLandPrice.call(@)
       cost_lawn:
         label: 'Cost - Lawn'
         desc: 'Cost of installing lawn.'
@@ -1676,7 +1724,7 @@ typologyCategories =
             label: 'Cost - Land'
             type: Number
             units: Units.$
-            calc: '$space.area * $financial.land.price_land'
+            calc: -> @param('space.area') && calcLandPrice.call(@)
           cost_rd:
             desc: 'Road surface cost.'
             label: 'Cost - Road'
@@ -1990,9 +2038,14 @@ Typologies.getClassByName = _.memoize (name) ->
   sanitize = (str) -> ('' + str).toLowerCase().trim()
   name = sanitize(name)
   for id, cls of TypologyClasses
-    if sanitize(cls.name) == name
+    if cls.name == sanitize(name)
       matchedId = id
   matchedId
+
+# Typologies.getClassAbbreviation = _.memoize (typologyClass) ->
+#   for id, cls of TypologyClasses
+#     if cls.abbr == typologyClass
+#       matchedId = id
 
 Typologies.getClassItems = ->
   _.map Typologies.classes, (cls, id) -> Setter.merge(Setter.clone(cls), {_id: id})
