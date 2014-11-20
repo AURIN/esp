@@ -365,7 +365,8 @@ TemplateClass.onAtlasLoad = (template, atlas) ->
   $typologyTable.on 'select', (e, id) ->
     tableSelectionEnabled = false
     atlas.publish('entity/select', ids: getEntityIdsByTypologyId(id))
-    tableSelectionEnabled = true
+    # Hide all popups so they don't obsruct the entities.
+    _.each atlas._managers.popup.getPopups(), (popup) -> popup.hide()
   $typologyTable.on 'deselect', (e, id) ->
     tableSelectionEnabled = false
     atlas.publish('entity/deselect', ids: getEntityIdsByTypologyId(id))
