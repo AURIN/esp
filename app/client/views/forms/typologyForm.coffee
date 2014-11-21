@@ -2,6 +2,7 @@ Meteor.startup ->
 
   collection = Typologies
   subclasses = Collections.createTemporary()
+  buildQualities = Collections.createTemporary()
 
   updateFields = ->
     # Used to store original copies of DOM nodes which we modify based on the typology class.
@@ -9,7 +10,8 @@ Meteor.startup ->
     unless @origInputs
       origInputs = @origInputs = {}
     # TODO(aramk) Refactor with entityForm.
-    typologyClass = Template.dropdown.getValue(getClassInput(@))
+    typologyClass = getClassValue(@)
+    subclass = getSubclassValue(@)
     # Only show fields when a class is selected.
     @$('.fields').toggle(!!typologyClass)
     defaultParams = Typologies.getDefaultParameterValues(typologyClass)
@@ -90,6 +92,10 @@ Meteor.startup ->
     # Populate available subclasses.
     Collections.removeAllDocs(subclasses)
     _.each Typologies.getSubclassItems(typologyClass), (item) -> subclasses.insert(item)
+    # Populate available build qualities.
+    Collections.removeAllDocs(buildQualities)
+    buildQualities.insert({name: 'Custom', _id: 'Custom'})
+    _.each Typologies.getBuildQualityItems(typologyClass, subclass), (item) -> buildQualities.insert(item)
     # Toggle visibility of geometry inputs.
     geom2dClasses = SchemaUtils.getField('parameters.space.geom_2d', Typologies).classes
     canModifyGeometry = !!geom2dClasses[typologyClass] && typologyClass != 'PATHWAY'
@@ -121,8 +127,18 @@ Meteor.startup ->
       Template.azimuthArray.setValue(cooling.$input, cooling.value)
       bindEvents.call(@)
       updateFields.call(@)
-      $classInput = getClassInput(@)
-      $classInput.on 'change', => updateFields.call(@)
+      getClassInput(@).on 'change', => updateFields.call(@)
+      preventSubclassChange = false
+      getSubclassSelect(@).on 'change', =>
+        return if preventSubclassChange
+        preventSubclassChange = true
+        updateFields.call(@)
+        # Set the build quality to Custom when subclass dropdown is changed.
+        Template.dropdown.setValue(getBuildQualitySelect(@), 'Custom')
+        preventSubclassChange = false
+      # Set initial value for build quality.
+      buildQuality = @data.doc?.parameters?.financial?.build_quality
+      Template.dropdown.setValue(getBuildQualitySelect(@), buildQuality)
     hooks:
       formToDoc: (doc) ->
         doc.project = Projects.getCurrentId()
@@ -155,6 +171,8 @@ Meteor.startup ->
     subclasses: -> subclasses
     classValue: -> @doc?.parameters?.general?.class
     subclassValue: -> @doc?.parameters?.general?.subclass
+    buildQualities: -> buildQualities
+    # buildQuality: -> @doc?.parameters?.general?.financial?.build_quality
 
   Form.events
     'change [data-name="parameters.space.geom_2d"] input': (e, template) ->
@@ -212,10 +230,11 @@ Meteor.startup ->
     getCostOfConstructionInput(template).parent().toggle(buildQuality == 'Custom')
 
   getClassInput = (template) -> template.$('[name="parameters.general.class"]').closest('.dropdown')
+  getClassValue = (template) -> Template.dropdown.getValue(getClassInput(template))
   getSelectOption = (value, $select) -> $('option[value="' + value + '"]', $select)
   getSubclassSelect = (template) ->
     template.$('[name="parameters.general.subclass"]').closest('.dropdown')
   getSubclassValue = (template) -> Template.dropdown.getValue(getSubclassSelect(template))
-  getBuildQualitySelect = (template) -> template.$('[name="parameters.financial.build_quality"]')
-  getBuildQualityValue = (template) -> getBuildQualitySelect(template).val()
+  getBuildQualitySelect = (template) -> template.$('[name="parameters.financial.build_quality"]').parent()
+  getBuildQualityValue = (template) -> Template.dropdown.getValue(getBuildQualitySelect(template).val())
   getCostOfConstructionInput = (template) -> template.$('[name="parameters.financial.cost_con"]')

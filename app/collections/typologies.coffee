@@ -847,7 +847,6 @@ CommercialSubclasses = ['Retail', 'Office', 'Hotel', 'Supermarket', 'Restaurant'
 PathwaySubclasses = ['Freeway', 'Highway', 'Street', 'Footpath', 'Bicycle Path']
 EnergySources = ['Electricity', 'Gas']
 TypologyBuildQualityMap =
-  'Custom': null
   'Standard Quality Build':
     'Single House': 'single_house_std'
     'Attached House': 'attached_house_std'
@@ -858,9 +857,7 @@ TypologyBuildQualityMap =
     'Attached House': 'attached_house_hq'
     'Walkup': 'walkup_hq'
     'High Rise': 'highrise_hq'
-TypologyBuildQualities = Object.keys(TypologyBuildQualityMap)
 CommercialConstructionTypes =
-  'Custom': null
   'Retail':
     'Local Shop': 'retail.local'
     'Shopping Centre': 'local.shopping'
@@ -870,9 +867,10 @@ CommercialConstructionTypes =
   'Hotel':
     '3 Star': 'hotel.three_star'
     '5 Star': 'hotel.five_star'
-  'Supermarket': 'supermarket'
-  'Restaurant': 'restaurant'
-TypologyBuildQualities = Object.keys(TypologyBuildQualityMap)
+  'Supermarket':
+    'Supermarket': 'supermarket'
+  'Restaurant':
+    'Restaurant': 'restaurant'
 # Appliance type to the project parameter storing its energy usage.
 ApplianceTypes =
   'Basic - Avg Performance': 'en_basic_avg_app'
@@ -1802,8 +1800,13 @@ typologyCategories =
         type: String
         desc: 'The build quality of the typology.'
         classes:
-          RESIDENTIAL: {defaultValue: 'Custom', allowedValues: TypologyBuildQualities}
-          COMMERCIAL: {defaultValue: 'Custom', allowedValues: CommercialConstructionTypes}
+          RESIDENTIAL: {defaultValue: 'Custom', allowedValues: Object.keys(TypologyBuildQualityMap)}
+          COMMERCIAL:
+            defaultValue: 'Custom'
+            allowedValues: (args) ->
+              # subclass = SchemaUtils.getParameterValue(typology, 'general.subclass')
+              values = CommercialConstructionTypes[args.subclass]
+              if values then Object.keys(values) else []
       cost_land:
         label: 'Cost - Land Parcel'
         type: Number
@@ -2234,9 +2237,17 @@ Typologies.getClassItems = ->
   _.map Typologies.classes, (cls, id) -> Setter.merge(Setter.clone(cls), {_id: id})
 
 Typologies.getSubclassItems = (typologyClass) ->
-  subclassField = SchemaUtils.getField('parameters.general.subclass', Typologies)
-  options = subclassField?.classes[typologyClass]
+  field = SchemaUtils.getField('parameters.general.subclass', Typologies)
+  options = field?.classes[typologyClass]
   allowedValues = options?.allowedValues ? []
+  _.map allowedValues, (value) -> {_id: value, name: value}
+
+Typologies.getBuildQualityItems = (typologyClass, subclass) ->
+  field = SchemaUtils.getField('parameters.financial.build_quality', Typologies)
+  options = field?.classes[typologyClass]
+  allowedValues = options?.allowedValues ? []
+  if Types.isFunction(allowedValues)
+    allowedValues = allowedValues(typologyClass: typologyClass, subclass: subclass)
   _.map allowedValues, (value) -> {_id: value, name: value}
 
 # TODO(aramk) Move to objects util.
