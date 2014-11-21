@@ -92,7 +92,8 @@ Meteor.startup ->
     _.each Typologies.getSubclassItems(typologyClass), (item) -> subclasses.insert(item)
     # Toggle visibility of geometry inputs.
     geom2dClasses = SchemaUtils.getField('parameters.space.geom_2d', Typologies).classes
-    @$('.geom').toggle(!!geom2dClasses[typologyClass])
+    canModifyGeometry = !!geom2dClasses[typologyClass] && typologyClass != 'PATHWAY'
+    @$('.geom').toggle(canModifyGeometry)
     # Toggle visibility of azimuth array inputs.
     azimuthClasses = SchemaUtils.getField('parameters.orientation.azimuth', Typologies).classes
     @$('.azimuth-array').toggle(!!azimuthClasses[typologyClass])
@@ -111,10 +112,6 @@ Meteor.startup ->
     name: 'typologyForm'
     collection: collection
     onRender: ->
-      bindEvents.call(@)
-      updateFields.call(@)
-      $classInput = getClassInput(@)
-      $classInput.on 'change', => updateFields.call(@)
       # Set values for azimuth fields.
       # TODO(aramk) Remove this with newer versions of Autoform.
       items = Form.getAzimuthItems(@)
@@ -122,6 +119,10 @@ Meteor.startup ->
       cooling = items.cooling
       Template.azimuthArray.setValue(heating.$input, heating.value)
       Template.azimuthArray.setValue(cooling.$input, cooling.value)
+      bindEvents.call(@)
+      updateFields.call(@)
+      $classInput = getClassInput(@)
+      $classInput.on 'change', => updateFields.call(@)
     hooks:
       formToDoc: (doc) ->
         doc.project = Projects.getCurrentId()

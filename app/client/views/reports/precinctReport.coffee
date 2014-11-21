@@ -49,6 +49,7 @@ Meteor.startup ->
 #      {param: 'transport.walkscore'}
 
       {title: 'Parking'}
+      {param: 'parking.parking_ga'}
       {param: 'parking.parking_sl'}
       {param: 'parking.parking_ug'}
       {param: 'parking.parking_t'}

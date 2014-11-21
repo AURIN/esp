@@ -13,6 +13,10 @@
         <div class="title">Typologies</div>
         <div class="items typologies">
           {{> collectionTable collection="Typologies" items=typologies settings=tableSettings}}
+          <div class="extra menu">
+            <div class="ui button toggle pathway draw item has-popup" title="Draw a pathway with the selected typology.">
+              <i class="road icon"></i></div>
+          </div>
         </div>
         <div class="title">Lots</div>
         <div class="items lots">
@@ -20,10 +24,10 @@
           <div class="extra menu">
             {{> dropdown name="lotDisplayMode" items=lotDisplayModes value=defaultLotDisplayMode
             labelAttr="label" valueAttr="value"}}
-            <a class="allocate item popup" title="Automatically allocate Typologies to
+            <a class="allocate item has-popup" title="Automatically allocate Typologies to
             empty Lots available for development."><i class="magic
             icon"></i></a>
-            <a class="amalgamate item popup" title="Amalgamate all contiguous, selected Lots.">
+            <a class="amalgamate item has-popup" title="Amalgamate all contiguous, selected Lots.">
             <i class="resize small icon"></i></a>
           </div>
         </div>

@@ -69,7 +69,7 @@ TemplateClass.rendered = ->
     )
 
   # Move extra buttons into collection tables
-  _.each ['lots', 'entities'], (type) =>
+  _.each ['lots', 'typologies', 'entities'], (type) =>
     $table = $(@find('.' + type + ' .collection-table'))
     $buttons = $(@find('.' + type + ' .extra.menu')).addClass('item')
     $('.crud.menu', $table).after($buttons)
@@ -78,7 +78,9 @@ TemplateClass.rendered = ->
   $(@find('.entities .collection-table .create.item')).remove()
 
   # Add popups to fields
-  @$('.popup').popup()
+  @$('.has-popup').popup()
+  # Add toggle state for buttons.
+  @$('.toggle').state()
 
   # Use icons for display mode dropdowns
   _.each ['.lotDisplayMode.dropdown', '.entityDisplayMode.dropdown'], (cls) ->
@@ -104,11 +106,6 @@ TemplateClass.rendered = ->
       else if idCount == 1
         firstSelectedLotId = ids[0]
       $amalgamateButton.toggle(idCount > 1)
-
-# TODO(aramk) Use a callback for when each row is created in the collection table.
-#  @autorun ->
-#    Typologies.findByProject()
-#
 
 onEditFormPanel = (args) ->
   id = args.ids[0]
@@ -215,16 +212,16 @@ createDraggableTypology = ->
 getSidebar = (template) ->
   $(template.find('.design.container > .sidebar'))
 
-getEntityTable = (template) -> $(template.find('.entities .collection-table'))
-getTypologyTable = (template) -> $(template.find('.typologies .collection-table'))
-getLotTable = (template) -> $(template.find('.lots .collection-table'))
+getEntityTable = (template) -> template.$('.entities .collection-table')
+getTypologyTable = (template) -> template.$('.typologies .collection-table')
+getLotTable = (template) -> template.$('.lots .collection-table')
+getPathwayDrawButton = (template) -> template.$('.pathway.draw.button')
 
 TemplateClass.addPanel = (template, panelTemplate, data) ->
   if currentPanelView
     TemplateClass.removePanel(template)
   $container = getSidebar(template)
   $panel = $('<div class="panel"></div>')
-  #  $('>.panel', $container).hide()
   $container.append $panel
   parentNode = $panel[0]
   if data
@@ -325,8 +322,16 @@ TemplateClass.onAtlasLoad = (template, atlas) ->
         newValue = SchemaUtils.getParameterValue(newTypology, paramName)
         oldValue = SchemaUtils.getParameterValue(oldTypology, paramName)
         newValue != oldValue
-      hasChanged = _.some ['general.class', 'space.geom_2d', 'space.geom_3d', 'space.height',
-                           'orientation.azimuth'], (paramName) -> hasParamChanged(paramName)
+      hasChanged = _.some([
+          'general.class', 'space.geom_2d', 'space.geom_3d', 'space.height', 'orientation.azimuth',
+          'composition.rd_lanes', 'composition.rd_width', 'composition.rd_mat',
+          'composition.prk_lanes', 'composition.prk_width', 'composition.prk_mat',
+          'composition.fp_lanes', 'composition.fp_width', 'composition.fp_mat',
+          'composition.bp_lanes', 'composition.bp_width', 'composition.bp_mat',
+          'composition.ve_lanes', 'composition.ve_width'
+        ]
+        (paramName) -> hasParamChanged(paramName)
+      )
       if hasChanged
         _.each Entities.find(typology: newTypology._id).fetch(), (entity) ->
           refreshEntity(entity._id)
@@ -360,7 +365,8 @@ TemplateClass.onAtlasLoad = (template, atlas) ->
   $typologyTable.on 'select', (e, id) ->
     tableSelectionEnabled = false
     atlas.publish('entity/select', ids: getEntityIdsByTypologyId(id))
-    tableSelectionEnabled = true
+    # Hide all popups so they don't obsruct the entities.
+    _.each atlas._managers.popup.getPopups(), (popup) -> popup.hide()
   $typologyTable.on 'deselect', (e, id) ->
     tableSelectionEnabled = false
     atlas.publish('entity/deselect', ids: getEntityIdsByTypologyId(id))
@@ -387,8 +393,12 @@ TemplateClass.onAtlasLoad = (template, atlas) ->
     unless collection.findOne(id)
       collection = Lots
     # Ignore this event when clicking on entities we don't manage in collections.
-    return unless collection.findOne(id)
+    entity = collection.findOne(id)
+    return unless entity
     onEditFormPanel ids: [id], collection: collection
+    # If double clicking a pathway, switch to edit mode.
+    typologyClass = Entities.getTypologyClass(id)
+    editGeoEntity(id) if typologyClass == 'PATHWAY'
 
   resolveModelId = (id) ->
     # When clicking on children of a GeoEntity collection, take the prefix as the ID of the
@@ -399,5 +409,84 @@ TemplateClass.onAtlasLoad = (template, atlas) ->
       id = idParts[1]
     id
 
-  getIdFromCollectionEntity: () ->
+  ##################################################################################################
+  # DRAWING
+  ##################################################################################################
 
+  # Selecting typologies in the table shows and hides the draw button for pathways.
+  $typologyTable = getTypologyTable(template)
+  typologyTableId = Template.collectionTable.getDomTableId($typologyTable)
+  $pathwayDrawButton = getPathwayDrawButton(template)
+  
+  getSelectedTypology = ->
+    selectedIds = Template.collectionTable.getSelectedIds(typologyTableId)
+    return null if selectedIds.length < 1
+    Typologies.findOne(selectedIds[0])
+
+  getSelectedPathwayTypology = ->
+    typology = getSelectedTypology()
+    return null unless typology?
+    typologyClass = Typologies.getTypologyClass(typology._id)
+    if typologyClass == 'PATHWAY' then typology else null
+
+  onTypologySelectionChange = ->
+    selectedIds = Template.collectionTable.getSelectedIds(typologyTableId)
+    # Currently only a single pathway can be selected for drawing.
+    typology = getSelectedPathwayTypology()
+    $pathwayDrawButton.toggle(typology?)
+
+  $typologyTable.on 'select deselect', onTypologySelectionChange
+  onTypologySelectionChange()
+
+  $pathwayDrawButton.on 'click', ->
+    isActive = $pathwayDrawButton.hasClass('active')
+    registerDrawEvents = ->
+      atlas.publish 'entity/draw', {
+        displayMode: 'line'
+        create: (args) ->
+          typology = getSelectedPathwayTypology()
+          subclass = SchemaUtils.getParameterValue(typology, 'general.subclass')
+          # TODO(aramk) Generate an incremented name.
+          name = subclass
+          feature = args.feature
+          id = feature.getId()
+          vertices = feature.getForm().getVertices()
+          AtlasManager.unrenderEntity(id)
+          console.log(vertices)
+          if vertices.length > 2 || !vertices[0].equals(vertices[1])
+            WKT.polylineFromVertices vertices, (wktStr) ->
+              console.log('wktStr', wktStr)
+              Entities.insert
+                name: name
+                typology: typology._id
+                project: Projects.getCurrentId()
+                parameters:
+                  space:
+                    geom_2d: wktStr
+          # Continue drawing if the button is active.
+          isActive = $pathwayDrawButton.hasClass('active')
+          registerDrawEvents() if isActive
+        cancel: ->
+          console.log('Drawing cancelled', arguments)
+          feature = args.feature
+          id = feature.getId()
+          AtlasManager.unrenderEntity(id)
+      }
+    AtlasManager.getAtlas().then (atlas) ->
+      if isActive
+        registerDrawEvents()
+      else
+        atlas.publish('entity/draw/stop', {validate: false})
+
+  editGeoEntity = (id) ->
+    AtlasManager.getAtlas().then (atlas) ->
+      atlas.publish('edit/disable')
+      atlas.publish('edit/enable', {
+        ids: [id]
+        complete: ->
+          feature = AtlasManager.getEntity(id)
+          WKT.featureToWkt feature, (wktStr) ->
+            Entities.update id, {$set: {'parameters.space.geom_2d': wktStr}}, (err, result) ->
+              refreshEntity(id)
+        cancel: -> refreshEntity(id)
+      })

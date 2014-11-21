@@ -3,6 +3,7 @@ reports = null
 ReportTemplates = [
   'residentialReport'
   'openSpaceReport'
+  'pathwayReport'
   #'precinctReport'
 ]
 
@@ -46,8 +47,7 @@ renderReport = (id) ->
   typologyClass = ReportTemplate.typologyClass
   typologyFilter = (entityId) ->
     entity = Entities.findOne(entityId)
-    typology = Typologies.findOne(entity.typology)
-    SchemaUtils.getParameterValue(typology, 'general.class') == typologyClass
+    Entities.getTypologyClass(entityId) == typologyClass
 
   # Use the selected entities, or all entities in the project.
   entityIds = AtlasManager.getSelectedFeatureIds()

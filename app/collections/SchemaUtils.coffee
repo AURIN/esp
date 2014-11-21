@@ -66,8 +66,9 @@ global = @
     unless segments.length > 0
       return false
     lastSegment = segments.pop()
+    target = obj
     for key in segments
-      target = obj[key] ?= {}
+      target = target[key] ?= {}
     target[lastSegment] = value
     true
 
