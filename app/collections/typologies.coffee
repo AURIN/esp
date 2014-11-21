@@ -391,8 +391,8 @@ projectCategories =
             desc: 'Land Value per Square Metre'
             units: Units.$m2
             defaultValue: 150
-      building:
-        label: 'Building'
+      residential:
+        label: 'Residential'
         items:
           single_house_std:
             label: 'Single House - Standard'
@@ -434,6 +434,54 @@ projectCategories =
             type: Number
             units: Units.$m2
             defaultValue: 2815
+      commercial:
+        items:
+          retail:
+            items:
+              local:
+                label: 'Retail - Local Shop'
+                type: Number
+                units: Units.$m2
+                defaultValue: 695
+              shopping:
+                label: 'Retail - Shopping Centre'
+                type: Number
+                units: Units.$m2
+                defaultValue: 2125
+          office:
+            items:
+              low_rise:
+                label: 'Office - Low-rise Without Lifts'
+                type: Number
+                units: Units.$m2
+                defaultValue: 1810
+              med_rise:
+                label: 'Office - Med-rise With Lifts'
+                type: Number
+                units: Units.$m2
+                defaultValue: 2225
+          hotel:
+            items:
+              three_star:
+                label: 'Hotel - 3 Star'
+                type: Number
+                units: Units.$m2
+                defaultValue: 3415
+              five_star:
+                label: 'Hotel - 5 Star'
+                type: Number
+                units: Units.$m2
+                defaultValue: 4330
+          supermarket:
+            label: 'Supermarket'
+            type: Number
+            units: Units.$m2
+            defaultValue: 1475
+          restaurant:
+            label: 'Restaurant'
+            type: Number
+            units: Units.$m2
+            defaultValue: 2450
       landscaping:
         label: 'Landscaping'
         items:
@@ -795,6 +843,7 @@ ClassNames = Object.keys(TypologyClasses)
 
 TypologyTypes = ['Basic', 'Efficient', 'Advanced']
 ResidentialSubclasses = ['Single House', 'Attached House', 'Walkup', 'High Rise']
+CommercialSubclasses = ['Retail', 'Office', 'Hotel', 'Supermarket', 'Restaurant']
 PathwaySubclasses = ['Freeway', 'Highway', 'Street', 'Footpath', 'Bicycle Path']
 EnergySources = ['Electricity', 'Gas']
 TypologyBuildQualityMap =
@@ -812,14 +861,18 @@ TypologyBuildQualityMap =
 TypologyBuildQualities = Object.keys(TypologyBuildQualityMap)
 CommercialConstructionTypes =
   'Custom': null
-  'Retail (Local Shop)': 695
-  'Retail (Shopping Centre)': 2125
-  'Office (Low-rise No Lifts)': 1810
-  'Office (Med-rise w Lifts)': 2225
-  'Hotel (3 Star)': 3415
-  'Hotel (5 Star)': 4330
-  'Supermarket': 1475
-  'Restaurant': 2450
+  'Retail':
+    'Local Shop': 'retail.local'
+    'Shopping Centre': 'local.shopping'
+  'Office':
+    'Low-rise Without Lifts': 'office.low_rise'
+    'Med-rise With Lifts': 'office.med_rise'
+  'Hotel':
+    '3 Star': 'hotel.three_star'
+    '5 Star': 'hotel.five_star'
+  'Supermarket': 'supermarket'
+  'Restaurant': 'restaurant'
+TypologyBuildQualities = Object.keys(TypologyBuildQualityMap)
 # Appliance type to the project parameter storing its energy usage.
 ApplianceTypes =
   'Basic - Avg Performance': 'en_basic_avg_app'
@@ -949,6 +1002,7 @@ typologyCategories =
         desc: 'Typology within a class.'
         classes:
           RESIDENTIAL: {allowedValues: ResidentialSubclasses, optional: false}
+          COMMERCIAL: {allowedValues: CommercialSubclasses, optional: false}
           PATHWAY: {allowedValues: PathwaySubclasses, optional: false}
       climate_zn:
         desc: 'BOM climate zone number.'
@@ -1747,9 +1801,9 @@ typologyCategories =
         label: 'Build Quality'
         type: String
         desc: 'The build quality of the typology.'
-        allowedValues: TypologyBuildQualities
         classes:
-          RESIDENTIAL: {defaultValue: 'Custom'}
+          RESIDENTIAL: {defaultValue: 'Custom', allowedValues: TypologyBuildQualities}
+          COMMERCIAL: {defaultValue: 'Custom', allowedValues: CommercialConstructionTypes}
       cost_land:
         label: 'Cost - Land Parcel'
         type: Number
@@ -2753,7 +2807,7 @@ updateBuildQuality = (userId, doc, fileNames, modifier) ->
   $set = {}
   return unless build_quality? && build_quality != 'Custom' && subclass? && gfa?
   buildQualityParamSuffix = Typologies.buildQualityMap[build_quality]?[subclass]
-  buildQualityParamId = 'parameters.financial.building.' + buildQualityParamSuffix
+  buildQualityParamId = 'parameters.financial.residential.' + buildQualityParamSuffix
   buildParamValue = SchemaUtils.getParameterValue(project, buildQualityParamId)
   cost_ug_park = SchemaUtils.getParameterValue(project, 'financial.parking.cost_ug_park')
   parking_ug = SchemaUtils.getParameterValue(fullDoc, 'parking.parking_ug')
