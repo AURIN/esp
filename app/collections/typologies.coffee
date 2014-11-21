@@ -38,7 +38,7 @@ Units =
   deg: 'degrees'
   GJyear: 'GJ/year'
   ha: 'ha'
-  jobs: 'Jobs'
+  jobs: 'jobs'
   kgco2: 'kg CO_2-e'
   kgco2m2: 'kg CO_2-e/m^2'
   kW: 'kW'
@@ -47,6 +47,9 @@ Units =
   kWhyear: 'kWh/year'
   kLyear: 'kL/year'
   kLm2year: 'kL/m^2/year'
+  km: 'km'
+  kmday: 'km/day'
+  lanes: 'lanes'
   Lsec: 'L/second'
   Lyear: 'L/year'
   m: 'm'
@@ -58,9 +61,11 @@ Units =
   MJ: 'MJ'
   MJm2year: 'MJ/m^2/year'
   MJyear: 'MJ/year'
-  spaces: 'Spaces'
+  people: 'people'
+  spaces: 'spaces'
   spacesm: 'spaces/m'
-  lanes: 'Lanes'
+  vehicles: 'vehicles'
+  year: 'year'
 
 extendSchema = (orig, changes) -> _.extend({}, orig, changes)
 
@@ -155,6 +160,20 @@ creatorSchema =
   label: 'Creator'
   type: String
   optional: true
+
+VktRailTypes =
+  rail0_400:
+    label: '0 - 0.4 kms'
+    value: -1.17115
+  rail400_800:
+    label: '0.4 - 0.8 kms'
+    value: -0.533986
+  rail800_1600:
+    label: '0.8 - 1.6 kms'
+    value: -0.355058
+  railgt_1600:
+    label: '> 1.6 kms'
+    value: 0
 
 projectCategories =
   general:
@@ -730,24 +749,76 @@ projectCategories =
         type: Number
         units: Units.m2vehicle
         defaultValue: 23
-# TODO(aramk) Use these for src_cook.
-#  energy_demand:
-#    label: 'Energy Demand'
-#    items:
-#      en_cook_elec:
-#        label: 'Cooktop and Oven - Electricity Demand'
-#        desc: 'Energy required for cooking in a typology using electricity.'
-#        type: Number
-#        decimal: true
-#        units: Units.MJyear
-#        defaultValue: 1956
-#      en_cook_gas:
-#        label: 'Cooktop and Oven - Gas Demand'
-#        desc: 'Energy required for cooking in a typology using gas.'
-#        type: Number
-#        decimal: true
-#        units: Units.MJyear
-#        defaultValue: 3366
+  transport:
+    label: 'Transport'
+    items:
+      trips:
+        label: 'Daily Trips per Dwelling'
+        type: Number
+        decimal: true
+        units: 'trips/dwelling'
+        defaultValue: 10.7
+      age:
+        label: 'Mean Age'
+        type: Number
+        decimal: true
+        units: Units.year
+        defaultValue: 38
+      gender:
+        label: 'Share Female Residents'
+        type: Number
+        decimal: true
+        defaultValue: 0.52
+      hhsize:
+        label: 'Household Size'
+        type: Number
+        decimal: true
+        units: Units.people
+        defaultValue: 2.6
+      totalvehs:
+        label: 'Vehicles per Household'
+        type: Number
+        decimal: true
+        units: Units.vehicles
+        defaultValue: 1.8
+      hhinc_grp:
+        label: 'Household Income Group'
+        type: Number
+        decimal: true
+        defaultValue: 3.3
+      distctr:
+        label: 'Distance to Activity Centre'
+        type: Number
+        decimal: true
+        units: Units.km
+        defaultValue: 6.3
+      railprox:
+        label: 'Proximity to Rail'
+        type: String
+        units: Units.km
+        defaultValue: 'railgt_1600'
+        allowedValues: Object.keys(VktRailTypes)
+      distbus:
+        label: 'Distance to Bus Stop'
+        type: Number
+        decimal: true
+        units: Units.km
+        defaultValue: 0.4
+      lum_index:
+        label: 'LUM Index'
+        type: Number
+        decimal: true
+        defaultValue: 0.38
+      density:
+        label: 'Density'
+        type: Number
+        decimal: true
+        defaultValue: 21.8
+      towork:
+        label: 'Share of Work Trips'
+        type: Number
+        decimal: true
+        defaultValue: 0.22
 
 ProjectParametersSchema = createCategoriesSchema
   categories: projectCategories
@@ -891,6 +962,14 @@ FootpathMaterialTypes =
 BicyclePathMaterialTypes =
   'Asphalt': 'asphalt'
   'Concrete': 'concrete'
+TransportCoefficients =
+  hhsize: 0.137197
+  totalvehs: 1.234835
+  hhinc_grp: 0.449265
+  distctr: 0.060162
+  distbus: 0.416703
+  lum_index: -0.482782
+  density: -0.008418
 
 # Common field schemas shared across collection schemas.
 
@@ -2188,6 +2267,23 @@ typologyCategories =
         decimal: true
         units: Units.m2
         calc: '$composition.ve_lanes * $composition.ve_width * $space.length'
+  transport:
+    label: 'Transport'
+    items:
+      vkt_household_day:
+        label: 'VKT Estimate (per Household)'
+        desc: 'Vehicle kilometres travelled per household per day.'
+        type: Number
+        decimal: true
+        units: Units.kmday
+        calc: ->
+          intercept = 1.638503
+          value = intercept
+          _.each TransportCoefficients, (value, field) =>
+            value += value * @param('transport.' + field)
+          railprox = @param('transport.railprox')
+          value += VktRailTypes[railprox].value
+          value = Math.pow(value, 2)
 
 ####################################################################################################
 # TYPOLOGY SCHEMA DEFINITION
@@ -2561,8 +2657,13 @@ Lots.validateTypology = (lot, typologyId) ->
     # Ensure the geometry of the typology will fit in the lot.
     areaDfs = [GeometryUtils.getModelArea(typology), GeometryUtils.getModelArea(lot)]
     Q.all(areaDfs).then (results) ->
-      lotArea = results.pop().area
-      typologyArea = results.pop().area
+      lotArea = results.pop()?.area
+      typologyArea = results.pop()?.area
+      unless lotArea
+        df.resolve('Lot has no area.')
+      unless typologyArea
+        # TODO(aramk) Fail if the typology should have a geometry.
+        df.resolve()
       if lotArea <= typologyArea
         df.resolve('Typology must have area less than or equal to the Lot.')
       else
