@@ -82,33 +82,30 @@ autoLabel = (field, id) ->
 
 createCategorySchemaObj = (cat, catId, args) ->
   catSchemaFields = {}
-  # For each field in each category
-  for itemId, item of cat.items
-    if item.items?
-      itemFields = createCategorySchemaObj(item, itemId, args)
-    else
-      # TODO(aramk) Set the default to 0 for numbers.
-      itemFields = _.extend({optional: true}, args.itemDefaults, item)
-      autoLabel(itemFields, itemId)
-      # If defaultValue is used, put it into "classes" to prevent SimpleSchema from storing this
-      # value in the doc. We want to inherit this value at runtime for all classes, but not
-      # persist it in multiple documents in case we want to change it later in the schema.
-      # TODO(aramk) Check if this is intended behaviour.
-      defaultValue = itemFields.defaultValue
-      if defaultValue?
-        classes = itemFields.classes ?= {}
-        allClassOptions = classes.ALL ?= {}
-        if allClassOptions.defaultValue?
-          throw new Error('Default value specified on field and in classOptions - only use one.')
-        allClassOptions.defaultValue = defaultValue
-        delete itemFields.defaultValue
+  hasRequiredField = false
+  forEachCategoryField cat, (itemId, item) ->
+    # Required fields must explicitly specify "optional" as false.
+    itemFields = _.extend({optional: true}, args.itemDefaults, item)
+    if itemFields.optional == false
+      hasRequiredField = true
+    autoLabel(itemFields, itemId)
+    # If defaultValue is used, put it into "classes" to prevent SimpleSchema from storing this
+    # value in the doc. We want to inherit this value at runtime for all classes, but not
+    # persist it in multiple documents in case we want to change it later in the schema.
+    defaultValue = itemFields.defaultValue
+    if defaultValue?
+      classes = itemFields.classes ?= {}
+      allClassOptions = classes.ALL ?= {}
+      if allClassOptions.defaultValue?
+        throw new Error('Default value specified on field and in classOptions - only use one.')
+      allClassOptions.defaultValue = defaultValue
+      delete itemFields.defaultValue
     catSchemaFields[itemId] = itemFields
   catSchema = new SimpleSchema(catSchemaFields)
   catSchemaArgs = _.extend({
-  # TODO(aramk) This should be optional: false, but an update to SimpleSchema is causing edits to
-  # these fields to fail during validation, since cleaning doesn't run for modifier objects.
-    optional: true
-    defaultValue: {}
+    # If a single field is required, the entire category is marked required. If no fields are
+    # required, the category can be omitted.
+    optional: !hasRequiredField
   }, args.categoryDefaults, cat, {type: catSchema})
   autoLabel(catSchemaArgs, catId)
   delete catSchemaArgs.items
@@ -217,6 +214,7 @@ projectCategories =
         label: 'Geometry'
         type: String
         desc: '2D geometry of the precinct envelope.'
+        optional: false
       area:
         label: 'Precinct Area'
         type: Number
@@ -961,8 +959,8 @@ typologyCategories =
         type: String
         desc: '2D footprint geometry of the typology.'
         classes:
-          RESIDENTIAL: {}
-          PATHWAY: {}
+          RESIDENTIAL: {optional: false}
+          PATHWAY: {optional: false}
       geom_3d:
         label: '3D Geometry'
         type: String
@@ -2063,8 +2061,6 @@ TypologySchema = new SimpleSchema
   parameters:
     label: 'Parameters'
     type: ParametersSchema
-  # Necessary to allow fields within to be required.
-    optional: false
     defaultValue: {}
   project: projectSchema
 
@@ -2238,6 +2234,7 @@ lotCategories =
         desc: 'Whether the lot can be used for development.'
         defaultValue: true
   space:
+    optional: false
     items:
       geom_2d:
         label: 'Geometry'

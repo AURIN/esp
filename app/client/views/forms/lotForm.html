@@ -4,23 +4,16 @@
     <div class="content">
       <div class="inner">
         <div class="ui form segment">
-          {{#autoForm collection=collection id=formName doc=doc type=formType settings=settings}}
+          {{#autoForm collection=collection id=formName doc=doc type=formType}}
             {{> afQuickField name="name"}}
             {{> afQuickField name="desc"}}
 
             {{#if forDev}}
-              <div class="form-group dropdown">
-                <label>Typology</label>
-                {{> dropdown name="typology" items=typologies value=typology allowEmpty=true schemaKey=false}}
-              </div>
+              {{> afQuickField name="typology" type="dropdown" items=typologies allowEmpty=true schemaKey=false}}
             {{/if}}
 
             <div class="subtitle">General</div>
-            <div class="form-group dropdown">
-              {{> afFieldLabel name="parameters.general.class"}}
-              {{> dropdown name="parameters.general.class" items=classes value=classValue
-              allowEmpty=true}}
-            </div>
+            {{> afQuickField name="parameters.general.class" type="dropdown" items=classes allowEmpty=true}}
             {{> afQuickField name="parameters.general.develop"}}
 
             <div class="subtitle">Space</div>

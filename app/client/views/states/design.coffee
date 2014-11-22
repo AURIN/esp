@@ -232,7 +232,7 @@ TemplateClass.addPanel = (template, panelTemplate, data) ->
 TemplateClass.removePanel = (template) ->
   console.debug 'Removing panel', @, template
   # Parent node is kept so we need to remove it manually.
-  $panel = $(TemplateUtils.getDom(currentPanelView))
+  $panel = $(Templates.getDom(currentPanelView))
   Blaze.remove(currentPanelView)
   $panel.remove()
   $container = getSidebar(template)
@@ -242,8 +242,7 @@ TemplateClass.removePanel = (template) ->
 TemplateClass.addFormPanel = (template, formTemplate, doc, settings) ->
   template ?= templateInstance
   settings ?= {}
-  data =
-    doc: doc, settings: settings
+  data = doc: doc, settings: settings
   TemplateClass.addPanel template, formTemplate, data
   callback = -> TemplateClass.removePanel template
   settings.onCancel = settings.onSuccess = callback

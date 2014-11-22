@@ -36,7 +36,7 @@ renderReport = (id) ->
   $reportPanelContent.empty()
   $reportPanelContent.append($currentReport)
   if currentReportTemplate
-    TemplateUtils.getDom(currentReportTemplate).remove()
+    Templates.getDom(currentReportTemplate).remove()
   templateName = report.templateName
   ReportTemplate = Template[templateName]
   console.log 'Rendering report', templateName
@@ -74,7 +74,7 @@ renderReport = (id) ->
   currentReportTemplate = UI.renderWithData(Template[templateName], reportData)
   UI.insert currentReportTemplate, $currentReport[0]
   PubSub.publish 'report/rendered', $currentReport
-  $report = $(TemplateUtils.getDom(currentReportTemplate))
+  $report = $(Templates.getDom(currentReportTemplate))
   $report.on 'render', (e, args) ->
     renderDf.resolve(args)
     # Place the header info into the report panel header

@@ -1,9 +1,5 @@
 {
   "packages": {
-    "aldeed:autoform": {
-      "git": "https://github.com/aramk/meteor-autoform.git",
-      "branch": "develop"
-    },
     "aslagle:reactive-table": {
       "git": "https://github.com/aramk/reactive-table",
       "branch": "develop"

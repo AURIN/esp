@@ -1,26 +1,9 @@
 TemplateClass = Template.azimuthArray
 
-# TODO(aramk) Use this with the newer version of Autoform.
-# AutoForm.addInputType('azimuthArray', {
-#   '.azimuth-array': -> TemplateClass.getValue($(@))
-#   template: 'azimuthArray'
-#   valueIn: (value) ->
-#     console.log 'valueIn', value
-#   valueOut: ->
-#     console.log 'valueOut', this
-#     TemplateClass.getValue(this)
-# })
-
-# registerAutoForm = _.once ->
-#   return if typeof AutoForm == 'undefined'
-#   AutoForm.addInputType('azimuthArray', {
-#     '.azimuth-array': -> TemplateClass.getValue($(@))
-#   })
-
-# TemplateClass.created = -> registerAutoForm()
-
-AutoForm.inputValueHandlers
-  '.azimuth-array': -> TemplateClass.getValue(this)
+AutoForm.addInputType 'azimuthArray',
+  template: 'azimuthArray'
+  valueOut: ->
+    TemplateClass.getValue(this)
 
 TemplateClass.rendered = ->
   name = @data.name
@@ -29,6 +12,7 @@ TemplateClass.rendered = ->
   $input = @$('.azimuth-array')
   schemaKey = if schemaKey != undefined then schemaKey else true
   $input.attr('data-schema-key', name) if schemaKey
+  TemplateClass.setValue($input, @data.value)
 
 TemplateClass.getValue = (elem) ->
   array = []
