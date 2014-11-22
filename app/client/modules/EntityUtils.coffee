@@ -20,7 +20,7 @@ Meteor.startup ->
       args =
         id: id
         vertices: space?.geom_2d ? typologySpace?.geom_2d
-        height: space?.height
+        height: space?.height ? 5
         zIndex: 1
         displayMode: displayMode
         fillColor: '#666'
@@ -54,17 +54,8 @@ Meteor.startup ->
           return
         # Modify the ID of c3ml entities to allow reusing them for multiple collections.
         c3mls = result.c3mls
-        # Translate the geoLocation of all meshes by a fixed amount to bring it closer to the given
-        # centroid in order to prevent an underlying bug with matrix transformations which is more
-        # pronounced the further we need to move the meshes after construction. Use the first valid
-        # geoLocation as a rough measure.
-        someGeoLocation = _.find(c3mls, (c3ml) -> c3ml.geoLocation).geoLocation
-        centroidDiff = new GeoPoint(centroid).subtract(new GeoPoint(someGeoLocation))
         _.each c3mls, (c3ml) ->
           c3ml.id = id + ':' + c3ml.id
-          geoLocation = c3ml.geoLocation
-          if geoLocation
-            c3ml.geoLocation = new GeoPoint(geoLocation).translate(centroidDiff).toArray()
         try
           c3mlEntities = AtlasManager.renderEntities(c3mls)
         catch e
