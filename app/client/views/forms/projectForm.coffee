@@ -1,7 +1,7 @@
 Meteor.startup ->
 
   close = ->
-    unless Router.current().route.name == 'design'
+    unless Router.getCurrentName() == 'design'
       Router.goToLastPath() or Router.go('projects')
 
   Form = Forms.defineModelForm

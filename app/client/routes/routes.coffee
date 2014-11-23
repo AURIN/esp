@@ -68,7 +68,8 @@ Router.setLastPathAsCurrent = ->
   return unless path
   Router.setLastPath(path, current.params)
 
-Router.getCurrentPath = -> Iron.Location.get().path
+Router.getCurrentName = -> Router.current().route.getName()
+Router.getCurrentPath = -> Router.current().url
 
 # When switching, remember the last route.
 Router.go = ->

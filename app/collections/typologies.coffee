@@ -220,14 +220,12 @@ projectCategories =
         label: 'Geometry'
         type: String
         desc: '2D geometry of the precinct envelope.'
-        optional: false
       area:
         label: 'Precinct Area'
         type: Number
         decimal: true
         desc: 'Total land area of the precinct.'
         units: Units.m2
-
   environment:
     label: 'Environment'
     items:
@@ -783,10 +781,12 @@ TypologyClasses =
     name: 'Open Space'
     color: '#7ed700' # Green
     abbr: 'os'
+    displayMode: false
   PATHWAY:
     name: 'Pathway'
     color: 'black'
     abbr: 'pw'
+    displayMode: 'line'
   INSTITUTIONAL:
     name: 'Institutional'
     color: 'orange'
@@ -873,7 +873,7 @@ calcLength = (id) ->
   feature = AtlasManager.getEntity(id)
   line = feature.getForm('line')
   unless line
-    throw new Error('Cannot calculate length of non-line GeoEntity.')
+    throw new Error('Cannot calculate length of non-line GeoEntity with ID ' + id)
   line.getLength()
 
 areaSchema =
@@ -2531,6 +2531,11 @@ Entities.findByProject = (projectId) -> SchemaUtils.findByProject(Entities, proj
 Entities.getTypologyClass = (id) ->
   typologyId = Entities.findOne(id).typology
   Typologies.getTypologyClass(typologyId) if typologyId?
+
+Entities.allowsMultipleDisplayModes = (id) ->
+  typologyClass = Entities.getTypologyClass(id)
+  displayMode = TypologyClasses[typologyClass].displayMode
+  !(displayMode? && (displayMode == false || !Types.isArray(displayMode)))
 
 # Listen for changes to Entities or Typologies and refresh reports.
 _reportRefreshSubscribed = false
