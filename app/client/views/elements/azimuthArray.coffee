@@ -44,3 +44,6 @@ TemplateClass.getOutputFromAzimuth = (elem, azimuth) ->
   array = TemplateClass.getValueArray(elem)
   return null unless array
   Typologies.calcOutputFromAzimuth(array, azimuth)
+
+TemplateClass.helpers
+  label: -> @label ? @atts.label

@@ -83,24 +83,30 @@ autoLabel = (field, id) ->
 createCategorySchemaObj = (cat, catId, args) ->
   catSchemaFields = {}
   hasRequiredField = false
-  forEachCategoryField cat, (itemId, item) ->
-    # Required fields must explicitly specify "optional" as false.
-    itemFields = _.extend({optional: true}, args.itemDefaults, item)
-    if itemFields.optional == false
-      hasRequiredField = true
-    autoLabel(itemFields, itemId)
-    # If defaultValue is used, put it into "classes" to prevent SimpleSchema from storing this
-    # value in the doc. We want to inherit this value at runtime for all classes, but not
-    # persist it in multiple documents in case we want to change it later in the schema.
-    defaultValue = itemFields.defaultValue
-    if defaultValue?
-      classes = itemFields.classes ?= {}
-      allClassOptions = classes.ALL ?= {}
-      if allClassOptions.defaultValue?
-        throw new Error('Default value specified on field and in classOptions - only use one.')
-      allClassOptions.defaultValue = defaultValue
-      delete itemFields.defaultValue
-    catSchemaFields[itemId] = itemFields
+  for itemId, item of cat.items
+    if item.items?
+      result = createCategorySchemaObj(item, itemId, args)
+      if result.hasRequiredField
+        hasRequiredField = true
+      fieldSchema = result.schema
+    else
+      # Required fields must explicitly specify "optional" as false.
+      fieldSchema = _.extend({optional: true}, args.itemDefaults, item)
+      if fieldSchema.optional == false
+        hasRequiredField = true
+      autoLabel(fieldSchema, itemId)
+      # If defaultValue is used, put it into "classes" to prevent SimpleSchema from storing this
+      # value in the doc. We want to inherit this value at runtime for all classes, but not
+      # persist it in multiple documents in case we want to change it later in the schema.
+      defaultValue = fieldSchema.defaultValue
+      if defaultValue?
+        classes = fieldSchema.classes ?= {}
+        allClassOptions = classes.ALL ?= {}
+        if allClassOptions.defaultValue?
+          throw new Error('Default value specified on field and in classOptions - only use one.')
+        allClassOptions.defaultValue = defaultValue
+        delete fieldSchema.defaultValue
+    catSchemaFields[itemId] = fieldSchema
   catSchema = new SimpleSchema(catSchemaFields)
   catSchemaArgs = _.extend({
     # If a single field is required, the entire category is marked required. If no fields are
@@ -109,7 +115,7 @@ createCategorySchemaObj = (cat, catId, args) ->
   }, args.categoryDefaults, cat, {type: catSchema})
   autoLabel(catSchemaArgs, catId)
   delete catSchemaArgs.items
-  catSchemaArgs
+  {hasRequiredField: hasRequiredField, schema: catSchemaArgs}
 
 # Constructs a SimpleSchema which contains all categories and each category is it's own
 # SimpleSchema.
@@ -121,8 +127,8 @@ createCategoriesSchema = (args) ->
   # For each category in the schema.
   catsFields = {}
   for catId, cat of cats
-    catSchemaArgs = createCategorySchemaObj(cat, catId, args)
-    catsFields[catId] = catSchemaArgs
+    result = createCategorySchemaObj(cat, catId, args)
+    catsFields[catId] = result.schema
   new SimpleSchema(catsFields)
 
 forEachCategoryField = (category, callback) ->
@@ -2658,7 +2664,6 @@ updateBuildQuality = (userId, doc, fileNames, modifier) ->
   return unless depResult.hasDependencyUpdates
   build_quality = SchemaUtils.getParameterValue(fullDoc, 'financial.build_quality')
   subclass = SchemaUtils.getParameterValue(fullDoc, 'general.subclass')
-  cost_con = SchemaUtils.getParameterValue(fullDoc, 'financial.cost_con')
   gfa = SchemaUtils.getParameterValue(fullDoc, 'space.gfa')
   $set = {}
   return unless build_quality? && build_quality != 'Custom' && subclass? && gfa?
@@ -2667,7 +2672,7 @@ updateBuildQuality = (userId, doc, fileNames, modifier) ->
   buildParamValue = SchemaUtils.getParameterValue(project, buildQualityParamId)
   cost_ug_park = SchemaUtils.getParameterValue(project, 'financial.parking.cost_ug_park')
   parking_ug = SchemaUtils.getParameterValue(fullDoc, 'parking.parking_ug')
-  parkingCost = cost_ug_park * parking_ug
+  parkingCost = if parking_ug? then cost_ug_park * parking_ug else 0
   $set['parameters.financial.cost_con'] = buildParamValue * gfa + parkingCost
   applyModifierSet(doc, modifier, $set)
 
