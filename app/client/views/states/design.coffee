@@ -370,10 +370,9 @@ TemplateClass.onAtlasLoad = (template, atlas) ->
 
   # Listen to double clicks from Atlas.
   atlas.subscribe 'entity/dblclick', (args) ->
-    collection = Entities
     id = resolveModelId(args.id)
-    unless collection.findOne(id)
-      collection = Lots
+    collections = [Entities, Lots]
+    collection = _.find collections, (collection) -> collection.findOne(id) && collection
     # Ignore this event when clicking on entities we don't manage in collections.
     entity = collection.findOne(id)
     return unless entity

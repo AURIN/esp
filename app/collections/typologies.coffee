@@ -966,7 +966,7 @@ typologyCategories =
         desc: '2D footprint geometry of the typology.'
         classes:
           RESIDENTIAL: {optional: false}
-          PATHWAY: {optional: false}
+          PATHWAY: {}
       geom_3d:
         label: '3D Geometry'
         type: String
