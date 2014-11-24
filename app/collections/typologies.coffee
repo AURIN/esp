@@ -65,7 +65,7 @@ Units =
   spaces: 'spaces'
   spacesm: 'spaces/m'
   vehicles: 'vehicles'
-  year: 'year'
+  years: 'years'
 
 extendSchema = (orig, changes) -> _.extend({}, orig, changes)
 
@@ -762,7 +762,7 @@ projectCategories =
         label: 'Mean Age'
         type: Number
         decimal: true
-        units: Units.year
+        units: Units.years
         defaultValue: 38
       gender:
         label: 'Share Female Residents'
