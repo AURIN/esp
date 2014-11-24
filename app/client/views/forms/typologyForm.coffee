@@ -28,7 +28,7 @@ Meteor.startup ->
       isHiddenField = classes and not classOptions
 
       $input = $(input.node)
-      $label = @$('label[for="' + key + '"]')
+      $label = Forms.getInputLabel($input)
       $wrapper = $input.closest(Forms.FIELD_SELECTOR)
       $wrappers[if isHiddenField then 'hide' else 'show'].push($wrapper)
       # Hide fields which have classes specified which don't contain the current class.
