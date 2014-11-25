@@ -279,7 +279,7 @@ TemplateClass.onAtlasLoad = (template, atlas) ->
   _.each entities.fetch(), (entity) -> renderEntity(entity._id)
 
   # Re-render when display mode changes.
-  reactiveToDisplayMode = (cursor, sessionVarName, getDisplayMode) ->
+  reactiveToDisplayMode = (collection, cursor, sessionVarName, getDisplayMode) ->
     firstRun = true
     template.autorun (c) ->
       # Register a dependency on display mode changes.
@@ -290,12 +290,13 @@ TemplateClass.onAtlasLoad = (template, atlas) ->
         firstRun = false
         return
       ids = _.map cursor.fetch(), (doc) -> doc._id
-      ids = _.filter ids, (id) -> Entities.allowsMultipleDisplayModes(id)
+      if collection.allowsMultipleDisplayModes?
+        ids = _.filter ids, (id) -> collection.allowsMultipleDisplayModes(id)
       _.each AtlasManager.getEntitiesByIds(ids), (entity) ->
         entity.setDisplayMode(getDisplayMode(entity.getId()))
 
-  reactiveToDisplayMode(Lots.findByProject(), 'lotDisplayMode', LotUtils.getDisplayMode)
-  reactiveToDisplayMode(Entities.findByProject(), 'entityDisplayMode')
+  reactiveToDisplayMode(Lots, Lots.findByProject(), 'lotDisplayMode', LotUtils.getDisplayMode)
+  reactiveToDisplayMode(Entities, Entities.findByProject(), 'entityDisplayMode')
 
   # Re-render entities of a typology when fields affecting visualisation are changed.
   handles.push Collections.observe typologies, {
@@ -373,6 +374,7 @@ TemplateClass.onAtlasLoad = (template, atlas) ->
     id = resolveModelId(args.id)
     collections = [Entities, Lots]
     collection = _.find collections, (collection) -> collection.findOne(id) && collection
+    return unless collection
     # Ignore this event when clicking on entities we don't manage in collections.
     entity = collection.findOne(id)
     return unless entity
