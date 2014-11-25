@@ -2082,7 +2082,7 @@ Typologies.getClassByName = _.memoize (name) ->
   sanitize = (str) -> ('' + str).toLowerCase().trim()
   name = sanitize(name)
   for id, cls of TypologyClasses
-    if cls.name == sanitize(name)
+    if sanitize(cls.name) == name
       matchedId = id
   matchedId
 
