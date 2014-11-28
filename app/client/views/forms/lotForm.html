@@ -9,7 +9,10 @@
             {{> afQuickField name="desc"}}
 
             {{#if forDev}}
-              {{> afQuickField name="typology" type="dropdown" items=typologies allowEmpty=true schemaKey=false}}
+              <div class="form-group">
+                {{> afFieldLabel label="Typologies"}}
+                {{> dropdown name="typology" items="typologies" allowEmpty=true schemaKey=false}}
+              </div>
             {{/if}}
 
             <div class="subtitle">General</div>

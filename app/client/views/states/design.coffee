@@ -374,14 +374,14 @@ TemplateClass.onAtlasLoad = (template, atlas) ->
     id = resolveModelId(args.id)
     collections = [Entities, Lots]
     collection = _.find collections, (collection) -> collection.findOne(id) && collection
-    return unless collection
     # Ignore this event when clicking on entities we don't manage in collections.
+    return unless collection
     entity = collection.findOne(id)
     return unless entity
     onEditFormPanel ids: [id], collection: collection
     # If double clicking a pathway, switch to edit mode.
-    typologyClass = Entities.getTypologyClass(id)
-    editGeoEntity(id) if typologyClass == 'PATHWAY'
+    if collection == Entities && Entities.getTypologyClass(id) == 'PATHWAY'
+      editGeoEntity(id)
 
   resolveModelId = (id) ->
     # When clicking on children of a GeoEntity collection, take the prefix as the ID of the

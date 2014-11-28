@@ -56,6 +56,7 @@ Meteor.startup ->
         c3mls = result.c3mls
         _.each c3mls, (c3ml) ->
           c3ml.id = id + ':' + c3ml.id
+          c3ml.show = true
         try
           c3mlEntities = AtlasManager.renderEntities(c3mls)
         catch e
@@ -70,7 +71,7 @@ Meteor.startup ->
         # feature.
         require ['atlas/model/Collection'], (Collection) ->
           # TODO(aramk) Use dependency injection to prevent the need for passing manually.
-          deps = geoEntity._bindDependencies({})
+          deps = geoEntity._bindDependencies({show: true})
           collection = new Collection('collection-' + id, {entities: ids}, deps)
           df.resolve(collection)
     df.promise
