@@ -5,17 +5,21 @@ Meteor.startup ->
   buildQualities = Collections.createTemporary()
 
   updateFields = ->
+    doc = @data.doc
     # Used to store original copies of DOM nodes which we modify based on the typology class.
     origInputs = @origInputs
     unless @origInputs
       origInputs = @origInputs = {}
     # TODO(aramk) Refactor with entityForm.
-    typologyClass = getClassValue(@)
-    subclass = getSubclassValue(@)
+    typologyClass = doc && SchemaUtils.getParameterValue(doc, 'general.class') ? getClassValue(@)
+    subclass = doc && SchemaUtils.getParameterValue(doc, 'general.subclass') ? getSubclassValue(@)
     # Only show fields when a class is selected.
-    @$('.fields').toggle(!!typologyClass)
+    $fields = @$('.fields')
+    $fields.toggle(!!typologyClass)
     defaultParams = Typologies.getDefaultParameterValues(typologyClass)
     console.debug 'updateFields', @, arguments, typologyClass
+    # Remove requried labels from previous updates.
+    Forms.getRequiredLabels($fields).remove()
     $paramInputs = []
     $wrappers = {show: [], hide: []}
     for key, input of Forms.getSchemaInputs(@, collection)
@@ -72,7 +76,7 @@ Meteor.startup ->
           # override with null yet. It is available only if a value is not set.
           $option = $('<option value="">None</option>')
           $input.prepend($option)
-        typology = @data.doc
+        typology = doc
         inputValue = SchemaUtils.getParameterValue(typology, paramName) if typology
         unless inputValue?
           if defaultValue?
@@ -129,9 +133,6 @@ Meteor.startup ->
         # Set the build quality to Custom when subclass dropdown is changed.
         Template.dropdown.setValue(getBuildQualitySelect(@), 'Custom')
         preventSubclassChange = false
-      # Set initial value for build quality.
-      buildQuality = @data.doc?.parameters?.financial?.build_quality
-      Template.dropdown.setValue(getBuildQualitySelect(@), buildQuality)
     hooks:
       formToDoc: (doc) ->
         doc.project = Projects.getCurrentId()
@@ -165,7 +166,7 @@ Meteor.startup ->
     classValue: -> @doc?.parameters?.general?.class
     subclassValue: -> @doc?.parameters?.general?.subclass
     buildQualities: -> buildQualities
-    # buildQuality: -> @doc?.parameters?.general?.financial?.build_quality
+    buildQuality: -> @doc?.parameters?.financial?.build_quality ? 'Custom'
 
   Form.events
     'change [data-name="parameters.space.geom_2d"] input': (e, template) ->
@@ -229,5 +230,5 @@ Meteor.startup ->
     template.$('[name="parameters.general.subclass"]').closest('.dropdown')
   getSubclassValue = (template) -> Template.dropdown.getValue(getSubclassSelect(template))
   getBuildQualitySelect = (template) -> template.$('[name="parameters.financial.build_quality"]').parent()
-  getBuildQualityValue = (template) -> Template.dropdown.getValue(getBuildQualitySelect(template).val())
+  getBuildQualityValue = (template) -> Template.dropdown.getValue(getBuildQualitySelect(template))
   getCostOfConstructionInput = (template) -> template.$('[name="parameters.financial.cost_con"]')

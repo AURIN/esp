@@ -9,12 +9,13 @@ Meteor.startup ->
     $('option[value="' + value + '"]', $select)
 
   updateFields = ->
+    doc = @data.doc
     # Used to store original copies of DOM nodes which we modify based on the typology class.
     origInputs = @origInputs
     unless @origInputs
       origInputs = @origInputs = {}
     # TODO(aramk) Refactor with typeForm.
-    typologyId = Template.dropdown.getValue(getTypologyInput.call(@))
+    typologyId = doc?.typology ? Template.dropdown.getValue(getTypologyInput.call(@))
     typology = Typologies.findOne(typologyId)
     typologyClass = typology?.parameters?.general?.class
     defaultParams = Typologies.getDefaultParameterValues(typologyClass)
