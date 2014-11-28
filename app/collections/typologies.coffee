@@ -864,7 +864,7 @@ TypologyBuildQualityMap =
 CommercialConstructionTypes =
   'Retail':
     'Local Shop': 'retail.local'
-    'Shopping Centre': 'local.shopping'
+    'Shopping Centre': 'retail.shopping'
   'Office':
     'Low-rise Without Lifts': 'office.low_rise'
     'Med-rise With Lifts': 'office.med_rise'
@@ -1086,6 +1086,7 @@ typologyCategories =
         units: Units.m2
         classes:
           RESIDENTIAL: {}
+          COMMERCIAL: {}
       cfa:
         label: 'Conditioned Floor Area'
         desc: 'Total conditioned area of the typology.'
@@ -1094,6 +1095,7 @@ typologyCategories =
         units: Units.m2
         classes:
           RESIDENTIAL: {}
+          COMMERCIAL: {}
       storeys:
         label: 'Storeys'
         desc: 'Number of floors/storeys in the typology.'
@@ -1101,9 +1103,11 @@ typologyCategories =
         units: 'Floors'
         classes:
           RESIDENTIAL: {}
+          COMMERCIAL: {}
       height: extendSchema(heightSchema, {
         classes:
           RESIDENTIAL: {}
+          COMMERCIAL: {}
         })
       length:
         label: 'Total Path Length'
@@ -1806,13 +1810,19 @@ typologyCategories =
         type: String
         desc: 'The build quality of the typology.'
         classes:
-          RESIDENTIAL: {defaultValue: 'Custom', allowedValues: Object.keys(TypologyBuildQualityMap)}
+          RESIDENTIAL:
+            defaultValue: 'Custom'
+            allowedValues: Object.keys(TypologyBuildQualityMap)
+            getCostParamId: (args) ->
+              'financial.residential.' + TypologyBuildQualityMap[args.value]?[args.subclass]
           COMMERCIAL:
             defaultValue: 'Custom'
             allowedValues: (args) ->
               # subclass = SchemaUtils.getParameterValue(typology, 'general.subclass')
               values = CommercialConstructionTypes[args.subclass]
               if values then Object.keys(values) else []
+            getCostParamId: (args) ->
+              'financial.commercial.' + CommercialConstructionTypes[args.subclass]?[args.value]
       cost_land:
         label: 'Cost - Land Parcel'
         type: Number
@@ -2826,13 +2836,16 @@ updateBuildQuality = (userId, doc, fileNames, modifier) ->
   gfa = SchemaUtils.getParameterValue(fullDoc, 'space.gfa')
   $set = {}
   return unless build_quality? && build_quality != 'Custom' && subclass? && gfa?
-  buildQualityParamSuffix = Typologies.buildQualityMap[build_quality]?[subclass]
-  buildQualityParamId = 'parameters.financial.residential.' + buildQualityParamSuffix
-  buildParamValue = SchemaUtils.getParameterValue(project, buildQualityParamId)
+  typologyClass = SchemaUtils.getParameterValue(fullDoc, 'general.class')
+  field = SchemaUtils.getField('parameters.financial.build_quality', Typologies)
+  options = field?.classes[typologyClass]
+  costParamId =
+    options.getCostParamId(subclass: subclass, typologyClass: typologyClass, value: build_quality)
+  costParamValue = SchemaUtils.getParameterValue(project, costParamId)
   cost_ug_park = SchemaUtils.getParameterValue(project, 'financial.parking.cost_ug_park')
   parking_ug = SchemaUtils.getParameterValue(fullDoc, 'parking.parking_ug')
   parkingCost = if parking_ug? then cost_ug_park * parking_ug else 0
-  $set['parameters.financial.cost_con'] = buildParamValue * gfa + parkingCost
+  $set['parameters.financial.cost_con'] = costParamValue * gfa + parkingCost
   applyModifierSet(doc, modifier, $set)
 
 Typologies.before.insert(updateBuildQuality)
