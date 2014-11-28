@@ -85,37 +85,40 @@ autoLabel = (field, id) ->
 
 createCategorySchemaObj = (cat, catId, args) ->
   catSchemaFields = {}
-  # For each field in each category
+  hasRequiredField = false
   for itemId, item of cat.items
     if item.items?
-      itemFields = createCategorySchemaObj(item, itemId, args)
+      result = createCategorySchemaObj(item, itemId, args)
+      if result.hasRequiredField
+        hasRequiredField = true
+      fieldSchema = result.schema
     else
-      # TODO(aramk) Set the default to 0 for numbers.
-      itemFields = _.extend({optional: true}, args.itemDefaults, item)
-      autoLabel(itemFields, itemId)
+      # Required fields must explicitly specify "optional" as false.
+      fieldSchema = _.extend({optional: true}, args.itemDefaults, item)
+      if fieldSchema.optional == false
+        hasRequiredField = true
+      autoLabel(fieldSchema, itemId)
       # If defaultValue is used, put it into "classes" to prevent SimpleSchema from storing this
       # value in the doc. We want to inherit this value at runtime for all classes, but not
       # persist it in multiple documents in case we want to change it later in the schema.
-      # TODO(aramk) Check if this is intended behaviour.
-      defaultValue = itemFields.defaultValue
+      defaultValue = fieldSchema.defaultValue
       if defaultValue?
-        classes = itemFields.classes ?= {}
+        classes = fieldSchema.classes ?= {}
         allClassOptions = classes.ALL ?= {}
         if allClassOptions.defaultValue?
           throw new Error('Default value specified on field and in classOptions - only use one.')
         allClassOptions.defaultValue = defaultValue
-        delete itemFields.defaultValue
-    catSchemaFields[itemId] = itemFields
+        delete fieldSchema.defaultValue
+    catSchemaFields[itemId] = fieldSchema
   catSchema = new SimpleSchema(catSchemaFields)
   catSchemaArgs = _.extend({
-  # TODO(aramk) This should be optional: false, but an update to SimpleSchema is causing edits to
-  # these fields to fail during validation, since cleaning doesn't run for modifier objects.
-    optional: true
-    defaultValue: {}
+    # If a single field is required, the entire category is marked required. If no fields are
+    # required, the category can be omitted.
+    optional: !hasRequiredField
   }, args.categoryDefaults, cat, {type: catSchema})
   autoLabel(catSchemaArgs, catId)
   delete catSchemaArgs.items
-  catSchemaArgs
+  {hasRequiredField: hasRequiredField, schema: catSchemaArgs}
 
 # Constructs a SimpleSchema which contains all categories and each category is it's own
 # SimpleSchema.
@@ -127,8 +130,8 @@ createCategoriesSchema = (args) ->
   # For each category in the schema.
   catsFields = {}
   for catId, cat of cats
-    catSchemaArgs = createCategorySchemaObj(cat, catId, args)
-    catsFields[catId] = catSchemaArgs
+    result = createCategorySchemaObj(cat, catId, args)
+    catsFields[catId] = result.schema
   new SimpleSchema(catsFields)
 
 forEachCategoryField = (category, callback) ->
@@ -226,7 +229,6 @@ projectCategories =
         decimal: true
         desc: 'Total land area of the precinct.'
         units: Units.m2
-
   environment:
     label: 'Environment'
     items:
@@ -830,10 +832,12 @@ TypologyClasses =
     name: 'Open Space'
     color: '#7ed700' # Green
     abbr: 'os'
+    displayMode: false
   PATHWAY:
     name: 'Pathway'
     color: 'black'
     abbr: 'pw'
+    displayMode: 'line'
   INSTITUTIONAL:
     name: 'Institutional'
     color: 'orange'
@@ -929,7 +933,7 @@ calcLength = (id) ->
   feature = AtlasManager.getEntity(id)
   line = feature.getForm('line')
   unless line
-    throw new Error('Cannot calculate length of non-line GeoEntity.')
+    throw new Error('Cannot calculate length of non-line GeoEntity with ID ' + id)
   line.getLength()
 
 areaSchema =
@@ -1022,8 +1026,10 @@ typologyCategories =
         type: String
         desc: '2D footprint geometry of the typology.'
         classes:
-          RESIDENTIAL: {}
-          COMMERCIAL: {}
+          RESIDENTIAL: {optional: false}
+          COMMERCIAL: {optional: false}
+          # Pathway typologies don't have geometry - it is defined in the entities - so this is
+          # optional.
           PATHWAY: {}
       geom_3d:
         label: '3D Geometry'
@@ -2207,8 +2213,6 @@ TypologySchema = new SimpleSchema
   parameters:
     label: 'Parameters'
     type: ParametersSchema
-  # Necessary to allow fields within to be required.
-    optional: false
     defaultValue: {}
   project: projectSchema
 
@@ -2224,7 +2228,7 @@ Typologies.getClassByName = _.memoize (name) ->
   sanitize = (str) -> ('' + str).toLowerCase().trim()
   name = sanitize(name)
   for id, cls of TypologyClasses
-    if cls.name == sanitize(name)
+    if sanitize(cls.name) == name
       matchedId = id
   matchedId
 
@@ -2390,6 +2394,7 @@ lotCategories =
         desc: 'Whether the lot can be used for development.'
         defaultValue: true
   space:
+    optional: false
     items:
       geom_2d:
         label: 'Geometry'
@@ -2561,9 +2566,9 @@ Lots.validateTypology = (lot, typologyId) ->
     # Ensure the geometry of the typology will fit in the lot.
     areaDfs = [GeometryUtils.getModelArea(typology), GeometryUtils.getModelArea(lot)]
     Q.all(areaDfs).then (results) ->
-      lotArea = results.pop().area
-      typologyArea = results.pop().area
-      if lotArea <= typologyArea
+      lotArea = results.pop()?.area
+      typologyArea = results.pop()?.area
+      if lotArea? && typologyArea? && lotArea <= typologyArea
         df.resolve('Typology must have area less than or equal to the Lot.')
       else
         df.resolve()
@@ -2680,6 +2685,11 @@ Entities.findByProject = (projectId) -> SchemaUtils.findByProject(Entities, proj
 Entities.getTypologyClass = (id) ->
   typologyId = Entities.findOne(id).typology
   Typologies.getTypologyClass(typologyId) if typologyId?
+
+Entities.allowsMultipleDisplayModes = (id) ->
+  typologyClass = Entities.getTypologyClass(id)
+  displayMode = TypologyClasses[typologyClass].displayMode
+  !(displayMode? && (displayMode == false || !Types.isArray(displayMode)))
 
 # Listen for changes to Entities or Typologies and refresh reports.
 _reportRefreshSubscribed = false
@@ -2813,7 +2823,6 @@ updateBuildQuality = (userId, doc, fileNames, modifier) ->
   return unless depResult.hasDependencyUpdates
   build_quality = SchemaUtils.getParameterValue(fullDoc, 'financial.build_quality')
   subclass = SchemaUtils.getParameterValue(fullDoc, 'general.subclass')
-  cost_con = SchemaUtils.getParameterValue(fullDoc, 'financial.cost_con')
   gfa = SchemaUtils.getParameterValue(fullDoc, 'space.gfa')
   $set = {}
   return unless build_quality? && build_quality != 'Custom' && subclass? && gfa?
@@ -2822,7 +2831,7 @@ updateBuildQuality = (userId, doc, fileNames, modifier) ->
   buildParamValue = SchemaUtils.getParameterValue(project, buildQualityParamId)
   cost_ug_park = SchemaUtils.getParameterValue(project, 'financial.parking.cost_ug_park')
   parking_ug = SchemaUtils.getParameterValue(fullDoc, 'parking.parking_ug')
-  parkingCost = cost_ug_park * parking_ug
+  parkingCost = if parking_ug? then cost_ug_park * parking_ug else 0
   $set['parameters.financial.cost_con'] = buildParamValue * gfa + parkingCost
   applyModifierSet(doc, modifier, $set)
 

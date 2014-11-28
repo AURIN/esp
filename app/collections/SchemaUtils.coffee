@@ -86,9 +86,11 @@ global = @
     Setter.defaults(model.parameters, defaults)
     model
 
-  findByProject: (collection, projectId) ->
+  findByProjectSelector: (projectId) ->
     projectId ?= Projects.getCurrentId()
     if projectId
-      collection.find({project: projectId})
+      {project: projectId}
     else
-      throw new Error('Project ID not provided - cannot retrieve models.')
+      throw new Error('No project ID provided.')
+
+  findByProject: (collection, projectId) -> collection.find(@findByProjectSelector(projectId))

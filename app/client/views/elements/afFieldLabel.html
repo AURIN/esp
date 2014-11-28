@@ -1,0 +1,9 @@
+<template name="afFieldLabel">
+  <label class="control-label">
+    {{#if label}}
+      <div class="value">{{label}}</div>
+    {{else}}
+      {{afFieldLabelText name=name}}
+    {{/if}}
+  </label>
+</template>

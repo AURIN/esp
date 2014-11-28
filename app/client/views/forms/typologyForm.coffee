@@ -30,7 +30,7 @@ Meteor.startup ->
       isHiddenField = classes and not classOptions
 
       $input = $(input.node)
-      $label = @$('label[for="' + key + '"]')
+      $label = Forms.getInputLabel($input)
       $wrapper = $input.closest(Forms.FIELD_SELECTOR)
       $wrappers[if isHiddenField then 'hide' else 'show'].push($wrapper)
       # Hide fields which have classes specified which don't contain the current class.
@@ -118,13 +118,6 @@ Meteor.startup ->
     name: 'typologyForm'
     collection: collection
     onRender: ->
-      # Set values for azimuth fields.
-      # TODO(aramk) Remove this with newer versions of Autoform.
-      items = Form.getAzimuthItems(@)
-      heating = items.heating
-      cooling = items.cooling
-      Template.azimuthArray.setValue(heating.$input, heating.value)
-      Template.azimuthArray.setValue(cooling.$input, cooling.value)
       bindEvents.call(@)
       updateFields.call(@)
       getClassInput(@).on 'change', => updateFields.call(@)

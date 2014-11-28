@@ -4,21 +4,15 @@
     <div class="content">
       <div class="inner">
         <div class="ui form segment">
-          {{#autoForm collection=collection id=formName doc=doc type=formType settings=settings}}
+          {{#autoForm collection=collection id=formName doc=doc type=formType}}
             {{> afQuickField name="name"}}
             {{> afQuickField name="desc"}}
 
             <div class="subtitle">General</div>
-            <div class="form-group dropdown">
-              {{> afFieldLabel name="parameters.general.class"}}
-              {{> dropdown name="parameters.general.class" items=classes value=classValue}}
-            </div>
+            {{> afQuickField name="parameters.general.class" type="dropdown" items=classes}}
 
             <div class="fields">
-              <div class="form-group dropdown">
-                {{> afFieldLabel name="parameters.general.subclass"}}
-                {{> dropdown name="parameters.general.subclass" items=subclasses value=subclassValue}}
-              </div>
+              {{> afQuickField name="parameters.general.subclass" type="dropdown" items=subclasses}}
               {{> afQuickField name="parameters.general.state"}}
               {{> afQuickField name="parameters.general.code"}}
               {{> afQuickField name="parameters.general.type" options="allowed"}}
@@ -78,8 +72,8 @@
 
               <div class="subtitle">Energy Demand</div>
               {{> afQuickField name="parameters.energy_demand.src_heat" options="allowed"}}
-              {{> azimuthArray name="parameters.orientation.eq_azmth_h" label="Azimuth Heating Energy Array"}}
-              {{> azimuthArray name="parameters.orientation.eq_azmth_c" label="Azimuth Cooling Energy Array"}}
+              {{> afFieldInput name="parameters.orientation.eq_azmth_h" type="azimuthArray" label="Azimuth Heating Energy Array"}}
+              {{> afFieldInput name="parameters.orientation.eq_azmth_c" type="azimuthArray" label="Azimuth Cooling Energy Array"}}
               {{> afQuickField name="parameters.energy_demand.en_heat"}}
               {{> afQuickField name="parameters.energy_demand.en_cool"}}
               {{> afQuickField name="parameters.energy_demand.en_light"}}

@@ -125,8 +125,6 @@ TemplateClass.helpers
       key: 'name'
       label: 'Name'
     ]
-#    rowsPerPage: 100000
-#    showNavigation: 'never'
     onCreate: (args) ->
       collection = args.collection
       if collection == Entities
@@ -152,10 +150,8 @@ TemplateClass.events
     LotUtils.autoAllocate()
   'mousedown .typologies .collection-table tr': (e) ->
     # Drag typology items from the table onto the globe.
-    console.log('mousedown')
     $row = $(e.currentTarget)
     $pin = createDraggableTypology()
-    #    $row.data('pin', $pin)
     $body = $('body')
     $body.addClass('dragging')
     $viewer = $('.viewer')
@@ -170,7 +166,6 @@ TemplateClass.events
         y: upEvent.clientY - viewerPos.top
       })
       if entities.length > 0
-        console.log('entities', entities)
         lot = null
         _.some entities, (entity) ->
           feature = entity.getParent()
@@ -180,27 +175,14 @@ TemplateClass.events
           # TODO(aramk) Refactor with the logic in the lot form.
           if lot.entity
             console.error('Remove the existing entity before allocating a typology onto this lot.')
-            # replaceExisting = confirm('This Lot already has an Entity - do you want to replace it?')
-            # # TODO(aramk) Reuse logic, or add it in collection hooks.
-            # if replaceExisting
-            #   console.log('replacing')
-            # else
           else
             Lots.createEntity(lot._id, typologyId)
           # TODO(aramk) Add to lot
       # If the typology was dragged on the globe, allocate it to any available lots.
-      console.log('mouseup')
-      #      $pin = $row.data('pin')
-      #      unless $pin
-      #        _.each handles, (handle) -> handle.cancel()
-      #      return
-      console.log('handles', handles)
-      console.log('pin', $pin)
       $pin.remove()
       $body.off('mousemove', mouseMoveHandler)
       $body.off('mouseup', mouseUpHandler)
       $body.removeClass('dragging')
-    
     $body.mousemove(mouseMoveHandler)
     $body.mouseup(mouseUpHandler)
 
@@ -232,7 +214,7 @@ TemplateClass.addPanel = (template, panelTemplate, data) ->
 TemplateClass.removePanel = (template) ->
   console.debug 'Removing panel', @, template
   # Parent node is kept so we need to remove it manually.
-  $panel = $(TemplateUtils.getDom(currentPanelView))
+  $panel = $(Templates.getDom(currentPanelView))
   Blaze.remove(currentPanelView)
   $panel.remove()
   $container = getSidebar(template)
@@ -242,8 +224,7 @@ TemplateClass.removePanel = (template) ->
 TemplateClass.addFormPanel = (template, formTemplate, doc, settings) ->
   template ?= templateInstance
   settings ?= {}
-  data =
-    doc: doc, settings: settings
+  data = doc: doc, settings: settings
   TemplateClass.addPanel template, formTemplate, data
   callback = -> TemplateClass.removePanel template
   settings.onCancel = settings.onSuccess = callback
@@ -298,7 +279,7 @@ TemplateClass.onAtlasLoad = (template, atlas) ->
   _.each entities.fetch(), (entity) -> renderEntity(entity._id)
 
   # Re-render when display mode changes.
-  reactiveToDisplayMode = (cursor, sessionVarName, getDisplayMode) ->
+  reactiveToDisplayMode = (collection, cursor, sessionVarName, getDisplayMode) ->
     firstRun = true
     template.autorun (c) ->
       # Register a dependency on display mode changes.
@@ -309,11 +290,13 @@ TemplateClass.onAtlasLoad = (template, atlas) ->
         firstRun = false
         return
       ids = _.map cursor.fetch(), (doc) -> doc._id
+      if collection.allowsMultipleDisplayModes?
+        ids = _.filter ids, (id) -> collection.allowsMultipleDisplayModes(id)
       _.each AtlasManager.getEntitiesByIds(ids), (entity) ->
         entity.setDisplayMode(getDisplayMode(entity.getId()))
 
-  reactiveToDisplayMode(Lots.findByProject(), 'lotDisplayMode', LotUtils.getDisplayMode)
-  reactiveToDisplayMode(Entities.findByProject(), 'entityDisplayMode')
+  reactiveToDisplayMode(Lots, Lots.findByProject(), 'lotDisplayMode', LotUtils.getDisplayMode)
+  reactiveToDisplayMode(Entities, Entities.findByProject(), 'entityDisplayMode')
 
   # Re-render entities of a typology when fields affecting visualisation are changed.
   handles.push Collections.observe typologies, {
@@ -388,17 +371,17 @@ TemplateClass.onAtlasLoad = (template, atlas) ->
 
   # Listen to double clicks from Atlas.
   atlas.subscribe 'entity/dblclick', (args) ->
-    collection = Entities
     id = resolveModelId(args.id)
-    unless collection.findOne(id)
-      collection = Lots
+    collections = [Entities, Lots]
+    collection = _.find collections, (collection) -> collection.findOne(id) && collection
     # Ignore this event when clicking on entities we don't manage in collections.
+    return unless collection
     entity = collection.findOne(id)
     return unless entity
     onEditFormPanel ids: [id], collection: collection
     # If double clicking a pathway, switch to edit mode.
-    typologyClass = Entities.getTypologyClass(id)
-    editGeoEntity(id) if typologyClass == 'PATHWAY'
+    if collection == Entities && Entities.getTypologyClass(id) == 'PATHWAY'
+      editGeoEntity(id)
 
   resolveModelId = (id) ->
     # When clicking on children of a GeoEntity collection, take the prefix as the ID of the
@@ -452,10 +435,8 @@ TemplateClass.onAtlasLoad = (template, atlas) ->
           id = feature.getId()
           vertices = feature.getForm().getVertices()
           AtlasManager.unrenderEntity(id)
-          console.log(vertices)
-          if vertices.length > 2 || !vertices[0].equals(vertices[1])
+          if vertices.length > 2 || (vertices.length == 2 && !vertices[0].equals(vertices[1]))
             WKT.polylineFromVertices vertices, (wktStr) ->
-              console.log('wktStr', wktStr)
               Entities.insert
                 name: name
                 typology: typology._id
@@ -467,7 +448,7 @@ TemplateClass.onAtlasLoad = (template, atlas) ->
           isActive = $pathwayDrawButton.hasClass('active')
           registerDrawEvents() if isActive
         cancel: ->
-          console.log('Drawing cancelled', arguments)
+          console.debug('Drawing cancelled', arguments)
           feature = args.feature
           id = feature.getId()
           AtlasManager.unrenderEntity(id)

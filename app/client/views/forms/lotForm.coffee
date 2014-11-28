@@ -52,7 +52,6 @@ Meteor.startup ->
       _.each _.values(EditState), (key) -> setEditState(key, false)
       data = @data ?= {}
       doc = @data.doc
-      @data.settings._doc = Setter.clone(doc)
       data.typologies = Collections.createTemporary()
       if doc
         id = doc._id

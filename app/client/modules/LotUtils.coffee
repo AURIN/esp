@@ -245,7 +245,9 @@ Meteor.startup -> resetRenderQueue()
           polygons.push(polygon)
         combinedPolygon = polygons.shift()
         _.each polygons, (polygon) ->
-          combinedPolygon = combinedPolygon.union(polygon).concaveHull()
+          union = combinedPolygon.union(polygon)
+          if union.length == 1
+            combinedPolygon = union[0].concaveHull()
         combinedLot = Lots.findOne(ids[0])
         delete combinedLot._id
         combinedVertices = combinedPolygon.getPoints()
