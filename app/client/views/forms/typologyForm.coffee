@@ -86,13 +86,9 @@ Meteor.startup ->
       # Avoid triggering a change event on the class input, which will trigger this method.
       $paramInputs.push($input) unless key == 'parameters.general.class'
 
-    _.each ['show', 'hide'], (visibility) -> _.each $wrappers[visibility], ($w) -> $w[visibility]()
     # Trigger changes in all fields so change event handlers are called. This assumes they are
     # synchronous.
     _.each $paramInputs, ($input) -> $input.trigger('change')
-    # Hide fields unavailable for this class. Perform this after the change handlers are called
-    # to ensure they don't show inputs that should be hidden.
-    _.each $wrappers.hide, ($w) -> $w.hide()
     # Populate available subclasses.
     Collections.removeAllDocs(subclasses)
     _.each Typologies.getSubclassItems(typologyClass), (item) -> subclasses.insert(item)
@@ -107,6 +103,9 @@ Meteor.startup ->
     # Toggle visibility of azimuth array inputs.
     azimuthClasses = SchemaUtils.getField('parameters.orientation.azimuth', Typologies).classes
     @$('.azimuth-array').toggle(!!azimuthClasses[typologyClass])
+    # Toggle visibility of the fields. Perform this last to ensure no change logic is triggered on
+    # the fields.
+    _.each ['show', 'hide'], (visibility) -> _.each $wrappers[visibility], ($w) -> $w[visibility]()
 
   bindEvents = ->
     # Bind change events to azimuth fields.
