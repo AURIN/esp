@@ -39,8 +39,10 @@ crudRoute('Projects', ProjectsController)
 
 Router.route 'design',
   path: '/design/:_id'
-  # TODO(aramk) Add action to the base controller and remove from routes.
-  waitOn: -> _.map(['projects', 'entities', 'typologies'], (name) -> Meteor.subscribe(name))
+  waitOn: ->
+    projectId = @params._id
+    [Meteor.subscribe('projects'), Meteor.subscribe('entities', projectId),
+      Meteor.subscribe('typologies', projectId), Meteor.subscribe('lots', projectId)]
   controller: DesignController
 
 Router.onBeforeAction ->
@@ -55,9 +57,10 @@ Router.setLastPath = (path, params) ->
   console.debug('last router path', _lastPath)
 Router.getLastPath = -> _lastPath
 Router.goToLastPath = ->
-  path = _lastPath.path
-  if _lastPath? and Router.getCurrentPath() != path
-    origGoFunc.call(Router, path, _lastPath.params)
+  currentPath = Router.getCurrentPath()
+  lastPath = Router.getLastPath()
+  if lastPath? and lastPath.path != currentPath.path
+    origGoFunc.call(Router, lastPath.path, lastPath.params)
     true
   else
     false
@@ -69,7 +72,11 @@ Router.setLastPathAsCurrent = ->
   Router.setLastPath(path, current.params)
 
 Router.getCurrentName = -> Router.current().route.getName()
-Router.getCurrentPath = -> Router.current().url
+Router.getCurrentPath = ->
+  {
+    path: Router.current().route.path()
+    params: Router.current().route.params()
+  }
 
 # When switching, remember the last route.
 Router.go = ->

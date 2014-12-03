@@ -2692,6 +2692,8 @@ Entities.mergeTypologyObj = (entity, typology) ->
 
 Entities.findByProject = (projectId) -> SchemaUtils.findByProject(Entities, projectId)
 
+Entities.findByTypology = (typologyId) -> Entities.find({typology: typologyId})
+
 Entities.getTypologyClass = (id) ->
   typologyId = Entities.findOne(id).typology
   Typologies.getTypologyClass(typologyId) if typologyId?
@@ -2891,5 +2893,4 @@ Collections.observe Typologies,
           console.debug('Lots update', err, result)
   removed: (typology) ->
     # Remove entities when the typology is removed.
-    entities = Entities.find({typology: typology._id}).fetch()
-    _.each entities, (entity) -> Entities.remove(entity._id)
+    _.each Entities.findByTypology(typology._id).fetch(), (entity) -> Entities.remove(entity._id)

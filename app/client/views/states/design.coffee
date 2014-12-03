@@ -316,7 +316,7 @@ TemplateClass.onAtlasLoad = (template, atlas) ->
         (paramName) -> hasParamChanged(paramName)
       )
       if hasChanged
-        _.each Entities.find(typology: newTypology._id).fetch(), (entity) ->
+        _.each Entities.findByTypology(newTypology._id).fetch(), (entity) ->
           refreshEntity(entity._id)
   }
 
