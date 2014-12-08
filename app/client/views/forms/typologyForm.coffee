@@ -4,15 +4,19 @@ Meteor.startup ->
   subclasses = Collections.createTemporary()
   buildQualities = Collections.createTemporary()
 
-  updateFields = ->
+  isUpdatingFields = false
+  updateFields = (args) ->
+    return if isUpdatingFields
+    args ?= {}
+    isUpdatingFields = true
     doc = @data.doc
     # Used to store original copies of DOM nodes which we modify based on the typology class.
     origInputs = @origInputs
     unless @origInputs
       origInputs = @origInputs = {}
     # TODO(aramk) Refactor with entityForm.
-    typologyClass = doc && SchemaUtils.getParameterValue(doc, 'general.class') ? getClassValue(@)
-    subclass = doc && SchemaUtils.getParameterValue(doc, 'general.subclass') ? getSubclassValue(@)
+    typologyClass = args.typologyClass ? getClassValue(@)
+    subclass = args.subclass ? getSubclassValue(@)
     # Only show fields when a class is selected.
     $fields = @$('.fields')
     $fields.toggle(!!typologyClass)
@@ -103,9 +107,12 @@ Meteor.startup ->
     # Toggle visibility of azimuth array inputs.
     azimuthClasses = SchemaUtils.getField('parameters.orientation.azimuth', Typologies).classes
     @$('.azimuth-array').toggle(!!azimuthClasses[typologyClass])
-    # Toggle visibility of the fields. Perform this last to ensure no change logic is triggered on
-    # the fields.
-    _.each ['show', 'hide'], (visibility) -> _.each $wrappers[visibility], ($w) -> $w[visibility]()
+    # Toggle visibility of the fields. Apply a class to allow both this and individual event
+    # handlers to detemine visibility. The field is only visible if it's both available in the class
+    # and also not hidden by event handlers.
+    _.each $wrappers.show, ($w) -> $w.removeClass('hidden')
+    _.each $wrappers.hide, ($w) -> $w.addClass('hidden')
+    isUpdatingFields = false
 
   bindEvents = ->
     # Bind change events to azimuth fields.
@@ -122,16 +129,24 @@ Meteor.startup ->
     collection: collection
     onRender: ->
       bindEvents.call(@)
-      updateFields.call(@)
-      getClassInput(@).on 'change', => updateFields.call(@)
+      $subclass = getSubclassSelect(@)
+      # Prevent infinite loop when updating the fields changes the subclasses dropdown.
       preventSubclassChange = false
-      getSubclassSelect(@).on 'change', =>
-        return if preventSubclassChange
+      getClassInput(@).on 'change', =>
+        # Remove the subclass when selecting a different class and wait for the new subclass to
+        # populate.
         preventSubclassChange = true
+        Template.dropdown.setValue($subclass, null)
         updateFields.call(@)
-        # Set the build quality to Custom when subclass dropdown is changed.
-        Template.dropdown.setValue(getBuildQualitySelect(@), 'Custom')
         preventSubclassChange = false
+      $subclass.on 'change', => updateFields.call(@)
+      doc = @data.doc
+      updateFieldsArgs = {}
+      # Since subclass is used to determine values, pass in the doc value initially since the input
+      # won't be popuated yet.
+      if doc
+        updateFieldsArgs.subclass = SchemaUtils.getParameterValue(doc, 'general.subclass')
+      updateFields.call(@, updateFieldsArgs)
     hooks:
       formToDoc: (doc) ->
         doc.project = Projects.getCurrentId()
