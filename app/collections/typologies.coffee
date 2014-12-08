@@ -1442,6 +1442,19 @@ typologyCategories =
         type: Number
         units: Units.kgco2
         calc: '$embodied_carbon.e_co2_green + $embodied_carbon.e_co2_imp'
+      i_co2_emb_intensity:
+        label: 'CO2 - Internal Embodied Intensity'
+        desc: 'CO2 per square metre embodied in the building.'
+        type: Number
+        units: Units.kgco2m2
+        classes:
+          COMMERCIAL:
+            subclasses:
+              'Retail': {defaultValue: 375}
+              'Office': {defaultValue: 450}
+              'Hotel': {defaultValue: 480}
+              'Supermarket': {defaultValue: 375}
+              'Restaurant': {defaultValue: 350}
       i_co2_emb:
         label: 'Internal Embodied'
         desc: 'CO2 embodied in the materials of the typology.'
@@ -1454,7 +1467,15 @@ typologyCategories =
         desc: 'Total CO2 embodied in the property.'
         type: Number
         units: Units.kgco2
-        calc: '$embodied_carbon.e_co2_emb + $embodied_carbon.i_co2_emb'
+        calc: ->
+          e_co2_emb = @param('embodied_carbon.e_co2_emb')
+          i_co2_emb_intensity = @param('embodied_carbon.i_co2_emb_intensity')
+          if i_co2_emb_intensity?
+            gfa = @calc('$space.gfa')
+            i_co2_emb = i_co2_emb_intensity * gfa
+          else
+            i_co2_emb = @param('embodied_carbon.i_co2_emb')
+          e_co2_emb + i_co2_emb
       pathways:
         label: 'Pathways'
         items:
@@ -2295,24 +2316,33 @@ Typologies.unflattenParameters = (doc, hasParametersPrefix) ->
       null
   doc
 
-Typologies.getDefaultParameterValues = _.memoize (typologyClass) ->
-  values = {}
-  SchemaUtils.forEachFieldSchema ParametersSchema, (fieldSchema, paramId) ->
-    # TODO(aramk) defaultValue currently removed from schema field.
-#    defaultValue = fieldSchema.defaultValue
-    classes = fieldSchema.classes
-    # NOTE: This does not look for official defaultValue in the schema, only in the class options.
-    classDefaultValue = classes?[typologyClass]?.defaultValue
-    allClassDefaultValue = classes?.ALL?.defaultValue
-    defaultValue = classDefaultValue ? allClassDefaultValue
+Typologies.getDefaultParameterValues = ->
+  if Types.isString(arguments[0])
+    [typologyClass, subclass] = arguments
+  else
+    typology = arguments[0]
+    typologyClass = SchemaUtils.getParameterValue(typology, 'general.class')
+    subclass = SchemaUtils.getParameterValue(typology, 'general.subclass')
+  Typologies._getDefaultParameterValues(typologyClass: typologyClass, subclass: subclass)
 
-    #    if defaultValue? && classDefaultValue?
-    #      console.warn('Field has both defaultValue and classes with defaultValue - using latter.')
-    #      defaultValue = classDefaultValue
-
-    if defaultValue?
-      values[paramId] = defaultValue
-  Typologies.unflattenParameters(values, false)
+Typologies._getDefaultParameterValues = _.memoize(
+  (args) ->
+    typologyClass = args.typologyClass
+    subclass = args.subclass
+    values = {}
+    SchemaUtils.forEachFieldSchema ParametersSchema, (fieldSchema, paramId) ->
+      # NOTE: This does not look for official defaultValue in the schema, only in the class options.
+      classes = fieldSchema.classes
+      classOptions = classes?[typologyClass]
+      classDefaultValue = classOptions?.defaultValue
+      subclassDefaultValue = classOptions?.subclasses?[subclass]?.defaultValue
+      allClassDefaultValue = classes?.ALL?.defaultValue
+      defaultValue = subclassDefaultValue ? classDefaultValue ? allClassDefaultValue
+      if defaultValue?
+        values[paramId] = defaultValue
+    Typologies.unflattenParameters(values, false)
+  (args) -> JSON.stringify(args)
+)
 
 # Get the parameters which have default values for other classes and should be excluded from models
 # of the class.
@@ -2330,8 +2360,7 @@ mergeDefaultParameters = (model, defaults) ->
   model
 
 Typologies.mergeDefaults = (model) ->
-  typologyClass = model.parameters.general?.class
-  defaults = if typologyClass then Typologies.getDefaultParameterValues(typologyClass) else null
+  defaults = Typologies.getDefaultParameterValues(model)
   mergeDefaultParameters(model, defaults)
 
 # Filters parameters which don't belong to the class assigned to the given model. This does not

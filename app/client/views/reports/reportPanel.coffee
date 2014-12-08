@@ -134,6 +134,9 @@ Template.reportPanel.rendered = ->
       filename = report.name + '.csv'
       Blobs.downloadInBrowser(blob, filename)
   $reportDropdown.on 'change', ->
+    # NOTE: Null default value is provided to avoid fluctuating between "" and null since dropdown
+    # will give value as "" when empty, causing the reactive variable to become null, causing the
+    # dropdown to become "" and so forth.
     id = Template.dropdown.getValue($reportDropdown) || null
     currentReportId.set(id)
   @autorun -> refreshReport()

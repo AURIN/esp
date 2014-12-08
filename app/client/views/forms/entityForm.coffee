@@ -17,8 +17,9 @@ Meteor.startup ->
     # TODO(aramk) Refactor with typeForm.
     typologyId = doc?.typology ? Template.dropdown.getValue(getTypologyInput.call(@))
     typology = Typologies.findOne(typologyId)
-    typologyClass = typology?.parameters?.general?.class
-    defaultParams = Typologies.getDefaultParameterValues(typologyClass)
+    typologyClass = SchemaUtils.getParameterValue(typology, 'general.class')
+    subclass = SchemaUtils.getParameterValue(typology, 'general.subclass')
+    defaultParams = Typologies.getDefaultParameterValues(typologyClass, subclass)
     #    defaultParams = Typologies.mergeDefaults(typology ? {})
     console.debug 'updateFields', @, arguments, typologyId, typology, typologyClass
     for key, input of Forms.getSchemaInputs(@, collection)

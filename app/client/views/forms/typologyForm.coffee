@@ -20,7 +20,7 @@ Meteor.startup ->
     # Only show fields when a class is selected.
     $fields = @$('.fields')
     $fields.toggle(!!typologyClass)
-    defaultParams = Typologies.getDefaultParameterValues(typologyClass)
+    defaultParams = Typologies.getDefaultParameterValues(typologyClass, subclass)
     console.debug 'updateFields', @, arguments, typologyClass
     # Remove requried labels from previous updates.
     Forms.getRequiredLabels($fields).remove()
