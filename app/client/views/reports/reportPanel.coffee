@@ -5,15 +5,15 @@ ReportTemplates = [
   'commercialReport'
   'openSpaceReport'
   'pathwayReport'
-  #'precinctReport'
+  'precinctReport'
 ]
 
 reportPanelTemplate = null
-currentReportId = null
+currentReportId = new ReactiveVar(null)
 currentReportTemplate = null
 $reportPanelContent = null
 $currentReport = null
-precinctReportId = 'precinct'
+precinctReportId = 'precinctReport'
 renderDf = null
 
 renderReport = (id) ->
@@ -21,23 +21,25 @@ renderReport = (id) ->
     throw new Error('No report ID provided for rendering')
   report = reports.findOne(id)
   unless report?
+    currentReportId.set(null)
     throw new Error('No such report with ID ' + report)
   # A promise for the rendered report fields
   renderDf = Q.defer()
   # If the same report is rendered, keep the scroll position.
   scrollTop = null
-  if currentReportId == id
+  if currentReportId.get() == id
     scrollTop = $reportPanelContent.scrollTop()
-  currentReportId = id
+  currentReportId.set(id)
+  $reportDropdown = getReportsDropdown()
   $currentReport = $('<div class="report-container"></div>')
   if scrollTop?
     # Wait until the report has rendered before setting scroll position.
     $currentReport.on 'render', ->
       $reportPanelContent.scrollTop(scrollTop)
-  $reportPanelContent.empty()
+  clearPanel()
   $reportPanelContent.append($currentReport)
-  if currentReportTemplate
-    Templates.getElement(currentReportTemplate).remove()
+  getRefreshButton().show()
+  getTools().show()
   templateName = report.templateName
   ReportTemplate = Template[templateName]
   console.log 'Rendering report', templateName
@@ -56,7 +58,8 @@ renderReport = (id) ->
   entityIds = _.filter entityIds, (id) -> Entities.findOne(id)
   if entityIds.length > 0
     if typologyClass? && id != precinctReportId
-      # If a typology class applies and we have made a selection, show the precinct report instead.
+      # If a typology class applies and we have made a selection with at least one incompatible
+      # typology, show the precinct report instead.
       hasMixedTypologies = _.some entityIds, (id) -> !typologyFilter(id)
       if hasMixedTypologies
         renderReport(precinctReportId)
@@ -87,9 +90,21 @@ renderReport = (id) ->
     $('.header', $report).detach()
     $panelHeader.append($info)
 
-
-refreshReport = -> renderReport(currentReportId) if currentReportId?
+refreshReport = ->
+  id = currentReportId.get()
+  Template.dropdown.setValue(getReportsDropdown(), id)
+  if id?
+    renderReport(id)
+  else
+    clearPanel()
 PubSub.subscribe 'report/refresh', -> refreshReport()
+
+clearPanel = ->
+  $reportPanelContent.empty()
+  getTools().hide()
+  reportPanelTemplate.$('.panel > .header .info').remove()
+  if currentReportTemplate
+    Templates.getElement(currentReportTemplate).remove()
 
 Template.reportPanel.created = ->
   reportPanelTemplate = @
@@ -98,7 +113,7 @@ Template.reportPanel.created = ->
   # Add static reports to a temporary collection for populating the dropdown.
   for name in ReportTemplates
     template = Template[name]
-    reports.insert({templateName: name, name: template.title})
+    reports.insert({_id: name, templateName: name, name: template.title})
   @data.reports = reports
   # Listen for changes to the entity selection and refresh reports.
   AtlasManager.getAtlas().then (atlas) ->
@@ -107,25 +122,26 @@ Template.reportPanel.created = ->
       refreshReport()
 
 Template.reportPanel.rendered = ->
-  $reportPanelContent = $(@find('.content'))
-  $reportDropdown = $(@find('.report.dropdown'))
-  $refreshButton = $(@find('.refresh.button'))
-  $downloadButton = $(@find('.download.button'))
-  $tools = $(@find('.tools')).hide()
-  doRender = ->
-    id = Template.dropdown.getValue($reportDropdown)
-    renderReport(id)
-    $refreshButton.show()
-    $tools.show()
-  $refreshButton.on 'click', doRender
-  $downloadButton.on 'click', ->
+  $reportPanelContent = @$('.content')
+  $reportDropdown = getReportsDropdown()
+  clearPanel()
+  getRefreshButton().on 'click', refreshReport
+  getDownloadButton().on 'click', ->
     renderDf.promise.then (args) ->
       csv = Reports.toCSV(args.renderedFields)
       blob = Blobs.fromString(csv, type: 'text/csv;charset=utf-8;')
-      report = reports.findOne(currentReportId)
+      report = reports.findOne(currentReportId.get())
       filename = report.name + '.csv'
       Blobs.downloadInBrowser(blob, filename)
-  $reportDropdown.on 'change', doRender
+  $reportDropdown.on 'change', ->
+    id = Template.dropdown.getValue($reportDropdown) || null
+    currentReportId.set(id)
+  @autorun -> refreshReport()
 
 Template.reportPanel.helpers
   reports: -> reports
+
+getRefreshButton = -> reportPanelTemplate.$('.refresh.button')
+getReportsDropdown = -> reportPanelTemplate.$('.report.dropdown')
+getDownloadButton = -> reportPanelTemplate.$('.download.button')
+getTools = -> reportPanelTemplate.$('.tools').hide()
