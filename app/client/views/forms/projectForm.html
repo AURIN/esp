@@ -44,12 +44,13 @@
           {{> afQuickField name="parameters.utilities.price_supply_water"}}
           {{> afQuickField name="parameters.utilities.price_usage_water"}}
 
-          <div class="subtitle">External Water</div>
+          <div class="subtitle">Water</div>
+          <div class="subsubtitle">External Water</div>
           {{> afQuickField name="parameters.external_water.demand_lawn"}}
           {{> afQuickField name="parameters.external_water.demand_ap"}}
           {{> afQuickField name="parameters.external_water.demand_hp"}}
 
-          <div class="subtitle">Stormwater</div>
+          <div class="subsubtitle">Stormwater</div>
           {{> afQuickField name="parameters.stormwater.runoff_roof"}}
           {{> afQuickField name="parameters.stormwater.runoff_impervious"}}
           {{> afQuickField name="parameters.stormwater.runoff_pervious"}}
@@ -99,7 +100,7 @@
           <div class="subsubtitle">Bicycle Paths</div>
           {{> afQuickField name="parameters.financial.pathways.bicycle_paths.price_asphalt"}}
           {{> afQuickField name="parameters.financial.pathways.bicycle_paths.price_concrete"}}
-          <div class="subsubtitle">All</div>
+          <div class="subsubtitle">All Pathways</div>
           {{> afQuickField name="parameters.financial.pathways.all.price_verge"}}
 
           <div class="subtitle">Embodied Carbon</div>
@@ -127,6 +128,24 @@
           {{> afQuickField name="parameters.energy.fitout.en_basic_hp_app"}}
           {{> afQuickField name="parameters.energy.fitout.en_aff_avg_app"}}
           {{> afQuickField name="parameters.energy.fitout.en_aff_hp_app"}}
+
+          <div class="subtitle">Parking</div>
+          {{> afQuickField name="parameters.parking.prk_area_veh"}}
+          {{> afQuickField name="parameters.financial.parking.cost_ug_park"}}
+
+          <div class="subtitle">Transport</div>
+          {{> afQuickField name="parameters.transport.trips"}}
+          {{> afQuickField name="parameters.transport.age"}}
+          {{> afQuickField name="parameters.transport.gender"}}
+          {{> afQuickField name="parameters.transport.hhsize"}}
+          {{> afQuickField name="parameters.transport.totalvehs"}}
+          {{> afQuickField name="parameters.transport.hhinc_grp"}}
+          {{> afQuickField name="parameters.transport.distctr"}}
+          {{> afQuickField name="parameters.transport.railprox"}}
+          {{> afQuickField name="parameters.transport.distbus"}}
+          {{> afQuickField name="parameters.transport.lum_index"}}
+          {{> afQuickField name="parameters.transport.density"}}
+          {{> afQuickField name="parameters.transport.towork"}}
 
           <div class="crud buttons">
             <button type="button" class="ui red cancel button">Cancel</button>

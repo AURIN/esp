@@ -419,6 +419,33 @@ projectCategories =
             desc: 'Land Value per Square Metre'
             units: Units.$m2
             defaultValue: 150
+      landscaping:
+        label: 'Landscaping'
+        items:
+          price_lawn:
+            label: 'Cost per Sqm - Lawn'
+            type: Number
+            decimal: true
+            units: Units.$m2
+            defaultValue: 40
+          price_annu:
+            label: 'Cost per Sqm - Annual Plants'
+            type: Number
+            decimal: true
+            units: Units.$m2
+            defaultValue: 40
+          price_hardy:
+            label: 'Cost per Sqm - Hardy Plants'
+            type: Number
+            decimal: true
+            units: Units.$m2
+            defaultValue: 50
+          price_imper:
+            label: 'Cost per Sqm - Impermeable'
+            type: Number
+            decimal: true
+            units: Units.$m2
+            defaultValue: 75
       residential:
         label: 'Residential'
         items:
@@ -510,33 +537,6 @@ projectCategories =
             type: Number
             units: Units.$m2
             defaultValue: 2450
-      landscaping:
-        label: 'Landscaping'
-        items:
-          price_lawn:
-            label: 'Cost per Sqm - Lawn'
-            type: Number
-            decimal: true
-            units: Units.$m2
-            defaultValue: 40
-          price_annu:
-            label: 'Cost per Sqm - Annual Plants'
-            type: Number
-            decimal: true
-            units: Units.$m2
-            defaultValue: 40
-          price_hardy:
-            label: 'Cost per Sqm - Hardy Plants'
-            type: Number
-            decimal: true
-            units: Units.$m2
-            defaultValue: 50
-          price_imper:
-            label: 'Cost per Sqm - Impermeable'
-            type: Number
-            decimal: true
-            units: Units.$m2
-            defaultValue: 75
       pathways:
         label: 'Pathways'
         items:
