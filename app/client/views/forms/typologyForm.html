@@ -107,11 +107,7 @@
               {{> afQuickField name="parameters.water_demand.e_prpn_grey"}}
 
               <div class="subtitle">Financial</div>
-              <div class="form-group dropdown">
-                {{> afFieldLabel name="parameters.financial.build_quality"}}
-                {{> dropdown name="parameters.financial.build_quality" items=buildQualities}}
-              </div>
-              <!-- {{> afQuickField name="parameters.financial.build_quality" options="allowed"}} -->
+              {{> afQuickField name="parameters.financial.build_type" type="dropdown" items=buildTypes}}
               {{> afQuickField name="parameters.financial.cost_con"}}
 
               <div class="subtitle">Parking</div>

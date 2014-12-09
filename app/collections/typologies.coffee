@@ -928,7 +928,7 @@ ResidentialSubclasses = ['Single House', 'Attached House', 'Walkup', 'High Rise'
 CommercialSubclasses = ['Retail', 'Office', 'Hotel', 'Supermarket', 'Restaurant']
 PathwaySubclasses = ['Freeway', 'Highway', 'Street', 'Footpath', 'Bicycle Path']
 EnergySources = ['Electricity', 'Gas']
-TypologyBuildQualityMap =
+TypologyBuildTypeMap =
   'Standard Quality Build':
     'Single House': 'single_house_std'
     'Attached House': 'attached_house_std'
@@ -1934,16 +1934,16 @@ typologyCategories =
   financial:
     label: 'Financial'
     items:
-      build_quality:
-        label: 'Build Quality'
+      build_type:
+        label: 'Build Type'
         type: String
-        desc: 'The build quality of the typology.'
+        desc: 'The build type of the typology.'
         classes:
           RESIDENTIAL:
             defaultValue: 'Custom'
-            allowedValues: Object.keys(TypologyBuildQualityMap)
+            allowedValues: Object.keys(TypologyBuildTypeMap)
             getCostParamId: (args) ->
-              'financial.residential.' + TypologyBuildQualityMap[args.value]?[args.subclass]
+              'financial.residential.' + TypologyBuildTypeMap[args.value]?[args.subclass]
           COMMERCIAL:
             defaultValue: 'Custom'
             allowedValues: (args) ->
@@ -2435,7 +2435,6 @@ TypologySchema = new SimpleSchema
 Typologies.attachSchema(TypologySchema)
 Typologies.classes = TypologyClasses
 Typologies.units = Units
-Typologies.buildQualityMap = TypologyBuildQualityMap
 Typologies.allow(Collections.allowAll())
 
 Typologies.getClassByName = _.memoize (name) ->
@@ -2461,8 +2460,8 @@ Typologies.getSubclassItems = (typologyClass) ->
   allowedValues = options?.allowedValues ? []
   _.map allowedValues, (value) -> {_id: value, name: value}
 
-Typologies.getBuildQualityItems = (typologyClass, subclass) ->
-  field = SchemaUtils.getField('parameters.financial.build_quality', Typologies)
+Typologies.getBuildTypeItems = (typologyClass, subclass) ->
+  field = SchemaUtils.getField('parameters.financial.build_type', Typologies)
   options = field?.classes[typologyClass]
   allowedValues = options?.allowedValues ? []
   if Types.isFunction(allowedValues)
@@ -3042,28 +3041,28 @@ Typologies.after.insert(updateQueuedEntities)
 Typologies.after.update(updateQueuedEntities)
 
 ####################################################################################################
-# BUILD QUALITY
+# BUILD TYPE
 ####################################################################################################
 
-buildQualityDependencyFieldIds = ['parameters.financial.build_quality',
+buildTypeDependencyFieldIds = ['parameters.financial.build_type',
   'parameters.general.subclass', 'parameters.space.gfa']
 
-updateBuildQuality = (userId, doc, fileNames, modifier) ->
-  depResult = getModifiedDocWithDeps(doc, modifier, buildQualityDependencyFieldIds)
+updateBuildType = (userId, doc, fileNames, modifier) ->
+  depResult = getModifiedDocWithDeps(doc, modifier, buildTypeDependencyFieldIds)
   fullDoc = depResult.fullDoc
   Typologies.mergeDefaults(fullDoc)
   project = Projects.mergeDefaults(Projects.findOne(fullDoc.project))
   return unless depResult.hasDependencyUpdates
-  build_quality = SchemaUtils.getParameterValue(fullDoc, 'financial.build_quality')
+  build_type = SchemaUtils.getParameterValue(fullDoc, 'financial.build_type')
   subclass = SchemaUtils.getParameterValue(fullDoc, 'general.subclass')
   gfa = SchemaUtils.getParameterValue(fullDoc, 'space.gfa')
   $set = {}
-  return unless build_quality? && build_quality != 'Custom' && subclass? && gfa?
+  return unless build_type? && build_type != 'Custom' && subclass? && gfa?
   typologyClass = SchemaUtils.getParameterValue(fullDoc, 'general.class')
-  field = SchemaUtils.getField('parameters.financial.build_quality', Typologies)
+  field = SchemaUtils.getField('parameters.financial.build_type', Typologies)
   options = field?.classes[typologyClass]
   costParamId =
-    options.getCostParamId(subclass: subclass, typologyClass: typologyClass, value: build_quality)
+    options.getCostParamId(subclass: subclass, typologyClass: typologyClass, value: build_type)
   costParamValue = SchemaUtils.getParameterValue(project, costParamId)
   cost_ug_park = SchemaUtils.getParameterValue(project, 'financial.parking.cost_ug_park')
   parking_ug = SchemaUtils.getParameterValue(fullDoc, 'parking.parking_ug')
@@ -3071,8 +3070,8 @@ updateBuildQuality = (userId, doc, fileNames, modifier) ->
   $set['parameters.financial.cost_con'] = costParamValue * gfa + parkingCost
   applyModifierSet(doc, modifier, $set)
 
-Typologies.before.insert(updateBuildQuality)
-Typologies.before.update(updateBuildQuality)
+Typologies.before.insert(updateBuildType)
+Typologies.before.update(updateBuildType)
 
 ####################################################################################################
 # ASSOCIATION MAINTENANCE

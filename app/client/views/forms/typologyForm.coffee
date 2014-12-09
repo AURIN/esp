@@ -2,7 +2,7 @@ Meteor.startup ->
 
   collection = Typologies
   subclasses = Collections.createTemporary()
-  buildQualities = Collections.createTemporary()
+  buildTypes = Collections.createTemporary()
 
   isUpdatingFields = false
   updateFields = (args) ->
@@ -80,8 +80,7 @@ Meteor.startup ->
           # override with null yet. It is available only if a value is not set.
           $option = $('<option value="">None</option>')
           $input.prepend($option)
-        typology = doc
-        inputValue = SchemaUtils.getParameterValue(typology, paramName) if typology
+        inputValue = SchemaUtils.getParameterValue(doc, paramName) if doc
         unless inputValue?
           if defaultValue?
             $input.val(defaultValue)
@@ -96,10 +95,14 @@ Meteor.startup ->
     # Populate available subclasses.
     Collections.removeAllDocs(subclasses)
     _.each Typologies.getSubclassItems(typologyClass), (item) -> subclasses.insert(item)
-    # Populate available build qualities.
-    Collections.removeAllDocs(buildQualities)
-    buildQualities.insert({name: 'Custom', _id: 'Custom'})
-    _.each Typologies.getBuildQualityItems(typologyClass, subclass), (item) -> buildQualities.insert(item)
+    # Populate available build types.
+    Collections.removeAllDocs(buildTypes)
+    buildTypes.insert({name: 'Custom', _id: 'Custom'})
+    _.each Typologies.getBuildTypeItems(typologyClass, subclass), (item) -> buildTypes.insert(item)
+    # Select custom build type if no value is selected.
+    buildType = doc && SchemaUtils.getParameterValue(doc, 'financial.build_type')
+    unless buildTypes.findOne(buildType)
+      Template.dropdown.setValue(getBuildTypeSelect(@), 'Custom')
     # Toggle visibility of geometry inputs.
     geom2dClasses = SchemaUtils.getField('parameters.space.geom_2d', Typologies).classes
     canModifyGeometry = !!geom2dClasses[typologyClass] && typologyClass != 'PATHWAY'
@@ -120,9 +123,8 @@ Meteor.startup ->
     $azimuthFields = @$('.azimuth-array input').add(getAzimuthInput(@)).add(getCfaInput(@))
     $azimuthFields.on('change', onAzimuthChange)
     $azimuthFields.on('keyup', _.debounce(onAzimuthChange, 300))
-    # Bind event to build quality dropdown
-    onBuildQualityChange = => Form.updateBuildQuality(@)
-    getBuildQualitySelect(@).on('change', onBuildQualityChange)
+    # Bind event to build type dropdown
+    getBuildTypeSelect(@).on 'change', => Form.updateBuildType(@)
 
   Form = Forms.defineModelForm
     name: 'typologyForm'
@@ -179,8 +181,7 @@ Meteor.startup ->
     subclasses: -> subclasses
     classValue: -> @doc?.parameters?.general?.class
     subclassValue: -> @doc?.parameters?.general?.subclass
-    buildQualities: -> buildQualities
-    buildQuality: -> @doc?.parameters?.financial?.build_quality ? 'Custom'
+    buildTypes: -> buildTypes
 
   Form.events
     'change [data-name="parameters.space.geom_2d"] input': (e, template) ->
@@ -228,14 +229,13 @@ Meteor.startup ->
   getAzimuthInput = (template) -> template.$('[name="parameters.orientation.azimuth"]')
   getCfaInput = (template) -> template.$('[name="parameters.space.cfa"]')
 
-  # BUILD QUALITY
+  # BUILD TYPE
 
-  Form.updateBuildQuality = (template) ->
-    buildQuality = getBuildQualityValue(template)
-    # subclass = getSubclassValue(template)
-    # buildQualityParamId = Typologies.buildQualityMap[buildQuality]?[subclass]
-    # getCostOfConstructionInput(template).parent().toggle(!buildQualityParamId?)
-    getCostOfConstructionInput(template).parent().toggle(buildQuality == 'Custom')
+  Form.updateBuildType = (template) ->
+    buildType = getBuildTypeValue(template)
+    getCostOfConstructionInput(template).parent().toggle(buildType == 'Custom')
+
+  # ELEMENTS
 
   getClassInput = (template) -> template.$('[name="parameters.general.class"]').closest('.dropdown')
   getClassValue = (template) -> Template.dropdown.getValue(getClassInput(template))
@@ -243,6 +243,6 @@ Meteor.startup ->
   getSubclassSelect = (template) ->
     template.$('[name="parameters.general.subclass"]').closest('.dropdown')
   getSubclassValue = (template) -> Template.dropdown.getValue(getSubclassSelect(template))
-  getBuildQualitySelect = (template) -> template.$('[name="parameters.financial.build_quality"]').parent()
-  getBuildQualityValue = (template) -> Template.dropdown.getValue(getBuildQualitySelect(template))
+  getBuildTypeSelect = (template) -> template.$('[data-name="parameters.financial.build_type"]')
+  getBuildTypeValue = (template) -> Template.dropdown.getValue(getBuildTypeSelect(template))
   getCostOfConstructionInput = (template) -> template.$('[name="parameters.financial.cost_con"]')
