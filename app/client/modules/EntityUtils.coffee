@@ -53,9 +53,12 @@ Meteor.startup ->
           df.resolve(null)
           return
         # Modify the ID of c3ml entities to allow reusing them for multiple collections.
-        c3mls = result.c3mls
-        _.each c3mls, (c3ml) ->
+        c3mls = _.map result.c3mls, (c3ml) ->
           c3ml.id = id + ':' + c3ml.id
+          c3ml.show = true
+          c3ml
+        # Ignore all collections in the c3ml, since they don't affect visualisation.
+        c3mls = _.filter c3mls, (c3ml) -> c3ml.type != 'collection'
         try
           c3mlEntities = AtlasManager.renderEntities(c3mls)
         catch e
@@ -70,7 +73,7 @@ Meteor.startup ->
         # feature.
         require ['atlas/model/Collection'], (Collection) ->
           # TODO(aramk) Use dependency injection to prevent the need for passing manually.
-          deps = geoEntity._bindDependencies({})
+          deps = geoEntity._bindDependencies({show: true})
           collection = new Collection('collection-' + id, {entities: ids}, deps)
           df.resolve(collection)
     df.promise
@@ -84,51 +87,53 @@ Meteor.startup ->
       AtlasManager.showEntity(id)
       df.resolve(geoEntity)
     else
-      @toGeoEntityArgs(id).then (entityArgs) =>
-        entity = Entities.getFlattened(id)
-        typologyClass = Entities.getTypologyClass(id)
+      @toGeoEntityArgs(id).then(
+        (entityArgs) =>
+          entity = Entities.getFlattened(id)
+          typologyClass = Entities.getTypologyClass(id)
 
-        doRender = (id, geoEntity) =>
-          AtlasManager.showEntity(id)
-          @_setUpPopup(geoEntity)
-          df.resolve(geoEntity)
+          doRender = (id, geoEntity) =>
+            AtlasManager.showEntity(id)
+            @_setUpPopup(geoEntity)
+            df.resolve(geoEntity)
 
-        if typologyClass == 'PATHWAY'
-          geoEntity = AtlasManager.renderEntity(entityArgs)
-          doRender(id, geoEntity)
-          return
-
-        azimuth = SchemaUtils.getParameterValue(entity, 'orientation.azimuth')
-        # If the geoEntity was rendered using the Typology geometry, centre it based on the Lot.
-        lot = Lots.findOne(entity.lot)
-        unless lot
-          EntityUtils.unrender(id)
-          throw new Error('Rendered geoEntity does not have an accompanying lot.')
-        lotId = lot._id
-        require [
-          'atlas/model/Feature',
-          'atlas/model/Vertex'
-        ], (Feature, Vertex) =>
-          LotUtils.render(lotId).then (lotEntity) =>
-            lotCentroid = lotEntity.getCentroid()
-            # Hide the entity initially to avoid showing the transition.
-            entityArgs.show = false
-            delete entityArgs.displayMode
-            # Render the Entity once the Lot has been rendered.
+          if typologyClass == 'PATHWAY'
             geoEntity = AtlasManager.renderEntity(entityArgs)
-            @._buildMeshCollection(id, lotCentroid).then (collection) =>
-              if collection
-                meshEntity = collection
-                geoEntity.setForm(Feature.DisplayMode.MESH, meshEntity)
-              # Ensure all forms have the same centroid.
-              _.each Feature.DisplayMode, (displayMode) ->
-                form = geoEntity.getForm(displayMode)
-                if form
-                  form.setCentroid(lotCentroid)
-                  # Apply rotation based on the azimuth.
-                  form.setRotation(new Vertex(0, 0, azimuth)) if azimuth?
-              geoEntity.setDisplayMode(Session.get('entityDisplayMode'))
-              doRender(id, geoEntity)
+            doRender(id, geoEntity)
+            return
+
+          azimuth = SchemaUtils.getParameterValue(entity, 'orientation.azimuth')
+          # If the geoEntity was rendered using the Typology geometry, centre it based on the Lot.
+          lot = Lots.findOne(entity.lot)
+          unless lot
+            EntityUtils.unrender(id)
+            throw new Error('Rendered geoEntity does not have an accompanying lot.')
+          lotId = lot._id
+          require [
+            'atlas/model/Feature',
+            'atlas/model/Vertex'
+          ], (Feature, Vertex) =>
+            LotUtils.render(lotId).then (lotEntity) =>
+              lotCentroid = lotEntity.getCentroid()
+              # Hide the entity initially to avoid showing the transition.
+              entityArgs.show = false
+              delete entityArgs.displayMode
+              # Render the Entity once the Lot has been rendered.
+              geoEntity = AtlasManager.renderEntity(entityArgs)
+              @._buildMeshCollection(id, lotCentroid).then (collection) ->
+                if collection
+                  meshEntity = collection
+                  geoEntity.setForm(Feature.DisplayMode.MESH, meshEntity)
+                # Ensure all forms have the same centroid.
+                _.each Feature.DisplayMode, (displayMode) ->
+                  form = geoEntity.getForm(displayMode)
+                  if form
+                    form.setCentroid(lotCentroid)
+                    # Apply rotation based on the azimuth.
+                    form.setRotation(new Vertex(0, 0, azimuth)) if azimuth?
+                geoEntity.setDisplayMode(Session.get('entityDisplayMode'))
+                doRender(id, geoEntity)
+      ).catch(df.reject)
     df.promise
 
   _setUpPopup: (geoEntity) ->

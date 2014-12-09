@@ -12,6 +12,7 @@ less
 meteor-platform
 standard-app-packages
 underscore
+reactive-var
 
 # PUBLIC
 awatson1978:dropzone

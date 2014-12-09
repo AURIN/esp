@@ -90,37 +90,40 @@ autoLabel = (field, id) ->
 
 createCategorySchemaObj = (cat, catId, args) ->
   catSchemaFields = {}
-  # For each field in each category
+  hasRequiredField = false
   for itemId, item of cat.items
     if item.items?
-      itemFields = createCategorySchemaObj(item, itemId, args)
+      result = createCategorySchemaObj(item, itemId, args)
+      if result.hasRequiredField
+        hasRequiredField = true
+      fieldSchema = result.schema
     else
-      # TODO(aramk) Set the default to 0 for numbers.
-      itemFields = _.extend({optional: true}, args.itemDefaults, item)
-      autoLabel(itemFields, itemId)
+      # Required fields must explicitly specify "optional" as false.
+      fieldSchema = _.extend({optional: true}, args.itemDefaults, item)
+      if fieldSchema.optional == false
+        hasRequiredField = true
+      autoLabel(fieldSchema, itemId)
       # If defaultValue is used, put it into "classes" to prevent SimpleSchema from storing this
       # value in the doc. We want to inherit this value at runtime for all classes, but not
       # persist it in multiple documents in case we want to change it later in the schema.
-      # TODO(aramk) Check if this is intended behaviour.
-      defaultValue = itemFields.defaultValue
+      defaultValue = fieldSchema.defaultValue
       if defaultValue?
-        classes = itemFields.classes ?= {}
+        classes = fieldSchema.classes ?= {}
         allClassOptions = classes.ALL ?= {}
         if allClassOptions.defaultValue?
           throw new Error('Default value specified on field and in classOptions - only use one.')
         allClassOptions.defaultValue = defaultValue
-        delete itemFields.defaultValue
-    catSchemaFields[itemId] = itemFields
+        delete fieldSchema.defaultValue
+    catSchemaFields[itemId] = fieldSchema
   catSchema = new SimpleSchema(catSchemaFields)
   catSchemaArgs = _.extend({
-  # TODO(aramk) This should be optional: false, but an update to SimpleSchema is causing edits to
-  # these fields to fail during validation, since cleaning doesn't run for modifier objects.
-    optional: true
-    defaultValue: {}
+    # If a single field is required, the entire category is marked required. If no fields are
+    # required, the category can be omitted.
+    optional: !hasRequiredField
   }, args.categoryDefaults, cat, {type: catSchema})
   autoLabel(catSchemaArgs, catId)
   delete catSchemaArgs.items
-  catSchemaArgs
+  {hasRequiredField: hasRequiredField, schema: catSchemaArgs}
 
 # Constructs a SimpleSchema which contains all categories and each category is it's own
 # SimpleSchema.
@@ -132,8 +135,8 @@ createCategoriesSchema = (args) ->
   # For each category in the schema.
   catsFields = {}
   for catId, cat of cats
-    catSchemaArgs = createCategorySchemaObj(cat, catId, args)
-    catsFields[catId] = catSchemaArgs
+    result = createCategorySchemaObj(cat, catId, args)
+    catsFields[catId] = result.schema
   new SimpleSchema(catsFields)
 
 forEachCategoryField = (category, callback) ->
@@ -245,7 +248,6 @@ projectCategories =
         decimal: true
         desc: 'Total land area of the precinct.'
         units: Units.m2
-
   environment:
     label: 'Environment'
     items:
@@ -901,10 +903,12 @@ TypologyClasses =
     name: 'Open Space'
     color: '#7ed700' # Green
     abbr: 'os'
+    displayMode: false
   PATHWAY:
     name: 'Pathway'
     color: 'black'
     abbr: 'pw'
+    displayMode: 'line'
   INSTITUTIONAL:
     name: 'Institutional'
     color: 'orange'
@@ -931,7 +935,7 @@ TypologyBuildQualityMap =
 CommercialConstructionTypes =
   'Retail':
     'Local Shop': 'retail.local'
-    'Shopping Centre': 'local.shopping'
+    'Shopping Centre': 'retail.shopping'
   'Office':
     'Low-rise Without Lifts': 'office.low_rise'
     'Med-rise With Lifts': 'office.med_rise'
@@ -1008,7 +1012,7 @@ calcLength = (id) ->
   feature = AtlasManager.getEntity(id)
   line = feature.getForm('line')
   unless line
-    throw new Error('Cannot calculate length of non-line GeoEntity.')
+    throw new Error('Cannot calculate length of non-line GeoEntity with ID ' + id)
   line.getLength()
 
 areaSchema =
@@ -1057,6 +1061,12 @@ calcEnergyCost = (source, suffix) ->
     usage_cost -= 365 * pv_output * size_pv * usage_price
   365 * supply_price + usage_cost
 
+calcEnergyWithIntensityCost = (suffix, shortSuffix) ->
+  supply_price = @param('utilities.price_supply_' + suffix)
+  usage_price = @KWH_TO_MJ(@param('utilities.price_usage_' + suffix))
+  usage_cost = @param('energy_demand.en_use_' + shortSuffix) * usage_price
+  365 * supply_price + usage_cost
+
 calcLandPrice = ->
   typologyClass = Entities.getTypologyClass(@model._id)
   abbr = TypologyClasses[typologyClass].abbr
@@ -1101,8 +1111,10 @@ typologyCategories =
         type: String
         desc: '2D footprint geometry of the typology.'
         classes:
-          RESIDENTIAL: {}
-          COMMERCIAL: {}
+          RESIDENTIAL: {optional: false}
+          COMMERCIAL: {optional: false}
+          # Pathway typologies don't have geometry - it is defined in the entities - so this is
+          # optional.
           PATHWAY: {}
       geom_3d:
         label: '3D Geometry'
@@ -1159,6 +1171,7 @@ typologyCategories =
         units: Units.m2
         classes:
           RESIDENTIAL: {}
+          COMMERCIAL: {}
       cfa:
         label: 'Conditioned Floor Area'
         desc: 'Total conditioned area of the typology.'
@@ -1167,6 +1180,7 @@ typologyCategories =
         units: Units.m2
         classes:
           RESIDENTIAL: {}
+          COMMERCIAL: {}
       storeys:
         label: 'Storeys'
         desc: 'Number of floors/storeys in the typology.'
@@ -1174,9 +1188,11 @@ typologyCategories =
         units: 'Floors'
         classes:
           RESIDENTIAL: {}
+          COMMERCIAL: {}
       height: extendSchema(heightSchema, {
         classes:
           RESIDENTIAL: {}
+          COMMERCIAL: {}
         })
       length:
         label: 'Total Path Length'
@@ -1441,7 +1457,13 @@ typologyCategories =
         decimal: true
         units: Units.MJm2year
         classes:
-          COMMERCIAL: {defaultValue: 1000}
+          COMMERCIAL:
+            subclasses:
+              'Retail': {defaultValue: 1140}
+              'Office': {defaultValue: 651}
+              'Hotel': {defaultValue: 909}
+              'Supermarket': {defaultValue: 3206}
+              'Restaurant': {defaultValue: 4878}
       en_use_e:
         desc: 'Electricity energy use of the typology.'
         label: 'Energy Use - Electricity'
@@ -1455,7 +1477,13 @@ typologyCategories =
         decimal: true
         units: Units.MJm2year
         classes:
-          COMMERCIAL: {defaultValue: 500}
+          COMMERCIAL:
+            subclasses:
+              'Retail': {defaultValue: 465}
+              'Office': {defaultValue: 266}
+              'Hotel': {defaultValue: 511}
+              'Supermarket': {defaultValue: 169}
+              'Restaurant': {defaultValue: 1540}
       en_use_g:
         desc: 'Gas energy use of the typology.'
         label: 'Energy Use - Gas'
@@ -1511,6 +1539,19 @@ typologyCategories =
         type: Number
         units: Units.kgco2
         calc: '$embodied_carbon.e_co2_green + $embodied_carbon.e_co2_imp'
+      i_co2_emb_intensity:
+        label: 'CO2 - Internal Embodied Intensity'
+        desc: 'CO2 per square metre embodied in the building.'
+        type: Number
+        units: Units.kgco2m2
+        classes:
+          COMMERCIAL:
+            subclasses:
+              'Retail': {defaultValue: 375}
+              'Office': {defaultValue: 450}
+              'Hotel': {defaultValue: 480}
+              'Supermarket': {defaultValue: 375}
+              'Restaurant': {defaultValue: 350}
       i_co2_emb:
         label: 'Internal Embodied'
         desc: 'CO2 embodied in the materials of the typology.'
@@ -1523,7 +1564,13 @@ typologyCategories =
         desc: 'Total CO2 embodied in the property.'
         type: Number
         units: Units.kgco2
-        calc: '$embodied_carbon.e_co2_emb + $embodied_carbon.i_co2_emb'
+        calc: ->
+          typologyClass = Entities.getTypologyClass(@model._id)
+          if typologyClass == 'COMMERCIAL'
+            i_co2_emb = @calc('$embodied_carbon.i_co2_emb_intensity * $space.gfa')
+          else
+            i_co2_emb = @param('embodied_carbon.i_co2_emb')
+          @param('embodied_carbon.e_co2_emb') + i_co2_emb
       pathways:
         label: 'Pathways'
         items:
@@ -1655,7 +1702,7 @@ typologyCategories =
         calc: ->
           typologyClass = Entities.getTypologyClass(@model._id)
           if typologyClass == 'COMMERCIAL'
-            @calc('$energy_demand.co2_op_e + $energy_demand.co2_op_g')
+            @calc('$operating_carbon.co2_op_e + $operating_carbon.co2_op_g')
           else
             @calc('$operating_carbon.co2_heat + $operating_carbon.co2_cool + $operating_carbon.co2_light + $operating_carbon.co2_hwat + $operating_carbon.co2_cook + $operating_carbon.co2_app - ($energy_demand.en_pv * $operating_carbon.elec)')
       co2_op_e:
@@ -1720,7 +1767,13 @@ typologyCategories =
         decimal: true
         units: Units.kLm2year
         classes:
-          COMMERCIAL: {defaultValue: 1.7}
+          COMMERCIAL:
+            subclasses:
+              'Retail': {defaultValue: 1.7}
+              'Office': {defaultValue: 1.01}
+              'Hotel': {defaultValue: 328}
+              'Supermarket': {defaultValue: 3.5}
+              'Restaurant': {defaultValue: 11.3}
       i_wu_total:
         label: 'Internal Total Water Use'
         desc: 'Total internal water use of the typology.'
@@ -1879,13 +1932,19 @@ typologyCategories =
         type: String
         desc: 'The build quality of the typology.'
         classes:
-          RESIDENTIAL: {defaultValue: 'Custom', allowedValues: Object.keys(TypologyBuildQualityMap)}
+          RESIDENTIAL:
+            defaultValue: 'Custom'
+            allowedValues: Object.keys(TypologyBuildQualityMap)
+            getCostParamId: (args) ->
+              'financial.residential.' + TypologyBuildQualityMap[args.value]?[args.subclass]
           COMMERCIAL:
             defaultValue: 'Custom'
             allowedValues: (args) ->
               # subclass = SchemaUtils.getParameterValue(typology, 'general.subclass')
               values = CommercialConstructionTypes[args.subclass]
               if values then Object.keys(values) else []
+            getCostParamId: (args) ->
+              'financial.commercial.' + CommercialConstructionTypes[args.subclass]?[args.value]
       cost_land:
         label: 'Cost - Land Parcel'
         type: Number
@@ -1943,14 +2002,24 @@ typologyCategories =
         type: Number
         decimal: true
         units: Units.$
-        calc: -> calcEnergyCost.call(@, 'Electricity', 'elec')
+        calc: ->
+          typologyClass = Entities.getTypologyClass(@model._id)
+          if typologyClass == 'COMMERCIAL'
+            calcEnergyWithIntensityCost.call(@, 'elec', 'e')
+          else
+            calcEnergyCost.call(@, 'Electricity', 'elec')
       cost_op_g:
         label: 'Cost - Gas Usage'
         desc: 'Operating costs due to gas usage.'
         type: Number
         decimal: true
         units: Units.$
-        calc: -> calcEnergyCost.call(@, 'Gas', 'gas')
+        calc: ->
+          typologyClass = Entities.getTypologyClass(@model._id)
+          if typologyClass == 'COMMERCIAL'
+            calcEnergyWithIntensityCost.call(@, 'gas', 'g')
+          else
+            calcEnergyCost.call(@, 'Gas', 'gas')
       cost_op_w:
         label: 'Cost - Water Usage'
         desc: 'Operating costs due to water usage.'
@@ -2303,8 +2372,6 @@ TypologySchema = new SimpleSchema
   parameters:
     label: 'Parameters'
     type: ParametersSchema
-  # Necessary to allow fields within to be required.
-    optional: false
     defaultValue: {}
   project: projectSchema
 
@@ -2320,7 +2387,7 @@ Typologies.getClassByName = _.memoize (name) ->
   sanitize = (str) -> ('' + str).toLowerCase().trim()
   name = sanitize(name)
   for id, cls of TypologyClasses
-    if cls.name == sanitize(name)
+    if sanitize(cls.name) == name
       matchedId = id
   matchedId
 
@@ -2377,24 +2444,33 @@ Typologies.unflattenParameters = (doc, hasParametersPrefix) ->
       null
   doc
 
-Typologies.getDefaultParameterValues = _.memoize (typologyClass) ->
-  values = {}
-  SchemaUtils.forEachFieldSchema ParametersSchema, (fieldSchema, paramId) ->
-    # TODO(aramk) defaultValue currently removed from schema field.
-#    defaultValue = fieldSchema.defaultValue
-    classes = fieldSchema.classes
-    # NOTE: This does not look for official defaultValue in the schema, only in the class options.
-    classDefaultValue = classes?[typologyClass]?.defaultValue
-    allClassDefaultValue = classes?.ALL?.defaultValue
-    defaultValue = classDefaultValue ? allClassDefaultValue
+Typologies.getDefaultParameterValues = ->
+  if Types.isString(arguments[0])
+    [typologyClass, subclass] = arguments
+  else
+    typology = arguments[0]
+    typologyClass = SchemaUtils.getParameterValue(typology, 'general.class')
+    subclass = SchemaUtils.getParameterValue(typology, 'general.subclass')
+  Typologies._getDefaultParameterValues(typologyClass: typologyClass, subclass: subclass)
 
-    #    if defaultValue? && classDefaultValue?
-    #      console.warn('Field has both defaultValue and classes with defaultValue - using latter.')
-    #      defaultValue = classDefaultValue
-
-    if defaultValue?
-      values[paramId] = defaultValue
-  Typologies.unflattenParameters(values, false)
+Typologies._getDefaultParameterValues = _.memoize(
+  (args) ->
+    typologyClass = args.typologyClass
+    subclass = args.subclass
+    values = {}
+    SchemaUtils.forEachFieldSchema ParametersSchema, (fieldSchema, paramId) ->
+      # NOTE: This does not look for official defaultValue in the schema, only in the class options.
+      classes = fieldSchema.classes
+      classOptions = classes?[typologyClass]
+      classDefaultValue = classOptions?.defaultValue
+      subclassDefaultValue = classOptions?.subclasses?[subclass]?.defaultValue
+      allClassDefaultValue = classes?.ALL?.defaultValue
+      defaultValue = subclassDefaultValue ? classDefaultValue ? allClassDefaultValue
+      if defaultValue?
+        values[paramId] = defaultValue
+    Typologies.unflattenParameters(values, false)
+  (args) -> JSON.stringify(args)
+)
 
 # Get the parameters which have default values for other classes and should be excluded from models
 # of the class.
@@ -2412,8 +2488,7 @@ mergeDefaultParameters = (model, defaults) ->
   model
 
 Typologies.mergeDefaults = (model) ->
-  typologyClass = model.parameters.general?.class
-  defaults = if typologyClass then Typologies.getDefaultParameterValues(typologyClass) else null
+  defaults = Typologies.getDefaultParameterValues(model)
   mergeDefaultParameters(model, defaults)
 
 # Filters parameters which don't belong to the class assigned to the given model. This does not
@@ -2486,6 +2561,7 @@ lotCategories =
         desc: 'Whether the lot can be used for development.'
         defaultValue: true
   space:
+    optional: false
     items:
       geom_2d:
         label: 'Geometry'
@@ -2659,12 +2735,7 @@ Lots.validateTypology = (lot, typologyId) ->
     Q.all(areaDfs).then (results) ->
       lotArea = results.pop()?.area
       typologyArea = results.pop()?.area
-      unless lotArea
-        df.resolve('Lot has no area.')
-      unless typologyArea
-        # TODO(aramk) Fail if the typology should have a geometry.
-        df.resolve()
-      if lotArea <= typologyArea
+      if lotArea? && typologyArea? && lotArea <= typologyArea
         df.resolve('Typology must have area less than or equal to the Lot.')
       else
         df.resolve()
@@ -2778,9 +2849,16 @@ Entities.mergeTypologyObj = (entity, typology) ->
 
 Entities.findByProject = (projectId) -> SchemaUtils.findByProject(Entities, projectId)
 
+Entities.findByTypology = (typologyId) -> Entities.find({typology: typologyId})
+
 Entities.getTypologyClass = (id) ->
   typologyId = Entities.findOne(id).typology
   Typologies.getTypologyClass(typologyId) if typologyId?
+
+Entities.allowsMultipleDisplayModes = (id) ->
+  typologyClass = Entities.getTypologyClass(id)
+  displayMode = TypologyClasses[typologyClass].displayMode
+  !(displayMode? && (displayMode == false || !Types.isArray(displayMode)))
 
 # Listen for changes to Entities or Typologies and refresh reports.
 _reportRefreshSubscribed = false
@@ -2914,17 +2992,19 @@ updateBuildQuality = (userId, doc, fileNames, modifier) ->
   return unless depResult.hasDependencyUpdates
   build_quality = SchemaUtils.getParameterValue(fullDoc, 'financial.build_quality')
   subclass = SchemaUtils.getParameterValue(fullDoc, 'general.subclass')
-  cost_con = SchemaUtils.getParameterValue(fullDoc, 'financial.cost_con')
   gfa = SchemaUtils.getParameterValue(fullDoc, 'space.gfa')
   $set = {}
   return unless build_quality? && build_quality != 'Custom' && subclass? && gfa?
-  buildQualityParamSuffix = Typologies.buildQualityMap[build_quality]?[subclass]
-  buildQualityParamId = 'parameters.financial.residential.' + buildQualityParamSuffix
-  buildParamValue = SchemaUtils.getParameterValue(project, buildQualityParamId)
+  typologyClass = SchemaUtils.getParameterValue(fullDoc, 'general.class')
+  field = SchemaUtils.getField('parameters.financial.build_quality', Typologies)
+  options = field?.classes[typologyClass]
+  costParamId =
+    options.getCostParamId(subclass: subclass, typologyClass: typologyClass, value: build_quality)
+  costParamValue = SchemaUtils.getParameterValue(project, costParamId)
   cost_ug_park = SchemaUtils.getParameterValue(project, 'financial.parking.cost_ug_park')
   parking_ug = SchemaUtils.getParameterValue(fullDoc, 'parking.parking_ug')
-  parkingCost = cost_ug_park * parking_ug
-  $set['parameters.financial.cost_con'] = buildParamValue * gfa + parkingCost
+  parkingCost = if parking_ug? then cost_ug_park * parking_ug else 0
+  $set['parameters.financial.cost_con'] = costParamValue * gfa + parkingCost
   applyModifierSet(doc, modifier, $set)
 
 Typologies.before.insert(updateBuildQuality)
@@ -2970,5 +3050,4 @@ Collections.observe Typologies,
           console.debug('Lots update', err, result)
   removed: (typology) ->
     # Remove entities when the typology is removed.
-    entities = Entities.find({typology: typology._id}).fetch()
-    _.each entities, (entity) -> Entities.remove(entity._id)
+    _.each Entities.findByTypology(typology._id).fetch(), (entity) -> Entities.remove(entity._id)

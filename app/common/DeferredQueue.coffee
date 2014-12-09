@@ -4,9 +4,9 @@ class @DeferredQueue
     @queue = []
 
   wait: (index) ->
-    df = @queue[index]
-    if df
-      df
+    promise = @queue[index]
+    if promise
+      promise
     else
       df = Q.defer()
       df.resolve()
