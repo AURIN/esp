@@ -4,8 +4,8 @@ ReportTemplates = [
   'residentialReport'
   'commercialReport'
   'openSpaceReport'
-  'transportReport'
   'pathwayReport'
+  'transportReport'
   'precinctReport'
 ]
 

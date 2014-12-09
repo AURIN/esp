@@ -11,7 +11,7 @@
             {{#if forDev}}
               <div class="form-group">
                 {{> afFieldLabel label="Typologies"}}
-                {{> dropdown name="typology" items="typologies" allowEmpty=true schemaKey=false}}
+                {{> dropdown name="typology" items=typologies allowEmpty=true schemaKey=false value=typologyId}}
               </div>
             {{/if}}
 

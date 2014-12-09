@@ -49,6 +49,7 @@ Units =
   kLm2year: 'kL/m^2/year'
   km: 'km'
   kmday: 'km/day'
+  kmyear: 'km/year'
   lanes: 'lanes'
   Lsec: 'L/second'
   Lyear: 'L/year'
@@ -2348,11 +2349,32 @@ typologyCategories =
         calc: ->
           intercept = 1.638503
           value = intercept
-          _.each TransportCoefficients, (value, field) =>
-            value += value * @param('transport.' + field)
+          _.each TransportCoefficients, (coeffValue, field) =>
+            value += coeffValue * @param('transport.' + field)
           railprox = @param('transport.railprox')
           value += VktRailTypes[railprox].value
           value = Math.pow(value, 2)
+      vkt_person_day:
+        label: 'VKT Estimate (per Resident)'
+        desc: 'Vehicle kilometres travelled per resident per day.'
+        type: Number
+        decimal: true
+        units: Units.kmday
+        calc: '$transport.vkt_household_day / $transport.hhsize'
+      vkt_household_year:
+        label: 'VKT Estimate (per Household)'
+        desc: 'Vehicle kilometres travelled per household per year.'
+        type: Number
+        decimal: true
+        units: Units.kmyear
+        calc: '$transport.vkt_household_day * 365'
+      vkt_person_year:
+        label: 'VKT Estimate (per Resident)'
+        desc: 'Vehicle kilometres travelled per resident per year.'
+        type: Number
+        decimal: true
+        units: Units.kmyear
+        calc: '$transport.vkt_person_day * 365'
 
 ####################################################################################################
 # TYPOLOGY SCHEMA DEFINITION
@@ -2850,6 +2872,14 @@ Entities.mergeTypologyObj = (entity, typology) ->
 Entities.findByProject = (projectId) -> SchemaUtils.findByProject(Entities, projectId)
 
 Entities.findByTypology = (typologyId) -> Entities.find({typology: typologyId})
+
+Entities.findByTypologyClass = (typologyClass, projectId) ->
+  typologies = Typologies.findByClass(typologyClass, projectId)
+  entities = []
+  _.each typologies, (typology) ->
+    _.each Entities.findByTypology(typology._id), (entity) ->
+      entities.push(entity)
+  entities
 
 Entities.getTypologyClass = (id) ->
   typologyId = Entities.findOne(id).typology
