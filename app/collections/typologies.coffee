@@ -32,15 +32,16 @@ Units =
   $kWh: '$/kWh'
   $MJ: '$/MJ'
   $kL: '$/kL'
-  co2kWh: 'kg CO_2-e/kWh'
-  co2m2year: 'kg CO_2-e/m^2/year'
-  co2GJ: 'kg CO_2-e/GJ'
   deg: 'degrees'
   GJyear: 'GJ/year'
   ha: 'ha'
   jobs: 'jobs'
   kgco2: 'kg CO_2-e'
+  kgco2day: 'kg CO_2-e/day'
+  kgco2kWh: 'kg CO_2-e/kWh'
+  kgco2km: 'kg CO_2-e/km'
   kgco2m2: 'kg CO_2-e/m^2'
+  kgco2year: 'kg CO_2-e/year'
   kW: 'kW'
   kWh: 'kWh'
   kWhday: 'kWh/day'
@@ -264,14 +265,19 @@ projectCategories =
         label: 'Carbon per kWh - Electricity'
         type: Number
         decimal: true
-        units: Units.co2kWh
+        units: Units.kgco2kWh
         defaultValue: 0.92
       gas:
         label: 'Carbon per kWh - Gas'
         type: Number
         decimal: true
-        units: Units.co2kWh
+        units: Units.kgco2kWh
         defaultValue: 0.229
+      vkt:
+        label: 'Carbon per vehicle km travelled'
+        type: Number
+        units: Units.kgco2km
+        defaultValue: 0.419
   renewable_energy:
     label: 'Renewable Energy'
     items:
@@ -2375,6 +2381,34 @@ typologyCategories =
         decimal: true
         units: Units.kmyear
         calc: '$transport.vkt_person_day * 365'
+      ghg_household_day:
+        label: 'GHG Estimate (per Household)'
+        desc: 'Greenhouse gas emissions per household per day.'
+        type: Number
+        decimal: true
+        units: Units.kgco2day
+        calc: '$transport.vkt_household_day * $operating_carbon.vkt'
+      ghg_person_day:
+        label: 'GHG Estimate (per Resident)'
+        desc: 'Greenhouse gas emissions per resident per day.'
+        type: Number
+        decimal: true
+        units: Units.kgco2day
+        calc: '$transport.vkt_person_day * $operating_carbon.vkt'
+      ghg_household_year:
+        label: 'GHG Estimate (per Household)'
+        desc: 'Greenhouse gas emissions per household per year.'
+        type: Number
+        decimal: true
+        units: Units.kgco2day
+        calc: '$transport.ghg_household_day * 365'
+      ghg_person_year:
+        label: 'GHG Estimate (per Resident)'
+        desc: 'Greenhouse gas emissions per resident per year.'
+        type: Number
+        decimal: true
+        units: Units.kgco2day
+        calc: '$transport.ghg_person_day * 365'
 
 ####################################################################################################
 # TYPOLOGY SCHEMA DEFINITION
