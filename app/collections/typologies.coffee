@@ -982,6 +982,12 @@ calcEnergyCost = (source, suffix) ->
     usage_cost -= 365 * pv_output * size_pv * usage_price
   365 * supply_price + usage_cost
 
+calcEnergyWithIntensityCost = (suffix, shortSuffix) ->
+  supply_price = @param('utilities.price_supply_' + suffix)
+  usage_price = @KWH_TO_MJ(@param('utilities.price_usage_' + suffix))
+  usage_cost = @param('energy_demand.en_use_' + shortSuffix) * usage_price
+  365 * supply_price + usage_cost
+
 calcLandPrice = ->
   typologyClass = Entities.getTypologyClass(@model._id)
   abbr = TypologyClasses[typologyClass].abbr
@@ -1372,7 +1378,13 @@ typologyCategories =
         decimal: true
         units: Units.MJm2year
         classes:
-          COMMERCIAL: {defaultValue: 1000}
+          COMMERCIAL:
+            subclasses:
+              'Retail': {defaultValue: 1140}
+              'Office': {defaultValue: 651}
+              'Hotel': {defaultValue: 909}
+              'Supermarket': {defaultValue: 3206}
+              'Restaurant': {defaultValue: 4878}
       en_use_e:
         desc: 'Electricity energy use of the typology.'
         label: 'Energy Use - Electricity'
@@ -1386,7 +1398,13 @@ typologyCategories =
         decimal: true
         units: Units.MJm2year
         classes:
-          COMMERCIAL: {defaultValue: 500}
+          COMMERCIAL:
+            subclasses:
+              'Retail': {defaultValue: 465}
+              'Office': {defaultValue: 266}
+              'Hotel': {defaultValue: 511}
+              'Supermarket': {defaultValue: 169}
+              'Restaurant': {defaultValue: 1540}
       en_use_g:
         desc: 'Gas energy use of the typology.'
         label: 'Energy Use - Gas'
@@ -1468,14 +1486,12 @@ typologyCategories =
         type: Number
         units: Units.kgco2
         calc: ->
-          e_co2_emb = @param('embodied_carbon.e_co2_emb')
-          i_co2_emb_intensity = @param('embodied_carbon.i_co2_emb_intensity')
-          if i_co2_emb_intensity?
-            gfa = @calc('$space.gfa')
-            i_co2_emb = i_co2_emb_intensity * gfa
+          typologyClass = Entities.getTypologyClass(@model._id)
+          if typologyClass == 'COMMERCIAL'
+            i_co2_emb = @calc('$embodied_carbon.i_co2_emb_intensity * $space.gfa')
           else
             i_co2_emb = @param('embodied_carbon.i_co2_emb')
-          e_co2_emb + i_co2_emb
+          @param('embodied_carbon.e_co2_emb') + i_co2_emb
       pathways:
         label: 'Pathways'
         items:
@@ -1607,7 +1623,7 @@ typologyCategories =
         calc: ->
           typologyClass = Entities.getTypologyClass(@model._id)
           if typologyClass == 'COMMERCIAL'
-            @calc('$energy_demand.co2_op_e + $energy_demand.co2_op_g')
+            @calc('$operating_carbon.co2_op_e + $operating_carbon.co2_op_g')
           else
             @calc('$operating_carbon.co2_heat + $operating_carbon.co2_cool + $operating_carbon.co2_light + $operating_carbon.co2_hwat + $operating_carbon.co2_cook + $operating_carbon.co2_app - ($energy_demand.en_pv * $operating_carbon.elec)')
       co2_op_e:
@@ -1672,7 +1688,13 @@ typologyCategories =
         decimal: true
         units: Units.kLm2year
         classes:
-          COMMERCIAL: {defaultValue: 1.7}
+          COMMERCIAL:
+            subclasses:
+              'Retail': {defaultValue: 1.7}
+              'Office': {defaultValue: 1.01}
+              'Hotel': {defaultValue: 328}
+              'Supermarket': {defaultValue: 3.5}
+              'Restaurant': {defaultValue: 11.3}
       i_wu_total:
         label: 'Internal Total Water Use'
         desc: 'Total internal water use of the typology.'
@@ -1901,14 +1923,24 @@ typologyCategories =
         type: Number
         decimal: true
         units: Units.$
-        calc: -> calcEnergyCost.call(@, 'Electricity', 'elec')
+        calc: ->
+          typologyClass = Entities.getTypologyClass(@model._id)
+          if typologyClass == 'COMMERCIAL'
+            calcEnergyWithIntensityCost.call(@, 'elec', 'e')
+          else
+            calcEnergyCost.call(@, 'Electricity', 'elec')
       cost_op_g:
         label: 'Cost - Gas Usage'
         desc: 'Operating costs due to gas usage.'
         type: Number
         decimal: true
         units: Units.$
-        calc: -> calcEnergyCost.call(@, 'Gas', 'gas')
+        calc: ->
+          typologyClass = Entities.getTypologyClass(@model._id)
+          if typologyClass == 'COMMERCIAL'
+            calcEnergyWithIntensityCost.call(@, 'gas', 'g')
+          else
+            calcEnergyCost.call(@, 'Gas', 'gas')
       cost_op_w:
         label: 'Cost - Water Usage'
         desc: 'Operating costs due to water usage.'
