@@ -535,6 +535,50 @@ projectCategories =
             type: Number
             units: Units.$m2
             defaultValue: 2450
+      institutional:
+        items:
+          school:
+            items:
+              primary:
+                label: 'School - Primary'
+                type: Number
+                units: Units.$m2
+                defaultValue: 1470
+              secondary:
+                label: 'School - Secondary'
+                type: Number
+                units: Units.$m2
+                defaultValue: 1870
+          tertiary:
+            label: 'Tertiary'
+            type: Number
+            units: Units.$m2
+            defaultValue: 2965
+          hospital:
+            items:
+              single_storey:
+                label: 'Hospital - Single-Storey'
+                type: Number
+                units: Units.$m2
+                defaultValue: 3408
+              multi_storey:
+                label: 'Hospital - Multi-Storey'
+                type: Number
+                units: Units.$m2
+                defaultValue: 4640
+          public:
+            items:
+              low_rise_without_lifts:
+                label: 'Public - Low-rise Without Lifts'
+                type: Number
+                units: Units.$m2
+                defaultValue: 2296
+              med_rise_with_lifts:
+                label: 'Public - Med-rise With Lifts'
+                type: Number
+                units: Units.$m2
+                defaultValue: 2878
+
       pathways:
         label: 'Pathways'
         items:
@@ -919,13 +963,36 @@ TypologyClasses =
     color: 'orange'
     abbr: 'i'
 
+BuildingClasses =
+  RESIDENTIAL: {}
+  COMMERCIAL: {}
+  MIXED_USE: {}
+  INSTITUTIONAL: {}
+
+extendClassMap = (args, map) -> Setter.merge({}, map, args)
+extendBuildingClasses = (args) -> extendClassMap(args, BuildingClasses)
+extendClassesWithDefault = (classArgs, defaultValue) ->
+  _.each classArgs, (args, typologyClass) ->
+    args.defaultValue = defaultValue
+  classArgs
+
+LandClasses = extendClassMap
+  OPEN_SPACE: {}
+
+extendLandClasses = (args) -> extendClassMap(args, LandClasses)
+
+classHasIntensity = (typologyClass) ->
+  typologyClass == 'COMMERCIAL' || typologyClass == 'INSTITUTIONAL'
+
 ClassNames = Object.keys(TypologyClasses)
 
 TypologyTypes = ['Basic', 'Efficient', 'Advanced']
 ResidentialSubclasses = ['Single House', 'Attached House', 'Walkup', 'High Rise']
 CommercialSubclasses = ['Retail', 'Office', 'Hotel', 'Supermarket', 'Restaurant']
+InstitutionalSubclasses = ['School', 'Tertiary', 'Hospital', 'Public']
 PathwaySubclasses = ['Freeway', 'Highway', 'Street', 'Footpath', 'Bicycle Path']
 EnergySources = ['Electricity', 'Gas']
+
 ResidentialBuildTypes =
   'Standard Quality Build':
     'Single House': 'single_house_std'
@@ -951,6 +1018,28 @@ CommercialBuildTypes =
     'Supermarket': 'supermarket'
   'Restaurant':
     'Restaurant': 'restaurant'
+InstitutionalBuildTypes =
+  'School':
+    'Primary': 'school.primary'
+    'Secondary': 'school.secondary'
+  'Tertiary':
+    'Tertiary': 'school.tertiary'
+  'Hospital':
+    'Single-Storey': 'hospital.single_storey'
+    'Multi-Storey': 'hospital.multi_storey'
+  'Public':
+    'Low-rise Without Lifts': 'public.low_rise_without_lifts'
+    'Med-rise With Lifts': 'public.med_rise_with_lifts'
+
+createBuildTypeClassOptions = (buildTypesMap, prefix) ->
+  options =
+    defaultValue: 'Custom'
+    allowedValues: (args) ->
+      values = buildTypesMap[args.subclass]
+      if values then Object.keys(values) else []
+    getCostParamId: (args) ->
+      'financial.' + prefix + '.' + buildTypesMap[args.subclass]?[args.value]
+
 # Appliance type to the project parameter storing its energy usage.
 ApplianceTypes =
   'Basic - Avg Performance': 'en_basic_avg_app'
@@ -971,6 +1060,7 @@ FootpathMaterialTypes =
 BicyclePathMaterialTypes =
   'Asphalt': 'asphalt'
   'Concrete': 'concrete'
+
 TransportModelParameters =
   intercept: 1.638503
   coefficients:
@@ -1162,6 +1252,7 @@ typologyCategories =
         classes:
           RESIDENTIAL: {allowedValues: ResidentialSubclasses, optional: false}
           COMMERCIAL: {allowedValues: CommercialSubclasses, optional: false}
+          INSTITUTIONAL: {allowedValues: InstitutionalSubclasses, optional: false}
           PATHWAY: {allowedValues: PathwaySubclasses, optional: false}
       climate_zn:
         desc: 'BOM climate zone number.'
@@ -1182,9 +1273,10 @@ typologyCategories =
         label: '2D Geometry'
         type: String
         desc: '2D footprint geometry of the typology.'
-        classes:
+        classes: extendBuildingClasses
           RESIDENTIAL: {optional: false}
           COMMERCIAL: {optional: false}
+          INSTITUTIONAL: {optional: false}
           # Pathway typologies don't have geometry - it is defined in the entities - so this is
           # optional.
           PATHWAY: {}
@@ -1192,9 +1284,7 @@ typologyCategories =
         label: '3D Geometry'
         type: String
         desc: '3D mesh representing the typology.'
-        classes:
-          RESIDENTIAL: {}
-          COMMERCIAL: {}
+        classes: BuildingClasses
       geom_2d_filename:
         label: '2D Geometry Filename'
         type: String
@@ -1241,30 +1331,22 @@ typologyCategories =
         type: Number
         decimal: true
         units: Units.m2
-        classes:
-          RESIDENTIAL: {}
-          COMMERCIAL: {}
+        classes: BuildingClasses
       cfa:
         label: 'Conditioned Floor Area'
         desc: 'Total conditioned area of the typology.'
         type: Number
         decimal: true
         units: Units.m2
-        classes:
-          RESIDENTIAL: {}
-          COMMERCIAL: {}
+        classes: BuildingClasses
       storeys:
         label: 'Storeys'
         desc: 'Number of floors/storeys in the typology.'
         type: Number
         units: 'Floors'
-        classes:
-          RESIDENTIAL: {}
-          COMMERCIAL: {}
+        classes: BuildingClasses
       height: extendSchema(heightSchema, {
-        classes:
-          RESIDENTIAL: {}
-          COMMERCIAL: {}
+        classes: BuildingClasses
         })
       length:
         label: 'Total Path Length'
@@ -1314,6 +1396,7 @@ typologyCategories =
         units: Units.m2job
         classes:
           COMMERCIAL: {defaultValue: 20}
+          INSTITUTIONAL: {defaultValue: 20}
       jobs:
         desc: 'Number of jobs in the commerical building.'
         label: 'Number of Jobs'
@@ -1377,7 +1460,7 @@ typologyCategories =
         desc: 'Proportion of extra land covered by annual plants, such as flowers and veggies.'
         type: Number
         decimal: true
-        classes:
+        classes: extendLandClasses
           RESIDENTIAL: {defaultValue: 0.1}
           COMMERCIAL: {defaultValue: 0}
           MIXED_USE: {defaultValue: 0.1}
@@ -1388,7 +1471,7 @@ typologyCategories =
         desc: 'Proportion of extra land covered by hardy or waterwise plants.'
         type: Number
         decimal: true
-        classes:
+        classes: extendLandClasses
           RESIDENTIAL: {defaultValue: 0.35}
           COMMERCIAL: {defaultValue: 0}
           MIXED_USE: {defaultValue: 0.15}
@@ -1399,7 +1482,7 @@ typologyCategories =
         desc: 'Proportion of extra land covered by pavement or another impermeable surface.'
         type: Number
         decimal: true
-        classes:
+        classes: extendLandClasses
           RESIDENTIAL: {defaultValue: 0.4}
           COMMERCIAL: {defaultValue: 0.9}
           MIXED_USE: {defaultValue: 0.6}
@@ -1536,6 +1619,12 @@ typologyCategories =
               'Hotel': {defaultValue: 909}
               'Supermarket': {defaultValue: 3206}
               'Restaurant': {defaultValue: 4878}
+          INSTITUTIONAL:
+            subclasses:
+              'School': {defaultValue: 156}
+              'Tertiary': {defaultValue: 626}
+              'Hospital': {defaultValue: 703.5}
+              'Public': {defaultValue: 806}
       en_use_e:
         desc: 'Electricity energy use of the typology.'
         label: 'Energy Use - Electricity'
@@ -1556,6 +1645,12 @@ typologyCategories =
               'Hotel': {defaultValue: 511}
               'Supermarket': {defaultValue: 169}
               'Restaurant': {defaultValue: 1540}
+          INSTITUTIONAL:
+            subclasses:
+              'School': {defaultValue: 17.9}
+              'Tertiary': {defaultValue: 284}
+              'Hospital': {defaultValue: 689.5}
+              'Public': {defaultValue: 202}
       en_use_g:
         desc: 'Gas energy use of the typology.'
         label: 'Energy Use - Gas'
@@ -1568,9 +1663,7 @@ typologyCategories =
         type: Number
         decimal: true
         units: Units.kW
-        classes:
-          RESIDENTIAL: {defaultValue: 0}
-          COMMERCIAL: {defaultValue: 0}
+        classes: extendClassesWithDefault(extendBuildingClasses(), 0)
       en_pv:
         label: 'PV Energy Generation'
         desc: 'Energy generated by the fitted PV system.'
@@ -1585,8 +1678,7 @@ typologyCategories =
         decimal: true
         units: Units.MJyear
         calc: ->
-          typologyClass = Entities.getTypologyClass(@model._id)
-          if typologyClass == 'COMMERCIAL'
+          if classHasIntensity(Entities.getTypologyClass(@model._id))
             @calc('$energy_demand.en_use_e + $energy_demand.en_use_g - (KWH_TO_MJ($energy_demand.size_pv * $renewable_energy.pv_output * 365))')
           else
             @calc('$energy_demand.en_app + $energy_demand.en_cook + ($energy_demand.en_hwat * 1000) + KWH_TO_MJ($energy_demand.en_light) + $energy_demand.en_cool + $energy_demand.en_heat - KWH_TO_MJ($energy_demand.en_pv)')
@@ -1624,6 +1716,12 @@ typologyCategories =
               'Hotel': {defaultValue: 480}
               'Supermarket': {defaultValue: 375}
               'Restaurant': {defaultValue: 350}
+          INSTITUTIONAL:
+            subclasses:
+              'School': {defaultValue: 475}
+              'Tertiary': {defaultValue: 475}
+              'Hospital': {defaultValue: 380}
+              'Public': {defaultValue: 375}
       i_co2_emb:
         label: 'Internal Embodied'
         desc: 'CO2 embodied in the materials of the typology.'
@@ -1637,8 +1735,7 @@ typologyCategories =
         type: Number
         units: Units.kgco2
         calc: ->
-          typologyClass = Entities.getTypologyClass(@model._id)
-          if typologyClass == 'COMMERCIAL'
+          if classHasIntensity(Entities.getTypologyClass(@model._id))
             i_co2_emb = @calc('$embodied_carbon.i_co2_emb_intensity * $space.gfa')
           else
             i_co2_emb = @param('embodied_carbon.i_co2_emb')
@@ -1772,8 +1869,7 @@ typologyCategories =
         decimal: true
         units: Units.kgco2
         calc: ->
-          typologyClass = Entities.getTypologyClass(@model._id)
-          if typologyClass == 'COMMERCIAL'
+          if classHasIntensity(Entities.getTypologyClass(@model._id))
             @calc('$operating_carbon.co2_op_e + $operating_carbon.co2_op_g')
           else
             @calc('$operating_carbon.co2_heat + $operating_carbon.co2_cool + $operating_carbon.co2_light + $operating_carbon.co2_hwat + $operating_carbon.co2_cook + $operating_carbon.co2_app - ($energy_demand.en_pv * $operating_carbon.elec)')
@@ -1846,6 +1942,12 @@ typologyCategories =
               'Hotel': {defaultValue: 328}
               'Supermarket': {defaultValue: 3.5}
               'Restaurant': {defaultValue: 11.3}
+          INSTITUTIONAL:
+            subclasses:
+              'School': {defaultValue: 3.25}
+              'Tertiary': {defaultValue: 3.25}
+              'Hospital': {defaultValue: 1.5}
+              'Public': {defaultValue: 3.3}
       i_wu_total:
         label: 'Internal Total Water Use'
         desc: 'Total internal water use of the typology.'
@@ -1853,8 +1955,7 @@ typologyCategories =
         decimal: true
         units: Units.kLyear
         calc: ->
-          typologyClass = Entities.getTypologyClass(@model._id)
-          if typologyClass == 'COMMERCIAL'
+          if classHasIntensity(Entities.getTypologyClass(@model._id))
             @calc('$water_demand.i_wu_intensity * $space.gfa')
           else
             @calc('$water_demand.i_wu_pot + $water_demand.i_wu_bore + $water_demand.i_wu_rain + $water_demand.i_wu_treat + $water_demand.i_wu_grey')
@@ -1891,46 +1992,31 @@ typologyCategories =
         type: Number
         decimal: true
         desc: 'Proportion of water as potable water.'
-        classes:
-          RESIDENTIAL: {defaultValue: 1}
-          COMMERCIAL: {defaultValue: 1}
-          OPEN_SPACE: {defaultValue: 1}
+        classes: extendClassesWithDefault(extendLandClasses(), 1)
       e_prpn_bore:
         label: 'External Proportion Bore Water'
         type: Number
         decimal: true
         desc: 'Proportion of irrigation as bore water.'
-        classes:
-          RESIDENTIAL: {defaultValue: 0}
-          COMMERCIAL: {defaultValue: 0}
-          OPEN_SPACE: {defaultValue: 0}
+        classes: extendClassesWithDefault(extendLandClasses(), 0)
       e_prpn_storm:
         label: 'External Proportion Stormwater Water'
         type: Number
         decimal: true
         desc: 'Proportion of irrigation as stormwater.'
-        classes:
-          RESIDENTIAL: {defaultValue: 0}
-          COMMERCIAL: {defaultValue: 0}
-          OPEN_SPACE: {defaulTvalue: 0}
+        classes: extendClassesWithDefault(extendLandClasses(), 0)
       e_prpn_treat:
         label: 'External Proportion Treated Water'
         type: Number
         decimal: true
         desc: 'Proportion of irrigation as treated/recycled.'
-        classes:
-          RESIDENTIAL: {defaultValue: 0}
-          COMMERCIAL: {defaultValue: 0}
-          OPEN_SPACE: {defaulTvalue: 0}
+        classes: extendClassesWithDefault(extendLandClasses(), 0)
       e_prpn_grey:
         label: 'External Proportion Grey Water'
         type: Number
         decimal: true
         desc: 'Proportion of irrigation as grey.'
-        classes:
-          RESIDENTIAL: {defaultValue: 0}
-          COMMERCIAL: {defaultValue: 0}
-          OPEN_SPACE: {defaulTvalue: 0}
+        classes: extendClassesWithDefault(extendLandClasses(), 0)
       e_wu_pot:
         label: 'Potable Water Use'
         type: Number
@@ -1969,8 +2055,7 @@ typologyCategories =
         decimal: true
         units: Units.kLyear
         calc: ->
-          typologyClass = Entities.getTypologyClass(@model._id)
-          if typologyClass == 'COMMERCIAL'
+          if classHasIntensity(Entities.getTypologyClass(@model._id))
             i_wu_pot = @param('water_demand.i_wu_total')
           else
             i_wu_pot = @param('water_demand.i_wu_pot')
@@ -2010,14 +2095,8 @@ typologyCategories =
             allowedValues: Object.keys(ResidentialBuildTypes)
             getCostParamId: (args) ->
               'financial.residential.' + ResidentialBuildTypes[args.value]?[args.subclass]
-          COMMERCIAL:
-            defaultValue: 'Custom'
-            allowedValues: (args) ->
-              # subclass = SchemaUtils.getParameterValue(typology, 'general.subclass')
-              values = CommercialBuildTypes[args.subclass]
-              if values then Object.keys(values) else []
-            getCostParamId: (args) ->
-              'financial.commercial.' + CommercialBuildTypes[args.subclass]?[args.value]
+          COMMERCIAL: createBuildTypeClassOptions(CommercialBuildTypes, 'commercial')
+          INSTITUTIONAL: createBuildTypeClassOptions(InstitutionalBuildTypes, 'institutional')
       cost_land:
         label: 'Cost - Land Parcel'
         type: Number
@@ -2060,9 +2139,7 @@ typologyCategories =
         desc: 'Cost of constructing the typology estimated using the Rawlinson’s Construction Handbook.'
         type: Number
         units: Units.$
-        classes:
-          RESIDENTIAL: {}
-          COMMERCIAL: {}
+        classes: BuildingClasses
       cost_prop:
         label: 'Cost - Property'
         desc: 'Total cost of the developing the property.'
@@ -2076,8 +2153,7 @@ typologyCategories =
         decimal: true
         units: Units.$
         calc: ->
-          typologyClass = Entities.getTypologyClass(@model._id)
-          if typologyClass == 'COMMERCIAL'
+          if classHasIntensity(Entities.getTypologyClass(@model._id))
             calcEnergyWithIntensityCost.call(@, 'elec', 'e')
           else
             calcEnergyCost.call(@, 'Electricity', 'elec')
@@ -2088,8 +2164,7 @@ typologyCategories =
         decimal: true
         units: Units.$
         calc: ->
-          typologyClass = Entities.getTypologyClass(@model._id)
-          if typologyClass == 'COMMERCIAL'
+          if classHasIntensity(Entities.getTypologyClass(@model._id))
             calcEnergyWithIntensityCost.call(@, 'gas', 'g')
           else
             calcEnergyCost.call(@, 'Gas', 'gas')
@@ -2186,21 +2261,17 @@ typologyCategories =
         type: Number
         decimal: true
         units: 'Degrees'
-        # defaultValue: 0
-        classes:
-          RESIDENTIAL: {}
+        classes: BuildingClasses
       eq_azmth_h:
         label: 'Azimuth Heating Energy Array'
         desc: 'Equation to predict heating energy use as a function of degrees azimuth.'
         type: String
-        classes:
-          RESIDENTIAL: {}
+        classes: BuildingClasses
       eq_azmth_c:
         label: 'Azimuth Cooling Energy Array'
         desc: 'Equation to predict cooling energy use as a function of degrees azimuth.'
         type: String
-        classes:
-          RESIDENTIAL: {}
+        classes: BuildingClasses
   parking:
     label: 'Parking'
     items:
@@ -2216,9 +2287,7 @@ typologyCategories =
         desc: 'Number of underground parking spaces.'
         type: Number
         units: Units.spaces
-        classes:
-          RESIDENTIAL: {}
-          COMMERCIAL: {}
+        classes: BuildingClasses
       parking_sl:
         label: 'Parking Spaces - Street Level'
         desc: 'Number of street level parking spaces.'
