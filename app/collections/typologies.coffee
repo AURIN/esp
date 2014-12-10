@@ -1949,10 +1949,10 @@ typologyCategories =
             defaultValue: 'Custom'
             allowedValues: (args) ->
               # subclass = SchemaUtils.getParameterValue(typology, 'general.subclass')
-              values = CommercialConstructionTypes[args.subclass]
+              values = CommercialBuildTypes[args.subclass]
               if values then Object.keys(values) else []
             getCostParamId: (args) ->
-              'financial.commercial.' + CommercialConstructionTypes[args.subclass]?[args.value]
+              'financial.commercial.' + CommercialBuildTypes[args.subclass]?[args.value]
       cost_land:
         label: 'Cost - Land Parcel'
         type: Number
