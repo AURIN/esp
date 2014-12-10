@@ -1629,8 +1629,9 @@ typologyCategories =
         desc: 'Electricity energy use of the typology.'
         label: 'Energy Use - Electricity'
         type: Number
+        decimal: true
         units: Units.MJyear
-        calc: '$energy_demand.en_int_e / $space.gfa'
+        calc: '$energy_demand.en_int_e * $space.gfa'
       en_int_g:
         desc: 'Gas energy use intensity of the typology.'
         label: 'Energy Use Intensity - Gas'
@@ -1655,8 +1656,9 @@ typologyCategories =
         desc: 'Gas energy use of the typology.'
         label: 'Energy Use - Gas'
         type: Number
+        decimal: true
         units: Units.MJyear
-        calc: '$energy_demand.en_int_g / $space.gfa'
+        calc: '$energy_demand.en_int_g * $space.gfa'
       size_pv:
         label: 'PV System Size'
         desc: 'PV system size fitted on the typology.'

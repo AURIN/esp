@@ -43,5 +43,4 @@ Meteor.startup ->
       {param: 'transport.trips_car_passenger_year'}
       {param: 'transport.trips_car_transit_year'}
       {param: 'transport.trips_car_active_year'}
-
     ]
