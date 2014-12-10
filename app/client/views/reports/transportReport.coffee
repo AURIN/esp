@@ -9,6 +9,7 @@ Meteor.startup ->
       # value is the same for all entities.
 
       {title: 'Vehicle Kilometres Travelled'}
+      
       {param: 'transport.vkt_household_day', aggregate: 'average'}
       {param: 'transport.vkt_person_day', aggregate: 'average'}
       {param: 'transport.vkt_household_day', label: 'VKT Estimate (total Precinct)'}
@@ -26,10 +27,7 @@ Meteor.startup ->
       {param: 'transport.ghg_household_year', label: 'GHG Estimate (total Precinct)'}
 
       {title: 'Mode Share'}
-      {param: 'transport.exp_vehpass'}
-      {param: 'transport.exp_transit'}
-      {param: 'transport.exp_active'}
-      
+
       {param: 'transport.mode_share_car_driver'}
       {param: 'transport.mode_share_car_passenger'}
       {param: 'transport.mode_share_transit'}
