@@ -53,10 +53,12 @@ Meteor.startup ->
           df.resolve(null)
           return
         # Modify the ID of c3ml entities to allow reusing them for multiple collections.
-        c3mls = result.c3mls
-        _.each c3mls, (c3ml) ->
+        c3mls = _.map result.c3mls, (c3ml) ->
           c3ml.id = id + ':' + c3ml.id
           c3ml.show = true
+          c3ml
+        # Ignore all collections in the c3ml, since they don't affect visualisation.
+        c3mls = _.filter c3mls, (c3ml) -> c3ml.type != 'collection'
         try
           c3mlEntities = AtlasManager.renderEntities(c3mls)
         catch e

@@ -214,7 +214,7 @@ TemplateClass.addPanel = (template, panelTemplate, data) ->
 TemplateClass.removePanel = (template) ->
   console.debug 'Removing panel', @, template
   # Parent node is kept so we need to remove it manually.
-  $panel = $(Templates.getDom(currentPanelView))
+  $panel = $(Templates.getElement(currentPanelView))
   Blaze.remove(currentPanelView)
   $panel.remove()
   $container = getSidebar(template)
@@ -316,7 +316,7 @@ TemplateClass.onAtlasLoad = (template, atlas) ->
         (paramName) -> hasParamChanged(paramName)
       )
       if hasChanged
-        _.each Entities.find(typology: newTypology._id).fetch(), (entity) ->
+        _.each Entities.findByTypology(newTypology._id).fetch(), (entity) ->
           refreshEntity(entity._id)
   }
 

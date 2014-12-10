@@ -1,5 +1,8 @@
 Meteor.startup ->
 
+  formName = 'lotForm'
+  collection = Lots
+
   EditState =
     CHANGED: 'changed'
     CREATED: 'created'
@@ -40,19 +43,19 @@ Meteor.startup ->
   getTypologyDropdown = (template) -> $(template.find('.typology.dropdown'))
 
   addTypologiesForClass = (typologyClass, template) ->
-    typologies = template.data.typologies
+    typologies = template.typologies
     Collections.removeAllDocs(typologies)
-    _.each Typologies.findByClass(typologyClass).fetch(), (typology) -> typologies.insert(typology)
+    Typologies.findByClass(typologyClass).forEach (typology) -> typologies.insert(typology)
 
   Form = Forms.defineModelForm
-    name: 'lotForm'
-    collection: 'Lots'
+    name: formName
+    collection: collection
     onCreate: ->
       # TODO(aramk) Set these based on whether there is existing geometry or not?
       _.each _.values(EditState), (key) -> setEditState(key, false)
       data = @data ?= {}
       doc = @data.doc
-      data.typologies = Collections.createTemporary()
+      @typologies = Collections.createTemporary()
       if doc
         id = doc._id
         AtlasManager.showEntity(id)
@@ -211,14 +214,14 @@ Meteor.startup ->
 
   stateToActiveClass = (name) -> if getEditState(name) then 'active' else ''
   boolToEnabledClass = (bool) -> if bool then '' else 'disabled'
+  getTemplate = -> Templates.getNamedInstance(formName)
 
   # TODO(aramk) Abstract dropdown to allow null selection automatically.
   Form.helpers
     classes: -> Typologies.getClassItems()
-    typologies: -> @typologies
+    typologyId: -> getTypologyId(@doc)
+    typologies: -> getTemplate().typologies
     forDev: -> Session.get('_forDev')
-    typology: -> getTypologyId(@doc)
-    classValue: -> @doc?.parameters?.general?.class
     isCreating: -> stateToActiveClass(EditState.CREATING)
     isEditing: -> stateToActiveClass(EditState.EDITING)
     canCreate: -> boolToEnabledClass(!getEditState(EditState.CREATED))

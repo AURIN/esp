@@ -124,4 +124,4 @@ sanitizeValue = (value) -> value ? 0
 CalcContext =
   IF: (condition, thenResult, elseResult) -> if condition then sanitizeValue(thenResult) else sanitizeValue(elseResult)
   KWH_TO_MJ: (kWh) -> kWh * 3.6
-  MJ_TO_KW: (mj) -> mj / 3.6
+  MJ_TO_KWH: (MJ) -> MJ / 3.6

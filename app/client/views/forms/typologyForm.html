@@ -38,7 +38,6 @@
               {{> afQuickField name="parameters.space.cfa"}}
               {{> afQuickField name="parameters.space.storeys"}}
               {{> afQuickField name="parameters.space.height"}}
-              {{> afQuickField name="parameters.space.occupants"}}
               {{> afQuickField name="parameters.space.num_0br"}}
               {{> afQuickField name="parameters.space.num_1br"}}
               {{> afQuickField name="parameters.space.num_2br"}}
@@ -48,6 +47,9 @@
               {{> afQuickField name="parameters.space.prpn_annu"}}
               {{> afQuickField name="parameters.space.prpn_hardy"}}
               {{> afQuickField name="parameters.space.prpn_imper"}}
+
+              {{> afQuickField name="parameters.space.occupants"}}
+              {{> afQuickField name="parameters.space.job_intensity"}}
 
               <div class="subtitle">Composition</div>
               {{> afQuickField name="parameters.composition.rd_lanes"}}
@@ -83,8 +85,12 @@
               {{> afQuickField name="parameters.energy_demand.type_app" options="allowed"}}
               {{> afQuickField name="parameters.energy_demand.size_pv"}}
 
+              {{> afQuickField name="parameters.energy_demand.en_int_e"}}
+              {{> afQuickField name="parameters.energy_demand.en_int_g"}}
+
               <div class="subtitle">Embodied Carbon</div>
               {{> afQuickField name="parameters.embodied_carbon.i_co2_emb"}}
+              {{> afQuickField name="parameters.embodied_carbon.i_co2_emb_intensity"}}
 
               <div class="subtitle">Water Demand</div>
               {{> afQuickField name="parameters.water_demand.i_wu_pot"}}
@@ -92,6 +98,7 @@
               {{> afQuickField name="parameters.water_demand.i_wu_rain"}}
               {{> afQuickField name="parameters.water_demand.i_wu_treat"}}
               {{> afQuickField name="parameters.water_demand.i_wu_grey"}}
+              {{> afQuickField name="parameters.water_demand.i_wu_intensity"}}
 
               {{> afQuickField name="parameters.water_demand.e_prpn_pot"}}
               {{> afQuickField name="parameters.water_demand.e_prpn_bore"}}
@@ -100,7 +107,7 @@
               {{> afQuickField name="parameters.water_demand.e_prpn_grey"}}
 
               <div class="subtitle">Financial</div>
-              {{> afQuickField name="parameters.financial.build_quality" options="allowed"}}
+              {{> afQuickField name="parameters.financial.build_type" type="dropdown" items=buildTypes}}
               {{> afQuickField name="parameters.financial.cost_con"}}
 
               <div class="subtitle">Parking</div>

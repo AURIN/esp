@@ -32,32 +32,44 @@ Units =
   $kWh: '$/kWh'
   $MJ: '$/MJ'
   $kL: '$/kL'
-  co2kWh: 'kg CO_2-e/kWh'
-  co2m2year: 'kg CO_2-e/m^2/year'
-  co2GJ: 'kg CO_2-e/GJ'
   deg: 'degrees'
   GJyear: 'GJ/year'
   ha: 'ha'
+  jobs: 'jobs'
   kgco2: 'kg CO_2-e'
+  kgco2day: 'kg CO_2-e/day'
+  kgco2kWh: 'kg CO_2-e/kWh'
+  kgco2km: 'kg CO_2-e/km'
   kgco2m2: 'kg CO_2-e/m^2'
+  kgco2year: 'kg CO_2-e/year'
   kW: 'kW'
   kWh: 'kWh'
   kWhday: 'kWh/day'
   kWhyear: 'kWh/year'
   kLyear: 'kL/year'
   kLm2year: 'kL/m^2/year'
+  km: 'km'
+  kmday: 'km/day'
+  kmyear: 'km/year'
+  lanes: 'lanes'
   Lsec: 'L/second'
   Lyear: 'L/year'
   m: 'm'
   m2: 'm^2'
   m2vehicle: 'm^2/vehicle'
+  m2job: 'm^2/job'
   mm: 'mm'
   MLyear: 'ML/year'
   MJ: 'MJ'
+  MJm2year: 'MJ/m^2/year'
   MJyear: 'MJ/year'
-  spaces: 'Spaces'
+  people: 'people'
+  spaces: 'spaces'
   spacesm: 'spaces/m'
-  lanes: 'Lanes'
+  tripsday: 'trips/day'
+  tripsyear: 'trips/year'
+  vehicles: 'vehicles'
+  years: 'years'
 
 extendSchema = (orig, changes) -> _.extend({}, orig, changes)
 
@@ -156,6 +168,16 @@ creatorSchema =
   type: String
   optional: true
 
+VktRailTypes =
+  rail0_400:
+    label: '0 - 0.4 kms'
+  rail400_800:
+    label: '0.4 - 0.8 kms'
+  rail800_1600:
+    label: '0.8 - 1.6 kms'
+  railgt_1600:
+    label: '> 1.6 kms'
+
 projectCategories =
   general:
     label: 'General'
@@ -241,14 +263,19 @@ projectCategories =
         label: 'Carbon per kWh - Electricity'
         type: Number
         decimal: true
-        units: Units.co2kWh
+        units: Units.kgco2kWh
         defaultValue: 0.92
       gas:
         label: 'Carbon per kWh - Gas'
         type: Number
         decimal: true
-        units: Units.co2kWh
+        units: Units.kgco2kWh
         defaultValue: 0.229
+      vkt:
+        label: 'Carbon per vehicle km travelled'
+        type: Number
+        units: Units.kgco2km
+        defaultValue: 0.419
   renewable_energy:
     label: 'Renewable Energy'
     items:
@@ -390,8 +417,35 @@ projectCategories =
             desc: 'Land Value per Square Metre'
             units: Units.$m2
             defaultValue: 150
-      building:
-        label: 'Building'
+      landscaping:
+        label: 'Landscaping'
+        items:
+          price_lawn:
+            label: 'Cost per Sqm - Lawn'
+            type: Number
+            decimal: true
+            units: Units.$m2
+            defaultValue: 40
+          price_annu:
+            label: 'Cost per Sqm - Annual Plants'
+            type: Number
+            decimal: true
+            units: Units.$m2
+            defaultValue: 40
+          price_hardy:
+            label: 'Cost per Sqm - Hardy Plants'
+            type: Number
+            decimal: true
+            units: Units.$m2
+            defaultValue: 50
+          price_imper:
+            label: 'Cost per Sqm - Impermeable'
+            type: Number
+            decimal: true
+            units: Units.$m2
+            defaultValue: 75
+      residential:
+        label: 'Residential'
         items:
           single_house_std:
             label: 'Single House - Standard'
@@ -433,33 +487,54 @@ projectCategories =
             type: Number
             units: Units.$m2
             defaultValue: 2815
-      landscaping:
-        label: 'Landscaping'
+      commercial:
         items:
-          price_lawn:
-            label: 'Cost per Sqm - Lawn'
+          retail:
+            items:
+              local:
+                label: 'Retail - Local Shop'
+                type: Number
+                units: Units.$m2
+                defaultValue: 695
+              shopping:
+                label: 'Retail - Shopping Centre'
+                type: Number
+                units: Units.$m2
+                defaultValue: 2125
+          office:
+            items:
+              low_rise:
+                label: 'Office - Low-rise Without Lifts'
+                type: Number
+                units: Units.$m2
+                defaultValue: 1810
+              med_rise:
+                label: 'Office - Med-rise With Lifts'
+                type: Number
+                units: Units.$m2
+                defaultValue: 2225
+          hotel:
+            items:
+              three_star:
+                label: 'Hotel - 3 Star'
+                type: Number
+                units: Units.$m2
+                defaultValue: 3415
+              five_star:
+                label: 'Hotel - 5 Star'
+                type: Number
+                units: Units.$m2
+                defaultValue: 4330
+          supermarket:
+            label: 'Supermarket'
             type: Number
-            decimal: true
             units: Units.$m2
-            defaultValue: 40
-          price_annu:
-            label: 'Cost per Sqm - Annual Plants'
+            defaultValue: 1475
+          restaurant:
+            label: 'Restaurant'
             type: Number
-            decimal: true
             units: Units.$m2
-            defaultValue: 40
-          price_hardy:
-            label: 'Cost per Sqm - Hardy Plants'
-            type: Number
-            decimal: true
-            units: Units.$m2
-            defaultValue: 50
-          price_imper:
-            label: 'Cost per Sqm - Impermeable'
-            type: Number
-            decimal: true
-            units: Units.$m2
-            defaultValue: 75
+            defaultValue: 2450
       pathways:
         label: 'Pathways'
         items:
@@ -681,24 +756,76 @@ projectCategories =
         type: Number
         units: Units.m2vehicle
         defaultValue: 23
-# TODO(aramk) Use these for src_cook.
-#  energy_demand:
-#    label: 'Energy Demand'
-#    items:
-#      en_cook_elec:
-#        label: 'Cooktop and Oven - Electricity Demand'
-#        desc: 'Energy required for cooking in a typology using electricity.'
-#        type: Number
-#        decimal: true
-#        units: Units.MJyear
-#        defaultValue: 1956
-#      en_cook_gas:
-#        label: 'Cooktop and Oven - Gas Demand'
-#        desc: 'Energy required for cooking in a typology using gas.'
-#        type: Number
-#        decimal: true
-#        units: Units.MJyear
-#        defaultValue: 3366
+  transport:
+    label: 'Transport'
+    items:
+      trips:
+        label: 'Daily Trips per Dwelling'
+        type: Number
+        decimal: true
+        units: 'trips/dwelling'
+        defaultValue: 10.7
+      age:
+        label: 'Mean Age'
+        type: Number
+        decimal: true
+        units: Units.years
+        defaultValue: 38
+      gender:
+        label: 'Share Female Residents'
+        type: Number
+        decimal: true
+        defaultValue: 0.52
+      hhsize:
+        label: 'Household Size'
+        type: Number
+        decimal: true
+        units: Units.people
+        defaultValue: 2.6
+      totalvehs:
+        label: 'Vehicles per Household'
+        type: Number
+        decimal: true
+        units: Units.vehicles
+        defaultValue: 1.8
+      hhinc_grp:
+        label: 'Household Income Group'
+        type: Number
+        decimal: true
+        defaultValue: 3.3
+      distctr:
+        label: 'Distance to Activity Centre'
+        type: Number
+        decimal: true
+        units: Units.km
+        defaultValue: 6.3
+      railprox:
+        label: 'Proximity to Rail'
+        type: String
+        units: Units.km
+        defaultValue: 'railgt_1600'
+        allowedValues: Object.keys(VktRailTypes)
+      distbus:
+        label: 'Distance to Bus Stop'
+        type: Number
+        decimal: true
+        units: Units.km
+        defaultValue: 0.4
+      lum_index:
+        label: 'LUM Index'
+        type: Number
+        decimal: true
+        defaultValue: 0.38
+      density:
+        label: 'Density'
+        type: Number
+        decimal: true
+        defaultValue: 21.8
+      towork:
+        label: 'Share of Work Trips'
+        type: Number
+        decimal: true
+        defaultValue: 0.22
 
 ProjectParametersSchema = createCategoriesSchema
   categories: projectCategories
@@ -796,10 +923,10 @@ ClassNames = Object.keys(TypologyClasses)
 
 TypologyTypes = ['Basic', 'Efficient', 'Advanced']
 ResidentialSubclasses = ['Single House', 'Attached House', 'Walkup', 'High Rise']
+CommercialSubclasses = ['Retail', 'Office', 'Hotel', 'Supermarket', 'Restaurant']
 PathwaySubclasses = ['Freeway', 'Highway', 'Street', 'Footpath', 'Bicycle Path']
 EnergySources = ['Electricity', 'Gas']
-TypologyBuildQualityMap =
-  'Custom': null
+ResidentialBuildTypes =
   'Standard Quality Build':
     'Single House': 'single_house_std'
     'Attached House': 'attached_house_std'
@@ -810,8 +937,20 @@ TypologyBuildQualityMap =
     'Attached House': 'attached_house_hq'
     'Walkup': 'walkup_hq'
     'High Rise': 'highrise_hq'
-TypologyBuildQualities = Object.keys(TypologyBuildQualityMap)
-  
+CommercialBuildTypes =
+  'Retail':
+    'Local Shop': 'retail.local'
+    'Shopping Centre': 'retail.shopping'
+  'Office':
+    'Low-rise Without Lifts': 'office.low_rise'
+    'Med-rise With Lifts': 'office.med_rise'
+  'Hotel':
+    '3 Star': 'hotel.three_star'
+    '5 Star': 'hotel.five_star'
+  'Supermarket':
+    'Supermarket': 'supermarket'
+  'Restaurant':
+    'Restaurant': 'restaurant'
 # Appliance type to the project parameter storing its energy usage.
 ApplianceTypes =
   'Basic - Avg Performance': 'en_basic_avg_app'
@@ -819,7 +958,6 @@ ApplianceTypes =
   'Affluenza - Avg Performance': 'en_aff_avg_app'
   'Affluenza - High Performance': 'en_aff_hp_app'
 WaterDemandSources = ['Potable', 'Bore', 'Rainwater Tank', 'On-Site Treated', 'Greywater']
-
 RoadMaterialTypes =
   'Full Depth Asphalt': 'full_asphalt'
   'Deep Strength Asphalt': 'deep_asphalt'
@@ -827,14 +965,79 @@ RoadMaterialTypes =
   'Granular with Asphalt': 'granular_asphalt'
   'Plain Concrete': 'concrete_plain'
   'Reinforced Concrete': 'concrete_reinforced'
-
 FootpathMaterialTypes =
   'Concrete': 'concrete'
   'Block Paved': 'block_paved'
-
 BicyclePathMaterialTypes =
   'Asphalt': 'asphalt'
   'Concrete': 'concrete'
+TransportModelParameters =
+  intercept: 1.638503
+  coefficients:
+    hhsize: 0.137197
+    totalvehs: 1.234835
+    hhinc_grp: 0.449265
+    distctr: 0.060162
+    distbus: 0.416703
+    lum_index: -0.482782
+    density: -0.008418
+  rail:
+    rail0_400: -1.17115
+    rail400_800: -0.533986
+    rail800_1600: -0.355058
+    railgt_1600: 0
+TransportModeShareModel =
+  TRANSIT:
+    intercept: 0.52540652
+    coefficients:
+      age: -0.03730417
+      density: 0.00211621
+      distbus: -0.33821962
+      distctr: -0.02444697
+      gender: 0.12682523
+      hhinc_grp: -0.07678141
+      lum_index: 0.29376731
+      totalvehs: -0.72141909
+      towork: 0.90955219
+    rail:
+      rail0_400: 0.90965021
+      rail400_800: 0.39663054
+      rail800_1600: 0.2272072
+      railgt_1600: 0
+  VEHPASS:
+    intercept: 2.35196487
+    coefficients:
+      age: -0.0644734
+      density: -0.00296777
+      distbus: 0.01352963
+      distctr: -0.0026131
+      gender: 0.35736189
+      hhinc_grp: -0.07473318
+      lum_index: 0.00570112
+      totalvehs: -0.18236871
+      towork: -1.99704375
+    rail:
+      rail0_400: 0.03718638
+      rail400_800: -0.01300623
+      rail800_1600: 0.00799577
+      railgt_1600: 0
+  ACTIVE:
+    intercept: 0.69033114
+    coefficients:
+      age: -0.02952043
+      density: 0.01042317
+      distbus: -0.39800579
+      distctr: 0.00731302
+      gender: 0.04724299
+      hhinc_grp: -0.07740797
+      lum_index: 0.2056736
+      totalvehs: -0.51259628
+      towork: -1.29622958
+    rail:
+      rail0_400: 0.90613405
+      rail400_800: 0.60263267
+      rail800_1600: 0.3058829
+      railgt_1600: 0
 
 # Common field schemas shared across collection schemas.
 
@@ -922,10 +1125,24 @@ calcEnergyCost = (source, suffix) ->
     usage_cost -= 365 * pv_output * size_pv * usage_price
   365 * supply_price + usage_cost
 
+calcEnergyWithIntensityCost = (suffix, shortSuffix) ->
+  supply_price = @param('utilities.price_supply_' + suffix)
+  usage_price = @KWH_TO_MJ(@param('utilities.price_usage_' + suffix))
+  usage_cost = @param('energy_demand.en_use_' + shortSuffix) * usage_price
+  365 * supply_price + usage_cost
+
 calcLandPrice = ->
   typologyClass = Entities.getTypologyClass(@model._id)
   abbr = TypologyClasses[typologyClass].abbr
   @param('financial.land.price_land_' + abbr)
+
+calcTransportLinearRegression = (params) ->
+  value = params.intercept
+  _.each params.coefficients, (coeffValue, field) =>
+    value += coeffValue * @param('transport.' + field)
+  railprox = @param('transport.railprox')
+  value += params.rail[railprox]
+  value
 
 typologyCategories =
   general:
@@ -944,6 +1161,7 @@ typologyCategories =
         desc: 'Typology within a class.'
         classes:
           RESIDENTIAL: {allowedValues: ResidentialSubclasses, optional: false}
+          COMMERCIAL: {allowedValues: CommercialSubclasses, optional: false}
           PATHWAY: {allowedValues: PathwaySubclasses, optional: false}
       climate_zn:
         desc: 'BOM climate zone number.'
@@ -966,6 +1184,9 @@ typologyCategories =
         desc: '2D footprint geometry of the typology.'
         classes:
           RESIDENTIAL: {optional: false}
+          COMMERCIAL: {optional: false}
+          # Pathway typologies don't have geometry - it is defined in the entities - so this is
+          # optional.
           PATHWAY: {}
       geom_3d:
         label: '3D Geometry'
@@ -973,6 +1194,7 @@ typologyCategories =
         desc: '3D mesh representing the typology.'
         classes:
           RESIDENTIAL: {}
+          COMMERCIAL: {}
       geom_2d_filename:
         label: '2D Geometry Filename'
         type: String
@@ -1021,6 +1243,7 @@ typologyCategories =
         units: Units.m2
         classes:
           RESIDENTIAL: {}
+          COMMERCIAL: {}
       cfa:
         label: 'Conditioned Floor Area'
         desc: 'Total conditioned area of the typology.'
@@ -1029,6 +1252,7 @@ typologyCategories =
         units: Units.m2
         classes:
           RESIDENTIAL: {}
+          COMMERCIAL: {}
       storeys:
         label: 'Storeys'
         desc: 'Number of floors/storeys in the typology.'
@@ -1036,9 +1260,11 @@ typologyCategories =
         units: 'Floors'
         classes:
           RESIDENTIAL: {}
+          COMMERCIAL: {}
       height: extendSchema(heightSchema, {
         classes:
           RESIDENTIAL: {}
+          COMMERCIAL: {}
         })
       length:
         label: 'Total Path Length'
@@ -1080,6 +1306,20 @@ typologyCategories =
         units: 'Persons'
         classes:
           RESIDENTIAL: {}
+      job_intensity:
+        desc: 'Number of jobs per square metre of commercial floorspace.'
+        label: 'Job Intensity'
+        type: Number
+        decimal: true
+        units: Units.m2job
+        classes:
+          COMMERCIAL: {defaultValue: 20}
+      jobs:
+        desc: 'Number of jobs in the commerical building.'
+        label: 'Number of Jobs'
+        type: Number
+        units: Units.jobs
+        calc: '$space.gfa / $space.job_intensity'
       num_0br:
         label: 'Dwellings - Studio'
         desc: 'Number of studio units in the typology.'
@@ -1282,6 +1522,46 @@ typologyCategories =
         classes:
           RESIDENTIAL:
             defaultValue: 'Basic - Avg Performance'
+      en_int_e:
+        desc: 'Electricity energy use intensity of the typology.'
+        label: 'Energy Use Intensity - Electricity'
+        type: Number
+        decimal: true
+        units: Units.MJm2year
+        classes:
+          COMMERCIAL:
+            subclasses:
+              'Retail': {defaultValue: 1140}
+              'Office': {defaultValue: 651}
+              'Hotel': {defaultValue: 909}
+              'Supermarket': {defaultValue: 3206}
+              'Restaurant': {defaultValue: 4878}
+      en_use_e:
+        desc: 'Electricity energy use of the typology.'
+        label: 'Energy Use - Electricity'
+        type: Number
+        units: Units.MJyear
+        calc: '$energy_demand.en_int_e / $space.gfa'
+      en_int_g:
+        desc: 'Gas energy use intensity of the typology.'
+        label: 'Energy Use Intensity - Gas'
+        type: Number
+        decimal: true
+        units: Units.MJm2year
+        classes:
+          COMMERCIAL:
+            subclasses:
+              'Retail': {defaultValue: 465}
+              'Office': {defaultValue: 266}
+              'Hotel': {defaultValue: 511}
+              'Supermarket': {defaultValue: 169}
+              'Restaurant': {defaultValue: 1540}
+      en_use_g:
+        desc: 'Gas energy use of the typology.'
+        label: 'Energy Use - Gas'
+        type: Number
+        units: Units.MJyear
+        calc: '$energy_demand.en_int_g / $space.gfa'
       size_pv:
         label: 'PV System Size'
         desc: 'PV system size fitted on the typology.'
@@ -1289,16 +1569,14 @@ typologyCategories =
         decimal: true
         units: Units.kW
         classes:
-          RESIDENTIAL:
-            defaultValue: 0
+          RESIDENTIAL: {defaultValue: 0}
+          COMMERCIAL: {defaultValue: 0}
       en_pv:
         label: 'PV Energy Generation'
         desc: 'Energy generated by the fitted PV system.'
         type: Number
         decimal: true
         units: Units.kWh
-      # TODO(aramk) Add needed project parameter
-      # TODO(aramk) Make days in year a constant above.
         calc: '$energy_demand.size_pv * $renewable_energy.pv_output * 365'
       en_total:
         label: 'Total Operating'
@@ -1306,7 +1584,12 @@ typologyCategories =
         type: Number
         decimal: true
         units: Units.MJyear
-        calc: '$energy_demand.en_app + $energy_demand.en_cook + ($energy_demand.en_hwat * 1000) + KWH_TO_MJ($energy_demand.en_light) + $energy_demand.en_cool + $energy_demand.en_heat - KWH_TO_MJ($energy_demand.en_pv)'
+        calc: ->
+          typologyClass = Entities.getTypologyClass(@model._id)
+          if typologyClass == 'COMMERCIAL'
+            @calc('$energy_demand.en_use_e + $energy_demand.en_use_g - (KWH_TO_MJ($energy_demand.size_pv * $renewable_energy.pv_output * 365))')
+          else
+            @calc('$energy_demand.en_app + $energy_demand.en_cook + ($energy_demand.en_hwat * 1000) + KWH_TO_MJ($energy_demand.en_light) + $energy_demand.en_cool + $energy_demand.en_heat - KWH_TO_MJ($energy_demand.en_pv)')
   embodied_carbon:
     label: 'Embodied Carbon'
     items:
@@ -1328,6 +1611,19 @@ typologyCategories =
         type: Number
         units: Units.kgco2
         calc: '$embodied_carbon.e_co2_green + $embodied_carbon.e_co2_imp'
+      i_co2_emb_intensity:
+        label: 'CO2 - Internal Embodied Intensity'
+        desc: 'CO2 per square metre embodied in the building.'
+        type: Number
+        units: Units.kgco2m2
+        classes:
+          COMMERCIAL:
+            subclasses:
+              'Retail': {defaultValue: 375}
+              'Office': {defaultValue: 450}
+              'Hotel': {defaultValue: 480}
+              'Supermarket': {defaultValue: 375}
+              'Restaurant': {defaultValue: 350}
       i_co2_emb:
         label: 'Internal Embodied'
         desc: 'CO2 embodied in the materials of the typology.'
@@ -1340,7 +1636,13 @@ typologyCategories =
         desc: 'Total CO2 embodied in the property.'
         type: Number
         units: Units.kgco2
-        calc: '$embodied_carbon.e_co2_emb + $embodied_carbon.i_co2_emb'
+        calc: ->
+          typologyClass = Entities.getTypologyClass(@model._id)
+          if typologyClass == 'COMMERCIAL'
+            i_co2_emb = @calc('$embodied_carbon.i_co2_emb_intensity * $space.gfa')
+          else
+            i_co2_emb = @param('embodied_carbon.i_co2_emb')
+          @param('embodied_carbon.e_co2_emb') + i_co2_emb
       pathways:
         label: 'Pathways'
         items:
@@ -1469,7 +1771,24 @@ typologyCategories =
         type: Number
         decimal: true
         units: Units.kgco2
-        calc: '$operating_carbon.co2_heat + $operating_carbon.co2_cool + $operating_carbon.co2_light + $operating_carbon.co2_hwat + $operating_carbon.co2_cook + $operating_carbon.co2_app - ($energy_demand.en_pv * $operating_carbon.elec)'
+        calc: ->
+          typologyClass = Entities.getTypologyClass(@model._id)
+          if typologyClass == 'COMMERCIAL'
+            @calc('$operating_carbon.co2_op_e + $operating_carbon.co2_op_g')
+          else
+            @calc('$operating_carbon.co2_heat + $operating_carbon.co2_cool + $operating_carbon.co2_light + $operating_carbon.co2_hwat + $operating_carbon.co2_cook + $operating_carbon.co2_app - ($energy_demand.en_pv * $operating_carbon.elec)')
+      co2_op_e:
+        desc: 'Operating CO2 from electricity use.'
+        label: 'CO2 - Electricity'
+        type: Number
+        units: Units.kgco2
+        calc: '(MJ_TO_KWH($energy_demand.en_use_e) - $energy_demand.en_pv) * $operating_carbon.elec'
+      co2_op_g:
+        desc: 'Operating CO2 from gas use.'
+        label: 'CO2 - Gas'
+        type: Number
+        units: Units.kgco2
+        calc: 'MJ_TO_KWH($energy_demand.en_use_g) * $operating_carbon.elec'
   water_demand:
     label: 'Water Demand'
     items:
@@ -1513,13 +1832,32 @@ typologyCategories =
         units: Units.kLyear
         classes:
           RESIDENTIAL: {}
+      i_wu_intensity:
+        desc: 'Internal potable water use intensity of the typology.'
+        label: 'Internal Water Use Intensity'
+        type: Number
+        decimal: true
+        units: Units.kLm2year
+        classes:
+          COMMERCIAL:
+            subclasses:
+              'Retail': {defaultValue: 1.7}
+              'Office': {defaultValue: 1.01}
+              'Hotel': {defaultValue: 328}
+              'Supermarket': {defaultValue: 3.5}
+              'Restaurant': {defaultValue: 11.3}
       i_wu_total:
         label: 'Internal Total Water Use'
         desc: 'Total internal water use of the typology.'
         type: Number
         decimal: true
         units: Units.kLyear
-        calc: '$water_demand.i_wu_pot + $water_demand.i_wu_bore + $water_demand.i_wu_rain + $water_demand.i_wu_treat + $water_demand.i_wu_grey'
+        calc: ->
+          typologyClass = Entities.getTypologyClass(@model._id)
+          if typologyClass == 'COMMERCIAL'
+            @calc('$water_demand.i_wu_intensity * $space.gfa')
+          else
+            @calc('$water_demand.i_wu_pot + $water_demand.i_wu_bore + $water_demand.i_wu_rain + $water_demand.i_wu_treat + $water_demand.i_wu_grey')
       e_wd_lawn:
         label: 'External Water Demand - Lawn'
         desc: 'External water demand of lawn.'
@@ -1554,50 +1892,45 @@ typologyCategories =
         decimal: true
         desc: 'Proportion of water as potable water.'
         classes:
-          RESIDENTIAL:
-            defaultValue: 1
-          OPEN_SPACE:
-            defaultValue: 1
+          RESIDENTIAL: {defaultValue: 1}
+          COMMERCIAL: {defaultValue: 1}
+          OPEN_SPACE: {defaultValue: 1}
       e_prpn_bore:
         label: 'External Proportion Bore Water'
         type: Number
         decimal: true
         desc: 'Proportion of irrigation as bore water.'
         classes:
-          RESIDENTIAL:
-            defaultValue: 0
-          OPEN_SPACE:
-            defaultValue: 0
+          RESIDENTIAL: {defaultValue: 0}
+          COMMERCIAL: {defaultValue: 0}
+          OPEN_SPACE: {defaultValue: 0}
       e_prpn_storm:
         label: 'External Proportion Stormwater Water'
         type: Number
         decimal: true
         desc: 'Proportion of irrigation as stormwater.'
         classes:
-          RESIDENTIAL:
-            defaultValue: 0
-          OPEN_SPACE:
-            defaultValue: 0
+          RESIDENTIAL: {defaultValue: 0}
+          COMMERCIAL: {defaultValue: 0}
+          OPEN_SPACE: {defaulTvalue: 0}
       e_prpn_treat:
         label: 'External Proportion Treated Water'
         type: Number
         decimal: true
         desc: 'Proportion of irrigation as treated/recycled.'
         classes:
-          RESIDENTIAL:
-            defaultValue: 0
-          OPEN_SPACE:
-            defaultValue: 0
+          RESIDENTIAL: {defaultValue: 0}
+          COMMERCIAL: {defaultValue: 0}
+          OPEN_SPACE: {defaulTvalue: 0}
       e_prpn_grey:
         label: 'External Proportion Grey Water'
         type: Number
         decimal: true
         desc: 'Proportion of irrigation as grey.'
         classes:
-          RESIDENTIAL:
-            defaultValue: 0
-          OPEN_SPACE:
-            defaultValue: 0
+          RESIDENTIAL: {defaultValue: 0}
+          COMMERCIAL: {defaultValue: 0}
+          OPEN_SPACE: {defaulTvalue: 0}
       e_wu_pot:
         label: 'Potable Water Use'
         type: Number
@@ -1635,7 +1968,13 @@ typologyCategories =
         type: Number
         decimal: true
         units: Units.kLyear
-        calc: '$water_demand.i_wu_pot + $water_demand.e_wu_pot'
+        calc: ->
+          typologyClass = Entities.getTypologyClass(@model._id)
+          if typologyClass == 'COMMERCIAL'
+            i_wu_pot = @param('water_demand.i_wu_total')
+          else
+            i_wu_pot = @param('water_demand.i_wu_pot')
+          i_wu_pot + @param('water_demand.e_wu_pot')
       wd_total:
         label: 'Total Water Demand'
         desc: 'Total water use for internal and external purposes.'
@@ -1661,13 +2000,24 @@ typologyCategories =
   financial:
     label: 'Financial'
     items:
-      build_quality:
-        label: 'Build Quality'
+      build_type:
+        label: 'Build Type'
         type: String
-        desc: 'The build quality of the typology.'
-        allowedValues: TypologyBuildQualities
+        desc: 'The build type of the typology.'
         classes:
-          RESIDENTIAL: {defaultValue: 'Custom'}
+          RESIDENTIAL:
+            defaultValue: 'Custom'
+            allowedValues: Object.keys(ResidentialBuildTypes)
+            getCostParamId: (args) ->
+              'financial.residential.' + ResidentialBuildTypes[args.value]?[args.subclass]
+          COMMERCIAL:
+            defaultValue: 'Custom'
+            allowedValues: (args) ->
+              # subclass = SchemaUtils.getParameterValue(typology, 'general.subclass')
+              values = CommercialBuildTypes[args.subclass]
+              if values then Object.keys(values) else []
+            getCostParamId: (args) ->
+              'financial.commercial.' + CommercialBuildTypes[args.subclass]?[args.value]
       cost_land:
         label: 'Cost - Land Parcel'
         type: Number
@@ -1712,6 +2062,7 @@ typologyCategories =
         units: Units.$
         classes:
           RESIDENTIAL: {}
+          COMMERCIAL: {}
       cost_prop:
         label: 'Cost - Property'
         desc: 'Total cost of the developing the property.'
@@ -1724,14 +2075,24 @@ typologyCategories =
         type: Number
         decimal: true
         units: Units.$
-        calc: -> calcEnergyCost.call(@, 'Electricity', 'elec')
+        calc: ->
+          typologyClass = Entities.getTypologyClass(@model._id)
+          if typologyClass == 'COMMERCIAL'
+            calcEnergyWithIntensityCost.call(@, 'elec', 'e')
+          else
+            calcEnergyCost.call(@, 'Electricity', 'elec')
       cost_op_g:
         label: 'Cost - Gas Usage'
         desc: 'Operating costs due to gas usage.'
         type: Number
         decimal: true
         units: Units.$
-        calc: -> calcEnergyCost.call(@, 'Gas', 'gas')
+        calc: ->
+          typologyClass = Entities.getTypologyClass(@model._id)
+          if typologyClass == 'COMMERCIAL'
+            calcEnergyWithIntensityCost.call(@, 'gas', 'g')
+          else
+            calcEnergyCost.call(@, 'Gas', 'gas')
       cost_op_w:
         label: 'Cost - Water Usage'
         desc: 'Operating costs due to water usage.'
@@ -2048,6 +2409,169 @@ typologyCategories =
         decimal: true
         units: Units.m2
         calc: '$composition.ve_lanes * $composition.ve_width * $space.length'
+  transport:
+    label: 'Transport'
+    items:
+      # VKT MODEL
+      vkt_household_day:
+        label: 'VKT Estimate (per Household)'
+        desc: 'Vehicle kilometres travelled per household per day.'
+        type: Number
+        decimal: true
+        units: Units.kmday
+        calc: ->
+          params = TransportModelParameters
+          value = calcTransportLinearRegression.call(@, params)
+          Math.pow(value, 2)
+      vkt_person_day:
+        label: 'VKT Estimate (per Resident)'
+        desc: 'Vehicle kilometres travelled per resident per day.'
+        type: Number
+        decimal: true
+        units: Units.kmday
+        calc: '$transport.vkt_household_day / $transport.hhsize'
+      vkt_household_year:
+        label: 'VKT Estimate (per Household)'
+        desc: 'Vehicle kilometres travelled per household per year.'
+        type: Number
+        decimal: true
+        units: Units.kmyear
+        calc: '$transport.vkt_household_day * 365'
+      vkt_person_year:
+        label: 'VKT Estimate (per Resident)'
+        desc: 'Vehicle kilometres travelled per resident per year.'
+        type: Number
+        decimal: true
+        units: Units.kmyear
+        calc: '$transport.vkt_person_day * 365'
+      ghg_household_day:
+        label: 'GHG Estimate (per Household)'
+        desc: 'Greenhouse gas emissions per household per day.'
+        type: Number
+        decimal: true
+        units: Units.kgco2day
+        calc: '$transport.vkt_household_day * $operating_carbon.vkt'
+      ghg_person_day:
+        label: 'GHG Estimate (per Resident)'
+        desc: 'Greenhouse gas emissions per resident per day.'
+        type: Number
+        decimal: true
+        units: Units.kgco2day
+        calc: '$transport.vkt_person_day * $operating_carbon.vkt'
+      ghg_household_year:
+        label: 'GHG Estimate (per Household)'
+        desc: 'Greenhouse gas emissions per household per year.'
+        type: Number
+        decimal: true
+        units: Units.kgco2day
+        calc: '$transport.ghg_household_day * 365'
+      ghg_person_year:
+        label: 'GHG Estimate (per Resident)'
+        desc: 'Greenhouse gas emissions per resident per year.'
+        type: Number
+        decimal: true
+        units: Units.kgco2day
+        calc: '$transport.ghg_person_day * 365'
+      # MODE SHARE MODEL
+      exp_vehpass:
+        desc: 'Vehicle as passenger mode share expotential'
+        type: Number
+        decimal: true
+        calc: ->
+          params = TransportModeShareModel.VEHPASS
+          value = calcTransportLinearRegression.call(@, params)
+          Math.exp(value)
+      exp_transit:
+        desc: 'Transit mode share expotential'
+        type: Number
+        decimal: true
+        calc: ->
+          params = TransportModeShareModel.TRANSIT
+          value = calcTransportLinearRegression.call(@, params)
+          Math.exp(value)
+      exp_active:
+        desc: 'Active mode share expotential'
+        type: Number
+        decimal: true
+        calc: ->
+          params = TransportModeShareModel.ACTIVE
+          value = calcTransportLinearRegression.call(@, params)
+          Math.exp(value)
+      exp_total:
+        desc: 'Total of mode share expotentials'
+        type: Number
+        decimal: true
+        calc: '$transport.exp_vehpass + $transport.exp_transit + $transport.exp_active'
+      mode_share_car_driver:
+        label: 'Mode Share - Car as Driver'
+        type: Number
+        decimal: true
+        calc: '1 / (1 + $transport.exp_total)'
+      mode_share_car_passenger:
+        label: 'Mode Share - Car as Passenger'
+        type: Number
+        decimal: true
+        calc: '$transport.exp_vehpass / (1 + $transport.exp_total)'
+      mode_share_transit:
+        label: 'Mode Share - Transit'
+        type: Number
+        decimal: true
+        calc: '$transport.exp_transit / (1 + $transport.exp_total)'
+      mode_share_active:
+        label: 'Mode Share - Active'
+        type: Number
+        decimal: true
+        calc: '$transport.exp_active / (1 + $transport.exp_total)'
+      total_trips:
+        label: 'Total Trips'
+        type: Number
+        units: Units.tripsday
+        calc: '$transport.trips'
+      trips_car_driver:
+        label: 'Car as Driver Trips'
+        type: Number
+        units: Units.tripsday
+        calc: '$transport.total_trips * $transport.mode_share_car_driver'
+      trips_car_passenger:
+        label: 'Car as Passenger Trips'
+        type: Number
+        units: Units.tripsday
+        calc: '$transport.total_trips * $transport.mode_share_car_passenger'
+      trips_car_transit:
+        label: 'Transit Trips'
+        type: Number
+        units: Units.tripsday
+        calc: '$transport.total_trips * $transport.mode_share_transit'
+      trips_car_active:
+        label: 'Active Trips'
+        type: Number
+        units: Units.tripsday
+        calc: '$transport.total_trips * $transport.mode_share_active'
+      total_trips_year:
+        label: 'Total Trips'
+        type: Number
+        units: Units.tripsyear
+        calc: '$transport.total_trips * 365'
+      trips_car_driver_year:
+        label: 'Car as Driver Trips'
+        type: Number
+        units: Units.tripsyear
+        calc: '$transport.trips_car_driver * 365'
+      trips_car_passenger_year:
+        label: 'Car as Passenger Trips'
+        type: Number
+        units: Units.tripsyear
+        calc: '$transport.trips_car_passenger * 365'
+      trips_car_transit_year:
+        label: 'Transit Trips'
+        type: Number
+        units: Units.tripsyear
+        calc: '$transport.trips_car_transit * 365'
+      trips_car_active_year:
+        label: 'Active Trips'
+        type: Number
+        units: Units.tripsyear
+        calc: '$transport.trips_car_active * 365'
 
 ####################################################################################################
 # TYPOLOGY SCHEMA DEFINITION
@@ -2074,7 +2598,6 @@ TypologySchema = new SimpleSchema
 Typologies.attachSchema(TypologySchema)
 Typologies.classes = TypologyClasses
 Typologies.units = Units
-Typologies.buildQualityMap = TypologyBuildQualityMap
 Typologies.allow(Collections.allowAll())
 
 Typologies.getClassByName = _.memoize (name) ->
@@ -2095,9 +2618,17 @@ Typologies.getClassItems = ->
   _.map Typologies.classes, (cls, id) -> Setter.merge(Setter.clone(cls), {_id: id})
 
 Typologies.getSubclassItems = (typologyClass) ->
-  subclassField = SchemaUtils.getField('parameters.general.subclass', Typologies)
-  options = subclassField?.classes[typologyClass]
+  field = SchemaUtils.getField('parameters.general.subclass', Typologies)
+  options = field?.classes[typologyClass]
   allowedValues = options?.allowedValues ? []
+  _.map allowedValues, (value) -> {_id: value, name: value}
+
+Typologies.getBuildTypeItems = (typologyClass, subclass) ->
+  field = SchemaUtils.getField('parameters.financial.build_type', Typologies)
+  options = field?.classes[typologyClass]
+  allowedValues = options?.allowedValues ? []
+  if Types.isFunction(allowedValues)
+    allowedValues = allowedValues(typologyClass: typologyClass, subclass: subclass)
   _.map allowedValues, (value) -> {_id: value, name: value}
 
 # TODO(aramk) Move to objects util.
@@ -2131,24 +2662,33 @@ Typologies.unflattenParameters = (doc, hasParametersPrefix) ->
       null
   doc
 
-Typologies.getDefaultParameterValues = _.memoize (typologyClass) ->
-  values = {}
-  SchemaUtils.forEachFieldSchema ParametersSchema, (fieldSchema, paramId) ->
-    # TODO(aramk) defaultValue currently removed from schema field.
-#    defaultValue = fieldSchema.defaultValue
-    classes = fieldSchema.classes
-    # NOTE: This does not look for official defaultValue in the schema, only in the class options.
-    classDefaultValue = classes?[typologyClass]?.defaultValue
-    allClassDefaultValue = classes?.ALL?.defaultValue
-    defaultValue = classDefaultValue ? allClassDefaultValue
+Typologies.getDefaultParameterValues = ->
+  if Types.isString(arguments[0])
+    [typologyClass, subclass] = arguments
+  else
+    typology = arguments[0]
+    typologyClass = SchemaUtils.getParameterValue(typology, 'general.class')
+    subclass = SchemaUtils.getParameterValue(typology, 'general.subclass')
+  Typologies._getDefaultParameterValues(typologyClass: typologyClass, subclass: subclass)
 
-    #    if defaultValue? && classDefaultValue?
-    #      console.warn('Field has both defaultValue and classes with defaultValue - using latter.')
-    #      defaultValue = classDefaultValue
-
-    if defaultValue?
-      values[paramId] = defaultValue
-  Typologies.unflattenParameters(values, false)
+Typologies._getDefaultParameterValues = _.memoize(
+  (args) ->
+    typologyClass = args.typologyClass
+    subclass = args.subclass
+    values = {}
+    SchemaUtils.forEachFieldSchema ParametersSchema, (fieldSchema, paramId) ->
+      # NOTE: This does not look for official defaultValue in the schema, only in the class options.
+      classes = fieldSchema.classes
+      classOptions = classes?[typologyClass]
+      classDefaultValue = classOptions?.defaultValue
+      subclassDefaultValue = classOptions?.subclasses?[subclass]?.defaultValue
+      allClassDefaultValue = classes?.ALL?.defaultValue
+      defaultValue = subclassDefaultValue ? classDefaultValue ? allClassDefaultValue
+      if defaultValue?
+        values[paramId] = defaultValue
+    Typologies.unflattenParameters(values, false)
+  (args) -> JSON.stringify(args)
+)
 
 # Get the parameters which have default values for other classes and should be excluded from models
 # of the class.
@@ -2166,8 +2706,7 @@ mergeDefaultParameters = (model, defaults) ->
   model
 
 Typologies.mergeDefaults = (model) ->
-  typologyClass = model.parameters.general?.class
-  defaults = if typologyClass then Typologies.getDefaultParameterValues(typologyClass) else null
+  defaults = Typologies.getDefaultParameterValues(model)
   mergeDefaultParameters(model, defaults)
 
 # Filters parameters which don't belong to the class assigned to the given model. This does not
@@ -2388,7 +2927,7 @@ Lots.validate = (lot) ->
     if validateTypology
       return validateTypology
   catch e
-    console.error('Lot could not be validated', lot, e)
+    console.error('Lot could not be validated', lot, e, e.stack)
 
 Lots.validateTypology = (lot, typologyId) ->
   df = Q.defer()
@@ -2528,6 +3067,16 @@ Entities.mergeTypologyObj = (entity, typology) ->
 
 Entities.findByProject = (projectId) -> SchemaUtils.findByProject(Entities, projectId)
 
+Entities.findByTypology = (typologyId) -> Entities.find({typology: typologyId})
+
+Entities.findByTypologyClass = (typologyClass, projectId) ->
+  typologies = Typologies.findByClass(typologyClass, projectId)
+  entities = []
+  _.each typologies, (typology) ->
+    _.each Entities.findByTypology(typology._id), (entity) ->
+      entities.push(entity)
+  entities
+
 Entities.getTypologyClass = (id) ->
   typologyId = Entities.findOne(id).typology
   Typologies.getTypologyClass(typologyId) if typologyId?
@@ -2655,34 +3204,37 @@ Typologies.after.insert(updateQueuedEntities)
 Typologies.after.update(updateQueuedEntities)
 
 ####################################################################################################
-# BUILD QUALITY
+# BUILD TYPE
 ####################################################################################################
 
-buildQualityDependencyFieldIds = ['parameters.financial.build_quality',
+buildTypeDependencyFieldIds = ['parameters.financial.build_type',
   'parameters.general.subclass', 'parameters.space.gfa']
 
-updateBuildQuality = (userId, doc, fileNames, modifier) ->
-  depResult = getModifiedDocWithDeps(doc, modifier, buildQualityDependencyFieldIds)
+updateBuildType = (userId, doc, fileNames, modifier) ->
+  depResult = getModifiedDocWithDeps(doc, modifier, buildTypeDependencyFieldIds)
   fullDoc = depResult.fullDoc
   Typologies.mergeDefaults(fullDoc)
   project = Projects.mergeDefaults(Projects.findOne(fullDoc.project))
   return unless depResult.hasDependencyUpdates
-  build_quality = SchemaUtils.getParameterValue(fullDoc, 'financial.build_quality')
+  build_type = SchemaUtils.getParameterValue(fullDoc, 'financial.build_type')
   subclass = SchemaUtils.getParameterValue(fullDoc, 'general.subclass')
   gfa = SchemaUtils.getParameterValue(fullDoc, 'space.gfa')
   $set = {}
-  return unless build_quality? && build_quality != 'Custom' && subclass? && gfa?
-  buildQualityParamSuffix = Typologies.buildQualityMap[build_quality]?[subclass]
-  buildQualityParamId = 'parameters.financial.building.' + buildQualityParamSuffix
-  buildParamValue = SchemaUtils.getParameterValue(project, buildQualityParamId)
+  return unless build_type? && build_type != 'Custom' && subclass? && gfa?
+  typologyClass = SchemaUtils.getParameterValue(fullDoc, 'general.class')
+  field = SchemaUtils.getField('parameters.financial.build_type', Typologies)
+  options = field?.classes[typologyClass]
+  costParamId =
+    options.getCostParamId(subclass: subclass, typologyClass: typologyClass, value: build_type)
+  costParamValue = SchemaUtils.getParameterValue(project, costParamId)
   cost_ug_park = SchemaUtils.getParameterValue(project, 'financial.parking.cost_ug_park')
   parking_ug = SchemaUtils.getParameterValue(fullDoc, 'parking.parking_ug')
   parkingCost = if parking_ug? then cost_ug_park * parking_ug else 0
-  $set['parameters.financial.cost_con'] = buildParamValue * gfa + parkingCost
+  $set['parameters.financial.cost_con'] = costParamValue * gfa + parkingCost
   applyModifierSet(doc, modifier, $set)
 
-Typologies.before.insert(updateBuildQuality)
-Typologies.before.update(updateBuildQuality)
+Typologies.before.insert(updateBuildType)
+Typologies.before.update(updateBuildType)
 
 ####################################################################################################
 # ASSOCIATION MAINTENANCE
@@ -2724,5 +3276,4 @@ Collections.observe Typologies,
           console.debug('Lots update', err, result)
   removed: (typology) ->
     # Remove entities when the typology is removed.
-    entities = Entities.find({typology: typology._id}).fetch()
-    _.each entities, (entity) -> Entities.remove(entity._id)
+    _.each Entities.findByTypology(typology._id).fetch(), (entity) -> Entities.remove(entity._id)
