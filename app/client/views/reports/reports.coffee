@@ -42,7 +42,7 @@
             renderedFields.push(renderedField)
             $fields.append(renderedField.element)
           catch e
-            console.error('Failed report field render: ' + e)
+            console.error('Failed report field render', e)
         $header = $(@find('.header'))
         $info = $('<div class="info"></div>')
         $header.append($info)
@@ -90,13 +90,10 @@
       unless value?
         value = 'N/A'
       else if type == Number
-        if paramSchema.decimal
-          # Round the value using the formatter to a fixed set of decimal points, otherwise it's hard
-          # to compare values.
-          decimalPoints = paramSchema.decimalPoints ? 2
-          value = formatter.round(value, {minSigFigs: decimalPoints, maxSigFigs: decimalPoints})
-        else
-          value = Math.round(value)
+        decimalPoints = paramSchema.decimalPoints ? 2
+        # Round the value using the formatter to a fixed set of decimal points, otherwise it's hard
+        # to compare values.
+        value = formatter.round(value, {minSigFigs: decimalPoints, maxSigFigs: decimalPoints})
       $field = $('<div class="field"></div>')
       $label = $('<div class="label"><div class="content">' + label + '</div></div>')
       if units?
