@@ -76,8 +76,8 @@ renderReport = (id) ->
   reportData =
     results: results
     entities: entities
-  currentReportTemplate = UI.renderWithData(Template[templateName], reportData)
-  UI.insert currentReportTemplate, $currentReport[0]
+  currentReportTemplate = Blaze.renderWithData(Template[templateName], reportData,
+    $currentReport[0])
   PubSub.publish 'report/rendered', $currentReport
   $report = $(Templates.getElement(currentReportTemplate))
   $report.on 'render', (e, args) ->

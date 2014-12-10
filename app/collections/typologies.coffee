@@ -169,16 +169,12 @@ creatorSchema =
 VktRailTypes =
   rail0_400:
     label: '0 - 0.4 kms'
-    value: -1.17115
   rail400_800:
     label: '0.4 - 0.8 kms'
-    value: -0.533986
   rail800_1600:
     label: '0.8 - 1.6 kms'
-    value: -0.355058
   railgt_1600:
     label: '> 1.6 kms'
-    value: 0
 
 projectCategories =
   general:
@@ -973,14 +969,73 @@ FootpathMaterialTypes =
 BicyclePathMaterialTypes =
   'Asphalt': 'asphalt'
   'Concrete': 'concrete'
-TransportCoefficients =
-  hhsize: 0.137197
-  totalvehs: 1.234835
-  hhinc_grp: 0.449265
-  distctr: 0.060162
-  distbus: 0.416703
-  lum_index: -0.482782
-  density: -0.008418
+TransportModelParameters =
+  intercept: 1.638503
+  coefficients:
+    hhsize: 0.137197
+    totalvehs: 1.234835
+    hhinc_grp: 0.449265
+    distctr: 0.060162
+    distbus: 0.416703
+    lum_index: -0.482782
+    density: -0.008418
+  rail:
+    rail0_400: -1.17115
+    rail400_800: -0.533986
+    rail800_1600: -0.355058
+    railgt_1600: 0
+TransportModeShareModel =
+  TRANSIT:
+    intercept: 0.52540652
+    coefficients:
+      age: -0.03730417
+      density: 0.00211621
+      distbus: -0.33821962
+      distctr: -0.02444697
+      gender: 0.12682523
+      hhinc_grp: -0.07678141
+      lum_index: 0.29376731
+      totalvehs: -0.72141909
+      towork: 0.90955219
+    rail:
+      rail0_400: 0.90965021
+      rail400_800: 0.39663054
+      rail800_1600: 0.2272072
+      railgt_1600: 0
+  VEHPASS:
+    intercept: 2.35196487
+    coefficients:
+      age: -0.0644734
+      density: -0.00296777
+      distbus: 0.01352963
+      distctr: -0.0026131
+      gender: 0.35736189
+      hhinc_grp: -0.07473318
+      lum_index: 0.00570112
+      totalvehs: -0.18236871
+      towork: -1.99704375
+    rail:
+      rail0_400: 0.03718638
+      rail400_800: -0.01300623
+      rail800_1600: 0.00799577
+      railgt_1600: 0
+  ACTIVE:
+    intercept: 0.69033114
+    coefficients:
+      age: -0.02952043
+      density: 0.01042317
+      distbus: -0.39800579
+      distctr: 0.00731302
+      gender: 0.04724299
+      hhinc_grp: -0.07740797
+      lum_index: 0.2056736
+      totalvehs: -0.51259628
+      towork: -1.29622958
+    rail:
+      rail0_400: 0.90613405
+      rail400_800: 0.60263267
+      rail800_1600: 0.3058829
+      railgt_1600: 0
 
 # Common field schemas shared across collection schemas.
 
@@ -1078,6 +1133,14 @@ calcLandPrice = ->
   typologyClass = Entities.getTypologyClass(@model._id)
   abbr = TypologyClasses[typologyClass].abbr
   @param('financial.land.price_land_' + abbr)
+
+calcTransportLinearRegression = (params) ->
+  value = params.intercept
+  _.each params.coefficients, (coeffValue, field) =>
+    value += coeffValue * @param('transport.' + field)
+  railprox = @param('transport.railprox')
+  value += params.rail[railprox]
+  value
 
 typologyCategories =
   general:
@@ -2347,6 +2410,7 @@ typologyCategories =
   transport:
     label: 'Transport'
     items:
+      # VKT MODEL
       vkt_household_day:
         label: 'VKT Estimate (per Household)'
         desc: 'Vehicle kilometres travelled per household per day.'
@@ -2354,13 +2418,9 @@ typologyCategories =
         decimal: true
         units: Units.kmday
         calc: ->
-          intercept = 1.638503
-          value = intercept
-          _.each TransportCoefficients, (coeffValue, field) =>
-            value += coeffValue * @param('transport.' + field)
-          railprox = @param('transport.railprox')
-          value += VktRailTypes[railprox].value
-          value = Math.pow(value, 2)
+          params = TransportModelParameters
+          value = calcTransportLinearRegression.call(@, params)
+          Math.pow(value, 2)
       vkt_person_day:
         label: 'VKT Estimate (per Resident)'
         desc: 'Vehicle kilometres travelled per resident per day.'
@@ -2410,6 +2470,31 @@ typologyCategories =
         decimal: true
         units: Units.kgco2day
         calc: '$transport.ghg_person_day * 365'
+      # MODE SHARE MODEL
+      exp_vehpass:
+        desc: 'Intermediate expotential value for Vehicle as Passenger mode share logit regression'
+        type: Number
+        decimal: true
+        calc: ->
+          params = TransportModeShareModel.VEHPASS
+          value = calcTransportLinearRegression.call(@, params)
+          Math.exp(value)
+      exp_transit:
+        desc: 'Intermediate expotential value for Transit mode share logit regression'
+        type: Number
+        decimal: true
+        calc: ->
+          params = TransportModeShareModel.TRANSIT
+          value = calcTransportLinearRegression.call(@, params)
+          Math.exp(value)
+      exp_active:
+        desc: 'Intermediate expotential value for Active mode share logit regression'
+        type: Number
+        decimal: true
+        calc: ->
+          params = TransportModeShareModel.ACTIVE
+          value = calcTransportLinearRegression.call(@, params)
+          Math.exp(value)
 
 ####################################################################################################
 # TYPOLOGY SCHEMA DEFINITION
