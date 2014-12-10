@@ -928,7 +928,7 @@ ResidentialSubclasses = ['Single House', 'Attached House', 'Walkup', 'High Rise'
 CommercialSubclasses = ['Retail', 'Office', 'Hotel', 'Supermarket', 'Restaurant']
 PathwaySubclasses = ['Freeway', 'Highway', 'Street', 'Footpath', 'Bicycle Path']
 EnergySources = ['Electricity', 'Gas']
-TypologyBuildTypeMap =
+ResidentialBuildTypes =
   'Standard Quality Build':
     'Single House': 'single_house_std'
     'Attached House': 'attached_house_std'
@@ -939,7 +939,7 @@ TypologyBuildTypeMap =
     'Attached House': 'attached_house_hq'
     'Walkup': 'walkup_hq'
     'High Rise': 'highrise_hq'
-CommercialConstructionTypes =
+CommercialBuildTypes =
   'Retail':
     'Local Shop': 'retail.local'
     'Shopping Centre': 'retail.shopping'
@@ -1827,50 +1827,45 @@ typologyCategories =
         decimal: true
         desc: 'Proportion of water as potable water.'
         classes:
-          RESIDENTIAL:
-            defaultValue: 1
-          OPEN_SPACE:
-            defaultValue: 1
+          RESIDENTIAL: {defaultValue: 1}
+          COMMERCIAL: {defaultValue: 1}
+          OPEN_SPACE: {defaultValue: 1}
       e_prpn_bore:
         label: 'External Proportion Bore Water'
         type: Number
         decimal: true
         desc: 'Proportion of irrigation as bore water.'
         classes:
-          RESIDENTIAL:
-            defaultValue: 0
-          OPEN_SPACE:
-            defaultValue: 0
+          RESIDENTIAL: {defaultValue: 0}
+          COMMERCIAL: {defaultValue: 0}
+          OPEN_SPACE: {defaultValue: 0}
       e_prpn_storm:
         label: 'External Proportion Stormwater Water'
         type: Number
         decimal: true
         desc: 'Proportion of irrigation as stormwater.'
         classes:
-          RESIDENTIAL:
-            defaultValue: 0
-          OPEN_SPACE:
-            defaultValue: 0
+          RESIDENTIAL: {defaultValue: 0}
+          COMMERCIAL: {defaultValue: 0}
+          OPEN_SPACE: {defaulTvalue: 0}
       e_prpn_treat:
         label: 'External Proportion Treated Water'
         type: Number
         decimal: true
         desc: 'Proportion of irrigation as treated/recycled.'
         classes:
-          RESIDENTIAL:
-            defaultValue: 0
-          OPEN_SPACE:
-            defaultValue: 0
+          RESIDENTIAL: {defaultValue: 0}
+          COMMERCIAL: {defaultValue: 0}
+          OPEN_SPACE: {defaulTvalue: 0}
       e_prpn_grey:
         label: 'External Proportion Grey Water'
         type: Number
         decimal: true
         desc: 'Proportion of irrigation as grey.'
         classes:
-          RESIDENTIAL:
-            defaultValue: 0
-          OPEN_SPACE:
-            defaultValue: 0
+          RESIDENTIAL: {defaultValue: 0}
+          COMMERCIAL: {defaultValue: 0}
+          OPEN_SPACE: {defaulTvalue: 0}
       e_wu_pot:
         label: 'Potable Water Use'
         type: Number
@@ -1908,7 +1903,13 @@ typologyCategories =
         type: Number
         decimal: true
         units: Units.kLyear
-        calc: '$water_demand.i_wu_pot + $water_demand.e_wu_pot'
+        calc: ->
+          typologyClass = Entities.getTypologyClass(@model._id)
+          if typologyClass == 'COMMERCIAL'
+            i_wu_pot = @param('water_demand.i_wu_total')
+          else
+            i_wu_pot = @param('water_demand.i_wu_pot')
+          i_wu_pot + @param('water_demand.e_wu_pot')
       wd_total:
         label: 'Total Water Demand'
         desc: 'Total water use for internal and external purposes.'
@@ -1941,9 +1942,9 @@ typologyCategories =
         classes:
           RESIDENTIAL:
             defaultValue: 'Custom'
-            allowedValues: Object.keys(TypologyBuildTypeMap)
+            allowedValues: Object.keys(ResidentialBuildTypes)
             getCostParamId: (args) ->
-              'financial.residential.' + TypologyBuildTypeMap[args.value]?[args.subclass]
+              'financial.residential.' + ResidentialBuildTypes[args.value]?[args.subclass]
           COMMERCIAL:
             defaultValue: 'Custom'
             allowedValues: (args) ->
