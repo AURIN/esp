@@ -66,6 +66,8 @@ Units =
   people: 'people'
   spaces: 'spaces'
   spacesm: 'spaces/m'
+  tripsday: 'trips/day'
+  tripsyear: 'trips/year'
   vehicles: 'vehicles'
   years: 'years'
 
@@ -2472,7 +2474,7 @@ typologyCategories =
         calc: '$transport.ghg_person_day * 365'
       # MODE SHARE MODEL
       exp_vehpass:
-        desc: 'Intermediate expotential value for Vehicle as Passenger mode share logit regression'
+        desc: 'Vehicle as passenger mode share expotential'
         type: Number
         decimal: true
         calc: ->
@@ -2480,7 +2482,7 @@ typologyCategories =
           value = calcTransportLinearRegression.call(@, params)
           Math.exp(value)
       exp_transit:
-        desc: 'Intermediate expotential value for Transit mode share logit regression'
+        desc: 'Transit mode share expotential'
         type: Number
         decimal: true
         calc: ->
@@ -2488,13 +2490,88 @@ typologyCategories =
           value = calcTransportLinearRegression.call(@, params)
           Math.exp(value)
       exp_active:
-        desc: 'Intermediate expotential value for Active mode share logit regression'
+        desc: 'Active mode share expotential'
         type: Number
         decimal: true
         calc: ->
           params = TransportModeShareModel.ACTIVE
           value = calcTransportLinearRegression.call(@, params)
           Math.exp(value)
+      exp_total:
+        desc: 'Total of mode share expotentials'
+        type: Number
+        decimal: true
+        calc: '$transport.exp_vehpass + $transport.exp_transit + $transport.exp_active'
+      mode_share_car_driver:
+        label: 'Mode Share - Car as Driver'
+        type: Number
+        decimal: true
+        calc: '1 / (1 + $transport.exp_total)'
+      mode_share_car_passenger:
+        label: 'Mode Share - Car as Passenger'
+        type: Number
+        decimal: true
+        calc: '$transport.exp_vehpass / (1 + $transport.exp_total)'
+      mode_share_transit:
+        label: 'Mode Share - Transit'
+        type: Number
+        decimal: true
+        calc: '$transport.exp_transit / (1 + $transport.exp_total)'
+      mode_share_active:
+        label: 'Mode Share - Active'
+        type: Number
+        decimal: true
+        calc: '$transport.exp_active / (1 + $transport.exp_total)'
+      total_trips:
+        label: 'Total Trips'
+        type: Number
+        units: Units.tripsday
+        calc: '$transport.trips'
+      trips_car_driver:
+        label: 'Car as Driver Trips'
+        type: Number
+        units: Units.tripsday
+        calc: '$transport.total_trips * $transport.mode_share_car_driver'
+      trips_car_passenger:
+        label: 'Car as Passenger Trips'
+        type: Number
+        units: Units.tripsday
+        calc: '$transport.total_trips * $transport.mode_share_car_passenger'
+      trips_car_transit:
+        label: 'Transit Trips'
+        type: Number
+        units: Units.tripsday
+        calc: '$transport.total_trips * $transport.mode_share_transit'
+      trips_car_active:
+        label: 'Active Trips'
+        type: Number
+        units: Units.tripsday
+        calc: '$transport.total_trips * $transport.mode_share_active'
+      total_trips_year:
+        label: 'Total Trips'
+        type: Number
+        units: Units.tripsyear
+        calc: '$transport.total_trips * 365'
+      trips_car_driver_year:
+        label: 'Car as Driver Trips'
+        type: Number
+        units: Units.tripsyear
+        calc: '$transport.trips_car_driver * 365'
+      trips_car_passenger_year:
+        label: 'Car as Passenger Trips'
+        type: Number
+        units: Units.tripsyear
+        calc: '$transport.trips_car_passenger * 365'
+      trips_car_transit_year:
+        label: 'Transit Trips'
+        type: Number
+        units: Units.tripsyear
+        calc: '$transport.trips_car_transit * 365'
+      trips_car_active_year:
+        label: 'Active Trips'
+        type: Number
+        units: Units.tripsyear
+        calc: '$transport.trips_car_active * 365'
 
 ####################################################################################################
 # TYPOLOGY SCHEMA DEFINITION
