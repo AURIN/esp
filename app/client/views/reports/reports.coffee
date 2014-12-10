@@ -86,13 +86,17 @@
       label = field.label
       value = field.value
       paramSchema = ParametersSchema.schema(param)
-      decimalPoints = paramSchema.decimalPoints ? 2
+      type = paramSchema.type
       unless value?
         value = 'N/A'
-      else if paramSchema.type == Number
-        # Round the value using the formatter to a fixed set of decimal points, otherwise it's hard
-        # to compare values.
-        value = formatter.round(value, {minSigFigs: decimalPoints, maxSigFigs: decimalPoints})
+      else if type == Number
+        if paramSchema.decimal
+          # Round the value using the formatter to a fixed set of decimal points, otherwise it's hard
+          # to compare values.
+          decimalPoints = paramSchema.decimalPoints ? 2
+          value = formatter.round(value, {minSigFigs: decimalPoints, maxSigFigs: decimalPoints})
+        else
+          value = Math.round(value)
       $field = $('<div class="field"></div>')
       $label = $('<div class="label"><div class="content">' + label + '</div></div>')
       if units?
