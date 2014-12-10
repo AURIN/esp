@@ -969,15 +969,16 @@ BuildingClasses =
   MIXED_USE: {}
   INSTITUTIONAL: {}
 
-extendClassMap = (args, map) -> Setter.merge({}, map, args)
+extendClassMap = (args, map) ->
+  unless map then throw new Error('Map not defined.')
+  Setter.merge({}, map, args)
 extendBuildingClasses = (args) -> extendClassMap(args, BuildingClasses)
 extendClassesWithDefault = (classArgs, defaultValue) ->
   _.each classArgs, (args, typologyClass) ->
     args.defaultValue = defaultValue
   classArgs
 
-LandClasses = extendClassMap
-  OPEN_SPACE: {}
+LandClasses = extendClassMap(OPEN_SPACE: {}, BuildingClasses)
 
 extendLandClasses = (args) -> extendClassMap(args, LandClasses)
 
@@ -985,7 +986,6 @@ classHasIntensity = (typologyClass) ->
   typologyClass == 'COMMERCIAL' || typologyClass == 'INSTITUTIONAL'
 
 ClassNames = Object.keys(TypologyClasses)
-
 TypologyTypes = ['Basic', 'Efficient', 'Advanced']
 ResidentialSubclasses = ['Single House', 'Attached House', 'Walkup', 'High Rise']
 CommercialSubclasses = ['Retail', 'Office', 'Hotel', 'Supermarket', 'Restaurant']
