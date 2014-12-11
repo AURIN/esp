@@ -359,14 +359,12 @@ TemplateClass.onAtlasLoad = (template, atlas) ->
   atlas.subscribe 'entity/select', (args) ->
     tableSelectionEnabled = false
     ids = _.map args.ids, (id) -> resolveModelId(id)
-    tableId = Template.collectionTable.getDomTableId(getTable(ids[0]))
-    Template.collectionTable.addSelection(tableId, ids) if tableId
+    Template.collectionTable.addSelection(getTable(ids[0]), ids)
     tableSelectionEnabled = true
   atlas.subscribe 'entity/deselect', (args) ->
     tableSelectionEnabled = false
     ids = _.map args.ids, (id) -> resolveModelId(id)
-    tableId = Template.collectionTable.getDomTableId(getTable(ids[0]))
-    Template.collectionTable.removeSelection(tableId, ids) if tableId
+    Template.collectionTable.removeSelection(getTable(ids[0]), ids)
     tableSelectionEnabled = true
 
   # Listen to double clicks from Atlas.
@@ -398,11 +396,10 @@ TemplateClass.onAtlasLoad = (template, atlas) ->
 
   # Selecting typologies in the table shows and hides the draw button for pathways.
   $typologyTable = getTypologyTable(template)
-  typologyTableId = Template.collectionTable.getDomTableId($typologyTable)
   $pathwayDrawButton = getPathwayDrawButton(template)
   
   getSelectedTypology = ->
-    selectedIds = Template.collectionTable.getSelectedIds(typologyTableId)
+    selectedIds = Template.collectionTable.getSelectedIds($typologyTable)
     return null if selectedIds.length < 1
     Typologies.findOne(selectedIds[0])
 
@@ -413,7 +410,7 @@ TemplateClass.onAtlasLoad = (template, atlas) ->
     if typologyClass == 'PATHWAY' then typology else null
 
   onTypologySelectionChange = ->
-    selectedIds = Template.collectionTable.getSelectedIds(typologyTableId)
+    selectedIds = Template.collectionTable.getSelectedIds($typologyTable)
     # Currently only a single pathway can be selected for drawing.
     typology = getSelectedPathwayTypology()
     $pathwayDrawButton.toggle(typology?)

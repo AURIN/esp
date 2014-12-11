@@ -23,12 +23,13 @@ Meteor.startup ->
         height: space?.height ? 5
         zIndex: 1
         displayMode: displayMode
-        fillColor: '#666'
-        borderColor: '#000'
+        fillColor: '#ccc'
+        borderColor: '#666'
       if typologyClass == 'PATHWAY'
         widthParamId = 'space.width'
         evalEngine.evaluate(model: entity, paramIds: [widthParamId])
         args.width = SchemaUtils.getParameterValue(entity, widthParamId)
+        args.fillColor = '#000'
         displayMode = 'line'
       else
         displayMode = Session.get('entityDisplayMode')

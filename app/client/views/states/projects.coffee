@@ -8,8 +8,7 @@ TemplateClass.rendered = ->
   Session.set('stateName', 'Projects')
   # Add a launch button to the table toolbar.
   $table = $(@find('.collection-table'))
-  getSelectedId = ->
-    Template.collectionTable.getSelectedIds(Template.collectionTable.getDomTableId($table))[0]
+  getSelectedId = -> Template.collectionTable.getSelectedIds($table)[0]
   $buttons = $('.on-selection-show', $table)
 
   # Duplicate button
