@@ -33,16 +33,15 @@ Meteor.startup ->
       classes = fieldSchema.classes
       classOptions = classes?[typologyClass]
       allClassOptions = classes?.ALL
-      if allClassOptions?
+      if classOptions != false && allClassOptions?
         classOptions = _.extend(allClassOptions, classOptions)
       isHiddenField = classes and not classOptions
 
       $input = $(input.node)
       $label = Forms.getInputLabel($input)
       $wrapper = $input.closest(Forms.FIELD_SELECTOR)
-      $wrappers[if isHiddenField then 'hide' else 'show'].push($wrapper)
       # Hide fields which have classes specified which don't contain the current class.
-      # $wrapper[if isHiddenField then 'hide' else 'show']()
+      $wrappers[if isHiddenField then 'hide' else 'show'].push($wrapper)
 
       if isParamField
         defaultValue = SchemaUtils.getParameterValue(defaultParams, key)

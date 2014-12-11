@@ -1,3 +1,5 @@
+# "use strict"
+
 ####################################################################################################
 # SCHEMA OPTIONS
 ####################################################################################################
@@ -95,7 +97,7 @@ autoLabel = (field, id) ->
 createCategorySchemaObj = (cat, catId, args) ->
   catSchemaFields = {}
   hasRequiredField = false
-  for itemId, item of cat.items
+  _.each cat.items, (item, itemId) ->
     if item.items?
       result = createCategorySchemaObj(item, itemId, args)
       if result.hasRequiredField
@@ -113,9 +115,19 @@ createCategorySchemaObj = (cat, catId, args) ->
       defaultValue = fieldSchema.defaultValue
       if defaultValue?
         classes = fieldSchema.classes ?= {}
+        # console.log('itemId', itemId)
+        # console.log('allClassOptions', allClassOptions)
+        # console.log('classes', classes)
         allClassOptions = classes.ALL ?= {}
+        # TODO(aramk) This block causes a strange issue where ALL.classes is defined with
+        # defaultValue already set, though it wasn't a step earlier...
         if allClassOptions.defaultValue?
-          throw new Error('Default value specified on field and in classOptions - only use one.')
+          # console.log('fieldSchema', fieldSchema)
+          # console.log('classes', classes)
+          # console.log('BuildingClasses', BuildingClasses)
+          # console.log('extend', extendBuildingClasses())
+          throw new Error('Default value specified on field ' + itemId + ' and in classOptions - only use one.')
+        # console.log('setting defualt value', allClassOptions)
         allClassOptions.defaultValue = defaultValue
         delete fieldSchema.defaultValue
     catSchemaFields[itemId] = fieldSchema
@@ -935,7 +947,7 @@ Projects.mergeDefaults = (model) ->
 # TYPOLOGY SCHEMA DECLARATION
 ####################################################################################################
 
-TypologyClasses =
+TypologyClasses = Object.freeze({
   RESIDENTIAL:
     name: 'Residential'
     color: '#009cff' # Blue
@@ -963,23 +975,26 @@ TypologyClasses =
     name: 'Institutional'
     color: 'orange'
     abbr: 'i'
+})
 
-BuildingClasses =
+BuildingClasses = Object.freeze({
   RESIDENTIAL: {}
   COMMERCIAL: {}
   MIXED_USE: {}
   INSTITUTIONAL: {}
+})
 
 extendClassMap = (args, map) ->
   unless map then throw new Error('Map not defined.')
-  Setter.merge({}, map, args)
+  args = if args then Setter.clone(args) else {}
+  Setter.merge(Setter.clone(map), args)
 extendBuildingClasses = (args) -> extendClassMap(args, BuildingClasses)
 extendClassesWithDefault = (classArgs, defaultValue) ->
-  _.each classArgs, (args, typologyClass) ->
-    args.defaultValue = defaultValue
+  classArgs.ALL ?= {}
+  classArgs.ALL.defaultValue = defaultValue
   classArgs
 
-LandClasses = extendClassMap(OPEN_SPACE: {}, BuildingClasses)
+LandClasses = Object.freeze(extendClassMap(OPEN_SPACE: {}, BuildingClasses))
 
 extendLandClasses = (args) -> extendClassMap(args, LandClasses)
 
@@ -1285,7 +1300,7 @@ typologyCategories =
         label: '3D Geometry'
         type: String
         desc: '3D mesh representing the typology.'
-        classes: BuildingClasses
+        classes: extendBuildingClasses()
       geom_2d_filename:
         label: '2D Geometry Filename'
         type: String
@@ -1332,22 +1347,23 @@ typologyCategories =
         type: Number
         decimal: true
         units: Units.m2
-        classes: BuildingClasses
+        classes: extendBuildingClasses()
       cfa:
         label: 'Conditioned Floor Area'
         desc: 'Total conditioned area of the typology.'
         type: Number
         decimal: true
         units: Units.m2
-        classes: BuildingClasses
+        classes: extendBuildingClasses
+          COMMERCIAL: false
       storeys:
         label: 'Storeys'
         desc: 'Number of floors/storeys in the typology.'
         type: Number
         units: 'Floors'
-        classes: BuildingClasses
+        classes: extendBuildingClasses()
       height: extendSchema(heightSchema, {
-        classes: BuildingClasses
+        classes: extendBuildingClasses()
         })
       length:
         label: 'Total Path Length'
@@ -2142,7 +2158,7 @@ typologyCategories =
         desc: 'Cost of constructing the typology estimated using the Rawlinson’s Construction Handbook.'
         type: Number
         units: Units.$
-        classes: BuildingClasses
+        classes: extendBuildingClasses()
       cost_prop:
         label: 'Cost - Property'
         desc: 'Total cost of the developing the property.'
@@ -2264,17 +2280,19 @@ typologyCategories =
         type: Number
         decimal: true
         units: 'Degrees'
-        classes: BuildingClasses
+        classes: extendClassesWithDefault(extendLandClasses(), 0)
       eq_azmth_h:
         label: 'Azimuth Heating Energy Array'
         desc: 'Equation to predict heating energy use as a function of degrees azimuth.'
         type: String
-        classes: BuildingClasses
+        classes: extendBuildingClasses
+          COMMERCIAL: false
       eq_azmth_c:
         label: 'Azimuth Cooling Energy Array'
         desc: 'Equation to predict cooling energy use as a function of degrees azimuth.'
         type: String
-        classes: BuildingClasses
+        classes: extendBuildingClasses
+          COMMERCIAL: false
   parking:
     label: 'Parking'
     items:
@@ -2290,7 +2308,7 @@ typologyCategories =
         desc: 'Number of underground parking spaces.'
         type: Number
         units: Units.spaces
-        classes: BuildingClasses
+        classes: extendBuildingClasses()
       parking_sl:
         label: 'Parking Spaces - Street Level'
         desc: 'Number of street level parking spaces.'
@@ -2486,7 +2504,7 @@ typologyCategories =
     items:
       # VKT MODEL
       vkt_household_day:
-        label: 'VKT Estimate (per Household)'
+        label: 'VKT per Household'
         desc: 'Vehicle kilometres travelled per household per day.'
         type: Number
         decimal: true
@@ -2496,49 +2514,63 @@ typologyCategories =
           value = calcTransportLinearRegression.call(@, params)
           Math.pow(value, 2)
       vkt_person_day:
-        label: 'VKT Estimate (per Resident)'
+        label: 'VKT per Resident'
         desc: 'Vehicle kilometres travelled per resident per day.'
         type: Number
         decimal: true
         units: Units.kmday
         calc: '$transport.vkt_household_day / $transport.hhsize'
+      vkt_dwellings_day:
+        label: 'VKT total Dwellings'
+        desc: 'Vehicle kilometres travelled for all dwellings per day.'
+        type: Number
+        decimal: true
+        units: Units.kmday
+        calc: '$transport.vkt_household_day * $space.dwell_tot'
       vkt_household_year:
-        label: 'VKT Estimate (per Household)'
+        label: 'VKT per Household'
         desc: 'Vehicle kilometres travelled per household per year.'
         type: Number
         decimal: true
         units: Units.kmyear
         calc: '$transport.vkt_household_day * 365'
       vkt_person_year:
-        label: 'VKT Estimate (per Resident)'
+        label: 'VKT per Resident'
         desc: 'Vehicle kilometres travelled per resident per year.'
         type: Number
         decimal: true
         units: Units.kmyear
         calc: '$transport.vkt_person_day * 365'
+      vkt_dwellings_year:
+        label: 'VKT total Dwellings'
+        desc: 'Vehicle kilometres travelled for all dwellings per year.'
+        type: Number
+        decimal: true
+        units: Units.kmyear
+        calc: '$transport.vkt_dwellings_day * 365'
       ghg_household_day:
-        label: 'GHG Estimate (per Household)'
+        label: 'GHG per Household'
         desc: 'Greenhouse gas emissions per household per day.'
         type: Number
         decimal: true
         units: Units.kgco2day
         calc: '$transport.vkt_household_day * $operating_carbon.vkt'
       ghg_person_day:
-        label: 'GHG Estimate (per Resident)'
+        label: 'GHG per Resident'
         desc: 'Greenhouse gas emissions per resident per day.'
         type: Number
         decimal: true
         units: Units.kgco2day
         calc: '$transport.vkt_person_day * $operating_carbon.vkt'
       ghg_household_year:
-        label: 'GHG Estimate (per Household)'
+        label: 'GHG per Household'
         desc: 'Greenhouse gas emissions per household per year.'
         type: Number
         decimal: true
         units: Units.kgco2day
         calc: '$transport.ghg_household_day * 365'
       ghg_person_year:
-        label: 'GHG Estimate (per Resident)'
+        label: 'GHG per Resident'
         desc: 'Greenhouse gas emissions per resident per year.'
         type: Number
         decimal: true
@@ -2597,11 +2629,13 @@ typologyCategories =
       total_trips:
         label: 'Total Trips'
         type: Number
+        decimal: true
         units: Units.tripsday
         calc: '$transport.trips'
       trips_car_driver:
         label: 'Car as Driver Trips'
         type: Number
+        decimal: true
         units: Units.tripsday
         calc: '$transport.total_trips * $transport.mode_share_car_driver'
       trips_car_passenger:
@@ -2612,36 +2646,43 @@ typologyCategories =
       trips_car_transit:
         label: 'Transit Trips'
         type: Number
+        decimal: true
         units: Units.tripsday
         calc: '$transport.total_trips * $transport.mode_share_transit'
       trips_car_active:
         label: 'Active Trips'
         type: Number
+        decimal: true
         units: Units.tripsday
         calc: '$transport.total_trips * $transport.mode_share_active'
       total_trips_year:
         label: 'Total Trips'
         type: Number
+        decimal: true
         units: Units.tripsyear
         calc: '$transport.total_trips * 365'
       trips_car_driver_year:
         label: 'Car as Driver Trips'
         type: Number
+        decimal: true
         units: Units.tripsyear
         calc: '$transport.trips_car_driver * 365'
       trips_car_passenger_year:
         label: 'Car as Passenger Trips'
         type: Number
+        decimal: true
         units: Units.tripsyear
         calc: '$transport.trips_car_passenger * 365'
       trips_car_transit_year:
         label: 'Transit Trips'
         type: Number
+        decimal: true
         units: Units.tripsyear
         calc: '$transport.trips_car_transit * 365'
       trips_car_active_year:
         label: 'Active Trips'
         type: Number
+        decimal: true
         units: Units.tripsyear
         calc: '$transport.trips_car_active * 365'
 
@@ -2752,6 +2793,7 @@ Typologies._getDefaultParameterValues = _.memoize(
       # NOTE: This does not look for official defaultValue in the schema, only in the class options.
       classes = fieldSchema.classes
       classOptions = classes?[typologyClass]
+      return if classOptions == false
       classDefaultValue = classOptions?.defaultValue
       subclassDefaultValue = classOptions?.subclasses?[subclass]?.defaultValue
       allClassDefaultValue = classes?.ALL?.defaultValue

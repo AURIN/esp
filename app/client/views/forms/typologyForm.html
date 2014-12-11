@@ -72,8 +72,8 @@
 
               <div class="subtitle">Energy Demand</div>
               {{> afQuickField name="parameters.energy_demand.src_heat" options="allowed"}}
-              {{> afFieldInput name="parameters.orientation.eq_azmth_h" type="azimuthArray" label="Azimuth Heating Energy Array"}}
-              {{> afFieldInput name="parameters.orientation.eq_azmth_c" type="azimuthArray" label="Azimuth Cooling Energy Array"}}
+              {{> afQuickField name="parameters.orientation.eq_azmth_h" type="azimuthArray"}}
+              {{> afQuickField name="parameters.orientation.eq_azmth_c" type="azimuthArray"}}
               {{> afQuickField name="parameters.energy_demand.en_heat"}}
               {{> afQuickField name="parameters.energy_demand.en_cool"}}
               {{> afQuickField name="parameters.energy_demand.en_light"}}

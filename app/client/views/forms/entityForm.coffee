@@ -29,13 +29,14 @@ Meteor.startup ->
       classes = fieldSchema.classes
       classOptions = classes?[typologyClass]
       allClassOptions = classes?.ALL
-      if allClassOptions?
+      if classOptions != false && allClassOptions?
         classOptions = _.extend(allClassOptions, classOptions)
+      isHiddenField = classes and not classOptions
 
       $input = $(input.node)
       $wrapper = $input.closest(Forms.FIELD_SELECTOR)
       # Hide fields which have classes specified which don't contain the current class.
-      $wrapper[if classes and not classOptions then 'hide' else 'show']()
+      $wrapper[if isHiddenField then 'hide' else 'show']()
 
       # For entities, we need to distinguish between default values inherited by the typology and
       # typology values that will be inherited by the entity.

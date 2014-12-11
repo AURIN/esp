@@ -12,11 +12,11 @@ Meteor.startup ->
 
       {param: 'transport.vkt_household_day', aggregate: 'average'}
       {param: 'transport.vkt_person_day', aggregate: 'average'}
-      {param: 'transport.vkt_household_day', label: 'VKT Estimate (total Precinct)'}
+      {param: 'transport.vkt_dwellings_day', label: 'VKT Estimate (total Precinct)'}
       
       {param: 'transport.vkt_household_year', aggregate: 'average'}
       {param: 'transport.vkt_person_year', aggregate: 'average'}
-      {param: 'transport.vkt_household_year', label: 'VKT Estimate (total Precinct)'}
+      {param: 'transport.vkt_dwellings_year', label: 'VKT Estimate (total Precinct)'}
 
       {param: 'transport.ghg_household_day', aggregate: 'average'}
       {param: 'transport.ghg_person_day', aggregate: 'average'}
@@ -28,10 +28,10 @@ Meteor.startup ->
 
       {title: 'Mode Share'}
 
-      {param: 'transport.mode_share_car_driver'}
-      {param: 'transport.mode_share_car_passenger'}
-      {param: 'transport.mode_share_transit'}
-      {param: 'transport.mode_share_active'}
+      {param: 'transport.mode_share_car_driver', aggregate: 'average'}
+      {param: 'transport.mode_share_car_passenger', aggregate: 'average'}
+      {param: 'transport.mode_share_transit', aggregate: 'average'}
+      {param: 'transport.mode_share_active', aggregate: 'average'}
       
       {param: 'transport.total_trips', label: 'Total Precinct Trips'}
       {param: 'transport.trips_car_driver'}
