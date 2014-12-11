@@ -1397,6 +1397,7 @@ typologyCategories =
         label: 'Plot Ratio'
         desc: 'The building footprint area divided by the lot size.'
         type: Number
+        decimal: true
         calc: '$space.gfa / $space.lotsize'
       occupants:
         label: 'No. Occupants'
@@ -1708,24 +1709,28 @@ typologyCategories =
         label: 'Greenspace'
         desc: 'CO2 embodied in the greenspace portion of external land.'
         type: Number
+        decimal: true
         units: Units.kgco2
         calc: '($space.ext_land_l + $space.ext_land_a + $space.ext_land_h) * $embodied_carbon.landscaping.greenspace'
       e_co2_imp:
         label: 'Impervious'
         desc: 'CO2 embodied in the impervious portion of external land.'
         type: Number
+        decimal: true
         units: Units.kgco2
         calc: '$space.ext_land_i * $embodied_carbon.landscaping.impermeable'
       e_co2_emb:
         label: 'Total External Embodied'
         desc: 'CO2 embodied in the external impermeable surfaces.'
         type: Number
+        decimal: true
         units: Units.kgco2
         calc: '$embodied_carbon.e_co2_green + $embodied_carbon.e_co2_imp'
       i_co2_emb_intensity:
         label: 'CO2 - Internal Embodied Intensity'
         desc: 'CO2 per square metre embodied in the building.'
         type: Number
+        decimal: true
         units: Units.kgco2m2
         classes:
           COMMERCIAL:
@@ -1745,17 +1750,26 @@ typologyCategories =
         label: 'Internal Embodied'
         desc: 'CO2 embodied in the materials of the typology.'
         type: Number
+        decimal: true
         units: Units.kgco2
         classes:
           RESIDENTIAL: {}
+      i_co2_emb_intensity_value:
+        label: 'Internal Embodied'
+        desc: 'CO2 embodied in the materials of the typology calculated using the intensity and GFA.'
+        type: Number
+        decimal: true
+        units: Units.kgco2
+        calc: '$embodied_carbon.i_co2_emb_intensity * $space.gfa'
       t_co2_emb:
         label: 'Total Embodied'
         desc: 'Total CO2 embodied in the property.'
         type: Number
+        decimal: true
         units: Units.kgco2
         calc: ->
           if classHasIntensity(Entities.getTypologyClass(@model._id))
-            i_co2_emb = @calc('$embodied_carbon.i_co2_emb_intensity * $space.gfa')
+            i_co2_emb = @param('embodied_carbon.i_co2_emb_intensity_value')
           else
             i_co2_emb = @param('embodied_carbon.i_co2_emb')
           @param('embodied_carbon.e_co2_emb') + i_co2_emb

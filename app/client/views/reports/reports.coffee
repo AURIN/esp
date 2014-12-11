@@ -91,6 +91,8 @@
         value = 'N/A'
       else if type == Number
         decimalPoints = paramSchema.decimalPoints ? 2
+        unless paramSchema.decimal
+          decimalPoints = 0
         # Round the value using the formatter to a fixed set of decimal points, otherwise it's hard
         # to compare values.
         value = formatter.round(value, {minSigFigs: decimalPoints, maxSigFigs: decimalPoints})
