@@ -14,7 +14,6 @@ Meteor.startup ->
       {param: 'space.extland'}
       {param: 'space.fpa'}
       {param: 'space.gfa'}
-#      {param: 'space.cfa'}
       {param: 'space.plot_ratio'}
       {param: 'space.dwell_dens'}
       {param: 'space.dwell_tot'}
@@ -85,9 +84,6 @@ Meteor.startup ->
       {param: 'financial.cost_op_w'}
       {param: 'financial.cost_op_t'}
       {param: 'financial.cost_op_t', label: 'Average Operating Cost', aggregate: 'average'}
-
-#      {title: 'Orientation'}
-#      {param: 'orientation.azimuth'}
 
       {title: 'Parking'}
       {param: 'parking.parking_ga'}

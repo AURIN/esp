@@ -14,7 +14,6 @@ Meteor.startup ->
       {param: 'space.extland'}
       {param: 'space.fpa'}
       {param: 'space.gfa'}
-#      {param: 'space.cfa'}
       {param: 'space.plot_ratio'}
       {param: 'space.jobs'}
 
@@ -28,7 +27,7 @@ Meteor.startup ->
       {param: 'embodied_carbon.e_co2_green'}
       {param: 'embodied_carbon.e_co2_imp'}
       {param: 'embodied_carbon.e_co2_emb'}
-      {param: 'embodied_carbon.i_co2_emb'}
+      {param: 'embodied_carbon.i_co2_emb_intensity_value'}
       {param: 'embodied_carbon.t_co2_emb'}
 
       {title: 'Operating Carbon'}
@@ -70,9 +69,6 @@ Meteor.startup ->
       {param: 'financial.cost_op_w'}
       {param: 'financial.cost_op_t'}
       {param: 'financial.cost_op_t', label: 'Average Operating Cost', aggregate: 'average'}
-
-#      {title: 'Orientation'}
-#      {param: 'orientation.azimuth'}
 
       {title: 'Parking'}
       {param: 'parking.parking_ga'}

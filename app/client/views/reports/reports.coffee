@@ -105,6 +105,8 @@
       $field
     else if field.title?
       return $('<div class="subtitle">' + field.title + '</div>')
+    else if field.subtitle?
+      return $('<div class="subsubtitle">' + field.subtitle + '</div>')
 
   toCSV: (renderedFields) ->
     csv = new Csv()

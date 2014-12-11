@@ -1,5 +1,3 @@
-# "use strict"
-
 ####################################################################################################
 # SCHEMA OPTIONS
 ####################################################################################################
@@ -1922,7 +1920,7 @@ typologyCategories =
     label: 'Water Demand'
     items:
       i_wu_pot:
-        label: 'Internal Potable Water Use'
+        label: 'Internal Water Use - Potable'
         desc: 'Internal potable water use of the typology.'
         type: Number
         decimal: true
@@ -1930,7 +1928,7 @@ typologyCategories =
         classes:
           RESIDENTIAL: {}
       i_wu_bore:
-        label: 'Internal Bore Water Use'
+        label: 'Internal Water Use - Bore'
         desc: 'Internal bore water use of the typology.'
         type: Number
         decimal: true
@@ -1938,7 +1936,7 @@ typologyCategories =
         classes:
           RESIDENTIAL: {}
       i_wu_rain:
-        label: 'Internal Rain Water Use'
+        label: 'Internal Water Use - Rain'
         desc: 'Internal rain water use of the typology.'
         type: Number
         decimal: true
@@ -1946,7 +1944,7 @@ typologyCategories =
         classes:
           RESIDENTIAL: {}
       i_wu_treat:
-        label: 'Internal Treated Water Use'
+        label: 'Internal Water Use - Treated'
         desc: 'Internal treated water use of the typology.'
         type: Number
         decimal: true
@@ -1954,7 +1952,7 @@ typologyCategories =
         classes:
           RESIDENTIAL: {}
       i_wu_grey:
-        label: 'Internal Grey Water Use'
+        label: 'Internal Water Use - Grey'
         desc: 'Internal grey water use of the typology.'
         type: Number
         decimal: true
@@ -1982,7 +1980,7 @@ typologyCategories =
               'Hospital': {defaultValue: 1.5}
               'Public': {defaultValue: 3.3}
       i_wu_total:
-        label: 'Internal Total Water Use'
+        label: 'Internal Water Use - Total'
         desc: 'Total internal water use of the typology.'
         type: Number
         decimal: true
@@ -2051,31 +2049,31 @@ typologyCategories =
         desc: 'Proportion of irrigation as grey.'
         classes: extendClassesWithDefault(extendLandClasses(), 0)
       e_wu_pot:
-        label: 'Potable Water Use'
+        label: 'External Water Use - Potable'
         type: Number
         desc: 'Potable water use for irrigation.'
         units: Units.kLyear
         calc: '$water_demand.e_wd_total * $water_demand.e_prpn_pot'
       e_wu_bore:
-        label: 'Bore Water Use'
+        label: 'External Water Use - Bore'
         type: Number
         desc: 'Bore water use for irrigation.'
         units: Units.kLyear
         calc: '$water_demand.e_wd_total * $water_demand.e_prpn_bore'
       e_wu_storm:
-        label: 'Stormwater Water Use'
+        label: 'External Water Use - Stormwater'
         type: Number
         desc: 'Stormwater use for irrigation.'
         units: Units.kLyear
         calc: '$water_demand.e_wd_total * $water_demand.e_prpn_storm'
       e_wu_treat:
-        label: 'Treated Water Use'
+        label: 'External Water Use - Treated'
         type: Number
         desc: 'Treated water use for irrigation.'
         units: Units.kLyear
         calc: '$water_demand.e_wd_total * $water_demand.e_prpn_treat'
       e_wu_grey:
-        label: 'Grey Water Use'
+        label: 'External Water Use - Treated'
         type: Number
         desc: 'Grey water use for irrigation.'
         units: Units.kLyear
