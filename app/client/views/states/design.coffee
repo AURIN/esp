@@ -359,12 +359,16 @@ TemplateClass.onAtlasLoad = (template, atlas) ->
   atlas.subscribe 'entity/select', (args) ->
     tableSelectionEnabled = false
     ids = _.map args.ids, (id) -> resolveModelId(id)
-    Template.collectionTable.addSelection(getTable(ids[0]), ids)
+    $table = getTable(ids[0])
+    return unless $table
+    Template.collectionTable.addSelection($table, ids)
     tableSelectionEnabled = true
   atlas.subscribe 'entity/deselect', (args) ->
     tableSelectionEnabled = false
     ids = _.map args.ids, (id) -> resolveModelId(id)
-    Template.collectionTable.removeSelection(getTable(ids[0]), ids)
+    $table = getTable(ids[0])
+    return unless $table
+    Template.collectionTable.removeSelection($table, ids)
     tableSelectionEnabled = true
 
   # Listen to double clicks from Atlas.

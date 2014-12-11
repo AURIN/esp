@@ -232,11 +232,14 @@ Meteor.startup -> resetRenderQueue()
     require ['Polygon'], (Polygon) =>
       WKT.getWKT (wkt) =>
         polygons = []
+        # Used for globalising and localising points.
+        referencePoint = null
         _.each lots, (lot) ->
           geom_2d = SchemaUtils.getParameterValue(lot, 'space.geom_2d')
           vertices = wkt.verticesFromWKT(geom_2d)[0]
-          polygon = new Polygon(vertices, {
-            sortPoints: false, smoothPoints: false, removeDuplicatePoints: true})
+          polygon = new Polygon(vertices)
+          referencePoint = polygon.getPoints()[0] unless referencePoint
+          polygon.localizePoints(referencePoint)
           unless polygons.length == 0
             # Each Lot must be touching at least one other Lot.
             someTouching = _.some polygons, (otherPolygon) -> polygon.intersects(otherPolygon)
@@ -245,11 +248,10 @@ Meteor.startup -> resetRenderQueue()
           polygons.push(polygon)
         combinedPolygon = polygons.shift()
         _.each polygons, (polygon) ->
-          union = combinedPolygon.union(polygon)
-          if union.length == 1
-            combinedPolygon = union[0].concaveHull()
+          combinedPolygon = combinedPolygon.union(polygon, {sortPoints: false, smoothPoints: false})[0]
         combinedLot = Lots.findOne(ids[0])
         delete combinedLot._id
+        combinedPolygon.globalizePoints(referencePoint)
         combinedVertices = combinedPolygon.getPoints()
         combinedWkt = wkt.wktFromVertices(combinedVertices)
         combinedLot.parameters.space.geom_2d = combinedWkt
