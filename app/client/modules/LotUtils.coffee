@@ -224,7 +224,7 @@ Meteor.startup -> resetRenderQueue()
   amalgamate: (ids) ->
     df = Q.defer()
     if ids.length < 2
-      throw new Error('At least two lots are needed to amalgamate.')
+      throw new Error('At least two Lots are needed to amalgamate.')
     lots = Lots.find({_id: {$in: ids}}).fetch()
     someHaveEntities = _.some lots, (lot) -> lot.entity?
     if someHaveEntities
@@ -263,6 +263,39 @@ Meteor.startup -> resetRenderQueue()
           else
             # Remove original lots after amalgamation.
             @removeByIds(ids).then(df.resolve, df.reject)
+    df.promise
+
+  subdivide: (ids, lineVertices) ->
+    df = Q.defer()
+    if ids.length == 0
+      throw new Error('At least one Lot is needed to subdivide.')
+    lots = Lots.find({_id: {$in: ids}}).fetch()
+    someHaveEntities = _.some lots, (lot) -> lot.entity?
+    if someHaveEntities
+      throw new Error('Cannot subdivide Lots which have Entities.')
+    require ['Polygon'], (Polygon) =>
+      WKT.getWKT (wkt) =>
+        polygons = []
+        # Used for globalising and localising points.
+        referencePoint = null
+        _.each lots, (lot) ->
+          geom_2d = SchemaUtils.getParameterValue(lot, 'space.geom_2d')
+          vertices = wkt.verticesFromWKT(geom_2d)[0]
+          polygon = new Polygon(vertices)
+          referencePoint = polygon.getPoints()[0] unless referencePoint
+          polygon.localizePoints(referencePoint)
+          polygons.push(polygon)
+        _.each polygons, (polygon) ->
+          polygon.globalizePoints(referencePoint)
+        
+        console.log('polygons', polygons)
+        console.log('lineVertices', lineVertices)
+        # TODO(aramk) Deselect lots
+        # TODO(aramk) Change style to red
+        # TODO(aramk) Subdivide
+
+        # TODO(aramk) Insert new lots.
+        # TODO(aramk) Remove old lots.
     df.promise
 
   removeByIds: (ids) ->

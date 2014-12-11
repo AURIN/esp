@@ -13,8 +13,7 @@
         <div class="items typologies">
           {{> collectionTable collection="Typologies" items=typologies settings=tableSettings}}
           <div class="extra menu">
-            <div class="ui button toggle pathway draw item has-popup" title="Draw a pathway with the selected typology.">
-              <i class="road icon"></i></div>
+            <div class="ui button toggle pathway draw item has-popup" title="Draw a pathway with the selected typology."><i class="road icon"></i></div>
           </div>
         </div>
         <div class="title">Lots</div>
@@ -27,7 +26,11 @@
             empty Lots available for development."><i class="magic
             icon"></i></a>
             <a class="amalgamate item has-popup" title="Amalgamate all contiguous, selected Lots.">
-            <i class="resize small icon"></i></a>
+              <i class="resize small icon"></i>
+            </a>
+            <div class="ui button toggle subdivide item has-popup" title="Subdivide selected Lots.">
+              <i class="resize full icon"></i>
+            </div>
           </div>
         </div>
       </div>
