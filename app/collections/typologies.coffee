@@ -958,6 +958,7 @@ TypologyClasses =
     color: 'black'
     abbr: 'pw'
     displayMode: 'line'
+    canAllocateToLot: false
   INSTITUTIONAL:
     name: 'Institutional'
     color: 'orange'
@@ -3012,7 +3013,11 @@ Lots.validateTypology = (lot, typologyId) ->
   lotClass = SchemaUtils.getParameterValue(lot, classParamId)
   typologyClass = SchemaUtils.getParameterValue(typology, classParamId)
   isForDevelopment = SchemaUtils.getParameterValue(lot, developParamId)
-  if typologyId && !isForDevelopment
+  canAllocate = false
+  classArgs = Typologies.classes[typologyClass]
+  if classArgs.canAllocateToLot == false
+    df.resolve('Typology with class ' + typologyClass + ' cannot be allocated to a Lot.')
+  else if typologyId && !isForDevelopment
     df.resolve('Lot is not for development - cannot assign typology.')
   else if !lotClass
     df.resolve('Lot does not have a Typology class assigned.')
