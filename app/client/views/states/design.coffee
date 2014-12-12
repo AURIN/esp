@@ -390,9 +390,13 @@ TemplateClass.onAtlasLoad = (template, atlas) ->
   $subdivideButton.click ->
     ids = AtlasManager.getSelectedLots()
     
-    registerDrawEvents = ->
+    startDrawing = ->
+      # Ensure lots are displayed as footprints.
+      Session.set('lotDisplayMode', 'footprint')
       atlas.publish 'entity/draw', {
         displayMode: 'line'
+        init: (args) ->
+          args.feature.setElevation(1)
         create: (args) ->
           feature = args.feature
           id = feature.getId()
@@ -411,7 +415,7 @@ TemplateClass.onAtlasLoad = (template, atlas) ->
     if isActive
       if ids.length == 0
         throw new Error('Select at least one Lot to subdivide.')
-      registerDrawEvents()
+      startDrawing()
     else
       atlas.publish('entity/draw/stop', {validate: false})
 
@@ -456,7 +460,7 @@ TemplateClass.onAtlasLoad = (template, atlas) ->
 
   $pathwayDrawButton.on 'click', ->
     isActive = $pathwayDrawButton.hasClass('active')
-    registerDrawEvents = ->
+    startDrawing = ->
       atlas.publish 'entity/draw', {
         displayMode: 'line'
         create: (args) ->
@@ -479,7 +483,7 @@ TemplateClass.onAtlasLoad = (template, atlas) ->
                     geom_2d: wktStr
           # Continue drawing if the button is active.
           isActive = $pathwayDrawButton.hasClass('active')
-          registerDrawEvents() if isActive
+          startDrawing() if isActive
         cancel: ->
           console.debug('Drawing cancelled', arguments)
           feature = args.feature
@@ -487,7 +491,7 @@ TemplateClass.onAtlasLoad = (template, atlas) ->
           AtlasManager.unrenderEntity(id)
       }
     if isActive
-      registerDrawEvents()
+      startDrawing()
     else
       atlas.publish('entity/draw/stop', {validate: false})
 
