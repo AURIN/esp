@@ -237,7 +237,7 @@ Meteor.startup -> resetRenderQueue()
         _.each lots, (lot) ->
           geom_2d = SchemaUtils.getParameterValue(lot, 'space.geom_2d')
           vertices = wkt.verticesFromWKT(geom_2d)[0]
-          polygon = new Polygon(vertices)
+          polygon = new Polygon(vertices, {sortPoints: false})
           referencePoint = polygon.getPoints()[0] unless referencePoint
           polygon.localizePoints(referencePoint)
           unless polygons.length == 0
@@ -265,7 +265,7 @@ Meteor.startup -> resetRenderQueue()
             @removeByIds(ids).then(df.resolve, df.reject)
     df.promise
 
-  subdivide: (ids, lineVertices) ->
+  subdivide: (ids, linePoints) ->
     df = Q.defer()
     if ids.length == 0
       throw new Error('At least one Lot is needed to subdivide.')
@@ -273,7 +273,7 @@ Meteor.startup -> resetRenderQueue()
     someHaveEntities = _.some lots, (lot) -> lot.entity?
     if someHaveEntities
       throw new Error('Cannot subdivide Lots which have Entities.')
-    require ['Polygon'], (Polygon) =>
+    require ['Polygon', 'Line'], (Polygon, Line) =>
       WKT.getWKT (wkt) =>
         polygons = []
         # Used for globalising and localising points.
@@ -281,21 +281,51 @@ Meteor.startup -> resetRenderQueue()
         _.each lots, (lot) ->
           geom_2d = SchemaUtils.getParameterValue(lot, 'space.geom_2d')
           vertices = wkt.verticesFromWKT(geom_2d)[0]
-          polygon = new Polygon(vertices)
+          polygon = new Polygon(vertices, {sortPoints: false})
+          polygon.id = lot._id
           referencePoint = polygon.getPoints()[0] unless referencePoint
           polygon.localizePoints(referencePoint)
           polygons.push(polygon)
-        _.each polygons, (polygon) ->
-          polygon.globalizePoints(referencePoint)
-        
+        lineVertices = _.map linePoints, (point) -> point.toVertex()
+        line = new Line(lineVertices)
+        line.localizePoints(referencePoint)
         console.log('polygons', polygons)
-        console.log('lineVertices', lineVertices)
-        # TODO(aramk) Deselect lots
-        # TODO(aramk) Change style to red
-        # TODO(aramk) Subdivide
-
-        # TODO(aramk) Insert new lots.
-        # TODO(aramk) Remove old lots.
+        console.log('line', line)
+        subdividedMap = {}
+        allSubdividedPolygons = []
+        _.each polygons, (polygon) ->
+          subdividedPolygons = subdividedMap[polygon.id] = []
+          results = polygon.difference(line)
+          console.log('results', results)
+          _.each results, (result) ->
+            result.globalizePoints(referencePoint)
+            subdividedPolygons.push(result)
+            allSubdividedPolygons.push(result)
+        if allSubdividedPolygons.length == 0
+          df.reject('No resulting polygons after subdivision.')
+        else if allSubdividedPolygons.length == polygons.length
+          df.reject('Same number of polygons after subdivision.')
+        else
+          # Create subdivided lots by cloning the original and applying the subdivided geometry.
+          insertDfs = []
+          _.each subdividedMap, (subdividedPolygons, id) ->
+            insertDf = Q.defer()
+            insertDfs.push(insertDf.promise)
+            lot = Lots.findOne(id)
+            delete lot._id
+            _.each subdividedPolygons, (polygon) ->
+              vertices = polygon.getPoints()
+              wktStr = wkt.wktFromVertices(vertices)
+              subLot = Setter.clone(lot)
+              SchemaUtils.setParameterValue(subLot, 'space.geom_2d', wktStr)
+              Lots.insert subLot, (err, result) ->
+                if err then insertDf.reject(err) else insertDf.resolve(result)
+          Q.all(insertDfs).then(
+            =>
+              # Remove original lots after subdivision.
+              @removeByIds(ids).then(df.resolve, df.reject)
+            df.reject
+          )
     df.promise
 
   removeByIds: (ids) ->
