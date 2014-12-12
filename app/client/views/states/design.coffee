@@ -88,25 +88,6 @@ TemplateClass.rendered = ->
     $('.dropdown.icon', $dropdown).attr('class', 'photo icon')
     $('.text', $dropdown).hide()
 
-  # Bind atlas event to show/hide the amalgamation button and handle the click event.
-
-  firstSelectedLotId = null
-  $amalgamateButton = @$('.amalgamate.item').hide()
-  $amalgamateButton.click ->
-    ids = AtlasManager.getSelectedLots()
-    # TODO(aramk) Make sure firstSelectedLotId is the first.
-    LotUtils.amalgamate(ids)
-
-  AtlasManager.getAtlas().then (atlas) ->
-    atlas.subscribe 'entity/selection/change', (args) ->
-      ids = AtlasManager.getSelectedLots()
-      idCount = ids.length
-      if idCount == 0
-        firstSelectedLotId = null
-      else if idCount == 1
-        firstSelectedLotId = ids[0]
-      $amalgamateButton.toggle(idCount > 1)
-
 onEditFormPanel = (args) ->
   id = args.ids[0]
   collection = args.collection
@@ -359,12 +340,16 @@ TemplateClass.onAtlasLoad = (template, atlas) ->
   atlas.subscribe 'entity/select', (args) ->
     tableSelectionEnabled = false
     ids = _.map args.ids, (id) -> resolveModelId(id)
-    Template.collectionTable.addSelection(getTable(ids[0]), ids)
+    $table = getTable(ids[0])
+    return unless $table
+    Template.collectionTable.addSelection($table, ids)
     tableSelectionEnabled = true
   atlas.subscribe 'entity/deselect', (args) ->
     tableSelectionEnabled = false
     ids = _.map args.ids, (id) -> resolveModelId(id)
-    Template.collectionTable.removeSelection(getTable(ids[0]), ids)
+    $table = getTable(ids[0])
+    return unless $table
+    Template.collectionTable.removeSelection($table, ids)
     tableSelectionEnabled = true
 
   # Listen to double clicks from Atlas.
@@ -389,6 +374,61 @@ TemplateClass.onAtlasLoad = (template, atlas) ->
     if idParts
       id = idParts[1]
     id
+
+  ##################################################################################################
+  # AMALGAMATION & SUBDIVISION
+  ##################################################################################################
+
+  # Bind atlas event to show/hide the amalgamation button and handle the click event.
+
+  firstSelectedLotId = null
+  $amalgamateButton = template.$('.amalgamate.item').hide()
+  $amalgamateButton.click ->
+    ids = AtlasManager.getSelectedLots()
+    LotUtils.amalgamate(ids)
+  $subdivideButton = template.$('.subdivide.item').hide()
+  $subdivideButton.click ->
+    ids = AtlasManager.getSelectedLots()
+    
+    startDrawing = ->
+      # Ensure lots are displayed as footprints.
+      Session.set('lotDisplayMode', 'footprint')
+      atlas.publish 'entity/draw', {
+        displayMode: 'line'
+        init: (args) ->
+          args.feature.setElevation(1)
+        create: (args) ->
+          feature = args.feature
+          id = feature.getId()
+          vertices = feature.getForm().getVertices()
+          AtlasManager.unrenderEntity(id)
+          LotUtils.subdivide(ids, vertices).fin(cancelSubdivision)
+        cancel: ->
+          console.debug('Drawing cancelled', arguments)
+          feature = args.feature
+          id = feature.getId()
+          AtlasManager.unrenderEntity(id)
+          cancelSubdivision()
+      }
+
+    isActive = $subdivideButton.hasClass('active')
+    if isActive
+      if ids.length == 0
+        throw new Error('Select at least one Lot to subdivide.')
+      startDrawing()
+    else
+      atlas.publish('entity/draw/stop', {validate: false})
+
+  cancelSubdivision = -> $subdivideButton.removeClass('active')
+  atlas.subscribe 'entity/selection/change', (args) ->
+    ids = AtlasManager.getSelectedLots()
+    idCount = ids.length
+    if idCount == 0
+      firstSelectedLotId = null
+    else if idCount == 1
+      firstSelectedLotId = ids[0]
+    $amalgamateButton.toggle(idCount > 1)
+    $subdivideButton.toggle(idCount > 0)
 
   ##################################################################################################
   # DRAWING
@@ -420,7 +460,7 @@ TemplateClass.onAtlasLoad = (template, atlas) ->
 
   $pathwayDrawButton.on 'click', ->
     isActive = $pathwayDrawButton.hasClass('active')
-    registerDrawEvents = ->
+    startDrawing = ->
       atlas.publish 'entity/draw', {
         displayMode: 'line'
         create: (args) ->
@@ -443,28 +483,26 @@ TemplateClass.onAtlasLoad = (template, atlas) ->
                     geom_2d: wktStr
           # Continue drawing if the button is active.
           isActive = $pathwayDrawButton.hasClass('active')
-          registerDrawEvents() if isActive
+          startDrawing() if isActive
         cancel: ->
           console.debug('Drawing cancelled', arguments)
           feature = args.feature
           id = feature.getId()
           AtlasManager.unrenderEntity(id)
       }
-    AtlasManager.getAtlas().then (atlas) ->
-      if isActive
-        registerDrawEvents()
-      else
-        atlas.publish('entity/draw/stop', {validate: false})
+    if isActive
+      startDrawing()
+    else
+      atlas.publish('entity/draw/stop', {validate: false})
 
   editGeoEntity = (id) ->
-    AtlasManager.getAtlas().then (atlas) ->
-      atlas.publish('edit/disable')
-      atlas.publish('edit/enable', {
-        ids: [id]
-        complete: ->
-          feature = AtlasManager.getEntity(id)
-          WKT.featureToWkt feature, (wktStr) ->
-            Entities.update id, {$set: {'parameters.space.geom_2d': wktStr}}, (err, result) ->
-              refreshEntity(id)
-        cancel: -> refreshEntity(id)
-      })
+    atlas.publish('edit/disable')
+    atlas.publish('edit/enable', {
+      ids: [id]
+      complete: ->
+        feature = AtlasManager.getEntity(id)
+        WKT.featureToWkt feature, (wktStr) ->
+          Entities.update id, {$set: {'parameters.space.geom_2d': wktStr}}, (err, result) ->
+            refreshEntity(id)
+      cancel: -> refreshEntity(id)
+    })

@@ -224,7 +224,7 @@ Meteor.startup -> resetRenderQueue()
   amalgamate: (ids) ->
     df = Q.defer()
     if ids.length < 2
-      throw new Error('At least two lots are needed to amalgamate.')
+      throw new Error('At least two Lots are needed to amalgamate.')
     lots = Lots.find({_id: {$in: ids}}).fetch()
     someHaveEntities = _.some lots, (lot) -> lot.entity?
     if someHaveEntities
@@ -232,11 +232,14 @@ Meteor.startup -> resetRenderQueue()
     require ['Polygon'], (Polygon) =>
       WKT.getWKT (wkt) =>
         polygons = []
+        # Used for globalising and localising points.
+        referencePoint = null
         _.each lots, (lot) ->
           geom_2d = SchemaUtils.getParameterValue(lot, 'space.geom_2d')
           vertices = wkt.verticesFromWKT(geom_2d)[0]
-          polygon = new Polygon(vertices, {
-            sortPoints: false, smoothPoints: false, removeDuplicatePoints: true})
+          polygon = new Polygon(vertices, {sortPoints: false})
+          referencePoint = polygon.getPoints()[0] unless referencePoint
+          polygon.localizePoints(referencePoint)
           unless polygons.length == 0
             # Each Lot must be touching at least one other Lot.
             someTouching = _.some polygons, (otherPolygon) -> polygon.intersects(otherPolygon)
@@ -245,11 +248,10 @@ Meteor.startup -> resetRenderQueue()
           polygons.push(polygon)
         combinedPolygon = polygons.shift()
         _.each polygons, (polygon) ->
-          union = combinedPolygon.union(polygon)
-          if union.length == 1
-            combinedPolygon = union[0].concaveHull()
+          combinedPolygon = combinedPolygon.union(polygon, {sortPoints: false, smoothPoints: false})[0]
         combinedLot = Lots.findOne(ids[0])
         delete combinedLot._id
+        combinedPolygon.globalizePoints(referencePoint)
         combinedVertices = combinedPolygon.getPoints()
         combinedWkt = wkt.wktFromVertices(combinedVertices)
         combinedLot.parameters.space.geom_2d = combinedWkt
@@ -261,6 +263,75 @@ Meteor.startup -> resetRenderQueue()
           else
             # Remove original lots after amalgamation.
             @removeByIds(ids).then(df.resolve, df.reject)
+    df.promise
+
+  subdivide: (ids, linePoints) ->
+    df = Q.defer()
+    if ids.length == 0
+      throw new Error('At least one Lot is needed to subdivide.')
+    lots = Lots.find({_id: {$in: ids}}).fetch()
+    someHaveEntities = _.some lots, (lot) -> lot.entity?
+    if someHaveEntities
+      throw new Error('Cannot subdivide Lots which have Entities.')
+    require ['Polygon', 'Line'], (Polygon, Line) =>
+      WKT.getWKT (wkt) =>
+        polygons = []
+        # Used for globalising and localising points.
+        referencePoint = null
+        _.each lots, (lot) ->
+          geom_2d = SchemaUtils.getParameterValue(lot, 'space.geom_2d')
+          vertices = wkt.verticesFromWKT(geom_2d)[0]
+          polygon = new Polygon(vertices, {sortPoints: false})
+          polygon.id = lot._id
+          referencePoint = polygon.getPoints()[0] unless referencePoint
+          polygon.localizePoints(referencePoint)
+          polygons.push(polygon)
+        lineVertices = _.map linePoints, (point) -> point.toVertex()
+        line = new Line(lineVertices)
+        line.localizePoints(referencePoint)
+        console.log('polygons', polygons)
+        console.log('line', line)
+        subdividedMap = {}
+        allSubdividedPolygons = []
+        _.each polygons, (polygon) ->
+          subdividedPolygons = subdividedMap[polygon.id] = []
+          diffPolygons = polygon.difference(line)
+          console.log('diffPolygons', diffPolygons)
+          _.each diffPolygons, (diffPolygon) ->
+            # Ensure the subdivided polygons are contained in the original Lot polygon. If we draw a
+            # line outside the Lot polygon, it can form a polygon on the outside which we should
+            # ignore. We use ovelaps() instead of contains() since the latter requires the geometry
+            # to either be absolutely fully contained (not the case) or share a perimeter (which all
+            # our polygons do).
+            if diffPolygon.overlaps(polygon)
+              diffPolygon.globalizePoints(referencePoint)
+              subdividedPolygons.push(diffPolygon)
+              allSubdividedPolygons.push(diffPolygon)
+        if allSubdividedPolygons.length == 0
+          df.reject('No resulting polygons after subdivision.')
+        else if allSubdividedPolygons.length == polygons.length
+          df.reject('Same number of polygons after subdivision.')
+        else
+          # Create subdivided lots by cloning the original and applying the subdivided geometry.
+          insertDfs = []
+          _.each subdividedMap, (subdividedPolygons, id) ->
+            insertDf = Q.defer()
+            insertDfs.push(insertDf.promise)
+            lot = Lots.findOne(id)
+            delete lot._id
+            _.each subdividedPolygons, (polygon) ->
+              vertices = polygon.getPoints()
+              wktStr = wkt.wktFromVertices(vertices)
+              subLot = Setter.clone(lot)
+              SchemaUtils.setParameterValue(subLot, 'space.geom_2d', wktStr)
+              Lots.insert subLot, (err, result) ->
+                if err then insertDf.reject(err) else insertDf.resolve(result)
+          Q.all(insertDfs).then(
+            =>
+              # Remove original lots after subdivision.
+              @removeByIds(ids).then(df.resolve, df.reject)
+            df.reject
+          )
     df.promise
 
   removeByIds: (ids) ->
