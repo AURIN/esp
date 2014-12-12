@@ -295,12 +295,18 @@ Meteor.startup -> resetRenderQueue()
         allSubdividedPolygons = []
         _.each polygons, (polygon) ->
           subdividedPolygons = subdividedMap[polygon.id] = []
-          results = polygon.difference(line)
-          console.log('results', results)
-          _.each results, (result) ->
-            result.globalizePoints(referencePoint)
-            subdividedPolygons.push(result)
-            allSubdividedPolygons.push(result)
+          diffPolygons = polygon.difference(line)
+          console.log('diffPolygons', diffPolygons)
+          _.each diffPolygons, (diffPolygon) ->
+            # Ensure the subdivided polygons are contained in the original Lot polygon. If we draw a
+            # line outside the Lot polygon, it can form a polygon on the outside which we should
+            # ignore. We use ovelaps() instead of contains() since the latter requires the geometry
+            # to either be absolutely fully contained (not the case) or share a perimeter (which all
+            # our polygons do).
+            if diffPolygon.overlaps(polygon)
+              diffPolygon.globalizePoints(referencePoint)
+              subdividedPolygons.push(diffPolygon)
+              allSubdividedPolygons.push(diffPolygon)
         if allSubdividedPolygons.length == 0
           df.reject('No resulting polygons after subdivision.')
         else if allSubdividedPolygons.length == polygons.length
