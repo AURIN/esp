@@ -10,7 +10,7 @@ application-configuration@1.0.3
 aramk:collection-table@0.2.1
 aramk:dropdown@0.2.1
 aramk:pubsub@1.5.0
-aramk:q@1.0.1
+aramk:q@1.0.1_1
 aramk:requirejs@2.1.15_1
 aramk:utility@0.4.2
 aslagle:reactive-table@0.4.2
