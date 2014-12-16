@@ -420,6 +420,28 @@ TemplateClass.onAtlasLoad = (template, atlas) ->
       atlas.publish('entity/draw/stop', {validate: false})
 
   cancelSubdivision = -> $subdivideButton.removeClass('active')
+
+  ##################################################################################################
+  # AUTO-ALIGNMENT
+  ##################################################################################################
+
+  $alignmentButton = template.$('.alignment.item').hide()
+  $alignmentButton.click ->
+    ids = AtlasManager.getSelectedLots()
+    LotUtils.autoAlign(ids)
+
+  atlas.subscribe 'entity/select', (args) ->
+    id = args.ids[0]
+    lot = Lots.findOne(id)
+    return unless lot
+    geoEntity = AtlasManager.getEntity(id)
+    geoEntity
+
+  ##################################################################################################
+  # LOT-SELECTION
+  ##################################################################################################
+
+  # Hide and show buttons based on the selected Lots.
   atlas.subscribe 'entity/selection/change', (args) ->
     ids = AtlasManager.getSelectedLots()
     idCount = ids.length
@@ -429,6 +451,7 @@ TemplateClass.onAtlasLoad = (template, atlas) ->
       firstSelectedLotId = ids[0]
     $amalgamateButton.toggle(idCount > 1)
     $subdivideButton.toggle(idCount > 0)
+    $alignmentButton.toggle(idCount > 0)
 
   ##################################################################################################
   # DRAWING
@@ -506,3 +529,4 @@ TemplateClass.onAtlasLoad = (template, atlas) ->
             refreshEntity(id)
       cancel: -> refreshEntity(id)
     })
+

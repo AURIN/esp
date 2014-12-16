@@ -334,6 +334,9 @@ Meteor.startup -> resetRenderQueue()
           )
     df.promise
 
+  autoAlign: (ids) ->
+    
+
   removeByIds: (ids) ->
     console.log 'removeByIds', ids
     dfs = []
