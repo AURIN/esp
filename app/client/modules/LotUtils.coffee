@@ -229,7 +229,7 @@ Meteor.startup -> resetRenderQueue()
     someHaveEntities = _.some lots, (lot) -> lot.entity?
     if someHaveEntities
       throw new Error('Cannot amalgamate Lots which have Entities.')
-    require ['Polygon'], (Polygon) =>
+    require ['subdiv/Polygon'], (Polygon) =>
       WKT.getWKT (wkt) =>
         polygons = []
         # Used for globalising and localising points.
@@ -237,7 +237,7 @@ Meteor.startup -> resetRenderQueue()
         _.each lots, (lot) ->
           geom_2d = SchemaUtils.getParameterValue(lot, 'space.geom_2d')
           vertices = wkt.verticesFromWKT(geom_2d)[0]
-          polygon = new Polygon(vertices, {sortPoints: false})
+          polygon = new Polygon(vertices)
           referencePoint = polygon.getPoints()[0] unless referencePoint
           polygon.localizePoints(referencePoint)
           unless polygons.length == 0
@@ -273,7 +273,7 @@ Meteor.startup -> resetRenderQueue()
     someHaveEntities = _.some lots, (lot) -> lot.entity?
     if someHaveEntities
       throw new Error('Cannot subdivide Lots which have Entities.')
-    require ['Polygon', 'Line'], (Polygon, Line) =>
+    require ['subdiv/Polygon', 'subdiv/Line'], (Polygon, Line) =>
       WKT.getWKT (wkt) =>
         polygons = []
         # Used for globalising and localising points.
@@ -335,8 +335,42 @@ Meteor.startup -> resetRenderQueue()
     df.promise
 
   autoAlign: (ids) ->
-    
-
+    df = Q.defer()
+    alignLots = []
+    _.each ids, (id) ->
+      lot = Lots.findOne(id)
+      alignLots.push(lot) if lot.entity
+    unless alignLots.length > 0
+      df.reject('No lots with entities found for auto-alignment.')
+      return df.promise
+    WKT.getWKT (wkt) ->
+      require [
+        'subdiv/AlignmentCalculator',
+        'subdiv/PointGeometry',
+        'subdiv/Polygon'
+      ], (AlignmentCalculator, PointGeometry, Polygon) ->
+        polyMap = {}
+        polygons = Lots.findByProject().map (lot) ->
+          geom_2d = SchemaUtils.getParameterValue(lot, 'space.geom_2d')
+          vertices = wkt.verticesFromWKT(geom_2d)[0]
+          polyMap[lot._id] = new Polygon(vertices)
+        PointGeometry.localizeMany(polygons)
+        
+        alignCalc = new AlignmentCalculator(polygons)
+        entityDfs = []
+        _.each alignLots, (alignLot) ->
+          polygon = polyMap[alignLot._id]
+          angle = alignCalc.getStreetInfo(polygon)?.angle
+          return if !angle
+          entityDf = Q.defer()
+          entityDfs.push(entityDf.promise)
+          Entities.update alignLot.entity,
+            {$set: 'parameters.orientation.azimuth': angle}, (err, result) ->
+              if err then entityDf.reject(err) else entityDf.resolve(result)
+        
+        Q.all(entityDfs).then(df.resolve, df.reject)
+    df.promise
+      
   removeByIds: (ids) ->
     console.log 'removeByIds', ids
     dfs = []
@@ -348,4 +382,3 @@ Meteor.startup -> resetRenderQueue()
     Q.all(dfs)
 
   beforeAtlasUnload: -> resetRenderQueue()
-

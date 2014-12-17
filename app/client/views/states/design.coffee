@@ -53,10 +53,10 @@ TemplateClass.rendered = ->
 
   # Don't show Atlas viewer if disabled.
   unless Window.getVarBool('atlas') == false
-    require([
-        'atlas-cesium/core/CesiumAtlas',
-        'atlas/lib/utility/Log'
-      ], (CesiumAtlas, Log) ->
+    require [
+      'atlas-cesium/core/CesiumAtlas',
+      'atlas/lib/utility/Log'
+    ], (CesiumAtlas, Log) ->
       Log.setLevel('debug')
       console.debug('Creating Atlas...')
       cesiumAtlas = new CesiumAtlas()
@@ -66,7 +66,6 @@ TemplateClass.rendered = ->
       cesiumAtlas.attachTo(atlasNode)
       cesiumAtlas.publish('debugMode', false)
       TemplateClass.onAtlasLoad(template, cesiumAtlas)
-    )
 
   # Move extra buttons into collection tables
   _.each ['lots', 'typologies', 'entities'], (type) =>
@@ -436,6 +435,25 @@ TemplateClass.onAtlasLoad = (template, atlas) ->
     return unless lot
     geoEntity = AtlasManager.getEntity(id)
     geoEntity
+
+  # Auto-align when adding entities to lots or modifying entities.
+
+  autoAlignEntity = (entity) ->
+    azimuth = SchemaUtils.getParameterValue(entity, 'orientation.azimuth')
+    LotUtils.autoAlign([entity.lot]) unless azimuth?
+
+  Collections.observe Entities.findByProject(),
+    changed: autoAlignEntity
+
+  Collections.observe Lots.findByProject(),
+    added: (newDoc) ->
+      entityId = newDoc.entity
+      if entityId
+        autoAlignEntity(Entities.findOne(entityId))
+    changed: (newDoc, oldDoc) ->
+      entityId = newDoc.entity
+      if !oldDoc.entity && entityId
+        autoAlignEntity(Entities.findOne(entityId))
 
   ##################################################################################################
   # LOT-SELECTION
