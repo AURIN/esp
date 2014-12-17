@@ -2968,7 +2968,11 @@ Lots.allow(Collections.allowAll())
 Lots.findByProject = (projectId) -> SchemaUtils.findByProject(Lots, projectId)
 Lots.findByEntity = (entityId) -> Lots.findOne({entity: entityId})
 Lots.findByTypology = (typologyId) ->
-  _.map Entities.find(typology: typologyId).fetch(), (entity) -> Lots.findByEntity(entity._id)
+  lots = []
+  _.each Entities.find(typology: typologyId).fetch(), (entity) ->
+    lot = Lots.findByEntity(entity._id)
+    lots.push(lot) if lot
+  lots
 Lots.findForDevelopment = (projectId) ->
   _.filter Lots.findByProject(projectId).fetch(), (lot) ->
     SchemaUtils.getParameterValue(lot, 'general.develop')
@@ -3371,39 +3375,19 @@ Typologies.before.update(updateBuildType)
 ####################################################################################################
 
 # Remove the entity from the lot when removing the entity.
-Collections.observe Entities,
-  removed: (entity) ->
-    lot = Lots.findByEntity(entity._id)
-    Lots.update(lot._id, {$unset: {entity: null}}) if lot?
+Entities.after.remove (userId, entity) ->
+  lot = Lots.findByEntity(entity._id)
+  Lots.update(lot._id, {$unset: {entity: null}}) if lot?
 
-Collections.observe Lots,
-  # TODO(aramk) This logic is still in the lotForm. Remove it from there first.
-  changed: (newLot, oldLot) ->
-    # Remove entity if it changes on the lot.
-    oldId = oldLot.entity
-    if oldId && oldId != newLot.entity
-      Entities.remove(oldId)
-  removed: (lot) ->
-    # Remove the entity when the lot is removed.
-    entityId = lot.entity
-    Entities.remove(entityId) if lot.entity?
+Lots.after.update (userId, lot, fieldNames, modifier) ->
+  if modifier.$unset?.entity != undefined
+    Entities.remove(@previous.entity)
 
-Collections.observe Typologies,
-  changed: (newTypology, oldTypology) ->
-    # Changing the class of the lots with the typology when changing it on the typology.
-    classParamId = 'parameters.general.class'
-    newClass = SchemaUtils.getParameterValue(newTypology, classParamId)
-    oldClass = SchemaUtils.getParameterValue(oldTypology, classParamId)
-    if newClass != oldClass
-      lots = Lots.findByTypology(newTypology._id)
-      console.debug('Updating class of Lots', lots, 'from', oldClass, 'to', newClass)
-      _.each lots, (lot) ->
-        modifier = {$set: {}}
-        modifier.$set[classParamId] = newClass
-        # TODO(aramk) For some reason, even if this is delayed, the models will switch back despite
-        # a successful update.
-        Lots.update lot._id, modifier, (err, result) ->
-          console.debug('Lots update', err, result)
-  removed: (typology) ->
-    # Remove entities when the typology is removed.
-    _.each Entities.findByTypology(typology._id).fetch(), (entity) -> Entities.remove(entity._id)
+Lots.after.remove (userId, lot) ->
+  # Remove the entity when the lot is removed.
+  entityId = lot.entity
+  Entities.remove(entityId) if lot.entity?
+
+Typologies.after.remove (userId, typology) ->
+  # Remove entities when the typology is removed.
+  _.each Entities.findByTypology(typology._id).fetch(), (entity) -> Entities.remove(entity._id)
