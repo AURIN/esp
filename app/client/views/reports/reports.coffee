@@ -34,7 +34,7 @@
 
       renderedFields = []
       $fields = $(@find('.fields'))
-      require(['atlas/util/NumberFormatter'], (NumberFormatter) =>
+      require ['atlas/util/NumberFormatter'], (NumberFormatter) =>
         formatter = new NumberFormatter()
         for field in fields
           try
@@ -53,7 +53,6 @@
         $report = $(@find('.report'))
         $report.trigger 'render',
           renderedFields: renderedFields
-      )
 
     Report.helpers
       reportData: ->
