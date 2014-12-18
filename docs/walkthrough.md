@@ -11,7 +11,4 @@ This guide will walk you through how to use the key features of the *ESP* applic
 
 The final product will look something like this:
 
-![App screenshot of the Maroondah demonstrator site][maroondah]
-
-
-[maroondah]: /img/screenshots/maroondah-angle-full.jpg
+![App screenshot of the Maroondah demonstrator site](/img/screenshots/maroondah-angle-full.jpg)
