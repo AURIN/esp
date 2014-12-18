@@ -1,0 +1,18 @@
+site_name: ESP Documentation
+repo_url: https://github.com/urbanetic/aurin-esp
+
+site_description: Documentation for the Envision Scenario Planner (ESP) application.
+site_author: Oliver Lade
+site_favicon: img/favicon.png
+
+pages:
+- ['index.md', 'Introduction']
+- ['features.md', 'Features']
+- ['analysis.md', 'Analysis']
+- ['walkthrough.md', 'Walkthrough']
+#- ['design.md', 'Design']
+
+- ['demo/maroondah.md', 'Demo Sites']
+
+- ['developers.md', 'Developers']
+- ['license.md', 'License']

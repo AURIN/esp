@@ -1,0 +1,4 @@
+img {
+  /** Ensure the images are displayed inline. */
+  display: inline !important;
+}
