@@ -15,7 +15,7 @@ Meteor.startup ->
       {param: 'space.fpa'}
       {param: 'space.gfa'}
       {param: 'space.plot_ratio'}
-      {param: 'space.dwell_dens'}
+      {param: 'space.dwell_dens', aggregate: 'average'}
       {param: 'space.dwell_tot'}
       {param: 'space.occupants'}
 

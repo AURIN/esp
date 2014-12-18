@@ -1846,28 +1846,28 @@ typologyCategories =
         desc: 'CO2 emissions due to heating the typology.'
         type: Number
         decimal: true
-        units: Units.kgco2
+        units: Units.kgco2year
         calc: -> calcEnergyC02.call(@, 'energy_demand.src_heat', 'energy_demand.en_heat')
       co2_cool:
         label: 'Cooling'
         desc: 'CO2 emissions due to cooling the typology.'
         type: Number
         decimal: true
-        units: Units.kgco2
+        units: Units.kgco2year
         calc: '$energy_demand.en_cool * KWH_TO_MJ($operating_carbon.elec)'
       co2_light:
         label: 'Lighting'
         desc: 'CO2-e emissions due to lighting the typology.'
         type: Number
         decimal: true
-        units: Units.kgco2
+        units: Units.kgco2year
         calc: '$energy_demand.en_light * $operating_carbon.elec'
       co2_hwat:
         label: 'Hot Water'
         desc: 'CO2-e emissions due to hot water heating in the typology.'
         type: Number
         decimal: true
-        units: Units.kgco2
+        units: Units.kgco2year
         calc: ->
           co2 = calcEnergyC02.call(@, 'energy_demand.src_hwat', 'energy_demand.en_hwat')
           if co2? then co2 * 1000 else null
@@ -1876,21 +1876,21 @@ typologyCategories =
         desc: 'CO2-e emissions due to cooking in the typology.'
         type: Number
         decimal: true
-        units: Units.kgco2
+        units: Units.kgco2year
         calc: -> calcEnergyC02.call(@, 'energy_demand.src_cook', 'energy_demand.en_cook')
       co2_app:
         label: 'Appliances'
         desc: 'CO2-e emissions due to powering appliances in the typology.'
         type: Number
         decimal: true
-        units: Units.kgco2
+        units: Units.kgco2year
         calc: '$energy_demand.en_app * KWH_TO_MJ($operating_carbon.elec)'
       co2_trans:
         label: 'Transport'
         desc: 'CO2-e emissions due to transport.'
         type: Number
         decimal: true
-        units: Units.kgco2
+        units: Units.kgco2year
       # TODO(aramk) Add once we have pathways.
         calc: '0'
       co2_op_tot:
@@ -1898,7 +1898,7 @@ typologyCategories =
         desc: 'Total operating CO2 from all energy uses.'
         type: Number
         decimal: true
-        units: Units.kgco2
+        units: Units.kgco2year
         calc: ->
           if classHasIntensity(Entities.getTypologyClass(@model._id))
             @calc('$operating_carbon.co2_op_e + $operating_carbon.co2_op_g')
@@ -1908,13 +1908,13 @@ typologyCategories =
         desc: 'Operating CO2 from electricity use.'
         label: 'CO2 - Electricity'
         type: Number
-        units: Units.kgco2
+        units: Units.kgco2year
         calc: '(MJ_TO_KWH($energy_demand.en_use_e) - $energy_demand.en_pv) * $operating_carbon.elec'
       co2_op_g:
         desc: 'Operating CO2 from gas use.'
         label: 'CO2 - Gas'
         type: Number
-        units: Units.kgco2
+        units: Units.kgco2year
         calc: 'MJ_TO_KWH($energy_demand.en_use_g) * $operating_carbon.elec'
   water_demand:
     label: 'Water Demand'

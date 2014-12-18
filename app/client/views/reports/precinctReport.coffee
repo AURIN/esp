@@ -77,6 +77,6 @@ Meteor.startup ->
       {param: 'lum'}
       {param: 'pop_tot'}
       {param: 'dwell_tot'}
-      {param: 'dwell_dens'}
+      {param: 'dwell_dens', aggregate: 'average'}
 
     ]
