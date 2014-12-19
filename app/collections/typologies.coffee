@@ -2073,7 +2073,7 @@ typologyCategories =
         units: Units.kLyear
         calc: '$water_demand.e_wd_total * $water_demand.e_prpn_treat'
       e_wu_grey:
-        label: 'External Water Use - Treated'
+        label: 'External Water Use - Greywater'
         type: Number
         desc: 'Grey water use for irrigation.'
         units: Units.kLyear

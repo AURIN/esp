@@ -41,22 +41,44 @@
       margin: 0;
       margin-bottom: 10px;
       box-shadow: 0 -1px 0 0 @color-line-1;
-//      tfoot {
-//        display: none;
-//      }
+    }
+    .title {
+      background: @color-blue-grey-30;
+      color: #000;
+      padding: 8px;
+      padding-bottom: 6px;
+      border-bottom: 3px solid @color-blue-grey-50;
+      .icon {
+        font-size: 1.4rem;
+      }
     }
     .reactive-table-filter {
       width: 100px;
+    }
+    .entities.title {
+      background: @color-yellow-70;
+      border-bottom-color: @color-yellow;
+    }
+    .typologies.title {
+      background: @color-green-70;
+      border-bottom-color: @color-green;
+    }
+    .lots.title {
+      background: @color-blue-50;
+      border-bottom-color: @color-blue-70;
+    }
+    .reports.title {
+      background: @color-teal-50;
+      border-bottom-color: @color-teal-70;
     }
   }
   .viewer {
     flex-grow: 1;
     height: auto;
     background: black;
-    color: white;
     overflow: hidden;
     position: relative;
-    .legend {
+    > .legend {
       background: rgba(255, 255, 255, 0.8);
       position: absolute;
       color: #555;
@@ -89,21 +111,21 @@
       height: 100%;
       width: 100%;
       .popup {
+        background: white;
         color: black;
         min-width: 200px;
         .body {
-          .types {
-            > * {
-              display: inline-block;
+          table {
+            width: 100%;
+            td:first-child {
+              padding-right: 5px;
             }
-            .typology-class {
-              margin-right: 5px;              
+            td:last-child {
+              text-align: right;
             }
           }
-        }
-        &:hover {
-          .body {
-            color: rgba(0,0,0,0.8);
+          .units {
+            float: none;
           }
         }
       }
