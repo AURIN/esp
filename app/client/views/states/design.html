@@ -2,21 +2,21 @@
   <div class="design container">
     <div class="sidebar">
       <div class="default panel">
-        <div class="title">Entities</div>
+        <div class="entities title"><i class="building icon"></i>Entities</div>
         <div class="items entities">
           {{> collectionTable collection="Entities" items=entities settings=tableSettings}}
           <div class="extra menu">
             {{> dropdown name="entityDisplayMode" items=displayModes value=defaultEntityDisplayMode labelAttr="label" valueAttr="value"}}
           </div>
         </div>
-        <div class="title">Typologies</div>
+        <div class="typologies title"><i class="sitemap icon"></i>Types</div>
         <div class="items typologies">
           {{> collectionTable collection="Typologies" items=typologies settings=tableSettings}}
           <div class="extra menu">
             <div class="ui button toggle pathway draw item has-popup" title="Draw a pathway with the selected typology."><i class="road icon"></i></div>
           </div>
         </div>
-        <div class="title">Lots</div>
+        <div class="lots title"><i class="block layout icon"></i>Lots</div>
         <div class="items lots">
           {{> collectionTable collection="Lots" items=lots settings=tableSettings}}
           <div class="extra menu">

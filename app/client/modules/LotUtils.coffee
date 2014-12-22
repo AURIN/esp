@@ -372,7 +372,6 @@ Meteor.startup -> resetRenderQueue()
     df.promise
       
   removeByIds: (ids) ->
-    console.log 'removeByIds', ids
     dfs = []
     _.each ids, (id) ->
       df = Q.defer()
