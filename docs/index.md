@@ -7,7 +7,7 @@ For more information, visit the homepage of the [CRCSI "Greening the Greyfields"
 **[Access the tool here][host]**. Note that you will need to be provided with a user account by an
 *AURIN administrator. To request access, [send us an email][admin-email].
 
-![Tonsley demonstrator site app view](/img/screenshots/maroondah-angle-full.jpg)
+![Tonsley demonstrator site app view](img/screenshots/maroondah-angle-full.jpg)
 
 
 ## Getting Started
