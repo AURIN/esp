@@ -115,16 +115,25 @@ Meteor.startup -> resetRenderQueue()
   toGeoEntityArgs: (id) ->
     AtlasConverter.getInstance().then (converter) =>
       lot = Lots.findOne(id)
-      className = SchemaUtils.getParameterValue(lot, 'general.class')
+      typologyClass = SchemaUtils.getParameterValue(lot, 'general.class')
       isForDevelopment = SchemaUtils.getParameterValue(lot, 'general.develop')
-      typologyClass = Typologies.classes[className]
+      typologyClassArgs = Typologies.classes[typologyClass]
       # Reduce saturation of non-develop lots. Ensure full saturation for develop lots.
-      if typologyClass
-        color = tinycolor(typologyClass.color).toHsv()
-        color.s = if isForDevelopment then 1 else 0.5
-        color = tinycolor(color)
-      else
-        color = tinycolor('#ccc')
+      color = '#ccc'
+      if typologyClassArgs
+        typology = Typologies.findOne(Entities.findOne(lot.entity)?.typology)
+        subclasses = typologyClassArgs.subclasses
+        subclass = typology && SchemaUtils.getParameterValue(typology, 'general.subclass')
+        color = typologyClassArgs.color ? color
+        if subclass &&  Types.isObject(subclasses)
+          color = subclasses[subclass]?.color ? color
+        unless isForDevelopment
+          nonDevColor = typologyClassArgs.nonDevColor
+          if nonDevColor
+            color = nonDevColor
+          else
+            color = tinycolor.lighten(color, 25)
+      color = tinycolor(color)
       borderColor = tinycolor.darken(color, 40)
       space = lot.parameters.space
       displayMode = @getDisplayMode(id)

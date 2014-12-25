@@ -948,19 +948,30 @@ Projects.mergeDefaults = (model) ->
 TypologyClasses = Object.freeze({
   RESIDENTIAL:
     name: 'Residential'
-    color: '#009cff' # Blue
+    color: '#3182bd' # Blue
     abbr: 'r'
+    # subclasses: ['Single House', 'Attached House', 'Walkup', 'High Rise']
+    subclasses:
+      'Single House':
+        color: '#3182bd'
+      'Attached House':
+        color: '#278db9'
+      'Walkup':
+        color: '#1692b1'
+      'High Rise':
+        color: '#407fc6'
   COMMERCIAL:
     name: 'Commercial'
-    color: 'red'
+    color: '#e34236'
     abbr: 'c'
+    subclasses: ['Retail', 'Office', 'Hotel', 'Supermarket', 'Restaurant']
   MIXED_USE:
     name: 'Mixed Use'
-    color: '#c000ff' # Purple
+    color: '#756bb1' # Purple
     abbr: 'mu'
   OPEN_SPACE:
     name: 'Open Space'
-    color: '#7ed700' # Green
+    color: '#31a354' # Green
     abbr: 'os'
     displayMode: false
   PATHWAY:
@@ -969,10 +980,12 @@ TypologyClasses = Object.freeze({
     abbr: 'pw'
     displayMode: 'line'
     canAllocateToLot: false
+    subclasses: ['Freeway', 'Highway', 'Street', 'Footpath', 'Bicycle Path']
   INSTITUTIONAL:
     name: 'Institutional'
-    color: 'orange'
+    color: '#d95f0e'
     abbr: 'i'
+    subclasses: ['School', 'Tertiary', 'Hospital', 'Public']
 })
 
 BuildingClasses = Object.freeze({
@@ -1001,11 +1014,12 @@ classHasIntensity = (typologyClass) ->
 
 ClassNames = Object.keys(TypologyClasses)
 TypologyTypes = ['Basic', 'Efficient', 'Advanced']
-ResidentialSubclasses = ['Single House', 'Attached House', 'Walkup', 'High Rise']
-CommercialSubclasses = ['Retail', 'Office', 'Hotel', 'Supermarket', 'Restaurant']
-InstitutionalSubclasses = ['School', 'Tertiary', 'Hospital', 'Public']
-PathwaySubclasses = ['Freeway', 'Highway', 'Street', 'Footpath', 'Bicycle Path']
 EnergySources = ['Electricity', 'Gas']
+
+ResidentialSubclasses = Object.keys(TypologyClasses.RESIDENTIAL.subclasses)
+CommercialSubclasses = TypologyClasses.COMMERCIAL.subclasses
+InstitutionalSubclasses = TypologyClasses.INSTITUTIONAL.subclasses
+PathwaySubclasses = TypologyClasses.PATHWAY.subclasses
 
 ResidentialBuildTypes =
   'Standard Quality Build':
@@ -2742,11 +2756,20 @@ Typologies.getClassByName = _.memoize (name) ->
 Typologies.getClassItems = ->
   _.map Typologies.classes, (cls, id) -> Setter.merge(Setter.clone(cls), {_id: id})
 
-Typologies.getSubclassItems = (typologyClass) ->
+Typologies.getSubclassItems = _.memoize (typologyClass) ->
   field = SchemaUtils.getField('parameters.general.subclass', Typologies)
   options = field?.classes[typologyClass]
   allowedValues = options?.allowedValues ? []
   _.map allowedValues, (value) -> {_id: value, name: value}
+
+# Typologies.getSubclassColors = _.memoize (typologyClass) ->
+#   classArgs = TypologyClasses[typologyClass]
+#   subclasses = classArgs?.subclasses
+#   unless subclasses?
+#     return {}
+#   colorMap = {}
+#   _.each subclasses, (subclassName, i) -> colorMap[subclassName]
+#   colorMap
 
 Typologies.getBuildTypeItems = (typologyClass, subclass) ->
   field = SchemaUtils.getField('parameters.financial.build_type', Typologies)
