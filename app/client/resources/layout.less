@@ -56,17 +56,24 @@ body {
       vertical-align: middle;
       color: #999;
       text-transform: uppercase;
-      width: 100%;
-      position: absolute;
-      top: 14px;
-      left: 0;
-      text-align: center;
+      margin-right: 10px;
+      text-align: right;
+      width: auto;
+      right: 140px;
+      left: auto;
     }
     .tools {
       z-index: 1;
       position: relative;
       .button {
         padding: 0.4rem;
+      }
+      .icon {
+        font-size: 1.2rem;
+      }
+      .aurin-user-nav {
+        border-left: 1px solid #ccc;
+        padding-left: 10px;
       }
       &.left {
         float: left;
@@ -315,6 +322,16 @@ body {
   /* Rules below not implemented in browsers yet */
   -o-user-select: none;
   user-select: none;
+}
+
+.tools {
+  .icon {
+    font-size: 1.2rem;
+  }
+  .aurin-user-nav {
+    border-left: 1px solid #ccc;
+    padding-left: 10px;
+  }
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
