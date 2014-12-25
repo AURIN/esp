@@ -59,23 +59,23 @@ Router.getLastPath = -> _lastPath
 Router.goToLastPath = ->
   currentPath = Router.getCurrentPath()
   lastPath = Router.getLastPath()
-  if lastPath? and lastPath.path != currentPath.path
+  if lastPath? && lastPath.path? && lastPath.path != currentPath.path
     origGoFunc.call(Router, lastPath.path, lastPath.params)
     true
   else
     false
 
 Router.setLastPathAsCurrent = ->
-  current = Router.current()
-  path = current.url
-  return unless path
-  Router.setLastPath(path, current.params)
+  current = Router.getCurrentPath()
+  Router.setLastPath(current.path, current.params)
 
 Router.getCurrentName = -> Router.current().route.getName()
 Router.getCurrentPath = ->
+  current = Router.current()
+  # Remove the host prefix from the path, which is sometimes present.
   {
-    path: Router.current().route.path()
-    params: Router.current().route.params()
+    path: Iron.Location.get().path
+    params: current?.params
   }
 
 # When switching, remember the last route.

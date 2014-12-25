@@ -130,12 +130,11 @@ TemplateClass.events
     LotUtils.autoAllocate()
   'mousedown .typologies .collection-table tr': (e) ->
     # Drag typology items from the table onto the globe.
-    $row = $(e.currentTarget)
     $pin = createDraggableTypology()
     $body = $('body')
     $body.addClass('dragging')
     $viewer = $('.viewer')
-    typologyId = $row.data('id')
+    typologyId = @_id
     mouseMoveHandler = (moveEvent) ->
       margin = {left: -16, top: -38}
       $pin.offset(left: moveEvent.clientX + margin.left, top: moveEvent.clientY + margin.top)
@@ -395,7 +394,10 @@ TemplateClass.onAtlasLoad = (template, atlas) ->
       atlas.publish 'entity/draw', {
         displayMode: 'line'
         init: (args) ->
-          args.feature.setElevation(1)
+          args.feature.setElevation(2)
+        # update: (args) ->
+        #   _.each args.feature.getHandles(), (handle) ->
+        #     handle
         create: (args) ->
           feature = args.feature
           id = feature.getId()

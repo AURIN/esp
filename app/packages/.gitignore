@@ -32,6 +32,7 @@ iron-router-progress
 /collectionFS
 /cfs-base-package
 /cfs-file
+/cfs-s3
 /cfs-collection
 /cfs-collection-filters
 /cfs-access-point
@@ -70,6 +71,7 @@ iron-router-progress
 /aramk:utility
 /aramk:dropdown
 /aramk:collection-table
+/aramk:file-upload
 /matb33:collection-hooks
 /urbanetic:subdiv
 /urbanetic:atlas

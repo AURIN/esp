@@ -16,9 +16,6 @@ reactive-var
 
 # PUBLIC
 awatson1978:dropzone
-cfs:filesystem
-cfs:standard-packages
-cfs:ejson-file
 cfs:http-methods
 digilord:roles
 iron:router
@@ -33,7 +30,7 @@ raix:handlebar-helpers
 
 # PUBLIC-FORKS
 # These are forked repos and added as private packages.
-aldeed:autoform
+aldeed:autoform@=4.0.7
 aldeed:collection2
 cfs:tempstore
 #aldeed:simple-schema
@@ -47,6 +44,7 @@ aramk:collection-table
 aramk:dropdown
 # These come last so RequireJS doesn't cause issues.
 aramk:requirejs
+aramk:file-upload
 urbanetic:subdiv
 urbanetic:atlas
 urbanetic:atlas-cesium

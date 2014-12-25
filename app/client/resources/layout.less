@@ -308,12 +308,6 @@ body {
   }
 }
 
-.ui.popup {
-  &, &:before {
-    background-color: @color-tooltip;
-  }
-}
-
 .unselectable {
   -webkit-user-select: none; /* Chrome/Safari */
   -moz-user-select: none; /* Firefox */
@@ -323,14 +317,30 @@ body {
   user-select: none;
 }
 
-.ui.menu.toolbar {
-  .ui.button.item {
-    box-shadow: none;
-    background: none;
-    height: 100%;
-    padding: 0.83em 0.95em;
+////////////////////////////////////////////////////////////////////////////////////////////////////
+// SEMANTIC-UI OVERRIDES
+////////////////////////////////////////////////////////////////////////////////////////////////////
+
+.ui.popup {
+  &, &:before {
+    background-color: @color-tooltip;
   }
-  .ui.item:before {
-    display: none !important;
+}
+
+.ui.menu {
+  .item {
+    cursor: pointer;
+    .ui.selection.dropdown {
+      min-width: inherit;
+      border: none;
+    }
   }
+}
+
+.ui.button {
+  text-transform: uppercase;
+}
+
+::selection {
+  background-color: rgba(172, 218, 254, 0.5);
 }

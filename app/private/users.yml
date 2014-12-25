@@ -1,8 +1,0 @@
-user_admin:
-  email: admin@test.com
-  username: admin
-  password: password
-user_test:
-  email: test@test.com
-  username: test
-  password: test
