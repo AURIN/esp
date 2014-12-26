@@ -393,17 +393,14 @@ TemplateClass.onAtlasLoad = (template, atlas) ->
       Session.set('lotDisplayMode', 'footprint')
       atlas.publish 'entity/draw', {
         displayMode: 'line'
-        init: (args) ->
-          args.feature.setElevation(2)
-        # update: (args) ->
-        #   _.each args.feature.getHandles(), (handle) ->
-        #     handle
+        init: (args) -> args.feature.setElevation(2)
         create: (args) ->
           feature = args.feature
           id = feature.getId()
           vertices = feature.getForm().getVertices()
           AtlasManager.unrenderEntity(id)
           LotUtils.subdivide(ids, vertices).fin(cancelSubdivision)
+        update: (args) -> args.feature.getHandles().forEach (handle) -> handle.setElevation(4)
         cancel: ->
           console.debug('Drawing cancelled', arguments)
           feature = args.feature
@@ -506,6 +503,7 @@ TemplateClass.onAtlasLoad = (template, atlas) ->
     startDrawing = ->
       atlas.publish 'entity/draw', {
         displayMode: 'line'
+        init: (args) -> args.feature.setElevation(2)
         create: (args) ->
           typology = getSelectedPathwayTypology()
           subclass = SchemaUtils.getParameterValue(typology, 'general.subclass')
@@ -527,6 +525,7 @@ TemplateClass.onAtlasLoad = (template, atlas) ->
           # Continue drawing if the button is active.
           isActive = $pathwayDrawButton.hasClass('active')
           startDrawing() if isActive
+        update: (args) -> args.feature.getHandles().forEach (handle) -> handle.setElevation(4)
         cancel: ->
           console.debug('Drawing cancelled', arguments)
           feature = args.feature

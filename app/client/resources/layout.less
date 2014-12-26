@@ -347,11 +347,18 @@ body {
 .ui.menu {
   .item {
     cursor: pointer;
+    .item {
+      color: rgba(0, 0, 0, 0.8);
+    }
     .ui.selection.dropdown {
       min-width: inherit;
       border: none;
     }
   }
+}
+
+.toolbar.ui.menu:not(.vertical) .item > .button {
+  padding: 0.78571em 0.95em;
 }
 
 .ui.button {
