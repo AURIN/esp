@@ -964,10 +964,20 @@ TypologyClasses = Object.freeze({
     name: 'Commercial'
     color: '#e34236'
     abbr: 'c'
-    subclasses: ['Retail', 'Office', 'Hotel', 'Supermarket', 'Restaurant']
+    subclasses:
+      'Retail':
+        color: '#e34236'
+      'Office':
+        color: '#ec483d'
+      'Hotel':
+        color: '#e02a2e'
+      'Supermarket':
+        color: '#eb3232'
+      'Restaurant':
+        color: '#e53b3b'
   MIXED_USE:
     name: 'Mixed Use'
-    color: '#756bb1' # Purple
+    color: '#d95f0e' # Orange
     abbr: 'mu'
   OPEN_SPACE:
     name: 'Open Space'
@@ -983,9 +993,17 @@ TypologyClasses = Object.freeze({
     subclasses: ['Freeway', 'Highway', 'Street', 'Footpath', 'Bicycle Path']
   INSTITUTIONAL:
     name: 'Institutional'
-    color: '#d95f0e'
+    color: '#756bb1' # Purple
     abbr: 'i'
-    subclasses: ['School', 'Tertiary', 'Hospital', 'Public']
+    subclasses:
+      'School':
+        color: '#756bb1'
+      'Tertiary':
+        color: '#a1589b'
+      'Hospital':
+        color: '#8e42a1'
+      'Public':
+        color: '#8958a1'
 })
 
 BuildingClasses = Object.freeze({
@@ -1017,8 +1035,8 @@ TypologyTypes = ['Basic', 'Efficient', 'Advanced']
 EnergySources = ['Electricity', 'Gas']
 
 ResidentialSubclasses = Object.keys(TypologyClasses.RESIDENTIAL.subclasses)
-CommercialSubclasses = TypologyClasses.COMMERCIAL.subclasses
-InstitutionalSubclasses = TypologyClasses.INSTITUTIONAL.subclasses
+CommercialSubclasses = Object.keys(TypologyClasses.COMMERCIAL.subclasses)
+InstitutionalSubclasses = Object.keys(TypologyClasses.INSTITUTIONAL.subclasses)
 PathwaySubclasses = TypologyClasses.PATHWAY.subclasses
 
 ResidentialBuildTypes =
