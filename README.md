@@ -15,10 +15,6 @@ Install [Meteor](https://www.meteor.com/):
 
 	$ curl https://install.meteor.com/ | sh
 
-Install [Meteorite](https://github.com/oortcloud/meteorite/):
-
-  $ npm install -g meteorite
-
 Run the following:
 
 	$ npm install
@@ -26,7 +22,7 @@ Run the following:
 
 Running
 -------
-Run the app by running `meteor` in the `app/` directory, or using `grunt meteor` from the project root directory.
+Run the app with `grunt meteor`.
 
 Building
 --------

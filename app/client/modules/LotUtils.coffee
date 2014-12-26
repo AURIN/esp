@@ -371,6 +371,8 @@ Meteor.startup -> resetRenderQueue()
           polygon = polyMap[alignLot._id]
           angle = alignCalc.getStreetInfo(polygon)?.angle
           return if !angle
+          # Ensure 0 degrees is facing south - the assumed direction of the front of the typology.
+          angle -= 90
           entityDf = Q.defer()
           entityDfs.push(entityDf.promise)
           Entities.update alignLot.entity,

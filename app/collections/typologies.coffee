@@ -3402,6 +3402,33 @@ Typologies.before.insert(updateBuildType)
 Typologies.before.update(updateBuildType)
 
 ####################################################################################################
+# SANITIZATION
+####################################################################################################
+
+# Ensure the azimuth value for entities and typologies is in the range [0, 360].
+
+sanitizeAzimuth = (azimuth) ->
+  azimuth = azimuth % 360
+  if azimuth < 0
+    azimuth = 360 + azimuth
+  else if azimuth == 0
+    # Eliminate possible -0.
+    azimuth = 0
+  azimuth
+
+azimuthFieldId = 'parameters.orientation.azimuth'
+
+_.each [Entities, Typologies], (collection) ->
+  collection.before.update (userId, entity, fieldNames, modifier) ->
+    azimuth = modifier.$set?[azimuthFieldId]
+    if azimuth?
+      modifier.$set[azimuthFieldId] = sanitizeAzimuth(azimuth)
+  collection.before.insert (userId, doc) ->
+    azimuth = SchemaUtils.getParameterValue(doc, azimuthFieldId)
+    if azimuth?
+      SchemaUtils.setParameterValue(doc, azimuthFieldId, sanitizeAzimuth(azimuth))
+
+####################################################################################################
 # ASSOCIATION MAINTENANCE
 ####################################################################################################
 

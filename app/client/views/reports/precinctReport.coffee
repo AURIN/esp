@@ -41,42 +41,10 @@ Meteor.startup ->
       {title: 'Stormwater'}
       {param: 'stormwater.runoff'}
 
-#      {title: 'Transport'}
-#      {param: 'transport.vkt_total'}
-#      {param: 'transport.vkt_capita'}
-#      {param: 'transport.rd_length'}
-#      {param: 'transport.rd_capita'}
-#      {param: 'transport.walkscore'}
-
       {title: 'Parking'}
       {param: 'parking.parking_ga'}
       {param: 'parking.parking_sl'}
       {param: 'parking.parking_ug'}
       {param: 'parking.parking_t'}
-#      {param: 'parking.prk_capita'}
-
-#      {title: 'Financial'}
-#      {param: 'cost_path'}
-#      {param: 'cost_pos'}
-#      {param: 'cost_res'}
-#      {param: 'cost_com'}
-#      {param: 'cost_mu'}
-#      {param: 'cost_dev'}
-
-      {title: 'Space'}
-      {param: 'area_res'}
-      {param: 'area_com'}
-      {param: 'area_mu'}
-      {param: 'area_pos'}
-      {param: 'area_path'}
-      {param: 'pr_res'}
-      {param: 'pr_com'}
-      {param: 'pr_mu'}
-
-      {title: 'General'}
-      {param: 'lum'}
-      {param: 'pop_tot'}
-      {param: 'dwell_tot'}
-      {param: 'dwell_dens', aggregate: 'average'}
 
     ]
