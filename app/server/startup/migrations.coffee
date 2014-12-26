@@ -17,9 +17,7 @@ Meteor.startup ->
             $rename:
               'parameters.space.geom': 'parameters.space.geom_2d'
               'parameters.space.mesh': 'parameters.space.geom_3d'
-          }, {
-            validate: false
-          })
+          }, {validate: false})
           migratedModelCount++
       _.each Typologies.find().fetch(), (model) -> migrateGeom(model, Typologies)
       _.each Entities.find().fetch(), (model) -> migrateGeom(model, Entities)
@@ -37,6 +35,21 @@ Meteor.startup ->
       OldProjects = new Meteor.Collection 'project'
       _.each OldProjects.find().fetch(), (model) -> migrateProject(model)
       console.log('Migrated', migratedModelCount, 'models')
+
+  Migrations.add
+    version: 3
+    up: ->
+      migratedModelCount = 0
+      # Replaced parameters.general.creator to author. Since no users existed beforehand, set the
+      # username as 'admin'.
+      _.each Projects.find().fetch(), (project) ->
+        migratedModelCount += Projects.update(project._id, {
+          $set:
+            author: 'admin'
+          $unset:
+            'general.creator': null
+        }, {validate: false})
+      console.log('Migrated', migratedModelCount, 'projects to use author field.')
 
   console.log('Migrating to latest version...')
   Migrations.migrateTo('latest')

@@ -46,6 +46,8 @@ aramk:dropdown
 aramk:requirejs
 aramk:file-upload
 urbanetic:subdiv
+urbanetic:accounts-aurin
+urbanetic:accounts-local
 urbanetic:atlas
 urbanetic:atlas-cesium
 urbanetic:atlas-util

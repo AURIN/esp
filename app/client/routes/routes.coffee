@@ -1,9 +1,10 @@
-#setStateName = (name) ->
-#  Session.set('stateName', name)
-
 BaseController = RouteController.extend
-# Don't render until we're ready (waitOn) resolved
+  onBeforeAction: ->
+    return unless @ready()
+    AccountsAurin.signInRequired(@)
+  # Don't render until we're ready (waitOn) resolved
   action: -> @render() if @ready()
+  waitOn: -> Meteor.subscribe('userData')
 
 crudRoute = (collectionName, controller) ->
   controller ?= BaseController
@@ -27,11 +28,11 @@ DesignController = BaseController.extend
   onBeforeAction: ->
     id = @.params._id
     Projects.setCurrentId(id)
-    @next()
+    AccountsAurin.signInRequired(@)
 
 ProjectsController = BaseController.extend
   template: 'projects'
-  waitOn: -> Meteor.subscribe('projects')
+  waitOn: -> Meteor.subscribe('projects') if Meteor.user()
 
 Router.route '/', -> @render('projects')
 
@@ -40,6 +41,7 @@ crudRoute('Projects', ProjectsController)
 Router.route 'design',
   path: '/design/:_id'
   waitOn: ->
+    return unless Meteor.user()
     projectId = @params._id
     [Meteor.subscribe('projects'), Meteor.subscribe('entities', projectId),
       Meteor.subscribe('typologies', projectId), Meteor.subscribe('lots', projectId)]
@@ -47,7 +49,7 @@ Router.route 'design',
 
 Router.onBeforeAction ->
   Router.initLastPath()
-  @next()
+  AccountsAurin.signInRequired(@)
 
 # Allow storing the last route visited and switching back.
 origGoFunc = Router.go

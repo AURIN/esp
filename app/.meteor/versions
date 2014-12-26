@@ -108,6 +108,8 @@ templating@1.0.10
 tracker@1.0.4
 ui@1.0.5
 underscore@1.0.2
+urbanetic:accounts-aurin@0.1.1
+urbanetic:accounts-local@0.1.0
 urbanetic:atlas@0.7.0-beta
 urbanetic:atlas-cesium@0.7.0-beta
 urbanetic:atlas-util@0.1.5

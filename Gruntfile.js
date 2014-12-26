@@ -280,17 +280,24 @@ module.exports = function(grunt) {
     var done = this.async();
     process.chdir(APP_DIR);
     var proc;
+    var env = {
+      AURIN_SERVER_URL: 'http://115.146.86.33:8080/envisionauth',
+      AURIN_APP_NAME: 'ESP',
+      METEOR_ADMIN_PASSWORD: 'password',
+      METEOR_ADMIN_EMAIL: 'admin@test.com'
+    };
+    var args = {options: {env: env}};
     if (arg1 === 'debug') {
-      proc = runProcess('meteor', {
-        options: {
-          env: _.extend({
-            NODE_OPTIONS: '--debug-brk'
-          }, process.env)
-        }
+      _.extend(env, {
+        NODE_OPTIONS: '--debug-brk'
       });
-    } else {
-      proc = runProcess('meteor');
+    } else if (arg1 === 'acs-local') {
+      _.extend(env, {
+        ACS_ENV: 'local'
+      });
     }
+    _.extend(env, process.env);
+    proc = runProcess('meteor', args);
     proc.on('exit', function() {
       done();
     });

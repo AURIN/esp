@@ -6,10 +6,8 @@ suite('ProjectUtils', function() {
     server.eval(function() {
       var projectId = Projects.insert({
         name: 'Foo',
+        author: 'me',
         parameters: {
-          general: {
-            creator: 'me'
-          },
           location: {
             country: 'Australia',
             ste_reg: 'Victoria',
@@ -51,10 +49,8 @@ suite('ProjectUtils', function() {
     server.eval(function() {
       var projectId = Projects.insert({
         name: 'Foo',
+        author: 'me',
         parameters: {
-          general: {
-            creator: 'me'
-          },
           location: {
             country: 'Australia',
             ste_reg: 'Victoria',

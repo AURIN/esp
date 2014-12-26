@@ -173,11 +173,6 @@ descSchema =
   type: String
   optional: true
 
-creatorSchema =
-  label: 'Creator'
-  type: String
-  optional: true
-
 VktRailTypes =
   rail0_400:
     label: '0 - 0.4 kms'
@@ -189,14 +184,6 @@ VktRailTypes =
     label: '> 1.6 kms'
 
 projectCategories =
-  general:
-    label: 'General'
-    items:
-      creator:
-      # TODO(aramk) Integrate this with users.
-        type: String
-        desc: 'Creator of the project or precinct.'
-        optional: false
   location:
     label: 'Location'
     items:
@@ -891,7 +878,9 @@ ProjectSchema = new SimpleSchema
     index: true
     unique: true
   desc: descSchema
-  creator: creatorSchema
+  author:
+    type: String
+    index: true
   parameters:
     label: 'Parameters'
     type: ProjectParametersSchema
@@ -900,6 +889,7 @@ ProjectSchema = new SimpleSchema
 @Projects = new Meteor.Collection 'projects', schema: ProjectSchema
 Projects.attachSchema(ProjectSchema)
 Projects.allow(Collections.allowAll())
+AccountsAurin.addCollectionAuthorization(Projects)
 
 hasSession = typeof Session != 'undefined'
 Projects.setCurrentId = (id) -> Session.set('projectId', id) if hasSession
