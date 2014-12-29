@@ -137,14 +137,25 @@ Meteor.startup -> resetRenderQueue()
       borderColor = tinycolor.darken(color, 40)
       space = lot.parameters.space
       displayMode = @getDisplayMode(id)
-      converter.toGeoEntityArgs
+      args =
         id: id
         vertices: space.geom_2d
         height: space.height
         displayMode: displayMode
-        style:
+      if typologyClass == 'OPEN_SPACE' && lot.entity?
+        # If the lot is an Open Space with an entity, render it with a check pattern to show it
+        # has an entity allocated.
+        args.style =
+          fillMaterial:
+            type: 'CheckPattern',
+            lightColor: color.toHexString(),
+            darkColor: tinycolor.darken(color, 5).toHexString()
+          borderColor: borderColor.toHexString()
+      else
+        args.style =
           fillColor: color.toHexString()
           borderColor: borderColor.toHexString()
+      converter.toGeoEntityArgs(args)
 
   getDisplayMode: (id) ->
     lot = Lots.findOne(id)
