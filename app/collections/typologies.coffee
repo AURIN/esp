@@ -532,6 +532,18 @@ projectCategories =
             type: Number
             units: Units.$m2
             defaultValue: 2450
+      mixed_use:
+        items:
+          std:
+            label: 'Single House - Standard'
+            type: Number
+            units: Units.$m2
+            defaultValue: 2090
+          hq:
+            label: 'Single House - Standard'
+            type: Number
+            units: Units.$m2
+            defaultValue: 2819
       institutional:
         items:
           school:
@@ -1054,6 +1066,9 @@ CommercialBuildTypes =
     'Supermarket': 'supermarket'
   'Restaurant':
     'Restaurant': 'restaurant'
+MixedUseBuildTypes =
+  'Standard Quality Build': 'std'
+  'High Quality Build': 'hq'
 InstitutionalBuildTypes =
   'School':
     'Primary': 'school.primary'
@@ -1313,6 +1328,7 @@ typologyCategories =
           RESIDENTIAL: {optional: false}
           COMMERCIAL: {optional: false}
           INSTITUTIONAL: {optional: false}
+          MIXED_USE: {optional: false}
           # Pathway typologies don't have geometry - it is defined in the entities - so this is
           # optional.
           PATHWAY: {}
@@ -1367,7 +1383,34 @@ typologyCategories =
         type: Number
         decimal: true
         units: Units.m2
-        classes: extendBuildingClasses()
+        classes: extendBuildingClasses
+          MIXED_USE: false
+      gfa_r:
+        label: 'Residential Gross Floor Area'
+        type: Number
+        decimal: true
+        units: Units.m2
+        classes:
+          MIXED_USE: {}
+      gfa_c:
+        label: 'Commercial Gross Floor Area'
+        type: Number
+        decimal: true
+        units: Units.m2
+        classes:
+          MIXED_USE: {}
+      gfa_t:
+        label: 'Gross Floor Area'
+        desc: 'Gross floor area of all the rooms in the typology.'
+        type: Number
+        decimal: true
+        units: Units.m2
+        calc: ->
+          typologyClass = Entities.getTypologyClass(@model._id)
+          if typologyClass == 'MIXED_USE'
+            @param('space.gfa_r') + @param('space.gfa_c')
+          else
+            @param('space.gfa')
       cfa:
         label: 'Conditioned Floor Area'
         desc: 'Total conditioned area of the typology.'
@@ -1418,7 +1461,7 @@ typologyCategories =
         desc: 'The building footprint area divided by the lot size.'
         type: Number
         decimal: true
-        calc: '$space.gfa / $space.lotsize'
+        calc: '$space.gfa_t / $space.lotsize'
       occupants:
         label: 'No. Occupants'
         desc: 'Number of occupants in the typology.'
@@ -1426,6 +1469,7 @@ typologyCategories =
         units: 'Persons'
         classes:
           RESIDENTIAL: {}
+          MIXED_USE: {}
       job_intensity:
         desc: 'Number of jobs per square metre of commercial floorspace.'
         label: 'Job Intensity'
@@ -1435,12 +1479,13 @@ typologyCategories =
         classes:
           COMMERCIAL: {defaultValue: 20}
           INSTITUTIONAL: {defaultValue: 20}
+          MIXED_USE: {defaultValue: 20}
       jobs:
         desc: 'Number of jobs in the commerical building.'
         label: 'Number of Jobs'
         type: Number
         units: Units.jobs
-        calc: '$space.gfa / $space.job_intensity'
+        calc: '$space.gfa_t / $space.job_intensity'
       num_0br:
         label: 'Dwellings - Studio'
         desc: 'Number of studio units in the typology.'
@@ -1448,6 +1493,7 @@ typologyCategories =
         units: 'Dwellings'
         classes:
           RESIDENTIAL: {}
+          MIXED_USE: {}
       num_1br:
         label: 'Dwellings - 1 Bedroom'
         desc: 'Number of 1 bedroom units in the typology.'
@@ -1455,6 +1501,7 @@ typologyCategories =
         units: 'Dwellings'
         classes:
           RESIDENTIAL: {}
+          MIXED_USE: {}
       num_2br:
         label: 'Dwellings - 2 Bedroom'
         desc: 'Number of 2 bedroom units in the typology.'
@@ -1462,6 +1509,7 @@ typologyCategories =
         units: 'Dwellings'
         classes:
           RESIDENTIAL: {}
+          MIXED_USE: {}
       num_3plus:
         label: 'Dwellings - 3 Bedroom Plus'
         desc: 'Number of 3 bedroom units in the typology.'
@@ -1469,6 +1517,7 @@ typologyCategories =
         units: 'Dwellings'
         classes:
           RESIDENTIAL: {}
+          MIXED_USE: {}
       dwell_tot:
         label: 'Dwellings - Total'
         desc: 'Number of total dwellings in the typology.'
@@ -1663,13 +1712,34 @@ typologyCategories =
               'Tertiary': {defaultValue: 626}
               'Hospital': {defaultValue: 703.5}
               'Public': {defaultValue: 806}
+      en_int_e_r:
+        label: 'Residential Energy Intensity - Electricity'
+        desc: 'Residential electricity energy use intensity of the typology.'
+        type: Number
+        decimal: true
+        units: Units.MJm2year
+        classes:
+          MIXED_USE: {defaultValue: 535}
+      en_int_e_c:
+        label: 'Commercial Energy Intensity - Electricity'
+        desc: 'Commercial electricity energy use intensity of the typology.'
+        type: Number
+        decimal: true
+        units: Units.MJm2year
+        classes:
+          MIXED_USE: {defaultValue: 1140}
       en_use_e:
         desc: 'Electricity energy use of the typology.'
         label: 'Energy Use - Electricity'
         type: Number
         decimal: true
         units: Units.MJyear
-        calc: '$energy_demand.en_int_e * $space.gfa'
+        calc: ->
+          typologyClass = Entities.getTypologyClass(@model._id)
+          if typologyClass == 'MIXED_USE'
+            @calc('$energy_demand.en_int_e_r * $space.gfa_r + $energy_demand.en_int_e_c * $space.gfa_c')
+          else
+            @calc('$energy_demand.en_int_e * $space.gfa_t')
       en_int_g:
         desc: 'Gas energy use intensity of the typology.'
         label: 'Energy Use Intensity - Gas'
@@ -1690,13 +1760,47 @@ typologyCategories =
               'Tertiary': {defaultValue: 284}
               'Hospital': {defaultValue: 689.5}
               'Public': {defaultValue: 202}
+      en_int_g_r:
+        label: 'Residential Energy Intensity - Gas'
+        desc: 'Residential gas energy use intensity of the typology.'
+        type: Number
+        decimal: true
+        units: Units.MJm2year
+        classes:
+          MIXED_USE: {defaultValue: 455}
+      en_int_g_c:
+        label: 'Commercial Energy Intensity - Gas'
+        desc: 'Commercial gas energy use intensity of the typology.'
+        type: Number
+        decimal: true
+        units: Units.MJm2year
+        classes:
+          MIXED_USE: {defaultValue: 465}
+      # en_int_g_t:
+      #   desc: 'Gas energy use intensity of the typology.'
+      #   label: 'Energy Use Intensity - Gas'
+      #   type: Number
+      #   decimal: true
+      #   units: Units.MJm2year
+      #   calc: ->
+      #     typologyClass = Entities.getTypologyClass(@model._id)
+      #     if typologyClass == 'MIXED_USE'
+      #       @param('space.en_int_g_r') + @param('space.en_int_g_c')
+      #     else
+      #       @param('space.en_int_g')
       en_use_g:
         desc: 'Gas energy use of the typology.'
         label: 'Energy Use - Gas'
         type: Number
         decimal: true
         units: Units.MJyear
-        calc: '$energy_demand.en_int_g * $space.gfa'
+        # calc: '$energy_demand.en_int_g_t * $space.gfa_t'
+        calc: ->
+          typologyClass = Entities.getTypologyClass(@model._id)
+          if typologyClass == 'MIXED_USE'
+            @calc('$energy_demand.en_int_g_r * $space.gfa_r + $energy_demand.en_int_g_c * $space.gfa_c')
+          else
+            @calc('$energy_demand.en_int_g * $space.gfa_t')
       size_pv:
         label: 'PV System Size'
         desc: 'PV system size fitted on the typology.'
@@ -1760,6 +1864,7 @@ typologyCategories =
               'Hotel': {defaultValue: 480}
               'Supermarket': {defaultValue: 375}
               'Restaurant': {defaultValue: 350}
+          MIXED_USE: {defaultValue: 480}
           INSTITUTIONAL:
             subclasses:
               'School': {defaultValue: 475}
@@ -1780,7 +1885,7 @@ typologyCategories =
         type: Number
         decimal: true
         units: Units.kgco2
-        calc: '$embodied_carbon.i_co2_emb_intensity * $space.gfa'
+        calc: '$embodied_carbon.i_co2_emb_intensity * $space.gfa_t'
       t_co2_emb:
         label: 'Total Embodied'
         desc: 'Total CO2 embodied in the property.'
@@ -1982,8 +2087,8 @@ typologyCategories =
         classes:
           RESIDENTIAL: {}
       i_wu_intensity:
-        desc: 'Internal potable water use intensity of the typology.'
         label: 'Internal Water Use Intensity'
+        desc: 'Internal potable water use intensity of the typology.'
         type: Number
         decimal: true
         units: Units.kLm2year
@@ -2001,6 +2106,22 @@ typologyCategories =
               'Tertiary': {defaultValue: 3.25}
               'Hospital': {defaultValue: 1.5}
               'Public': {defaultValue: 3.3}
+      i_wu_intensity_r:
+        label: 'Internal Water Use Intensity - Residential'
+        desc: 'Residential internal potable water use intensity of the typology.'
+        type: Number
+        decimal: true
+        units: Units.kLm2year
+        classes:
+          MIXED_USE: {defaultValue: 2.70}
+      i_wu_intensity_c:
+        label: 'Internal Water Use Intensity - Commercial'
+        desc: 'Commercial internal potable water use intensity of the typology.'
+        type: Number
+        decimal: true
+        units: Units.kLm2year
+        classes:
+          MIXED_USE: {defaultValue: 1.70}
       i_wu_total:
         label: 'Internal Water Use - Total'
         desc: 'Total internal water use of the typology.'
@@ -2009,7 +2130,11 @@ typologyCategories =
         units: Units.kLyear
         calc: ->
           if classHasIntensity(Entities.getTypologyClass(@model._id))
-            @calc('$water_demand.i_wu_intensity * $space.gfa')
+            typologyClass = Entities.getTypologyClass(@model._id)
+            if typologyClass == 'MIXED_USE'
+              @calc('$water_demand.i_wu_intensity_r * $space.gfa_r + $water_demand.i_wu_intensity_c * $space.gfa_c')
+            else
+              @calc('$water_demand.i_wu_intensity * $space.gfa_t')
           else
             @calc('$water_demand.i_wu_pot + $water_demand.i_wu_bore + $water_demand.i_wu_rain + $water_demand.i_wu_treat + $water_demand.i_wu_grey')
       e_wd_lawn:
@@ -2100,7 +2225,6 @@ typologyCategories =
         desc: 'Grey water use for irrigation.'
         units: Units.kLyear
         calc: '$water_demand.e_wd_total * $water_demand.e_prpn_grey'
-      # TODO(aramk) Migrate this for the residential schema to use those above.
       wu_pot_tot:
         label: 'Total Potable Water Use'
         desc: 'Total potable water use for internal and external purposes.'
@@ -2149,6 +2273,10 @@ typologyCategories =
             getCostParamId: (args) ->
               'financial.residential.' + ResidentialBuildTypes[args.value]?[args.subclass]
           COMMERCIAL: createBuildTypeClassOptions(CommercialBuildTypes, 'commercial')
+          MIXED_USE:
+            defaultValue: 'Custom'
+            allowedValues: Object.keys(MixedUseBuildTypes)
+            getCostParamId: (args) -> 'financial.residential.' + ResidentialBuildTypes[args.value]
           INSTITUTIONAL: createBuildTypeClassOptions(InstitutionalBuildTypes, 'institutional')
       cost_land:
         label: 'Cost - Land Parcel'
@@ -3373,7 +3501,8 @@ Typologies.after.update(updateQueuedEntities)
 ####################################################################################################
 
 buildTypeDependencyFieldIds = ['parameters.financial.build_type',
-  'parameters.general.subclass', 'parameters.space.gfa']
+    'parameters.general.subclass', 'parameters.space.gfa', 'parameters.space.gfa_r',
+    'parameters.space.gfa_c']
 
 updateBuildType = (userId, doc, fileNames, modifier) ->
   depResult = getModifiedDocWithDeps(doc, modifier, buildTypeDependencyFieldIds)
