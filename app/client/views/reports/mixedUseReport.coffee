@@ -1,8 +1,8 @@
 Meteor.startup ->
   Reports.define
-    name: 'residentialReport'
-    title: 'Residential Report'
-    typologyClass: 'RESIDENTIAL'
+    name: 'mixedUseReport'
+    title: 'Mixed Use Report'
+    typologyClass: 'MIXED_USE'
 
     fields: [
       {title: 'Space'}
@@ -15,17 +15,11 @@ Meteor.startup ->
       {param: 'space.fpa'}
       {param: 'space.gfa_t'}
       {param: 'space.plot_ratio'}
-      {param: 'space.dwell_dens', aggregate: 'average'}
-      {param: 'space.dwell_tot'}
-      {param: 'space.occupants'}
+      {param: 'space.jobs'}
 
       {title: 'Energy Demand'}
-      {param: 'energy_demand.en_heat'}
-      {param: 'energy_demand.en_cool'}
-      {param: 'energy_demand.en_light'}
-      {param: 'energy_demand.en_hwat'}
-      {param: 'energy_demand.en_cook'}
-      {param: 'energy_demand.en_app'}
+      {param: 'energy_demand.en_use_e'}
+      {param: 'energy_demand.en_use_g'}
       {param: 'energy_demand.en_pv'}
       {param: 'energy_demand.en_total'}
 
@@ -33,26 +27,17 @@ Meteor.startup ->
       {param: 'embodied_carbon.e_co2_green'}
       {param: 'embodied_carbon.e_co2_imp'}
       {param: 'embodied_carbon.e_co2_emb'}
-      {param: 'embodied_carbon.i_co2_emb'}
+      {param: 'embodied_carbon.i_co2_emb_intensity_value'}
       {param: 'embodied_carbon.t_co2_emb'}
 
       {title: 'Operating Carbon'}
-      {param: 'operating_carbon.co2_heat'}
-      {param: 'operating_carbon.co2_cool'}
-      {param: 'operating_carbon.co2_light'}
-      {param: 'operating_carbon.co2_hwat'}
-      {param: 'operating_carbon.co2_cook'}
-      {param: 'operating_carbon.co2_app'}
+      {param: 'operating_carbon.co2_op_e'}
+      {param: 'operating_carbon.co2_op_g'}
       {param: 'operating_carbon.co2_op_tot'}
 
       {title: 'Water Demand'}
-      {param: 'water_demand.i_wu_pot'}
-      {param: 'water_demand.i_wu_bore'}
-      {param: 'water_demand.i_wu_rain'}
-      {param: 'water_demand.i_wu_treat'}
-      {param: 'water_demand.i_wu_grey'}
       {param: 'water_demand.i_wu_total'}
-      
+
       {param: 'water_demand.e_wu_pot'}
       {param: 'water_demand.e_wu_bore'}
       {param: 'water_demand.e_wu_storm'}
@@ -86,7 +71,6 @@ Meteor.startup ->
       {param: 'financial.cost_op_t', label: 'Average Operating Cost', aggregate: 'average'}
 
       {title: 'Parking'}
-      {param: 'parking.parking_ga'}
       {param: 'parking.parking_sl'}
       {param: 'parking.parking_ug'}
       {param: 'parking.parking_t'}
