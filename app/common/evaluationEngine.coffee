@@ -9,7 +9,10 @@ class @EvaluationEngine
     model = args.model
     changes = {}
     schemas = @getOutputParamSchemas(args.paramIds)
-    project = Projects.mergeDefaults(Projects.getCurrent())
+    project = args.project ? Projects.findOne(model.project) ? Projects.getCurrent()
+    unless project
+      throw new Error('No project provided')
+    project = Projects.mergeDefaults(project)
 
     getValueOrCalc = (paramId) =>
       # NOTE: Parameters may reference other parameters which were not requested for evaluation, so

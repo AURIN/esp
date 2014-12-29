@@ -1030,7 +1030,7 @@ LandClasses = Object.freeze(extendClassMap(OPEN_SPACE: {}, BuildingClasses))
 extendLandClasses = (args) -> extendClassMap(args, LandClasses)
 
 classHasIntensity = (typologyClass) ->
-  typologyClass == 'COMMERCIAL' || typologyClass == 'INSTITUTIONAL'
+  !!{COMMERCIAL: true, MIXED_USE: true, INSTITUTIONAL: true}[typologyClass]
 
 ClassNames = Object.keys(TypologyClasses)
 TypologyTypes = ['Basic', 'Efficient', 'Advanced']
@@ -1273,7 +1273,7 @@ calcEnergyWithIntensityCost = (suffix, shortSuffix) ->
   365 * supply_price + usage_cost
 
 calcLandPrice = ->
-  typologyClass = Entities.getTypologyClass(@model._id)
+  typologyClass = Entities.getTypologyClass(@model)
   abbr = TypologyClasses[typologyClass].abbr
   @param('financial.land.price_land_' + abbr)
 
@@ -1406,7 +1406,7 @@ typologyCategories =
         decimal: true
         units: Units.m2
         calc: ->
-          typologyClass = Entities.getTypologyClass(@model._id)
+          typologyClass = Entities.getTypologyClass(@model)
           if typologyClass == 'MIXED_USE'
             @param('space.gfa_r') + @param('space.gfa_c')
           else
@@ -1735,7 +1735,7 @@ typologyCategories =
         decimal: true
         units: Units.MJyear
         calc: ->
-          typologyClass = Entities.getTypologyClass(@model._id)
+          typologyClass = Entities.getTypologyClass(@model)
           if typologyClass == 'MIXED_USE'
             @calc('$energy_demand.en_int_e_r * $space.gfa_r + $energy_demand.en_int_e_c * $space.gfa_c')
           else
@@ -1783,7 +1783,7 @@ typologyCategories =
       #   decimal: true
       #   units: Units.MJm2year
       #   calc: ->
-      #     typologyClass = Entities.getTypologyClass(@model._id)
+      #     typologyClass = Entities.getTypologyClass(@model)
       #     if typologyClass == 'MIXED_USE'
       #       @param('space.en_int_g_r') + @param('space.en_int_g_c')
       #     else
@@ -1796,7 +1796,7 @@ typologyCategories =
         units: Units.MJyear
         # calc: '$energy_demand.en_int_g_t * $space.gfa_t'
         calc: ->
-          typologyClass = Entities.getTypologyClass(@model._id)
+          typologyClass = Entities.getTypologyClass(@model)
           if typologyClass == 'MIXED_USE'
             @calc('$energy_demand.en_int_g_r * $space.gfa_r + $energy_demand.en_int_g_c * $space.gfa_c')
           else
@@ -1822,7 +1822,7 @@ typologyCategories =
         decimal: true
         units: Units.MJyear
         calc: ->
-          if classHasIntensity(Entities.getTypologyClass(@model._id))
+          if classHasIntensity(Entities.getTypologyClass(@model))
             @calc('$energy_demand.en_use_e + $energy_demand.en_use_g - (KWH_TO_MJ($energy_demand.size_pv * $renewable_energy.pv_output * 365))')
           else
             @calc('$energy_demand.en_app + $energy_demand.en_cook + ($energy_demand.en_hwat * 1000) + KWH_TO_MJ($energy_demand.en_light) + $energy_demand.en_cool + $energy_demand.en_heat - KWH_TO_MJ($energy_demand.en_pv)')
@@ -1893,7 +1893,7 @@ typologyCategories =
         decimal: true
         units: Units.kgco2
         calc: ->
-          if classHasIntensity(Entities.getTypologyClass(@model._id))
+          if classHasIntensity(Entities.getTypologyClass(@model))
             i_co2_emb = @param('embodied_carbon.i_co2_emb_intensity_value')
           else
             i_co2_emb = @param('embodied_carbon.i_co2_emb')
@@ -2027,7 +2027,7 @@ typologyCategories =
         decimal: true
         units: Units.kgco2year
         calc: ->
-          if classHasIntensity(Entities.getTypologyClass(@model._id))
+          if classHasIntensity(Entities.getTypologyClass(@model))
             @calc('$operating_carbon.co2_op_e + $operating_carbon.co2_op_g')
           else
             @calc('$operating_carbon.co2_heat + $operating_carbon.co2_cool + $operating_carbon.co2_light + $operating_carbon.co2_hwat + $operating_carbon.co2_cook + $operating_carbon.co2_app - ($energy_demand.en_pv * $operating_carbon.elec)')
@@ -2129,8 +2129,8 @@ typologyCategories =
         decimal: true
         units: Units.kLyear
         calc: ->
-          if classHasIntensity(Entities.getTypologyClass(@model._id))
-            typologyClass = Entities.getTypologyClass(@model._id)
+          if classHasIntensity(Entities.getTypologyClass(@model))
+            typologyClass = Entities.getTypologyClass(@model)
             if typologyClass == 'MIXED_USE'
               @calc('$water_demand.i_wu_intensity_r * $space.gfa_r + $water_demand.i_wu_intensity_c * $space.gfa_c')
             else
@@ -2232,7 +2232,7 @@ typologyCategories =
         decimal: true
         units: Units.kLyear
         calc: ->
-          if classHasIntensity(Entities.getTypologyClass(@model._id))
+          if classHasIntensity(Entities.getTypologyClass(@model))
             i_wu_pot = @param('water_demand.i_wu_total')
           else
             i_wu_pot = @param('water_demand.i_wu_pot')
@@ -2276,7 +2276,7 @@ typologyCategories =
           MIXED_USE:
             defaultValue: 'Custom'
             allowedValues: Object.keys(MixedUseBuildTypes)
-            getCostParamId: (args) -> 'financial.residential.' + ResidentialBuildTypes[args.value]
+            getCostParamId: (args) -> 'financial.mixed_use.' + MixedUseBuildTypes[args.value]
           INSTITUTIONAL: createBuildTypeClassOptions(InstitutionalBuildTypes, 'institutional')
       cost_land:
         label: 'Cost - Land Parcel'
@@ -2334,7 +2334,7 @@ typologyCategories =
         decimal: true
         units: Units.$
         calc: ->
-          if classHasIntensity(Entities.getTypologyClass(@model._id))
+          if classHasIntensity(Entities.getTypologyClass(@model))
             calcEnergyWithIntensityCost.call(@, 'elec', 'e')
           else
             calcEnergyCost.call(@, 'Electricity', 'elec')
@@ -2345,7 +2345,7 @@ typologyCategories =
         decimal: true
         units: Units.$
         calc: ->
-          if classHasIntensity(Entities.getTypologyClass(@model._id))
+          if classHasIntensity(Entities.getTypologyClass(@model))
             calcEnergyWithIntensityCost.call(@, 'gas', 'g')
           else
             calcEnergyCost.call(@, 'Gas', 'gas')
@@ -3370,8 +3370,9 @@ Entities.findByTypologyClass = (typologyClass, projectId) ->
       entities.push(entity)
   entities
 
-Entities.getTypologyClass = (id) ->
-  typologyId = Entities.findOne(id).typology
+Entities.getTypologyClass = (idOrModel) ->
+  entity = if Types.isObject(idOrModel) then idOrModel else Entities.findOne(idOrModel)
+  typologyId = entity.typology
   Typologies.getTypologyClass(typologyId) if typologyId?
 
 Entities.allowsMultipleDisplayModes = (id) ->
@@ -3511,15 +3512,21 @@ updateBuildType = (userId, doc, fileNames, modifier) ->
   project = Projects.mergeDefaults(Projects.findOne(fullDoc.project))
   return unless depResult.hasDependencyUpdates
   build_type = SchemaUtils.getParameterValue(fullDoc, 'financial.build_type')
-  subclass = SchemaUtils.getParameterValue(fullDoc, 'general.subclass')
-  gfa = SchemaUtils.getParameterValue(fullDoc, 'space.gfa')
-  $set = {}
-  return unless build_type? && build_type != 'Custom' && subclass? && gfa?
   typologyClass = SchemaUtils.getParameterValue(fullDoc, 'general.class')
+  subclass = SchemaUtils.getParameterValue(fullDoc, 'general.subclass')
+  gfaParamId = 'space.gfa'
+  if typologyClass == 'MIXED_USE'
+    # Mixed use has two components for GFA.
+    gfaParamId = 'space.gfa_t'
+    dummyEntity = {typology: fullDoc._id, parameters: fullDoc.parameters, project: fullDoc.project}
+    EntityUtils.evaluate(dummyEntity, gfaParamId)
+  gfa = SchemaUtils.getParameterValue(fullDoc, gfaParamId)
+  $set = {}
+  return unless build_type? && build_type != 'Custom' && gfa?
   field = SchemaUtils.getField('parameters.financial.build_type', Typologies)
   options = field?.classes[typologyClass]
   costParamId =
-    options.getCostParamId(subclass: subclass, typologyClass: typologyClass, value: build_type)
+    options.getCostParamId(typologyClass: typologyClass, subclass: subclass, value: build_type)
   costParamValue = SchemaUtils.getParameterValue(project, costParamId)
   cost_ug_park = SchemaUtils.getParameterValue(project, 'financial.parking.cost_ug_park')
   parking_ug = SchemaUtils.getParameterValue(fullDoc, 'parking.parking_ug')
