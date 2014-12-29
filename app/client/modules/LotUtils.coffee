@@ -142,8 +142,9 @@ Meteor.startup -> resetRenderQueue()
         vertices: space.geom_2d
         height: space.height
         displayMode: displayMode
-        fillColor: color.toHexString()
-        borderColor: borderColor.toHexString()
+        style:
+          fillColor: color.toHexString()
+          borderColor: borderColor.toHexString()
 
   getDisplayMode: (id) ->
     lot = Lots.findOne(id)
