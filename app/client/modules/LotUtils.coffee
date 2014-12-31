@@ -148,8 +148,8 @@ Meteor.startup -> resetRenderQueue()
         args.style =
           fillMaterial:
             type: 'CheckPattern',
-            lightColor: color.toHexString(),
-            darkColor: tinycolor.darken(color, 5).toHexString()
+            color1: color.toHexString(),
+            color2: tinycolor.darken(color, 5).toHexString()
           borderColor: borderColor.toHexString()
       else
         args.style =
