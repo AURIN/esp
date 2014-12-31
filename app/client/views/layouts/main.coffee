@@ -4,10 +4,10 @@ Template.mainLayout.helpers
   project: -> Projects.getCurrent()
 
 Template.mainLayout.events
-  'click .project > .close.button': ->
+  'click .header .close.button': ->
     Router.go('projects')
     Projects.setCurrentId(null)
-  'click .project > .edit.button': ->
+  'click .header .edit.button': ->
     Template.design.addFormPanel null, Template.projectForm, Projects.getCurrent()
-  'click .project > .import.button': -> Template.design.addFormPanel null, Template.importForm
-  'click .project > .zoom.button': -> LotUtils.renderAllAndZoom()
+  'click .header .import.button': -> Template.design.addFormPanel null, Template.importForm
+  'click .header .zoom.button': -> LotUtils.renderAllAndZoom()

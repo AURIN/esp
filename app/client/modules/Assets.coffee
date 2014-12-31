@@ -4,7 +4,7 @@
     df = Q.defer()
     Meteor.call 'assets/import/file', fileId, (err, result) ->
       if err
-        console.error 'Asset import failed', err, fileObj
+        console.error 'Asset import failed', err, fileId
         return
       assetId = result.id
       loadAssets = {}
@@ -27,7 +27,7 @@
             df.reject(err)
             return
           df.resolve({c3mls: c3mls, body: body})
-      (err) -> df.reject(err)
+      df.reject
     )
     df.promise
 

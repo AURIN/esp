@@ -13,7 +13,7 @@ Meteor.startup ->
       {param: 'space.ext_land_i'}
       {param: 'space.extland'}
       {param: 'space.fpa'}
-      {param: 'space.gfa'}
+      {param: 'space.gfa_t'}
       {param: 'space.plot_ratio'}
       {param: 'space.jobs'}
 

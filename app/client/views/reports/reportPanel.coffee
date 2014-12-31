@@ -5,6 +5,7 @@ ReportTemplates = [
   'commercialReport'
   'openSpaceReport'
   'pathwayReport'
+  'mixedUseReport'
   'institutionalReport'
   'transportReport'
   'precinctReport'

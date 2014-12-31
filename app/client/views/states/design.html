@@ -2,14 +2,14 @@
   <div class="design container">
     <div class="sidebar">
       <div class="default panel">
-        <div class="entities title"><i class="building icon"></i>Entities</div>
+        <div class="entities title"><i class="building icon"></i>Objects</div>
         <div class="items entities">
           {{> collectionTable collection="Entities" items=entities settings=tableSettings}}
           <div class="extra menu">
             {{> dropdown name="entityDisplayMode" items=displayModes value=defaultEntityDisplayMode labelAttr="label" valueAttr="value"}}
           </div>
         </div>
-        <div class="typologies title"><i class="sitemap icon"></i>Types</div>
+        <div class="typologies title"><i class="sitemap icon"></i>Typologies</div>
         <div class="items typologies">
           {{> collectionTable collection="Typologies" items=typologies settings=tableSettings}}
           <div class="extra menu">
@@ -26,10 +26,10 @@
             empty Lots available for development."><i class="magic
             icon"></i></a>
             <a class="amalgamate item has-popup" title="Amalgamate all contiguous, selected Lots.">
-              <i class="resize small icon"></i>
+              <i class="compress icon"></i>
             </a>
             <div class="ui button toggle subdivide item has-popup" title="Subdivide selected Lots.">
-              <i class="resize full icon"></i>
+              <i class="expand icon"></i>
             </div>
             <div class="ui button alignment item has-popup" title="Align typologies on the selected Lots to face the street.">
               <i class="refresh icon"></i>

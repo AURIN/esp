@@ -31,6 +31,7 @@ body {
   overflow: auto;
   // Allow elastic scrolling in iOS.
   -webkit-overflow-scrolling: touch;
+  background: #fff;
   &.dragging {
     .noselect;
   }
@@ -56,17 +57,24 @@ body {
       vertical-align: middle;
       color: #999;
       text-transform: uppercase;
-      width: 100%;
-      position: absolute;
-      top: 14px;
-      left: 0;
-      text-align: center;
+      margin-right: 10px;
+      text-align: right;
+      width: auto;
+      right: 140px;
+      left: auto;
     }
     .tools {
       z-index: 1;
       position: relative;
       .button {
         padding: 0.4rem;
+      }
+      .icon {
+        font-size: 1.2rem;
+      }
+      .aurin-user-nav {
+        border-left: 1px solid #ccc;
+        padding-left: 10px;
       }
       &.left {
         float: left;
@@ -268,11 +276,14 @@ body {
   }
 }
 
-.reactive-table-navigation .form-inline input {
-  width: 30px;
-  padding: 4px;
-  text-align: center;
-
+.reactive-table-navigation {
+  font-size: 10px;
+  .form-inline input {
+    font-size: 10px;
+    width: 30px;
+    padding: 4px;
+    text-align: center;
+  }
 }
 
 .reactive-table-filter {
@@ -308,12 +319,6 @@ body {
   }
 }
 
-.ui.popup {
-  &, &:before {
-    background-color: @color-tooltip;
-  }
-}
-
 .unselectable {
   -webkit-user-select: none; /* Chrome/Safari */
   -moz-user-select: none; /* Firefox */
@@ -323,14 +328,47 @@ body {
   user-select: none;
 }
 
-.ui.menu.toolbar {
-  .ui.button.item {
-    box-shadow: none;
-    background: none;
-    height: 100%;
-    padding: 0.83em 0.95em;
+.tools {
+  .icon {
+    font-size: 1.2rem;
   }
-  .ui.item:before {
-    display: none !important;
+  .aurin-user-nav {
+    border-left: 1px solid #ccc;
+    padding-left: 10px;
   }
+}
+
+////////////////////////////////////////////////////////////////////////////////////////////////////
+// SEMANTIC-UI OVERRIDES
+////////////////////////////////////////////////////////////////////////////////////////////////////
+
+.ui.popup {
+  &, &:before {
+    background-color: @color-tooltip;
+  }
+}
+
+.ui.menu {
+  .item {
+    cursor: pointer;
+    .item {
+      color: rgba(0, 0, 0, 0.8);
+    }
+    .ui.selection.dropdown {
+      min-width: inherit;
+      border: none;
+    }
+  }
+}
+
+.toolbar.ui.menu:not(.vertical) .item > .button {
+  padding: 0.78571em 0.95em;
+}
+
+.ui.button {
+  text-transform: uppercase;
+}
+
+::selection {
+  background-color: rgba(172, 218, 254, 0.5);
 }

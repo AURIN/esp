@@ -115,26 +115,47 @@ Meteor.startup -> resetRenderQueue()
   toGeoEntityArgs: (id) ->
     AtlasConverter.getInstance().then (converter) =>
       lot = Lots.findOne(id)
-      className = SchemaUtils.getParameterValue(lot, 'general.class')
+      typologyClass = SchemaUtils.getParameterValue(lot, 'general.class')
       isForDevelopment = SchemaUtils.getParameterValue(lot, 'general.develop')
-      typologyClass = Typologies.classes[className]
+      typologyClassArgs = Typologies.classes[typologyClass]
       # Reduce saturation of non-develop lots. Ensure full saturation for develop lots.
-      if typologyClass
-        color = tinycolor(typologyClass.color).toHsv()
-        color.s = if isForDevelopment then 1 else 0.5
-        color = tinycolor(color)
-      else
-        color = tinycolor('#ccc')
+      color = '#ccc'
+      if typologyClassArgs
+        typology = Typologies.findOne(Entities.findOne(lot.entity)?.typology)
+        subclasses = typologyClassArgs.subclasses
+        subclass = typology && SchemaUtils.getParameterValue(typology, 'general.subclass')
+        color = typologyClassArgs.color ? color
+        if subclass &&  Types.isObject(subclasses)
+          color = subclasses[subclass]?.color ? color
+        unless isForDevelopment
+          nonDevColor = typologyClassArgs.nonDevColor
+          if nonDevColor
+            color = nonDevColor
+          else
+            color = tinycolor.lighten(color, 25)
+      color = tinycolor(color)
       borderColor = tinycolor.darken(color, 40)
       space = lot.parameters.space
       displayMode = @getDisplayMode(id)
-      converter.toGeoEntityArgs
+      args =
         id: id
         vertices: space.geom_2d
         height: space.height
         displayMode: displayMode
-        fillColor: color.toHexString()
-        borderColor: borderColor.toHexString()
+      if typologyClass == 'OPEN_SPACE' && lot.entity?
+        # If the lot is an Open Space with an entity, render it with a check pattern to show it
+        # has an entity allocated.
+        args.style =
+          fillMaterial:
+            type: 'CheckPattern',
+            color1: color.toHexString(),
+            color2: tinycolor.darken(color, 5).toHexString()
+          borderColor: borderColor.toHexString()
+      else
+        args.style =
+          fillColor: color.toHexString()
+          borderColor: borderColor.toHexString()
+      converter.toGeoEntityArgs(args)
 
   getDisplayMode: (id) ->
     lot = Lots.findOne(id)
@@ -362,6 +383,8 @@ Meteor.startup -> resetRenderQueue()
           polygon = polyMap[alignLot._id]
           angle = alignCalc.getStreetInfo(polygon)?.angle
           return if !angle
+          # Ensure 0 degrees is facing south - the assumed direction of the front of the typology.
+          angle -= 90
           entityDf = Q.defer()
           entityDfs.push(entityDf.promise)
           Entities.update alignLot.entity,

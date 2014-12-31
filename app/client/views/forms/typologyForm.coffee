@@ -7,7 +7,9 @@ Meteor.startup ->
   isUpdatingFields = false
   updateFields = (args) ->
     return if isUpdatingFields
-    args ?= {}
+    args = _.extend({
+      populateSubclasses: true
+    }, args)
     isUpdatingFields = true
     doc = @data.doc
     # Used to store original copies of DOM nodes which we modify based on the typology class.
@@ -91,9 +93,10 @@ Meteor.startup ->
     # Trigger changes in all fields so change event handlers are called. This assumes they are
     # synchronous.
     _.each $paramInputs, ($input) -> $input.trigger('change')
-    # Populate available subclasses.
-    Collections.removeAllDocs(subclasses)
-    _.each Typologies.getSubclassItems(typologyClass), (item) -> subclasses.insert(item)
+    if args.populateSubclasses
+      # Populate available subclasses.
+      Collections.removeAllDocs(subclasses)
+      _.each Typologies.getSubclassItems(typologyClass), (item) -> subclasses.insert(item)
     # Populate available build types.
     Collections.removeAllDocs(buildTypes)
     buildTypes.insert({name: 'Custom', _id: 'Custom'})
@@ -140,7 +143,13 @@ Meteor.startup ->
         Template.dropdown.setValue($subclass, null)
         updateFields.call(@)
         preventSubclassChange = false
-      $subclass.on 'change', => updateFields.call(@)
+      $subclass.on 'change', =>
+        return if preventSubclassChange
+        preventSubclassChange = true
+        # Prevent updating the subclass collection which will result in unnecessary updates and
+        # delays.
+        updateFields.call(@, {populateSubclasses: false})
+        preventSubclassChange = false
       doc = @data.doc
       updateFieldsArgs = {}
       # Since subclass is used to determine values, pass in the doc value initially since the input

@@ -130,12 +130,11 @@ TemplateClass.events
     LotUtils.autoAllocate()
   'mousedown .typologies .collection-table tr': (e) ->
     # Drag typology items from the table onto the globe.
-    $row = $(e.currentTarget)
     $pin = createDraggableTypology()
     $body = $('body')
     $body.addClass('dragging')
     $viewer = $('.viewer')
-    typologyId = $row.data('id')
+    typologyId = @_id
     mouseMoveHandler = (moveEvent) ->
       margin = {left: -16, top: -38}
       $pin.offset(left: moveEvent.clientX + margin.left, top: moveEvent.clientY + margin.top)
@@ -394,14 +393,14 @@ TemplateClass.onAtlasLoad = (template, atlas) ->
       Session.set('lotDisplayMode', 'footprint')
       atlas.publish 'entity/draw', {
         displayMode: 'line'
-        init: (args) ->
-          args.feature.setElevation(1)
+        init: (args) -> args.feature.setElevation(2)
         create: (args) ->
           feature = args.feature
           id = feature.getId()
           vertices = feature.getForm().getVertices()
           AtlasManager.unrenderEntity(id)
           LotUtils.subdivide(ids, vertices).fin(cancelSubdivision)
+        update: (args) -> args.feature.getHandles().forEach (handle) -> handle.setElevation(4)
         cancel: ->
           console.debug('Drawing cancelled', arguments)
           feature = args.feature
@@ -504,6 +503,7 @@ TemplateClass.onAtlasLoad = (template, atlas) ->
     startDrawing = ->
       atlas.publish 'entity/draw', {
         displayMode: 'line'
+        init: (args) -> args.feature.setElevation(2)
         create: (args) ->
           typology = getSelectedPathwayTypology()
           subclass = SchemaUtils.getParameterValue(typology, 'general.subclass')
@@ -525,6 +525,7 @@ TemplateClass.onAtlasLoad = (template, atlas) ->
           # Continue drawing if the button is active.
           isActive = $pathwayDrawButton.hasClass('active')
           startDrawing() if isActive
+        update: (args) -> args.feature.getHandles().forEach (handle) -> handle.setElevation(4)
         cancel: ->
           console.debug('Drawing cancelled', arguments)
           feature = args.feature

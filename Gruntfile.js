@@ -127,7 +127,7 @@ module.exports = function(grunt) {
           });
         };
       addTasks('install-bower', 'install-npm', 'install-grunt', 'install-mrt',
-        'setup-atlas-resources');
+        'install-meteor-packages', 'setup-atlas-resources');
     console.log('Running tasks', tasks);
     tasks.forEach(function(task) {
       grunt.task.run(task);
@@ -159,6 +159,20 @@ module.exports = function(grunt) {
   grunt.registerTask('install-mrt', 'Installs Meteorite dependencies.', function() {
     // TODO(aramk) Run this as a child process since it causes huge CPU lag otherwise.
     shell.exec('cd ' + APP_DIR + ' && mrt install');
+  });
+
+  grunt.registerTask('install-meteor-packages', 'Installs Meteor dependencies manually to avoid \
+      Meteorite installing all transient dependencies for packages when we only need to provide a \
+      few custom forks.', function() {
+    var done = this.async();
+    shell.cd(path.join(APP_DIR, 'packages'));
+    execAll([
+      'git clone https://github.com/aramk/Meteor-cfs-tempstore.git cfs-tempstore',
+      'git clone https://github.com/aramk/Meteor-cfs-s3.git cfs-s3',
+      'git clone https://github.com/aramk/meteor-collection-hooks.git collection-hooks --branch feature/exceptions --single-branch'
+    ], function() {
+      done();
+    });
   });
 
   grunt.registerTask('build-atlas', 'Builds Atlas.', function(arg1) {
@@ -266,17 +280,24 @@ module.exports = function(grunt) {
     var done = this.async();
     process.chdir(APP_DIR);
     var proc;
+    var env = {
+      AURIN_SERVER_URL: 'http://115.146.86.33:8080/envisionauth',
+      AURIN_APP_NAME: 'ESP',
+      METEOR_ADMIN_PASSWORD: 'password',
+      METEOR_ADMIN_EMAIL: 'admin@test.com'
+    };
+    var args = {options: {env: env}};
     if (arg1 === 'debug') {
-      proc = runProcess('meteor', {
-        options: {
-          env: _.extend({
-            NODE_OPTIONS: '--debug-brk'
-          }, process.env)
-        }
+      _.extend(env, {
+        NODE_OPTIONS: '--debug-brk'
       });
-    } else {
-      proc = runProcess('meteor');
+    } else if (arg1 === 'acs-local') {
+      _.extend(env, {
+        ACS_ENV: 'local'
+      });
     }
+    _.extend(env, process.env);
+    proc = runProcess('meteor', args);
     proc.on('exit', function() {
       done();
     });

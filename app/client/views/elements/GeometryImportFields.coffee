@@ -53,7 +53,7 @@
           unless uploadNotEmpty
             throw new Error('File must contain at least one c3ml entity other than a collection.')
           @handleMeshUpload(c3mls, fileObj, template).then(df.resolve, df.reject)
-      (err) -> df.reject(err)
+      df.reject
     )
     df.promise
 

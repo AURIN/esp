@@ -22,7 +22,7 @@ TemplateClass.rendered = ->
   $buttons.append($btnDuplicate)
   
   # Export button
-  $btnExport = $('<a class="export item" title="Export"><i class="down icon"></i></a>')
+  $btnExport = $('<a class="export item" title="Export"><i class="download icon"></i></a>')
   $btnExport.on 'click', ->
     id = getSelectedId()
     ProjectUtils.downloadInBrowser(id)
