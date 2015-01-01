@@ -2232,8 +2232,12 @@ typologyCategories =
         decimal: true
         units: Units.kLyear
         calc: ->
-          if classHasIntensity(Entities.getTypologyClass(@model))
+          typologyClass = Entities.getTypologyClass(@model)
+          if classHasIntensity(typologyClass)
             i_wu_pot = @param('water_demand.i_wu_total')
+          else if typologyClass == 'OPEN_SPACE'
+            # Open space has no internal water usage component.
+            i_wu_pot = 0
           else
             i_wu_pot = @param('water_demand.i_wu_pot')
           i_wu_pot + @param('water_demand.e_wu_pot')
@@ -2731,6 +2735,20 @@ typologyCategories =
         decimal: true
         units: Units.kgco2day
         calc: '$transport.ghg_household_day * 365'
+      ghg_dwellings_day:
+        label: 'GHG total Dwellings'
+        desc: 'Greenhouse gas emissions for all dwellings per day.'
+        type: Number
+        decimal: true
+        units: Units.kgco2day
+        calc: '$transport.ghg_household_day * $space.dwell_tot'
+      ghg_dwellings_year:
+        label: 'GHG per Household'
+        desc: 'Greenhouse gas emissions per household per year.'
+        type: Number
+        decimal: true
+        units: Units.kgco2day
+        calc: '$transport.ghg_dwellings_day * 365'
       ghg_person_year:
         label: 'GHG per Resident'
         desc: 'Greenhouse gas emissions per resident per year.'
