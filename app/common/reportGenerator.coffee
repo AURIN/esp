@@ -28,7 +28,8 @@ class @ReportGenerator
     paramIds = Object.keys(paramMap)
     for model in models
       # Evaluation result is stored in the model.
-      @evalEngine.evaluate(model: model, paramIds: paramIds)
+      typologyClass = Entities.getTypologyClass(model)
+      @evalEngine.evaluate(model: model, paramIds: paramIds, typologyClass: typologyClass)
     reportResults = {}
     for field in fields
       # Aggregate values for evaluated parameters across all models.
