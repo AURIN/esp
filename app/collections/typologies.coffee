@@ -1486,6 +1486,10 @@ typologyCategories =
         type: Number
         units: Units.jobs
         calc: '$space.gfa_t / $space.job_intensity'
+        classes:
+          COMMERCIAL: {}
+          INSTITUTIONAL: {}
+          MIXED_USE: {}
       num_0br:
         label: 'Dwellings - Studio'
         desc: 'Number of studio units in the typology.'
@@ -2026,6 +2030,7 @@ typologyCategories =
         type: Number
         decimal: true
         units: Units.kgco2year
+        classes: BuildingClasses
         calc: ->
           if classHasIntensity(Entities.getTypologyClass(@model))
             @calc('$operating_carbon.co2_op_e + $operating_carbon.co2_op_g')
@@ -2232,8 +2237,12 @@ typologyCategories =
         decimal: true
         units: Units.kLyear
         calc: ->
-          if classHasIntensity(Entities.getTypologyClass(@model))
+          typologyClass = Entities.getTypologyClass(@model)
+          if classHasIntensity(typologyClass)
             i_wu_pot = @param('water_demand.i_wu_total')
+          else if typologyClass == 'OPEN_SPACE'
+            # Open space has no internal water usage component.
+            i_wu_pot = 0
           else
             i_wu_pot = @param('water_demand.i_wu_pot')
           i_wu_pot + @param('water_demand.e_wu_pot')
@@ -2333,6 +2342,7 @@ typologyCategories =
         type: Number
         decimal: true
         units: Units.$
+        classes: BuildingClasses
         calc: ->
           if classHasIntensity(Entities.getTypologyClass(@model))
             calcEnergyWithIntensityCost.call(@, 'elec', 'e')
@@ -2344,6 +2354,7 @@ typologyCategories =
         type: Number
         decimal: true
         units: Units.$
+        classes: BuildingClasses
         calc: ->
           if classHasIntensity(Entities.getTypologyClass(@model))
             calcEnergyWithIntensityCost.call(@, 'gas', 'g')
@@ -2477,12 +2488,16 @@ typologyCategories =
         type: Number
         units: Units.spaces
         calc: '$space.ext_land_i * $parking.parking_land / $parking.prk_area_veh'
+        classes: extendBuildingClasses
+          PATHWAY: {}
       parking_t:
         label: 'Parking Spaces - Total'
         desc: 'Total number of parking spaces.'
         type: Number
         units: Units.spaces
         calc: '$parking.parking_ga + $parking.parking_sl + $parking.parking_ug'
+        classes: extendBuildingClasses
+          PATHWAY: {}
       parking_rd:
         label: 'Parking Spaces per Metre'
         desc: 'Number of parking spaces per metre length of pathway.'
@@ -2731,6 +2746,20 @@ typologyCategories =
         decimal: true
         units: Units.kgco2day
         calc: '$transport.ghg_household_day * 365'
+      ghg_dwellings_day:
+        label: 'GHG total Dwellings'
+        desc: 'Greenhouse gas emissions for all dwellings per day.'
+        type: Number
+        decimal: true
+        units: Units.kgco2day
+        calc: '$transport.ghg_household_day * $space.dwell_tot'
+      ghg_dwellings_year:
+        label: 'GHG per Household'
+        desc: 'Greenhouse gas emissions per household per year.'
+        type: Number
+        decimal: true
+        units: Units.kgco2day
+        calc: '$transport.ghg_dwellings_day * 365'
       ghg_person_year:
         label: 'GHG per Resident'
         desc: 'Greenhouse gas emissions per resident per year.'

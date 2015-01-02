@@ -40,4 +40,5 @@ Meteor.startup ->
       {param: 'financial.cost_xland'}
       {param: 'financial.cost_prop'}
       {param: 'financial.cost_prop', label: 'Average Property Cost', aggregate: 'average'}
+      {param: 'financial.cost_op_w'}
     ]

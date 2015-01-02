@@ -7,6 +7,7 @@ class @EvaluationEngine
 
   evaluate: (args) ->
     model = args.model
+    typologyClass = args.typologyClass
     changes = {}
     schemas = @getOutputParamSchemas(args.paramIds)
     project = args.project ? Projects.findOne(model.project) ? Projects.getCurrent()
@@ -75,6 +76,9 @@ class @EvaluationEngine
 
     # Go through output parameters and calculate them recursively.
     for paramId, schema of schemas
+      classOptions = schema.classes
+      # Ignore schema if field doesn't allow typology class.
+      return if typologyClass? && classOptions? && !classOptions[typologyClass]
       # TODO(aramk) Detect cycles and throw exceptions to prevent infinite loops.
       try
         result = getValueOrCalc(paramId)
