@@ -2290,7 +2290,6 @@ typologyCategories =
       cost_land:
         label: 'Cost - Land Parcel'
         type: Number
-        decimal: true
         desc: 'Value of the parcel of land.'
         units: Units.$
         calc: -> @param('space.lotsize') * calcLandPrice.call(@)
@@ -2340,7 +2339,6 @@ typologyCategories =
         label: 'Cost - Electricity Usage'
         desc: 'Operating costs due to electricity usage.'
         type: Number
-        decimal: true
         units: Units.$
         classes: BuildingClasses
         calc: ->
@@ -2352,7 +2350,6 @@ typologyCategories =
         label: 'Cost - Gas Usage'
         desc: 'Operating costs due to gas usage.'
         type: Number
-        decimal: true
         units: Units.$
         classes: BuildingClasses
         calc: ->
@@ -2364,14 +2361,12 @@ typologyCategories =
         label: 'Cost - Water Usage'
         desc: 'Operating costs due to water usage.'
         type: Number
-        decimal: true
         units: Units.$
         calc: '$utilities.price_supply_water + $water_demand.wu_pot_tot * $utilities.price_usage_water'
       cost_op_t:
         label: 'Cost - Total Operating'
         desc: 'Total operating cost of the typology including electricity and gas usage.'
         type: Number
-        decimal: true
         units: Units.$
         calc: '$financial.cost_op_e + $financial.cost_op_g + $financial.cost_op_w'
       pathways:
