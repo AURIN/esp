@@ -19,7 +19,7 @@ Meteor.startup ->
       {param: 'embodied_carbon.t_co2_emb', label: 'Total Embodied'}
 
       {title: 'Operating Carbon'}
-      {param: 'embodied_carbon.co2_op_tot', label: 'Total Operating'}
+      {param: 'operating_carbon.co2_op_tot', label: 'Total Operating'}
 
       {title: 'Water Demand'}
       {param: 'water_demand.wu_pot_tot', label: 'Total Potable Operating'}
