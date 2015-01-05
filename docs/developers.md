@@ -59,4 +59,5 @@ Deployment settings are found in `Gruntfile.js`.
 
 ### Modulus
 
+    $ cd app
     $ modulus deploy
