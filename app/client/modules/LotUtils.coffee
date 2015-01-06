@@ -382,8 +382,11 @@ Meteor.startup -> resetRenderQueue()
           polygon = polyMap[alignLot._id]
           angle = alignCalc.getStreetInfo(polygon)?.angle
           return if !angle
-          # Ensure 0 degrees is facing south - the assumed direction of the front of the typology.
-          angle -= 90
+          # 0 degrees is north-facing according to typologies. SubDiv assumes 0 degrees to be east.
+          # We must subtract 90 degrees to convert from SubDiv to the typology's 0 degree. The front
+          # of the typology is assumed to be south, so we must add 180 degrees. Hence, we have a net
+          # change of 90 degrees.
+          angle += 90
           entityDf = Q.defer()
           entityDfs.push(entityDf.promise)
           Entities.update alignLot.entity,
