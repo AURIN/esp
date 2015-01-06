@@ -237,7 +237,7 @@ TemplateClass.onAtlasLoad = (template, atlas) ->
     removed: (lot) ->
       unrenderLot(lot._id)
 
-  LotUtils.renderAllAndZoom()
+  ProjectUtils.zoomToEntities()
 
   # Rendering Entities.
   renderEntity = (id) -> EntityUtils.render(id)

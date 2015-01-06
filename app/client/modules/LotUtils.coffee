@@ -198,10 +198,7 @@ Meteor.startup -> resetRenderQueue()
     Q.all(lotRenderDfs)
 
   renderAllAndZoom: ->
-    if Lots.findByProject().count() != 0
-      @renderAll().then => @_zoomToEntities()
-    else
-      ProjectUtils.zoomTo()
+    @renderAll().then => @_zoomToEntities()
 
   _zoomToEntities: ->
     ids = _.map Lots.findByProject().fetch(), (entity) -> entity._id
