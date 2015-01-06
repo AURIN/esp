@@ -140,8 +140,10 @@ Meteor.startup -> resetRenderQueue()
       args =
         id: id
         vertices: space.geom_2d
-        height: space.height
         displayMode: displayMode
+      height = space.height
+      if height?
+        args.height = height
       if typologyClass == 'OPEN_SPACE' && lot.entity?
         # If the lot is an Open Space with an entity, render it with a check pattern to show it
         # has an entity allocated.

@@ -231,7 +231,9 @@ module.exports = function(grunt) {
     var config;
     var done = this.async();
     // TODO(aramk) Run this as a child process since it causes huge CPU lag otherwise.
-    if (arg1 === 'heroku') {
+    if (arg1 === 'modulus') {
+      deployModulus(done);
+    } else if (arg1 === 'heroku') {
       deployHeroku(done);
     } else if (arg1 === 'meteor') {
       shell.cd(APP_DIR);
@@ -321,6 +323,15 @@ module.exports = function(grunt) {
   //////////////////////////////////////////////////////////////////////////////////////////////////
   // AUXILIARY
   //////////////////////////////////////////////////////////////////////////////////////////////////
+
+  function deployModulus(done) {
+    shell.cd(APP_DIR);
+    runProcess('modulus deploy --project-name ' + APP_ID, {
+      exit: function() {
+        done();
+      }
+    });
+  }
 
   function deployHeroku(done) {
     if (!fs.existsSync('.git')) {

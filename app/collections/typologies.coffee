@@ -171,7 +171,6 @@ forEachCategoriesField = (categories, callback) ->
 descSchema =
   label: 'Description'
   type: String
-  optional: true
 
 VktRailTypes =
   rail0_400:
@@ -988,7 +987,7 @@ TypologyClasses = Object.freeze({
     displayMode: false
   PATHWAY:
     name: 'Pathway'
-    color: 'black'
+    color: '#333'
     abbr: 'pw'
     displayMode: 'line'
     canAllocateToLot: false
@@ -1021,8 +1020,8 @@ extendClassMap = (args, map) ->
   Setter.merge(Setter.clone(map), args)
 extendBuildingClasses = (args) -> extendClassMap(args, BuildingClasses)
 extendClassesWithDefault = (classArgs, defaultValue) ->
-  classArgs.ALL ?= {}
-  classArgs.ALL.defaultValue = defaultValue
+  _.each classArgs, (args, classId) ->
+    args.defaultValue = defaultValue
   classArgs
 
 LandClasses = Object.freeze(extendClassMap(OPEN_SPACE: {}, BuildingClasses))
@@ -2455,12 +2454,14 @@ typologyCategories =
         type: String
         classes: extendBuildingClasses
           COMMERCIAL: false
+          MIXED_USE: false
       eq_azmth_c:
         label: 'Azimuth Cooling Energy Array'
         desc: 'Equation to predict cooling energy use as a function of degrees azimuth.'
         type: String
         classes: extendBuildingClasses
           COMMERCIAL: false
+          MIXED_USE: false
   parking:
     label: 'Parking'
     items:
@@ -2885,8 +2886,8 @@ TypologySchema = new SimpleSchema
     desc: 'The full name of the typology.'
     type: String
     index: true
-  desc: extendSchema(descSchema,
-    {desc: 'A detailed description of the typology, including a summary of the materials and services provided.'})
+  desc: extendSchema descSchema,
+    desc: 'A detailed description of the typology, including a summary of the materials and services provided.'
   parameters:
     label: 'Parameters'
     type: ParametersSchema
@@ -3106,7 +3107,8 @@ LotSchema = new SimpleSchema
     label: 'Name'
     type: String
     desc: 'The full name of the lot.'
-  desc: descSchema
+  desc: extendSchema descSchema,
+    optional: true
   entity:
     label: 'Entity'
     type: String
@@ -3329,7 +3331,8 @@ EntitySchema = new SimpleSchema
     label: 'Name'
     type: String
     index: true
-  desc: descSchema
+  desc: extendSchema descSchema,
+    optional: true
   typology:
     label: 'Typology'
     type: String
