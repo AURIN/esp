@@ -58,6 +58,7 @@ Meteor.startup ->
       # Add required "description" field for all models as a blank string.
       _.each [Typologies, Projects], (collection) ->
         _.each collection.find().fetch(), (model) ->
+          return if model.desc?
           migratedModelCount += collection.update(model._id, {
             $set:
               desc: '...'

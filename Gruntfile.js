@@ -230,7 +230,6 @@ module.exports = function(grunt) {
   grunt.registerTask('deploy', 'Deploys the built app.', function(arg1, arg2) {
     var config;
     var done = this.async();
-    // TODO(aramk) Run this as a child process since it causes huge CPU lag otherwise.
     if (arg1 === 'modulus') {
       deployModulus(done);
     } else if (arg1 === 'heroku') {

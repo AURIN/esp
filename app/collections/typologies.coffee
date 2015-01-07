@@ -3089,12 +3089,12 @@ lotCategories =
         desc: 'Whether the lot can be used for development.'
         defaultValue: true
   space:
-    optional: false
     items:
       geom_2d:
         label: 'Geometry'
         type: String,
         desc: '3D Geometry of the lot envelope.'
+        optional: false
       height: extendSchema(heightSchema,
         {label: 'Allowable Height', desc: 'The maximum allowable height for structures in this lot.'})
       area: areaSchema

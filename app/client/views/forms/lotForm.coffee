@@ -71,25 +71,13 @@ Meteor.startup ->
     onRender: -> $(@findAll('.ui.toggle.button')).state()
 
     onSuccess: (operation, result, template) ->
+      # Create the entity from the typology if none exists, or replace it if the typology class was
+      # changed.
       data = template.data
       id = if operation == 'insert' then result else data.doc._id
       doc = Lots.findOne(id)
       entityDf = Q.defer()
-      geomDf = Q.defer()
-
-      # Handle drawing and editing.
-      stopEditing()
-      stopCreating()
-      unless currentGeoEntity?
-        console.error('No geometry provided for lot.')
-        return
-      isChanged = getEditState(EditState.CHANGED)
-      if isChanged
-        WKT.polygonFromVertices currentGeoEntity.getVertices(), (wkt) ->
-          geomDf.resolve(wkt)
-      else
-        geomDf.resolve(null)
-
+      
       # If not for development, there is no dropdown.
       $typologyDropdown = getTypologyDropdown(template)
       if $typologyDropdown.length > 0
@@ -97,34 +85,12 @@ Meteor.startup ->
         Lots.createOrReplaceEntity(id, newTypologyId).then(entityDf.resolve, entityDf.reject)
       else
         entityDf.resolve(null)
-
-      developParamId = 'parameters.general.develop'
-      geomParamId = 'parameters.space.geom_2d'
-
-      formDf = Q.defer()
-      reject = (err) ->
-        console.error.apply(console, arguments)
-        formDf.reject(err)
-      Q.all([
-        entityDf,
-        geomDf.promise]).then (results) ->
-        wkt = results[1]
-        modifier = {}
-        if wkt?
-          modifier[geomParamId] = wkt
-          Lots.update id, {$set: modifier}, (err, result) ->
-            if err
-              reject('Updating lot failed', err, modifier)
-            else
-              formDf.resolve(result)
-        else
-          formDf.resolve()
-      formDf.promise.fin ->
-        # Remove the drawn/edited Lot if it's temporary.
-        return unless currentGeoEntity?
-        unless Lots.findOne(currentGeoEntity.getId())
-          currentGeoEntity.remove()
-      formDf.promise
+      
+      # Remove the drawn/edited Lot if it's temporary.
+      if currentGeoEntity? && !Lots.findOne(currentGeoEntity.getId())
+        currentGeoEntity.remove()
+      
+      entityDf.promise
 
     onCancel: (template) ->
       stopEditing()
@@ -142,9 +108,15 @@ Meteor.startup ->
     hooks:
       before:
         insert: (doc, template) ->
-          setTypologyValue(doc, true, template)
+          setTypologyValue(doc, true, template).then =>
+            console.log('setTypologyValue', arguments)
+            @result(doc)
+          return undefined
         update: (docId, modifier, template) ->
-          setTypologyValue(modifier, false, template)
+          setTypologyValue(modifier, false, template).then =>
+            console.log('setTypologyValue', arguments)
+            @result(modifier)
+          return undefined
       formToDoc: (doc) ->
         doc.project = Projects.getCurrentId()
         doc
@@ -164,7 +136,31 @@ Meteor.startup ->
       else
         doc.$unset ?= {}
         doc.$unset.entity = null
-    doc
+    setGeometry(doc, isInserting, template)
+
+  setGeometry = (doc, isInserting, template) ->
+    geomDf = Q.defer()
+    # Handle drawing and editing.
+    stopEditing()
+    stopCreating()
+    unless currentGeoEntity?
+      console.error('No geometry provided for lot.')
+      return
+    isChanged = getEditState(EditState.CHANGED)
+    if isChanged
+      WKT.polygonFromVertices currentGeoEntity.getVertices(), (wkt) ->
+        modifier = {$set: {'parameters.space.geom_2d': wkt}}
+        if isInserting
+          Setter.merge(doc, Collections.simulateModifierUpdate(doc, modifier))
+        else
+          Setter.merge(doc, modifier)
+          delete doc.$unset?['parameters.space']
+          delete doc.$unset?['parameters.space.geom_2d']
+        geomDf.resolve()
+    else
+      geomDf.resolve()
+
+    geomDf.promise
 
   Form.events
     'click .footprint.buttons .create': (e, template) ->
@@ -214,7 +210,7 @@ Meteor.startup ->
 
   stateToActiveClass = (name) -> if getEditState(name) then 'active' else ''
   boolToEnabledClass = (bool) -> if bool then '' else 'disabled'
-  getTemplate = -> Templates.getNamedInstance(formName)
+  getTemplate = (template) -> Templates.getNamedInstance(formName, template)
 
   # TODO(aramk) Abstract dropdown to allow null selection automatically.
   Form.helpers
