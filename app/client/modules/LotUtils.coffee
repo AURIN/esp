@@ -389,6 +389,8 @@ Meteor.startup -> resetRenderQueue()
           angle += 90
           entityDf = Q.defer()
           entityDfs.push(entityDf.promise)
+          # Convert the angle from counter-clockwise to clockwise.
+          angle = 360 - angle
           Entities.update alignLot.entity,
             {$set: 'parameters.orientation.azimuth': angle}, (err, result) ->
               if err then entityDf.reject(err) else entityDf.resolve(result)
