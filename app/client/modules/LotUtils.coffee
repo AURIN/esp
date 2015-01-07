@@ -373,7 +373,7 @@ Meteor.startup -> resetRenderQueue()
         polygons = Lots.findByProject().map (lot) ->
           geom_2d = SchemaUtils.getParameterValue(lot, 'space.geom_2d')
           vertices = wkt.verticesFromWKT(geom_2d)[0]
-          polyMap[lot._id] = new Polygon(vertices)
+          polyMap[lot._id] = new Polygon(vertices).smoothPoints();
         PointGeometry.localizeMany(polygons)
         
         alignCalc = new AlignmentCalculator(polygons)
@@ -381,7 +381,7 @@ Meteor.startup -> resetRenderQueue()
         _.each alignLots, (alignLot) ->
           polygon = polyMap[alignLot._id]
           angle = alignCalc.getStreetInfo(polygon)?.angle
-          return if !angle
+          return unless angle?
           # 0 degrees is north-facing according to typologies. SubDiv assumes 0 degrees to be east.
           # We must subtract 90 degrees to convert from SubDiv to the typology's 0 degree. The front
           # of the typology is assumed to be south, so we must add 180 degrees. Hence, we have a net
