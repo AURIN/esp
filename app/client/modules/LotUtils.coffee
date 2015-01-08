@@ -366,15 +366,16 @@ Meteor.startup -> resetRenderQueue()
     WKT.getWKT (wkt) ->
       require [
         'subdiv/AlignmentCalculator',
-        'subdiv/PointGeometry',
-        'subdiv/Polygon'
-      ], (AlignmentCalculator, PointGeometry, Polygon) ->
+        'subdiv/Polygon',
+        'subdiv/util/GeographicUtil'
+      ], (AlignmentCalculator, Polygon, GeographicUtil) ->
         polyMap = {}
         polygons = Lots.findByProject().map (lot) ->
           geom_2d = SchemaUtils.getParameterValue(lot, 'space.geom_2d')
           vertices = wkt.verticesFromWKT(geom_2d)[0]
-          polyMap[lot._id] = new Polygon(vertices).smoothPoints();
-        PointGeometry.localizeMany(polygons)
+          polygon = new Polygon(vertices).smoothPoints()
+          GeographicUtil.localizePointGeometry(polygon)
+          polyMap[lot._id] = polygon
         
         alignCalc = new AlignmentCalculator(polygons)
         entityDfs = []

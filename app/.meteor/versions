@@ -114,7 +114,7 @@ urbanetic:accounts-local@0.1.0
 urbanetic:atlas@0.7.0-beta
 urbanetic:atlas-cesium@0.7.0-beta
 urbanetic:atlas-util@0.1.5
-urbanetic:subdiv@0.5.1
+urbanetic:subdiv@0.5.2
 url@1.0.3
 webapp@1.1.5
 webapp-hashing@1.0.2
