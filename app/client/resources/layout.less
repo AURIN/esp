@@ -14,6 +14,16 @@ html {
   overflow: hidden;
 }
 
+body {
+  overflow: auto;
+  // Allow elastic scrolling in iOS.
+  -webkit-overflow-scrolling: touch;
+  background: #fff;
+  &.dragging {
+    .noselect;
+  }
+}
+
 .noselect {
   -webkit-touch-callout: none;
   -webkit-user-select: none;
@@ -25,16 +35,6 @@ html {
 
 .hidden {
   display: none !important;
-}
-
-body {
-  overflow: auto;
-  // Allow elastic scrolling in iOS.
-  -webkit-overflow-scrolling: touch;
-  background: #fff;
-  &.dragging {
-    .noselect;
-  }
 }
 
 .main.container {
