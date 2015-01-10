@@ -12,11 +12,13 @@ Meteor.startup ->
     onCancel: close
 
   updateFields = ->
+    doc = @data.doc
     # TODO(aramk) Refactor with Typology form. No select fields are used at the moment.
     for key, input of @schemaInputs
       $input = $(input.node)
       fieldSchema = input.field
       isParamField = ParamUtils.hasPrefix(key)
+      paramName = ParamUtils.removePrefix(key)
 
       defaultValue = null
       if isParamField
@@ -29,8 +31,21 @@ Meteor.startup ->
       if defaultValue?
         $input.attr('placeholder', defaultValue)
 
+      # Select default values for dropdowns.
+      if isSelectInput($input)
+        if defaultValue?
+          # Label which option is the default value.
+          $defaultOption = getSelectOption(defaultValue, $input)
+          if $defaultOption.length > 0
+            $defaultOption.text($defaultOption.text() + ' (Default)')
+        inputValue = SchemaUtils.getParameterValue(doc, paramName) if doc
+        unless inputValue?
+          inputValue = defaultValue ? ''
+          setSelectValue($input, inputValue)
+
   Form.helpers
     project: -> Projects.getCurrentId()
+    railTypes: -> Typologies.getRailTypeItems()
 
   Form.events
     'click .button.view-current': (e, template) ->
@@ -58,3 +73,15 @@ Meteor.startup ->
             console.error('Cannot change camera position - must provide longitude, latitude and elevation',
               position)
 
+isDropdown = ($input) -> $input.parent().hasClass('dropdown')
+isSelectInput = ($input) -> isDropdown($input) || $input.is('select')
+getSelectOption = (value, $input) ->
+  if isDropdown($input)
+    Template.dropdown.getItem($input.parent(), value)
+  else
+    $('option[value="' + value + '"]', $input)
+setSelectValue = ($input, value) ->
+  if isDropdown($input)
+    Template.dropdown.setValue($input.parent(), value)
+  else
+    $input.val(value)

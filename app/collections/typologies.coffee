@@ -2952,6 +2952,8 @@ Typologies.getBuildTypeItems = (typologyClass, subclass) ->
     allowedValues = allowedValues(typologyClass: typologyClass, subclass: subclass)
   _.map allowedValues, (value) -> {_id: value, name: value}
 
+Typologies.getRailTypeItems = -> _.map VktRailTypes, (item, id) -> {_id: id, name: item.label}
+
 # TODO(aramk) Move to objects util.
 Typologies.getModifierProperty = (obj, property) ->
   target = obj
