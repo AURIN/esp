@@ -89,7 +89,7 @@ class @EvaluationEngine
         changes[paramId] = result
     changes
 
-  getOutputParamSchemas: (paramIds) =>
+  getOutputParamSchemas: (paramIds) ->
     unless paramIds
       paramIds = @schema._schemaKeys
     schemas = {}

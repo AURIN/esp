@@ -813,68 +813,80 @@ projectCategories =
     items:
       trips:
         label: 'Daily Trips per Dwelling'
+        desc: 'Mean daily trips per dwelling.'
         type: Number
         decimal: true
         units: 'trips/dwelling'
         defaultValue: 10.7
       age:
         label: 'Mean Age'
+        desc: 'Mean resident age.'
         type: Number
         decimal: true
         units: Units.years
         defaultValue: 38
       gender:
         label: 'Share Female Residents'
+        desc: 'Share of female residents.'
         type: Number
         decimal: true
         defaultValue: 0.52
       hhsize:
         label: 'Household Size'
+        desc: 'Mean household size.'
         type: Number
         decimal: true
         units: Units.people
         defaultValue: 2.6
       totalvehs:
         label: 'Vehicles per Household'
+        desc: 'Mean vehicles per household.'
         type: Number
         decimal: true
         units: Units.vehicles
         defaultValue: 1.8
       hhinc_grp:
         label: 'Household Income Group'
+        desc: 'Mean household income earning group. Range is 1 to 5 with 5 earning the highest income.'
         type: Number
         decimal: true
         defaultValue: 3.3
       distctr:
         label: 'Distance to Activity Centre'
+        desc: 'Mean street network distance to the nearest CBD or major centre.'
         type: Number
         decimal: true
         units: Units.km
         defaultValue: 6.3
       railprox:
         label: 'Proximity to Rail'
+        desc: 'Proximity band measuring street network distance to nearest train station or tram corridor.'
         type: String
         units: Units.km
         defaultValue: 'railgt_1600'
         allowedValues: Object.keys(VktRailTypes)
       distbus:
         label: 'Distance to Bus Stop'
+        desc: 'Mean street network distance to the nearest standard bus stop.'
         type: Number
         decimal: true
         units: Units.km
         defaultValue: 0.4
       lum_index:
         label: 'LUM Index'
+        desc: 'Mean land use mix within a 1600m street network walking catchment. Range is 0 to 1 with 1 being the most mixed.'
         type: Number
         decimal: true
         defaultValue: 0.38
       density:
         label: 'Density'
+        desc: 'Mean housing density within a 1600m street network walking catchment.'
         type: Number
         decimal: true
         defaultValue: 21.8
       towork:
         label: 'Share of Work Trips'
+        desc: 'Share of trips made as commuting trips to work.'
         type: Number
         decimal: true
         defaultValue: 0.22
