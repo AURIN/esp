@@ -1,6 +1,6 @@
-# Enivision Scenario Planner (ESP)
+# ENVISION Scenario Planner (ESP)
 
-**ESP** is an geospatial Web application for *sustainable urban planning*.
+**ESP** is a geospatial Web application for *sustainable urban planning*.
 
 For more information, visit the homepage of the [CRCSI "Greening the Greyfields"][gtg] project.
 
