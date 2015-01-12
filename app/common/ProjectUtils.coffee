@@ -64,25 +64,25 @@ incrementName = (name) ->
             createDf.resolve(newModelId)
     refDfs = []
     Q.all(createDfs).then(Meteor.bindEnvironment(
-        ->
-          _.each idMaps, (idMap, name) ->
-            collection = collectionMap[name]
-            _.each idMap, (newId, oldId) ->
-              newModel = collection.findOne(newId)
-              modifier = SchemaUtils.getRefModifier(newModel, collection, idMaps)
-              if Object.keys(modifier.$set).length > 0
-                refDf = Q.defer()
-                refDfs.push(refDf.promise)
-                collection.update newId, modifier, {validate: false}, (err, result) ->
-                  if err
-                    refDf.reject(err)
-                  else
-                    refDf.resolve(newId)
-          Q.all(refDfs).then(
-            -> df.resolve(idMaps)
-            # TODO(aramk) Remove added models on failure.
-            (err) -> df.reject(err)
-          )
+      ->
+        _.each idMaps, (idMap, name) ->
+          collection = collectionMap[name]
+          _.each idMap, (newId, oldId) ->
+            newModel = collection.findOne(newId)
+            modifier = SchemaUtils.getRefModifier(newModel, collection, idMaps)
+            if Object.keys(modifier.$set).length > 0
+              refDf = Q.defer()
+              refDfs.push(refDf.promise)
+              collection.update newId, modifier, {validate: false}, (err, result) ->
+                if err
+                  refDf.reject(err)
+                else
+                  refDf.resolve(newId)
+        Q.all(refDfs).then(
+          -> df.resolve(idMaps)
+          # TODO(aramk) Remove added models on failure.
+          (err) -> df.reject(err)
+        )
       )
       (err) -> df.reject(err)
     )
@@ -110,7 +110,13 @@ incrementName = (name) ->
     blob = Blobs.fromString(JSON.stringify(json), {type: 'application/json'})
     Blobs.downloadInBrowser(blob, 'project-' + id + '.json')
 
-  zoomTo: ->
+  zoomToEntities: ->
+    if Lots.findByProject().count() > 0
+      LotUtils.renderAllAndZoom()
+    else
+      @zoomToProject()
+
+  zoomToProject: ->
     projectId = Projects.getCurrentId()
     location = Projects.getLocationCoords(projectId)
     if location.latitude? and location.longitude?

@@ -66,15 +66,19 @@ This method will deploy the application to Meteor's free hosting service.
 
 ### Heroku
 
-This method will build the Node.js app and deploy it to [Heroku](https://heroku.com/). This requires
-that you have the [Heroku Toolbelt](https://toolbelt.heroku.com/) installed.
+This method will build the Node.js app and deploy it to [Heroku][heroku]. This requires
+that you have the [Heroku Toolbelt][toolbelt] installed.
 
     $ grunt deploy:heroku
 
 ### Modulus
 
 This method will deploy the application to [Modulus.io](https://modulus.io/), a Node.js app hosting
-platform-as-a-service. This doesn't use Grunt, and instead requires the
-[Modulus CLI tool](https://github.com/onmodulus/modulus-cli) to be installed.
+platform-as-a-service. This requires the [Modulus CLI tool][modulus-cli] to be installed.
 
-    $ modulus deploy
+    $ grunt deploy:modulus
+
+
+[heroku]: https://heroku.com/
+[toolbelt]: https://toolbelt.heroku.com/
+[modulus-cli]: https://github.com/onmodulus/modulus-cli

@@ -7,6 +7,7 @@ class @EvaluationEngine
 
   evaluate: (args) ->
     model = args.model
+    typologyClass = args.typologyClass
     changes = {}
     schemas = @getOutputParamSchemas(args.paramIds)
     project = args.project ? Projects.findOne(model.project) ? Projects.getCurrent()
@@ -30,10 +31,10 @@ class @EvaluationEngine
       schema = @getParamSchema(paramId)
       calc = schema.calc
       if Types.isString(calc)
-        calc = buildEvalFunc(expr: calc)
+        calc = buildEvalFunc(paramId: paramId, expr: calc)
         schema.calc = calc
       if Types.isFunction(calc)
-        addCalcContext(calc)
+        addCalcContext(paramId, calc)
         result = calc.call(calc.context)
         result = @sanitizeParamValue(paramId, result)
         # Store the calculated value to prevent calculating again.
@@ -59,14 +60,15 @@ class @EvaluationEngine
       funcBody = funcBody.replace(/(\w+)\s*\(/gi, 'this.$1(')
       funcBody = 'return ' + funcBody
       calc = new Function(funcBody)
-      addCalcContext(calc)
+      addCalcContext(args.paramId, calc)
       calc
 
-    addCalcContext = (calc) ->
+    addCalcContext = (paramId, calc) =>
+      schema = @getParamSchema(paramId)
       calc.context = _.defaults(_.extend(calc.context ? {}, {
         param: getValueOrCalc
         calc: (expr) ->
-          subcalc = buildEvalFunc(expr: expr)
+          subcalc = buildEvalFunc(paramId: paramId, expr: expr)
           subcalc.call(subcalc.context)
         paramId: paramId
         model: model
@@ -74,7 +76,10 @@ class @EvaluationEngine
       }), CalcContext)
 
     # Go through output parameters and calculate them recursively.
-    for paramId, schema of schemas
+    _.each schemas, (schema, paramId) ->
+      classOptions = schema.classes
+      # Ignore schema if field doesn't allow typology class.
+      return if typologyClass? && classOptions? && !classOptions[typologyClass]
       # TODO(aramk) Detect cycles and throw exceptions to prevent infinite loops.
       try
         result = getValueOrCalc(paramId)

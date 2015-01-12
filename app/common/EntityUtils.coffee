@@ -8,7 +8,8 @@ _.extend EntityUtils,
 
   evaluate: (entity, paramIds) ->
     paramIds = if Types.isArray(paramIds) then paramIds else [paramIds]
-    evalEngine.evaluate(model: entity, paramIds: paramIds)
+    typologyClass = Entities.getTypologyClass(entity)
+    evalEngine.evaluate(model: entity, paramIds: paramIds, typologyClass: typologyClass)
 
 if Meteor.isClient
 
@@ -36,7 +37,7 @@ if Meteor.isClient
             borderColor: '#666'
         if typologyClass == 'PATHWAY'
           widthParamId = 'space.width'
-          evalEngine.evaluate(model: entity, paramIds: [widthParamId])
+          evalEngine.evaluate(model: entity, paramIds: [widthParamId], typologyClass: typologyClass)
           args.width = SchemaUtils.getParameterValue(entity, widthParamId)
           args.style.fillColor = '#000'
           displayMode = 'line'

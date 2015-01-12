@@ -11,6 +11,7 @@ ReportTemplates = [
   'precinctReport'
 ]
 
+TemplateClass = Template.reportPanel
 reportPanelTemplate = null
 currentReportId = new ReactiveVar(null)
 currentReportTemplate = null
@@ -109,7 +110,7 @@ clearPanel = ->
   if currentReportTemplate
     Templates.getElement(currentReportTemplate).remove()
 
-Template.reportPanel.created = ->
+TemplateClass.created = ->
   reportPanelTemplate = @
   @data ?= {}
   reports = Collections.createTemporary()
@@ -124,7 +125,7 @@ Template.reportPanel.created = ->
       console.debug('entity/selection/change', @, arguments)
       refreshReport()
 
-Template.reportPanel.rendered = ->
+TemplateClass.rendered = ->
   $reportPanelContent = @$('.content')
   $reportDropdown = getReportsDropdown()
   clearPanel()
@@ -142,9 +143,19 @@ Template.reportPanel.rendered = ->
     # dropdown to become "" and so forth.
     id = Template.dropdown.getValue($reportDropdown) || null
     currentReportId.set(id)
-  @autorun -> refreshReport()
+  # Refresh report on changes to the current report. Don't render the report until told to so
+  # Atlas entities are rendered beforehand and GFA can be calculated.
+  shouldRun = false
+  @autorun ->
+    id = currentReportId.get()
+    return unless shouldRun
+    refreshReport()
+  shouldRun = true
 
-Template.reportPanel.helpers
+TemplateClass.destroyed = ->
+  currentReportId.set(null)
+
+TemplateClass.helpers
   reports: -> reports
 
 getRefreshButton = -> reportPanelTemplate.$('.refresh.button')

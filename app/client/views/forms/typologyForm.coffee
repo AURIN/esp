@@ -143,13 +143,16 @@ Meteor.startup ->
         Template.dropdown.setValue($subclass, null)
         updateFields.call(@)
         preventSubclassChange = false
-      $subclass.on 'change', =>
+      # Prevent dropdown from triggering value changes when updating fields when the value has not
+      # actually changed.
+      onSubClassChange = =>
         return if preventSubclassChange
         preventSubclassChange = true
         # Prevent updating the subclass collection which will result in unnecessary updates and
         # delays.
         updateFields.call(@, {populateSubclasses: false})
         preventSubclassChange = false
+      $subclass.on 'change', _.throttle(onSubClassChange, 1000, {trailing: false})
       doc = @data.doc
       updateFieldsArgs = {}
       # Since subclass is used to determine values, pass in the doc value initially since the input

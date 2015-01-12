@@ -140,8 +140,10 @@ Meteor.startup -> resetRenderQueue()
       args =
         id: id
         vertices: space.geom_2d
-        height: space.height
         displayMode: displayMode
+      height = space.height
+      if height?
+        args.height = height
       if typologyClass == 'OPEN_SPACE' && lot.entity?
         # If the lot is an Open Space with an entity, render it with a check pattern to show it
         # has an entity allocated.
@@ -196,10 +198,7 @@ Meteor.startup -> resetRenderQueue()
     Q.all(lotRenderDfs)
 
   renderAllAndZoom: ->
-    if Lots.findByProject().count() != 0
-      @renderAll().then => @_zoomToEntities()
-    else
-      ProjectUtils.zoomTo()
+    @renderAll().then => @_zoomToEntities()
 
   _zoomToEntities: ->
     ids = _.map Lots.findByProject().fetch(), (entity) -> entity._id
@@ -367,26 +366,32 @@ Meteor.startup -> resetRenderQueue()
     WKT.getWKT (wkt) ->
       require [
         'subdiv/AlignmentCalculator',
-        'subdiv/PointGeometry',
-        'subdiv/Polygon'
-      ], (AlignmentCalculator, PointGeometry, Polygon) ->
+        'subdiv/Polygon',
+        'subdiv/util/GeographicUtil'
+      ], (AlignmentCalculator, Polygon, GeographicUtil) ->
         polyMap = {}
         polygons = Lots.findByProject().map (lot) ->
           geom_2d = SchemaUtils.getParameterValue(lot, 'space.geom_2d')
           vertices = wkt.verticesFromWKT(geom_2d)[0]
-          polyMap[lot._id] = new Polygon(vertices)
-        PointGeometry.localizeMany(polygons)
+          polygon = new Polygon(vertices).smoothPoints()
+          GeographicUtil.localizePointGeometry(polygon)
+          polyMap[lot._id] = polygon
         
         alignCalc = new AlignmentCalculator(polygons)
         entityDfs = []
         _.each alignLots, (alignLot) ->
           polygon = polyMap[alignLot._id]
           angle = alignCalc.getStreetInfo(polygon)?.angle
-          return if !angle
-          # Ensure 0 degrees is facing south - the assumed direction of the front of the typology.
-          angle -= 90
+          return unless angle?
+          # 0 degrees is north-facing according to typologies. SubDiv assumes 0 degrees to be east.
+          # We must subtract 90 degrees to convert from SubDiv to the typology's 0 degree. The front
+          # of the typology is assumed to be south, so we must add 180 degrees. Hence, we have a net
+          # change of 90 degrees.
+          angle += 90
           entityDf = Q.defer()
           entityDfs.push(entityDf.promise)
+          # Convert the angle from counter-clockwise to clockwise.
+          angle = 360 - angle
           Entities.update alignLot.entity,
             {$set: 'parameters.orientation.azimuth': angle}, (err, result) ->
               if err then entityDf.reject(err) else entityDf.resolve(result)

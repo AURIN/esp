@@ -171,7 +171,6 @@ forEachCategoriesField = (categories, callback) ->
 descSchema =
   label: 'Description'
   type: String
-  optional: true
 
 VktRailTypes =
   rail0_400:
@@ -814,68 +813,80 @@ projectCategories =
     items:
       trips:
         label: 'Daily Trips per Dwelling'
+        desc: 'Mean daily trips per dwelling.'
         type: Number
         decimal: true
         units: 'trips/dwelling'
         defaultValue: 10.7
       age:
         label: 'Mean Age'
+        desc: 'Mean resident age.'
         type: Number
         decimal: true
         units: Units.years
         defaultValue: 38
       gender:
         label: 'Share Female Residents'
+        desc: 'Share of female residents.'
         type: Number
         decimal: true
         defaultValue: 0.52
       hhsize:
         label: 'Household Size'
+        desc: 'Mean household size.'
         type: Number
         decimal: true
         units: Units.people
         defaultValue: 2.6
       totalvehs:
         label: 'Vehicles per Household'
+        desc: 'Mean vehicles per household.'
         type: Number
         decimal: true
         units: Units.vehicles
         defaultValue: 1.8
       hhinc_grp:
         label: 'Household Income Group'
+        desc: 'Mean household income earning group. Range is 1 to 5 with 5 earning the highest income.'
         type: Number
         decimal: true
         defaultValue: 3.3
       distctr:
         label: 'Distance to Activity Centre'
+        desc: 'Mean street network distance to the nearest CBD or major centre.'
         type: Number
         decimal: true
         units: Units.km
         defaultValue: 6.3
       railprox:
         label: 'Proximity to Rail'
+        desc: 'Proximity band measuring street network distance to nearest train station or tram corridor.'
         type: String
         units: Units.km
         defaultValue: 'railgt_1600'
         allowedValues: Object.keys(VktRailTypes)
       distbus:
         label: 'Distance to Bus Stop'
+        desc: 'Mean street network distance to the nearest standard bus stop.'
         type: Number
         decimal: true
         units: Units.km
         defaultValue: 0.4
       lum_index:
         label: 'LUM Index'
+        desc: 'Mean land use mix within a 1600m street network walking catchment. Range is 0 to 1 with 1 being the most mixed.'
         type: Number
         decimal: true
         defaultValue: 0.38
       density:
         label: 'Density'
+        desc: 'Mean housing density within a 1600m street network walking catchment.'
         type: Number
         decimal: true
         defaultValue: 21.8
       towork:
         label: 'Share of Work Trips'
+        desc: 'Share of trips made as commuting trips to work.'
         type: Number
         decimal: true
         defaultValue: 0.22
@@ -988,7 +999,7 @@ TypologyClasses = Object.freeze({
     displayMode: false
   PATHWAY:
     name: 'Pathway'
-    color: 'black'
+    color: '#333'
     abbr: 'pw'
     displayMode: 'line'
     canAllocateToLot: false
@@ -1021,8 +1032,8 @@ extendClassMap = (args, map) ->
   Setter.merge(Setter.clone(map), args)
 extendBuildingClasses = (args) -> extendClassMap(args, BuildingClasses)
 extendClassesWithDefault = (classArgs, defaultValue) ->
-  classArgs.ALL ?= {}
-  classArgs.ALL.defaultValue = defaultValue
+  _.each classArgs, (args, classId) ->
+    args.defaultValue = defaultValue
   classArgs
 
 LandClasses = Object.freeze(extendClassMap(OPEN_SPACE: {}, BuildingClasses))
@@ -1486,6 +1497,10 @@ typologyCategories =
         type: Number
         units: Units.jobs
         calc: '$space.gfa_t / $space.job_intensity'
+        classes:
+          COMMERCIAL: {}
+          INSTITUTIONAL: {}
+          MIXED_USE: {}
       num_0br:
         label: 'Dwellings - Studio'
         desc: 'Number of studio units in the typology.'
@@ -2026,6 +2041,7 @@ typologyCategories =
         type: Number
         decimal: true
         units: Units.kgco2year
+        classes: BuildingClasses
         calc: ->
           if classHasIntensity(Entities.getTypologyClass(@model))
             @calc('$operating_carbon.co2_op_e + $operating_carbon.co2_op_g')
@@ -2232,8 +2248,12 @@ typologyCategories =
         decimal: true
         units: Units.kLyear
         calc: ->
-          if classHasIntensity(Entities.getTypologyClass(@model))
+          typologyClass = Entities.getTypologyClass(@model)
+          if classHasIntensity(typologyClass)
             i_wu_pot = @param('water_demand.i_wu_total')
+          else if typologyClass == 'OPEN_SPACE'
+            # Open space has no internal water usage component.
+            i_wu_pot = 0
           else
             i_wu_pot = @param('water_demand.i_wu_pot')
           i_wu_pot + @param('water_demand.e_wu_pot')
@@ -2281,7 +2301,6 @@ typologyCategories =
       cost_land:
         label: 'Cost - Land Parcel'
         type: Number
-        decimal: true
         desc: 'Value of the parcel of land.'
         units: Units.$
         calc: -> @param('space.lotsize') * calcLandPrice.call(@)
@@ -2331,8 +2350,8 @@ typologyCategories =
         label: 'Cost - Electricity Usage'
         desc: 'Operating costs due to electricity usage.'
         type: Number
-        decimal: true
         units: Units.$
+        classes: BuildingClasses
         calc: ->
           if classHasIntensity(Entities.getTypologyClass(@model))
             calcEnergyWithIntensityCost.call(@, 'elec', 'e')
@@ -2342,8 +2361,8 @@ typologyCategories =
         label: 'Cost - Gas Usage'
         desc: 'Operating costs due to gas usage.'
         type: Number
-        decimal: true
         units: Units.$
+        classes: BuildingClasses
         calc: ->
           if classHasIntensity(Entities.getTypologyClass(@model))
             calcEnergyWithIntensityCost.call(@, 'gas', 'g')
@@ -2353,14 +2372,12 @@ typologyCategories =
         label: 'Cost - Water Usage'
         desc: 'Operating costs due to water usage.'
         type: Number
-        decimal: true
         units: Units.$
         calc: '$utilities.price_supply_water + $water_demand.wu_pot_tot * $utilities.price_usage_water'
       cost_op_t:
         label: 'Cost - Total Operating'
         desc: 'Total operating cost of the typology including electricity and gas usage.'
         type: Number
-        decimal: true
         units: Units.$
         calc: '$financial.cost_op_e + $financial.cost_op_g + $financial.cost_op_w'
       pathways:
@@ -2449,12 +2466,14 @@ typologyCategories =
         type: String
         classes: extendBuildingClasses
           COMMERCIAL: false
+          MIXED_USE: false
       eq_azmth_c:
         label: 'Azimuth Cooling Energy Array'
         desc: 'Equation to predict cooling energy use as a function of degrees azimuth.'
         type: String
         classes: extendBuildingClasses
           COMMERCIAL: false
+          MIXED_USE: false
   parking:
     label: 'Parking'
     items:
@@ -2477,12 +2496,16 @@ typologyCategories =
         type: Number
         units: Units.spaces
         calc: '$space.ext_land_i * $parking.parking_land / $parking.prk_area_veh'
+        classes: extendBuildingClasses
+          PATHWAY: {}
       parking_t:
         label: 'Parking Spaces - Total'
         desc: 'Total number of parking spaces.'
         type: Number
         units: Units.spaces
         calc: '$parking.parking_ga + $parking.parking_sl + $parking.parking_ug'
+        classes: extendBuildingClasses
+          PATHWAY: {}
       parking_rd:
         label: 'Parking Spaces per Metre'
         desc: 'Number of parking spaces per metre length of pathway.'
@@ -2731,6 +2754,20 @@ typologyCategories =
         decimal: true
         units: Units.kgco2day
         calc: '$transport.ghg_household_day * 365'
+      ghg_dwellings_day:
+        label: 'GHG total Dwellings'
+        desc: 'Greenhouse gas emissions for all dwellings per day.'
+        type: Number
+        decimal: true
+        units: Units.kgco2day
+        calc: '$transport.ghg_household_day * $space.dwell_tot'
+      ghg_dwellings_year:
+        label: 'GHG per Household'
+        desc: 'Greenhouse gas emissions per household per year.'
+        type: Number
+        decimal: true
+        units: Units.kgco2day
+        calc: '$transport.ghg_dwellings_day * 365'
       ghg_person_year:
         label: 'GHG per Resident'
         desc: 'Greenhouse gas emissions per resident per year.'
@@ -2861,8 +2898,8 @@ TypologySchema = new SimpleSchema
     desc: 'The full name of the typology.'
     type: String
     index: true
-  desc: extendSchema(descSchema,
-    {desc: 'A detailed description of the typology, including a summary of the materials and services provided.'})
+  desc: extendSchema descSchema,
+    desc: 'A detailed description of the typology, including a summary of the materials and services provided.'
   parameters:
     label: 'Parameters'
     type: ParametersSchema
@@ -2914,6 +2951,8 @@ Typologies.getBuildTypeItems = (typologyClass, subclass) ->
   if Types.isFunction(allowedValues)
     allowedValues = allowedValues(typologyClass: typologyClass, subclass: subclass)
   _.map allowedValues, (value) -> {_id: value, name: value}
+
+Typologies.getRailTypeItems = -> _.map VktRailTypes, (item, id) -> {_id: id, name: item.label}
 
 # TODO(aramk) Move to objects util.
 Typologies.getModifierProperty = (obj, property) ->
@@ -3064,12 +3103,12 @@ lotCategories =
         desc: 'Whether the lot can be used for development.'
         defaultValue: true
   space:
-    optional: false
     items:
       geom_2d:
         label: 'Geometry'
         type: String,
         desc: '3D Geometry of the lot envelope.'
+        optional: false
       height: extendSchema(heightSchema,
         {label: 'Allowable Height', desc: 'The maximum allowable height for structures in this lot.'})
       area: areaSchema
@@ -3082,7 +3121,8 @@ LotSchema = new SimpleSchema
     label: 'Name'
     type: String
     desc: 'The full name of the lot.'
-  desc: descSchema
+  desc: extendSchema descSchema,
+    optional: true
   entity:
     label: 'Entity'
     type: String
@@ -3305,7 +3345,8 @@ EntitySchema = new SimpleSchema
     label: 'Name'
     type: String
     index: true
-  desc: descSchema
+  desc: extendSchema descSchema,
+    optional: true
   typology:
     label: 'Typology'
     type: String

@@ -14,7 +14,7 @@ Meteor.startup ->
       {param: 'space.extland'}
       {param: 'space.fpa'}
       {param: 'space.gfa_t'}
-      {param: 'space.plot_ratio'}
+      {param: 'space.plot_ratio', aggregate: 'average'}
       {param: 'space.dwell_dens', aggregate: 'average'}
       {param: 'space.dwell_tot'}
       {param: 'space.occupants'}

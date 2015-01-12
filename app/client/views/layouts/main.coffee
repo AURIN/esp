@@ -10,4 +10,4 @@ Template.mainLayout.events
   'click .header .edit.button': ->
     Template.design.addFormPanel null, Template.projectForm, Projects.getCurrent()
   'click .header .import.button': -> Template.design.addFormPanel null, Template.importForm
-  'click .header .zoom.button': -> LotUtils.renderAllAndZoom()
+  'click .header .zoom.button': -> ProjectUtils.zoomToEntities()
