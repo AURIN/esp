@@ -11,6 +11,7 @@ bower_components
 /dist
 /dist_tmp
 /heroku
+/site
 *.sublime-workspace
 
 # Compiled source #
