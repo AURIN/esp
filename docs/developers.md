@@ -4,7 +4,7 @@ This guide is intended to walk developers through the process of building and de
 application.
 
 
-## Installation
+## Local Installation
 
 Install [Node.js](http://nodejs.org/) and NPM (Node Package Manager).
 
@@ -20,7 +20,11 @@ Install [Meteorite](https://github.com/oortcloud/meteorite/):
 
     $ npm install -g meteorite
 
-Run the following:
+Check out the `aurin-esp` code into a project directory:
+
+    $ git clone https://github.com/urbanetic/aurin-esp.git && cd aurin-esp
+
+Run the following in the `aurin-esp` directory to install dependencies:
 
     $ npm install
     $ grunt install
@@ -38,6 +42,8 @@ To build a distributable Meteor app in `dist/`:
 
     $ grunt build
 
+This generates a standard Node.js app, which can be deployed in a variety of ways.
+
 
 ## Deployment
 
@@ -47,16 +53,28 @@ Deployment settings are found in `Gruntfile.js`.
 
 ### Local
 
+This method will build the Node.js app and run it locally, expecting a MongoDB instance to be
+running on `localhost:27017`.
+
     $ grunt deploy:local
-
-### Heroku
-
-    $ grunt deploy:heroku
 
 ### meteor.com
 
+This method will deploy the application to Meteor's free hosting service.
+
     $ grunt deploy:meteor
 
+### Heroku
+
+This method will build the Node.js app and deploy it to [Heroku](https://heroku.com/). This requires
+that you have the [Heroku Toolbelt](https://toolbelt.heroku.com/) installed.
+
+    $ grunt deploy:heroku
+
 ### Modulus
+
+This method will deploy the application to [Modulus.io](https://modulus.io/), a Node.js app hosting
+platform-as-a-service. This doesn't use Grunt, and instead requires the
+[Modulus CLI tool](https://github.com/onmodulus/modulus-cli) to be installed.
 
     $ modulus deploy
