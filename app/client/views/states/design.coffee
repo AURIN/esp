@@ -4,7 +4,6 @@ templateInstance = null
 TemplateClass = Template.design
 
 displayModesCollection = null
-#_nonDevExtrusionModeId = '_nonDevExtrusion'
 @DisplayModes =
   footprint: 'Footprint'
   extrusion: 'Extrusion'
@@ -312,7 +311,7 @@ TemplateClass.onAtlasLoad = (template, atlas) ->
 
   # Listen to selections in tables.
   tables = [getEntityTable(template), getLotTable(template)]
-  # Prevent bulk selections of entities when selecting the typology table from needlessly triggering
+# Prevent bulk selections of entities when selecting the typology table from needlessly triggering
   # the table event handlers below or causing infinite loops.
   tableSelectionEnabled = true
   _.each tables, ($table) ->
@@ -323,12 +322,13 @@ TemplateClass.onAtlasLoad = (template, atlas) ->
   # Clicking on a typology selects all entities of that typology.
   $typologyTable = getTypologyTable(template)
   getEntityIdsByTypologyId = (typologyId) ->
-    _.map Entities.find(typology: typologyId).fetch(), (entity) -> entity._id
+    _.map Entities.findByTypology(typologyId).fetch(), (entity) -> entity._id
   $typologyTable.on 'select', (e, id) ->
     tableSelectionEnabled = false
     atlas.publish('entity/select', ids: getEntityIdsByTypologyId(id))
     # Hide all popups so they don't obsruct the entities.
     _.each atlas._managers.popup.getPopups(), (popup) -> popup.hide()
+    tableSelectionEnabled = true
   $typologyTable.on 'deselect', (e, id) ->
     tableSelectionEnabled = false
     atlas.publish('entity/deselect', ids: getEntityIdsByTypologyId(id))
@@ -339,15 +339,13 @@ TemplateClass.onAtlasLoad = (template, atlas) ->
     tableSelectionEnabled = false
     ids = _.map args.ids, (id) -> resolveModelId(id)
     $table = getTable(ids[0])
-    return unless $table
-    Template.collectionTable.addSelection($table, ids)
+    Template.collectionTable.addSelection($table, ids) if $table
     tableSelectionEnabled = true
   atlas.subscribe 'entity/deselect', (args) ->
     tableSelectionEnabled = false
     ids = _.map args.ids, (id) -> resolveModelId(id)
     $table = getTable(ids[0])
-    return unless $table
-    Template.collectionTable.removeSelection($table, ids)
+    Template.collectionTable.removeSelection($table, ids) if $table
     tableSelectionEnabled = true
 
   # Listen to double clicks from Atlas.
