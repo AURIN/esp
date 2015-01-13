@@ -65,5 +65,18 @@ Meteor.startup ->
           }, {validate: false})
       console.log('Migrated', migratedModelCount, 'models by adding description field.')
 
+  Migrations.add
+    version: 5
+    up: ->
+      migratedModelCount = 0
+      # Add Project#isTenplate as false.
+      Projects.find().forEach (model) ->
+        return if model.isTemplate?
+        migratedModelCount += Projects.update(model._id, {
+          $set:
+            isTemplate: false
+        }, {validate: false})
+      console.log('Migrated', migratedModelCount, 'projects by adding isTemplate field.')
+
   console.log('Migrating to latest version...')
   Migrations.migrateTo('latest')

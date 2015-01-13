@@ -44,6 +44,7 @@ Meteor.startup ->
           setSelectValue($input, inputValue)
 
   Form.helpers
+    isAdmin: -> AuthUtils.isAdmin()
     project: -> Projects.getCurrentId()
     railTypes: -> Typologies.getRailTypeItems()
 
