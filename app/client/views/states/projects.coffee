@@ -53,7 +53,7 @@ TemplateClass.rendered = ->
   $btnTemplates.state()
   $btnTemplates.on 'click', =>
     @showTemplates.set(!@showTemplates.get())
-  $buttons.before($btnTemplates)
+  $buttons.after($btnTemplates)
   
   @autorun =>
     showTemplates = @showTemplates.get()
