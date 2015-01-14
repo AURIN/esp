@@ -676,7 +676,7 @@ projectCategories =
             type: Number
             decimal: true
             units: Units.kgco2m2
-            defaultValue: -20
+            defaultValue: -2
           impermeable:
             label: 'Impermeable'
             type: Number
@@ -1002,7 +1002,7 @@ TypologyClasses = Object.freeze({
         color: '#e53b3b'
   MIXED_USE:
     name: 'Mixed Use'
-    color: '#d95f0e' # Orange
+    color: '#756bb1' # Purple
     abbr: 'mu'
   OPEN_SPACE:
     name: 'Open Space'
@@ -1018,17 +1018,17 @@ TypologyClasses = Object.freeze({
     subclasses: ['Freeway', 'Highway', 'Street', 'Footpath', 'Bicycle Path']
   INSTITUTIONAL:
     name: 'Institutional'
-    color: '#756bb1' # Purple
+    color: '#ffae00' # Orange
     abbr: 'i'
     subclasses:
       'School':
-        color: '#756bb1'
+        color: '#ffae00'
       'Tertiary':
-        color: '#a1589b'
+        color: '#ffd200'
       'Hospital':
-        color: '#8e42a1'
+        color: '#ffc63d'
       'Public':
-        color: '#8958a1'
+        color: '#e4ff00'
 })
 
 BuildingClasses = Object.freeze({
@@ -2764,7 +2764,7 @@ typologyCategories =
         desc: 'Greenhouse gas emissions per household per year.'
         type: Number
         decimal: true
-        units: Units.kgco2day
+        units: Units.kgco2year
         calc: '$transport.ghg_household_day * 365'
       ghg_dwellings_day:
         label: 'GHG total Dwellings'
@@ -2778,14 +2778,14 @@ typologyCategories =
         desc: 'Greenhouse gas emissions per household per year.'
         type: Number
         decimal: true
-        units: Units.kgco2day
+        units: Units.kgco2year
         calc: '$transport.ghg_dwellings_day * 365'
       ghg_person_year:
         label: 'GHG per Resident'
         desc: 'Greenhouse gas emissions per resident per year.'
         type: Number
         decimal: true
-        units: Units.kgco2day
+        units: Units.kgco2year
         calc: '$transport.ghg_person_day * 365'
       # MODE SHARE MODEL
       exp_vehpass:

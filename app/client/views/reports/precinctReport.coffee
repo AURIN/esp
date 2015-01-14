@@ -13,7 +13,7 @@ Meteor.startup ->
       {param: 'space.jobs', label: 'Total Jobs'}
 
       {title: 'Energy Demand'}
-      {param: 'financial.cost_op_e', label: 'Total Operating'}
+      {param: 'energy_demand.en_total', label: 'Total Operating'}
 
       {title: 'Embodied Carbon'}
       {param: 'embodied_carbon.t_co2_emb', label: 'Total Embodied'}
