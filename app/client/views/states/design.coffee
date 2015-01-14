@@ -372,6 +372,89 @@ TemplateClass.onAtlasLoad = (template, atlas) ->
     id
 
   ##################################################################################################
+  # DRAWING
+  ##################################################################################################
+
+  # Selecting typologies in the table shows and hides the draw button for pathways.
+  $typologyTable = getTypologyTable(template)
+  $pathwayDrawButton = getPathwayDrawButton(template)
+  
+  getSelectedTypology = ->
+    selectedIds = Template.collectionTable.getSelectedIds($typologyTable)
+    return null if selectedIds.length < 1
+    Typologies.findOne(selectedIds[0])
+
+  getSelectedPathwayTypology = ->
+    typology = getSelectedTypology()
+    return null unless typology?
+    typologyClass = Typologies.getTypologyClass(typology._id)
+    if typologyClass == 'PATHWAY' then typology else null
+
+  onTypologySelectionChange = ->
+    selectedIds = Template.collectionTable.getSelectedIds($typologyTable)
+    # Currently only a single pathway can be selected for drawing.
+    typology = getSelectedPathwayTypology()
+    $pathwayDrawButton.toggle(typology?)
+
+  $typologyTable.on 'select deselect', onTypologySelectionChange
+  onTypologySelectionChange()
+
+  stopDrawing = -> atlas.publish('entity/draw/stop')
+
+  $pathwayDrawButton.on 'click', ->
+    isActive = $pathwayDrawButton.hasClass('active')
+    startDrawing = ->
+      stopDrawing()
+      atlas.publish 'entity/draw', {
+        displayMode: 'line'
+        init: (args) -> args.feature.setElevation(2)
+        create: (args) ->
+          typology = getSelectedPathwayTypology()
+          subclass = SchemaUtils.getParameterValue(typology, 'general.subclass')
+          # TODO(aramk) Generate an incremented name.
+          name = subclass
+          feature = args.feature
+          id = feature.getId()
+          vertices = feature.getForm().getVertices()
+          AtlasManager.unrenderEntity(id)
+          if vertices.length > 2 || (vertices.length == 2 && !vertices[0].equals(vertices[1]))
+            WKT.polylineFromVertices vertices, (wktStr) ->
+              Entities.insert
+                name: name
+                typology: typology._id
+                project: Projects.getCurrentId()
+                parameters:
+                  space:
+                    geom_2d: wktStr
+          # Continue drawing if the button is active.
+          isActive = $pathwayDrawButton.hasClass('active')
+          startDrawing() if isActive
+        update: (args) -> args.feature.getHandles().forEach (handle) -> handle.setElevation(4)
+        cancel: (args) ->
+          console.debug('Drawing cancelled', arguments)
+          feature = args.feature
+          id = feature.getId()
+          AtlasManager.unrenderEntity(id)
+          $pathwayDrawButton.removeClass('active')
+      }
+    if isActive
+      startDrawing()
+    else
+      atlas.publish('entity/draw/stop', {validate: false})
+
+  editGeoEntity = (id) ->
+    atlas.publish('edit/disable')
+    atlas.publish('edit/enable', {
+      ids: [id]
+      complete: ->
+        feature = AtlasManager.getEntity(id)
+        WKT.featureToWkt feature, (wktStr) ->
+          Entities.update id, {$set: {'parameters.space.geom_2d': wktStr}}, (err, result) ->
+            refreshEntity(id)
+      cancel: -> refreshEntity(id)
+    })
+
+  ##################################################################################################
   # AMALGAMATION & SUBDIVISION
   ##################################################################################################
 
@@ -387,6 +470,7 @@ TemplateClass.onAtlasLoad = (template, atlas) ->
     ids = AtlasManager.getSelectedLots()
     
     startDrawing = ->
+      stopDrawing()
       # Ensure lots are displayed as footprints.
       Session.set('lotDisplayMode', 'footprint')
       atlas.publish 'entity/draw', {
@@ -399,12 +483,13 @@ TemplateClass.onAtlasLoad = (template, atlas) ->
           AtlasManager.unrenderEntity(id)
           LotUtils.subdivide(ids, vertices).fin(cancelSubdivision)
         update: (args) -> args.feature.getHandles().forEach (handle) -> handle.setElevation(4)
-        cancel: ->
+        cancel: (args) ->
           console.debug('Drawing cancelled', arguments)
           feature = args.feature
           id = feature.getId()
           AtlasManager.unrenderEntity(id)
           cancelSubdivision()
+          $subdivideButton.removeClass('active')
       }
 
     isActive = $subdivideButton.hasClass('active')
@@ -467,83 +552,4 @@ TemplateClass.onAtlasLoad = (template, atlas) ->
     $amalgamateButton.toggle(idCount > 1)
     $subdivideButton.toggle(idCount > 0)
     $alignmentButton.toggle(idCount > 0)
-
-  ##################################################################################################
-  # DRAWING
-  ##################################################################################################
-
-  # Selecting typologies in the table shows and hides the draw button for pathways.
-  $typologyTable = getTypologyTable(template)
-  $pathwayDrawButton = getPathwayDrawButton(template)
-  
-  getSelectedTypology = ->
-    selectedIds = Template.collectionTable.getSelectedIds($typologyTable)
-    return null if selectedIds.length < 1
-    Typologies.findOne(selectedIds[0])
-
-  getSelectedPathwayTypology = ->
-    typology = getSelectedTypology()
-    return null unless typology?
-    typologyClass = Typologies.getTypologyClass(typology._id)
-    if typologyClass == 'PATHWAY' then typology else null
-
-  onTypologySelectionChange = ->
-    selectedIds = Template.collectionTable.getSelectedIds($typologyTable)
-    # Currently only a single pathway can be selected for drawing.
-    typology = getSelectedPathwayTypology()
-    $pathwayDrawButton.toggle(typology?)
-
-  $typologyTable.on 'select deselect', onTypologySelectionChange
-  onTypologySelectionChange()
-
-  $pathwayDrawButton.on 'click', ->
-    isActive = $pathwayDrawButton.hasClass('active')
-    startDrawing = ->
-      atlas.publish 'entity/draw', {
-        displayMode: 'line'
-        init: (args) -> args.feature.setElevation(2)
-        create: (args) ->
-          typology = getSelectedPathwayTypology()
-          subclass = SchemaUtils.getParameterValue(typology, 'general.subclass')
-          # TODO(aramk) Generate an incremented name.
-          name = subclass
-          feature = args.feature
-          id = feature.getId()
-          vertices = feature.getForm().getVertices()
-          AtlasManager.unrenderEntity(id)
-          if vertices.length > 2 || (vertices.length == 2 && !vertices[0].equals(vertices[1]))
-            WKT.polylineFromVertices vertices, (wktStr) ->
-              Entities.insert
-                name: name
-                typology: typology._id
-                project: Projects.getCurrentId()
-                parameters:
-                  space:
-                    geom_2d: wktStr
-          # Continue drawing if the button is active.
-          isActive = $pathwayDrawButton.hasClass('active')
-          startDrawing() if isActive
-        update: (args) -> args.feature.getHandles().forEach (handle) -> handle.setElevation(4)
-        cancel: ->
-          console.debug('Drawing cancelled', arguments)
-          feature = args.feature
-          id = feature.getId()
-          AtlasManager.unrenderEntity(id)
-      }
-    if isActive
-      startDrawing()
-    else
-      atlas.publish('entity/draw/stop', {validate: false})
-
-  editGeoEntity = (id) ->
-    atlas.publish('edit/disable')
-    atlas.publish('edit/enable', {
-      ids: [id]
-      complete: ->
-        feature = AtlasManager.getEntity(id)
-        WKT.featureToWkt feature, (wktStr) ->
-          Entities.update id, {$set: {'parameters.space.geom_2d': wktStr}}, (err, result) ->
-            refreshEntity(id)
-      cancel: -> refreshEntity(id)
-    })
 
