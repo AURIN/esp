@@ -908,11 +908,17 @@ ProjectSchema = new SimpleSchema
     label: 'Parameters'
     type: ProjectParametersSchema
     defaultValue: {}
+  isTemplate:
+    label: 'Template?'
+    type: Boolean
+    defaultValue: false
 
 @Projects = new Meteor.Collection 'projects', schema: ProjectSchema
 Projects.attachSchema(ProjectSchema)
 Projects.allow(Collections.allowAll())
-AccountsAurin.addCollectionAuthorization(Projects)
+AccountsAurin.addCollectionAuthorization Projects,
+  # A user has access to their own projects as well as any templates.
+  userSelector: (args) -> {$or: [{author: args.username}, {isTemplate: true}]}
 
 hasSession = typeof Session != 'undefined'
 Projects.setCurrentId = (id) -> Session.set('projectId', id) if hasSession
@@ -953,6 +959,12 @@ Projects.getDefaultParameterValues = _.memoize ->
 Projects.mergeDefaults = (model) ->
   defaults = Projects.getDefaultParameterValues()
   mergeDefaultParameters(model, defaults)
+
+# Template Projects
+
+Projects.before.insert = (userId, doc) ->
+  if doc.isTemplate && !AuthUtils.isAdmin(userId)
+    throw new Error('Only admin user can create template project.')
 
 ####################################################################################################
 # TYPOLOGY SCHEMA DECLARATION

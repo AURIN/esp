@@ -7,6 +7,9 @@
           {{#autoForm collection=collection id=formName doc=doc type=formType}}
           {{> afQuickField name="name"}}
           {{> afQuickField name="desc"}}
+          {{#if isAdmin}}
+            {{> afQuickField name="isTemplate"}}
+          {{/if}}
 
           <div class="subtitle">Location</div>
           {{> afQuickField name="parameters.location.country" options="allowed"}}
