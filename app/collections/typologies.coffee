@@ -3205,16 +3205,20 @@ Lots.createEntity = (args) ->
   allowReplace = args.allowReplace
   df = Q.defer()
   lot = Lots.findOne(lotId)
-  if lot.entity && !allowReplace
-    throw new Error('Cannot replace entity on existing Lot with ID ' + lotId)
   typology = Typologies.findOne(typologyId)
   if !lot
     throw new Error('No Lot with ID ' + id)
   else if !typology
     throw new Error('No Typology with ID ' + typologyId)
-  # TODO(aramk) Need a warning?
-  #  else if lot.entity?
-  #    throw new Error('Lot with ID ' + id + ' already has entity')
+  oldEntityId = lot.entity
+  oldTypologyId = oldEntityId && Entities.findOne(oldEntityId).typology
+  newTypologyId = typology._id
+  if oldEntityId && !allowReplace
+    throw new Error('Cannot replace entity on existing Lot with ID ' + lotId)
+  else if newTypologyId && oldTypologyId && oldTypologyId == newTypologyId
+    # Prevent creating a new entity if the same typology as the existing is specified.
+    df.resolve(oldEntityId)
+    return df.promise
   classParamId = 'parameters.general.class'
   developParamId = 'parameters.general.develop'
   lotClass = SchemaUtils.getParameterValue(lot, classParamId)
@@ -3248,29 +3252,23 @@ Lots.createEntity = (args) ->
       lotModifier[developParamId] = isForDevelopment
       Lots.update lotId, {$set: lotModifier}, (err, result) ->
         if err
+          # Remove the newly created entity if the lot could not be updated.
           Entities.remove newEntityId, (removeErr, result) ->
             if removeErr
               df.reject(removeErr)
             else
               df.reject(err)
         else
-          df.resolve(newEntityId)
+          # Remove the existing entity (if any) when replacing.
+          if allowReplace && oldEntityId
+            Entities.remove oldEntityId, (err, result) ->
+              if err
+                console.error('Could not remove old entity with id', oldEntityId, err)
+              else
+                df.resolve(newEntityId)
+          else
+            df.resolve(newEntityId)
   df.promise
-
-Lots.createOrReplaceEntity = (lotId, newTypologyId) ->
-  entityDf = Q.defer()
-  lot = Lots.findOne(lotId)
-  oldEntityId = lot.entity
-  oldTypologyId = oldEntityId && Entities.findOne(oldEntityId).typology
-  if newTypologyId && oldTypologyId != newTypologyId
-    # Create a new entity for the lot, removing the old one.
-    Lots.createEntity(lotId: lotId, typologyId: newTypologyId, allowReplace: true).then(
-      (newEntityId) -> entityDf.resolve(newEntityId)
-      (err) -> entityDf.reject(err)
-    )
-  else
-    entityDf.resolve(oldEntityId)
-  entityDf.promise
 
 Lots.validate = (lot) ->
   entityId = lot.entity

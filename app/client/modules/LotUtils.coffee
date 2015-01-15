@@ -248,6 +248,9 @@ Meteor.startup ->
 
       # Find the area of all possible typologies to prevent placing a typology which does not fit.
       validateDfs = []
+      # Ensure lot validation succeeds if we allow non-developable lots to be used.
+      if args.allowNonDevelopment
+        SchemaUtils.setParameterValue(lot, 'general.develop', true)
       _.each lotTypologies, (typology) ->
         validateDf = Q.defer()
         Lots.validateTypology(lot, typology._id).then(

@@ -29,11 +29,12 @@ Meteor.startup ->
       else if lotIds.length == 0
         alert('Please select at least one Lot.')
       else
-        LotUtils.autoAllocate
+        LotUtils.autoAllocate({
           lotIds: lotIds
           typologyIds: typologyIds
           allowNonDevelopment: doc.allowNonDevelopment
           replace: doc.replace
+        }).then => @done()
       false
 
   Form.helpers

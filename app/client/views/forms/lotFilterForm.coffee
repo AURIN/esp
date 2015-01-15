@@ -53,7 +53,7 @@ Meteor.startup ->
       allocated = doc.allocated
       count = doc.count
       lotIds = []
-      LotUtils.getAreas().then (results) ->
+      LotUtils.getAreas().then (results) =>
         _.some _.values(results), (result, i) ->
           return true if count? && i >= count
           lot = result.model

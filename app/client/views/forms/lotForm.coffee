@@ -82,7 +82,8 @@ Meteor.startup ->
       $typologyDropdown = getTypologyDropdown(template)
       if $typologyDropdown.length > 0
         newTypologyId = Template.dropdown.getValue($typologyDropdown)
-        Lots.createOrReplaceEntity(id, newTypologyId).then(entityDf.resolve, entityDf.reject)
+        Lots.createEntity(lotId: id, typologyId: newTypologyId, allowReplace: true)
+            .then(entityDf.resolve, entityDf.reject)
       else
         entityDf.resolve(null)
       
