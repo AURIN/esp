@@ -3222,7 +3222,7 @@ Lots.createEntity = (args) ->
   # If no class is provided, use the class of the entity's typology.
   unless lotClass
     lotClass = SchemaUtils.getParameterValue(typology, classParamId)
-  if allowNonDevelopment
+  if args.allowNonDevelopment
     # Ensures the lot will be updated as developable and validation will pass.
     isForDevelopment = true
     SchemaUtils.setParameterValue(lot, developParamId, true)

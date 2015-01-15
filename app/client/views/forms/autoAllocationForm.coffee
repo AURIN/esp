@@ -1,6 +1,16 @@
 Meteor.startup ->
 
   schema = new SimpleSchema
+    allowNonDevelopment:
+      label: 'Allow non-developable'
+      desc: 'Whether to allow non-developable Lots to be allocated by changing them to development Lots.'
+      type: Boolean
+      defaultValue: false
+    replace:
+      label: 'Replace'
+      desc: 'Replace existing allocations if necessary.'
+      type: Boolean
+      defaultValue: false
 
   formName = 'autoAllocationForm'
   collection = Lots
@@ -12,14 +22,18 @@ Meteor.startup ->
     onSubmit: (doc) ->
       console.log('onSubmit', arguments)
       $table = getTypologyTable()
-      typologyIds = Template.getSelectedIds($table)[0]
-      lots = AtlasManager.getSelectedLots()
-      lotIds = _.map lots, (lot) -> lot._id
-      LotUtils.autoAllocate
-        lotIds: lotIds
-        typologyIds: typologyIds
-        nonDevelopment: true
-        replace: true
+      typologyIds = Template.collectionTable.getSelectedIds($table)
+      lotIds = AtlasManager.getSelectedLots()
+      if typologyIds.length == 0
+        alert('Please select a Typology.')
+      else if lotIds.length == 0
+        alert('Please select at least one Lot.')
+      else
+        LotUtils.autoAllocate
+          lotIds: lotIds
+          typologyIds: typologyIds
+          allowNonDevelopment: doc.allowNonDevelopment
+          replace: doc.replace
       false
 
   Form.helpers
@@ -30,6 +44,7 @@ Meteor.startup ->
         key: 'name'
         label: 'Name'
       ]
+      crudMenu: false
       multiSelect: false
 
   getTypologyTable = (template) -> getTemplate().$('.collection-table')

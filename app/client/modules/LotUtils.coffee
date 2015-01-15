@@ -229,7 +229,7 @@ Meteor.startup ->
     typologyMap = Typologies.getClassMap(typologies)
     _.each lots, (lot) ->
       develop = SchemaUtils.getParameterValue(lot, 'general.develop')
-      return if !args.allowNonDevelopment && develop
+      return if !args.allowNonDevelopment && !develop
       return if !args.replace && lot.entity
       
       typologyClass = SchemaUtils.getParameterValue(lot, 'general.class')
@@ -247,20 +247,24 @@ Meteor.startup ->
       dfs.push(entityDf.promise)
 
       # Find the area of all possible typologies to prevent placing a typology which does not fit.
-      areaDfs = []
-      _.each lotTypologies, (typology) -> areaDfs.push(GeometryUtils.getModelArea(typology))
-      lotAreaDf = GeometryUtils.getModelArea(lot)
-      areaDfs.push(lotAreaDf)
+      validateDfs = []
+      _.each lotTypologies, (typology) ->
+        validateDf = Q.defer()
+        Lots.validateTypology(lot, typology._id).then(
+          (err) -> if err? then validateDf.resolve(null) else validateDf.resolve(typology)
+          validateDf.reject
+        )
+        validateDfs.push(validateDf.promise)
 
-      Q.all(areaDfs).then (results) ->
-        lotArea = results.pop().area
-        areaResults = _.filter results, (result) -> result.area <= lotArea
-        if areaResults.length > 0
-          typology = Arrays.getRandomItem(areaResults).model
+      Q.all(validateDfs).then (results) ->
+        typologies = _.filter results, (result) -> result?
+        if typologies.length > 0
+          typology = Arrays.getRandomItem(typologies)
           console.debug 'Allocating typology', typology, 'to lot', lot
-          Lots.createEntity(lotId: lot._id, typologyId: typology._id,
-              allowReplace: args.replace, allowNonDevelopment: args.allowNonDevelopment)
-              .then(entityDf.resolve, entityDf.reject)
+          Lots.createEntity({
+            lotId: lot._id, typologyId: typology._id, allowReplace: args.replace,
+            allowNonDevelopment: args.allowNonDevelopment
+          }).then(entityDf.resolve, entityDf.reject)
         entityDf.resolve()
     Q.all(dfs).then -> console.debug 'Successfully allocated', dfs.length, 'lots'
 

@@ -125,7 +125,7 @@ TemplateClass.events
   'change .lotDisplayMode.dropdown': (e) ->
     displayMode = Template.dropdown.getValue(e.currentTarget)
     Session.set('lotDisplayMode', displayMode)
-  'click .allocate.item': (e) ->
+  'click .allocate.item': (e, template) ->
     TemplateClass.addFormPanel(template, Template.autoAllocationForm)
   'click .filter.item': (e, template) ->
     TemplateClass.addFormPanel(template, Template.lotFilterForm)

@@ -61,7 +61,7 @@ Meteor.startup ->
           if SchemaUtils.getParameterValue(lot, 'general.class') != typologyClass ||
               (fpaGte? && area < fpaGte) || (fpaLte? && area > fpaLte) ||
               SchemaUtils.getParameterValue(lot, 'general.develop') != develop ||
-              lot.entity? == allocated
+              lot.entity? != allocated
             return false
           lotIds.push(lot._id)
           return false

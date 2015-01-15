@@ -6,10 +6,13 @@
         <div class="ui form segment">
           {{#autoForm id=formName schema=schema}}
 
-          <div class="field">
-            <label>Typologies</label>
-            {{> collectionTable collection="Typologies" items=typologies settings=tableSettings}}
-          </div>
+            <div class="field">
+              <label>Typologies</label>
+              {{> collectionTable collection="Typologies" items=typologies settings=tableSettings}}
+            </div>
+
+            {{> afQuickField name="allowNonDevelopment"}}
+            {{> afQuickField name="replace"}}
 
             <div class="crud buttons">
               <button type="button" class="ui red cancel button">Close</button>
