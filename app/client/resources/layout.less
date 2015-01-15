@@ -278,11 +278,17 @@ body {
 
 .reactive-table-navigation {
   font-size: 10px;
-  .form-inline input {
-    font-size: 10px;
-    width: 30px;
-    padding: 4px;
-    text-align: center;
+  .form-inline {
+    .input {
+      width: auto !important;
+    }
+    input {
+      // Conflits with ui.form input.
+      font-size: 10px !important;
+      width: 30px !important;
+      padding: 4px !important;
+      text-align: center !important;
+    }
   }
 }
 

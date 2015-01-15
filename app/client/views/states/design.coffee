@@ -126,7 +126,9 @@ TemplateClass.events
     displayMode = Template.dropdown.getValue(e.currentTarget)
     Session.set('lotDisplayMode', displayMode)
   'click .allocate.item': (e) ->
-    LotUtils.autoAllocate()
+    TemplateClass.addFormPanel(template, Template.autoAllocationForm)
+  'click .filter.item': (e, template) ->
+    TemplateClass.addFormPanel(template, Template.lotFilterForm)
   'mousedown .typologies .collection-table tr': (e) ->
     # Drag typology items from the table onto the globe.
     $pin = createDraggableTypology()
@@ -154,7 +156,7 @@ TemplateClass.events
           if lot.entity
             console.error('Remove the existing entity before allocating a typology onto this lot.')
           else
-            Lots.createEntity(lot._id, typologyId)
+            Lots.createEntity(lotId: lot._id, typologyId: typologyId)
           # TODO(aramk) Add to lot
       # If the typology was dragged on the globe, allocate it to any available lots.
       $pin.remove()
@@ -175,9 +177,16 @@ getSidebar = (template) ->
 getEntityTable = (template) -> template.$('.entities .collection-table')
 getTypologyTable = (template) -> template.$('.typologies .collection-table')
 getLotTable = (template) -> template.$('.lots .collection-table')
+
 getPathwayDrawButton = (template) -> template.$('.pathway.draw.button')
 
 TemplateClass.addPanel = (template, panelTemplate, data) ->
+  callback = -> TemplateClass.removePanel template
+  data = Setter.merge({
+    settings:
+      onCancel: callback
+      onSuccess: callback
+  }, data)
   if currentPanelView
     TemplateClass.removePanel(template)
   $container = getSidebar(template)
@@ -201,11 +210,8 @@ TemplateClass.removePanel = (template) ->
 
 TemplateClass.addFormPanel = (template, formTemplate, doc, settings) ->
   template ?= templateInstance
-  settings ?= {}
   data = doc: doc, settings: settings
   TemplateClass.addPanel template, formTemplate, data
-  callback = -> TemplateClass.removePanel template
-  settings.onCancel = settings.onSuccess = callback
 
 TemplateClass.onAtlasLoad = (template, atlas) ->
   projectId = Projects.getCurrentId()
