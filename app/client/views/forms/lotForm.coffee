@@ -82,7 +82,8 @@ Meteor.startup ->
       $typologyDropdown = getTypologyDropdown(template)
       if $typologyDropdown.length > 0
         newTypologyId = Template.dropdown.getValue($typologyDropdown)
-        Lots.createOrReplaceEntity(id, newTypologyId).then(entityDf.resolve, entityDf.reject)
+        Lots.createEntity(lotId: id, typologyId: newTypologyId, allowReplace: true)
+            .then(entityDf.resolve, entityDf.reject)
       else
         entityDf.resolve(null)
       
@@ -214,13 +215,7 @@ Meteor.startup ->
 
   # TODO(aramk) Abstract dropdown to allow null selection automatically.
   Form.helpers
-    classes: ->
-      classes = Collections.createTemporary()
-      _.each Typologies.getClassItems(), (item) -> classes.insert(item)
-      _.each Typologies.classes, (cls, id) ->
-        if cls.canAllocateToLot == false
-          classes.remove(id)
-      classes
+    classes: -> Collections.createTemporary(Typologies.getAllocatableClassItems())
     typologyId: -> getTypologyId(@doc)
     typologies: -> getTemplate().typologies
     forDev: -> Session.get('_forDev')

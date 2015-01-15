@@ -1,7 +1,10 @@
 _renderQueue = null
 resetRenderQueue = -> _renderQueue = new DeferredQueueMap()
+evalEngine = null
 
-Meteor.startup -> resetRenderQueue()
+Meteor.startup ->
+  resetRenderQueue()
+  evalEngine = new EvaluationEngine(schema: Lots.simpleSchema())
 
 @LotUtils =
 
@@ -204,40 +207,67 @@ Meteor.startup -> resetRenderQueue()
     ids = _.map Lots.findByProject().fetch(), (entity) -> entity._id
     AtlasManager.zoomToEntities(ids)
 
-  # Find all unallocated development lots and allocate appropriate typologies for them.
-  autoAllocate: ->
-    console.debug 'Automatically allocating typologies to lots...'
+  # Allocate a set of typologies to a set of lots.
+  # @param {Object} args
+  # @param {Array.<String>} lotIds
+  # @param {Array.<String>} typologyIds
+  # @param {Boolean} allowNonDevelopment - Whether to also allocate lots which are marked for
+  #      non-development.
+  # @param {Boolean} replace - Whether to replace existing allocations.
+  # @returns {Promise}
+  autoAllocate: (args) ->
+    args = _.extend({
+      lotIds: []
+      typologyIds: []
+      allowNonDevelopment: false
+      replace: false
+    }, args)
+    console.debug 'Automatically allocating typologies to lots...', args
     dfs = []
-    typologyMap = Typologies.getClassMap()
-    typologies = Typologies.findByProject().fetch()
-    _.each Lots.findAvailable(), (lot) ->
+    lots = _.map args.lotIds, (id) -> Lots.findOne(id)
+    typologies = _.map args.typologyIds, (id) -> Typologies.findOne(id)
+    typologyMap = Typologies.getClassMap(typologies)
+    _.each lots, (lot) ->
+      develop = SchemaUtils.getParameterValue(lot, 'general.develop')
+      return if !args.allowNonDevelopment && !develop
+      return if !args.replace && lot.entity
+      
       typologyClass = SchemaUtils.getParameterValue(lot, 'general.class')
       if typologyClass?
-        classTypologies = typologyMap[typologyClass] ? []
+        lotTypologies = typologyMap[typologyClass] ? []
       else
         # Allocate to any typology
-        classTypologies = typologies
-      unless classTypologies.length > 0
+        lotTypologies = typologies
+      unless lotTypologies.length > 0
         console.warn 'Could not find suitable typology for lot', lot
         return
-      return unless classTypologies.length > 0
+      return unless lotTypologies.length > 0
 
       entityDf = Q.defer()
       dfs.push(entityDf.promise)
 
       # Find the area of all possible typologies to prevent placing a typology which does not fit.
-      areaDfs = []
-      _.each classTypologies, (typology) -> areaDfs.push(GeometryUtils.getModelArea(typology))
-      lotAreaDf = GeometryUtils.getModelArea(lot)
-      areaDfs.push(lotAreaDf)
+      validateDfs = []
+      # Ensure lot validation succeeds if we allow non-developable lots to be used.
+      if args.allowNonDevelopment
+        SchemaUtils.setParameterValue(lot, 'general.develop', true)
+      _.each lotTypologies, (typology) ->
+        validateDf = Q.defer()
+        Lots.validateTypology(lot, typology._id).then(
+          (err) -> if err? then validateDf.resolve(null) else validateDf.resolve(typology)
+          validateDf.reject
+        )
+        validateDfs.push(validateDf.promise)
 
-      Q.all(areaDfs).then (results) ->
-        lotArea = results.pop().area
-        areaResults = _.filter results, (result) -> result.area <= lotArea
-        if areaResults.length > 0
-          typology = Arrays.getRandomItem(areaResults).model
+      Q.all(validateDfs).then (results) ->
+        typologies = _.filter results, (result) -> result?
+        if typologies.length > 0
+          typology = Arrays.getRandomItem(typologies)
           console.debug 'Allocating typology', typology, 'to lot', lot
-          Lots.createEntity(lot._id, typology._id).then(entityDf.resolve, entityDf.reject)
+          Lots.createEntity({
+            lotId: lot._id, typologyId: typology._id, allowReplace: args.replace,
+            allowNonDevelopment: args.allowNonDevelopment
+          }).then(entityDf.resolve, entityDf.reject)
         entityDf.resolve()
     Q.all(dfs).then -> console.debug 'Successfully allocated', dfs.length, 'lots'
 
@@ -399,6 +429,22 @@ Meteor.startup -> resetRenderQueue()
         Q.all(entityDfs).then(df.resolve, df.reject)
     df.promise
       
+  getAreas: (args) ->
+    args = _.extend({
+      indexByArea: false
+    }, args)
+    fpas = {}
+    areaDfs = []
+    Lots.findByProject().forEach (lot) ->
+      df = GeometryUtils.getModelArea(lot)
+      areaDfs.push(df)
+      df.then (results) ->
+        if args.indexByArea
+          fpas[results.area] ?= results
+        else
+          fpas[lot._id] = results
+    Q.all(areaDfs).then -> fpas
+
   removeByIds: (ids) ->
     dfs = []
     _.each ids, (id) ->
