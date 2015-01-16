@@ -525,14 +525,11 @@ TemplateClass.onAtlasLoad = (template, atlas) ->
     geoEntity = AtlasManager.getEntity(id)
     geoEntity
 
-  # Auto-align when adding entities to lots or modifying entities.
+  # Auto-align when adding new lots or adding/replacing entities on lots.
 
   autoAlignEntity = (entity) ->
     azimuth = SchemaUtils.getParameterValue(entity, 'orientation.azimuth')
     LotUtils.autoAlign([entity.lot]) unless azimuth?
-
-  Collections.observe Entities.findByProject(),
-    changed: autoAlignEntity
 
   Collections.observe Lots.findByProject(),
     added: (newDoc) ->
@@ -541,7 +538,7 @@ TemplateClass.onAtlasLoad = (template, atlas) ->
         autoAlignEntity(Entities.findOne(entityId))
     changed: (newDoc, oldDoc) ->
       entityId = newDoc.entity
-      if !oldDoc.entity && entityId
+      if entityId && oldDoc.entity != entityId
         autoAlignEntity(Entities.findOne(entityId))
 
   ##################################################################################################

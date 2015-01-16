@@ -63,6 +63,9 @@ Meteor.startup ->
       heightResults = SchemaUtils.getParameterValues(Lots.findByProject(), 'space.height',
           {indexByValues: true})
       setFloorCeil(heightResults, $heightMin, $heightMax)
+
+      # Submit the form to perform the initial selection.
+      _.delay (=> @$('form').first().submit()), 300
     
     onSubmit: (doc) ->
       typologyClass = doc.class
