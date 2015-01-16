@@ -440,7 +440,8 @@ Meteor.startup ->
       areaDfs.push(df)
       df.then (results) ->
         if args.indexByArea
-          fpas[results.area] ?= results
+          areaModels = fpas[results.area] ?= []
+          areaModels.push(results)
         else
           fpas[lot._id] = results
     Q.all(areaDfs).then -> fpas

@@ -94,3 +94,18 @@ global = @
       throw new Error('No project ID provided.')
 
   findByProject: (collection, projectId) -> collection.find(@findByProjectSelector(projectId))
+
+  getParameterValues: (collection, paramId, args) ->
+    args = _.extend({
+      indexByValues: false
+    }, args)
+    values = {}
+    _.each Collections.getItems(collection), (model) ->
+      value = SchemaUtils.getParameterValue(model, paramId)
+      if args.indexByValues
+        models = values[value] ?= []
+        models.push(model)
+      else
+        values[model._id] = value
+    values
+

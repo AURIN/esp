@@ -12,18 +12,28 @@ Meteor.startup ->
       label: 'Allocated'
       type: Boolean
       defaultValue: false
-    fpa_gte:
-      label: 'FPA Greater Than or Equal'
+    fpaMin:
+      label: 'Min. Lot Area'
       type: Number
       decimal: true
       optional: true
-    fpa_lte:
-      label: 'FPA Less Than or Equal'
+    fpaMax:
+      label: 'Max. Lot Area'
       type: Number
       decimal: true
       optional: true
-    count:
-      label: 'Count'
+    heightMin:
+      label: 'Min. Height'
+      type: Number
+      decimal: true
+      optional: true
+    heightMax:
+      label: 'Max. Height'
+      type: Number
+      decimal: true
+      optional: true
+    limit:
+      label: 'Limit'
       type: Number
       optional: true
 
@@ -35,31 +45,45 @@ Meteor.startup ->
     schema: schema
 
     onRender: ->
-      $lte = getFpaLteInput(@)
-      $gte = getFpaGteInput(@)
-      LotUtils.getAreas({indexByArea: true}).then (fpas) ->
-        values = Object.keys(fpas)
+      setFloorCeil = (results, $min, $max) ->
+        values = Object.keys(results)
         min = Math.floor(Math.min.apply(null, values))
         max = Math.ceil(Math.max.apply(null, values))
         if values.length > 0
-          $gte.val(min)
-          $lte.val(max)
+          $min.val(min)
+          $max.val(max)
+
+      $fpaMin = getFpaMinInput(@)
+      $fpaMax = getFpaMaxInput(@)
+      LotUtils.getAreas({indexByArea: true}).then (fpaResults) ->
+        setFloorCeil(fpaResults, $fpaMin, $fpaMax)
+
+      $heightMin = getHeightMinInput(@)
+      $heightMax = getHeightMaxInput(@)
+      heightResults = SchemaUtils.getParameterValues(Lots.findByProject(), 'space.height',
+          {indexByValues: true})
+      setFloorCeil(heightResults, $heightMin, $heightMax)
     
     onSubmit: (doc) ->
       typologyClass = doc.class
-      fpaGte = doc.fpa_gte
-      fpaLte = doc.fpa_lte
       develop = doc.develop
       allocated = doc.allocated
-      count = doc.count
+      fpaMin = doc.fpaMin
+      fpaMax = doc.fpaMax
+      heightMin = doc.heightMin
+      heighMax = doc.heightMax
+      limit = doc.limit
       lotIds = []
-      LotUtils.getAreas().then (results) =>
-        _.some _.values(results), (result, i) ->
-          return true if count? && i >= count
+      LotUtils.getAreas().then (results) ->
+        _.some results, (result) ->
+          return true if limit? && lotIds.length >= limit
           lot = result.model
           area = result.area
+          height = SchemaUtils.getParameterValue(lot, 'space.height')
           if SchemaUtils.getParameterValue(lot, 'general.class') != typologyClass ||
-              (fpaGte? && area < fpaGte) || (fpaLte? && area > fpaLte) ||
+              (fpaMin? && area < fpaMin) || (fpaMax? && area > fpaMax) ||
+              (height? && heightMin? && height < heightMin) ||
+              (height? && heightMax? && height > heightMax) ||
               SchemaUtils.getParameterValue(lot, 'general.develop') != develop ||
               lot.entity? != allocated
             return false
@@ -74,6 +98,10 @@ Meteor.startup ->
     classes: -> Collections.createTemporary(Typologies.getAllocatableClassItems())
     defaultClass: -> 'RESIDENTIAL'
 
-  getFpaLteInput = (template) -> getTemplate(template).$('[name="fpa_lte"]')
-  getFpaGteInput = (template) -> getTemplate(template).$('[name="fpa_gte"]')
+  getFpaMinInput = (template) -> getField('fpaMin', template)
+  getFpaMaxInput = (template) -> getField('fpaMax', template)
+  getHeightMinInput = (template) -> getField('heightMin', template)
+  getHeightMaxInput = (template) -> getField('heightMax', template)
+  
+  getField = (name, template) -> getTemplate(template).$('[name="' + name + '"]')
   getTemplate = (template) -> Templates.getNamedInstance(formName, template)
