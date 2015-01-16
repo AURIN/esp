@@ -6,11 +6,7 @@
         <div class="ui form segment">
           {{#autoForm id=formName schema=schema}}
 
-            <div class="field">
-              <label>Typologies</label>
-              {{> collectionTable collection="Typologies" items=typologies settings=tableSettings}}
-            </div>
-
+            {{> collectionTable collection="Typologies" items=typologies settings=tableSettings}}
             {{> afQuickField name="allowNonDevelopment"}}
             {{> afQuickField name="replace"}}
 

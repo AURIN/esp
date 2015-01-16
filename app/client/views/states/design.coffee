@@ -83,6 +83,7 @@ TemplateClass.rendered = ->
   # Use icons for display mode dropdowns
   _.each ['.lotDisplayMode.dropdown', '.entityDisplayMode.dropdown'], (cls) ->
     $dropdown = @$(cls)
+    $dropdown.addClass('item')
     $('.dropdown.icon', $dropdown).attr('class', 'photo icon')
     $('.text', $dropdown).hide()
 
@@ -547,6 +548,8 @@ TemplateClass.onAtlasLoad = (template, atlas) ->
   # LOT-SELECTION
   ##################################################################################################
 
+  $allocationButton = template.$('.allocate.item').hide()
+
   # Hide and show buttons based on the selected Lots.
   atlas.subscribe 'entity/selection/change', (args) ->
     ids = AtlasManager.getSelectedLots()
@@ -558,4 +561,5 @@ TemplateClass.onAtlasLoad = (template, atlas) ->
     $amalgamateButton.toggle(idCount > 1)
     $subdivideButton.toggle(idCount > 0)
     $alignmentButton.toggle(idCount > 0)
+    $allocationButton.toggle(idCount > 0)
 
