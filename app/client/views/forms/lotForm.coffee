@@ -9,10 +9,6 @@ Meteor.startup ->
     CREATING: 'creating'
     EDITING: 'editing'
 
-  # Used to define an empty record in the typology dropdown. Selecting this removes any existing
-  # entity associated with the lot.
-  #  EMPTY = ':empty'
-
   # TODO(aramk) At the moment only one lot form instance can exist at once.
   getEditState = (name) -> Session.get('edit_' + name)
   setEditState = (name, value) ->
