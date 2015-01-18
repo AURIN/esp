@@ -47,6 +47,11 @@ Meteor.startup ->
     isAdmin: -> AuthUtils.isAdmin()
     project: -> Projects.getCurrentId()
     railTypes: -> Typologies.getRailTypeItems()
+    authorName: ->
+      username = @doc?.author
+      if username
+        user = Meteor.users.findOne({username: username})
+        user.profile.name if user
 
   Form.events
     'click .button.view-current': (e, template) ->
