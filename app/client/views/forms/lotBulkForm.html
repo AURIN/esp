@@ -1,0 +1,26 @@
+<template name="lotBulkForm">
+  <div class="flex-panel crud form">
+    <div class="lots title"><i class="block layout icon"></i>Lot Bulk Edit</div>
+    <div class="content">
+      <div class="inner">
+        <div class="ui form segment">
+          {{#autoForm schema=schema id=formName}}
+
+            <div class="subtitle">General</div>
+            {{> afQuickField name="parameters.general.class" type="dropdown" items=classes allowEmpty=true}}
+            {{> afQuickField name="parameters.general.develop"}}
+
+            <div class="subtitle">Space</div>
+            {{> afQuickField name="parameters.space.height"}}
+
+            <div class="crud buttons">
+              <button type="button" class="ui red cancel button">Cancel</button>
+              <div class="spacer"></div>
+              <button type="submit" class="ui button submit green">Save</button>
+            </div>
+          {{/autoForm}}
+        </div>
+      </div>
+    </div>
+  </div>
+</template>

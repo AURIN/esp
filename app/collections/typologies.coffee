@@ -3640,8 +3640,20 @@ Entities.after.remove (userId, entity) ->
   Lots.update(lot._id, {$unset: {entity: null}}) if lot?
 
 Lots.after.update (userId, lot, fieldNames, modifier) ->
+  # Remove the entity when the lot's entity field is unset.
   if modifier.$unset?.entity != undefined
     Entities.remove(@previous.entity)
+
+Lots.before.update (userId, lot, fieldNames, modifier) ->
+  newLot = Collections.simulateModifierUpdate(lot, modifier)
+  entityId = newLot.entity
+  return unless entityId
+  typologyClass = SchemaUtils.getParameterValue(newLot, 'general.class')
+  entityTypologyClass = Entities.getTypologyClass(entityId)
+  if typologyClass != entityTypologyClass
+    delete modifier.$set?.entity
+    modifier.$unset ?= {}
+    modifier.$unset.entity = null
 
 Lots.after.remove (userId, lot) ->
   # Remove the entity when the lot is removed.

@@ -32,21 +32,26 @@ Meteor.startup ->
         $input.attr('placeholder', defaultValue)
 
       # Select default values for dropdowns.
-      if isSelectInput($input)
+      if Forms.isSelectInput($input)
         if defaultValue?
           # Label which option is the default value.
-          $defaultOption = getSelectOption(defaultValue, $input)
+          $defaultOption = Forms.getSelectOption($input, defaultValue)
           if $defaultOption.length > 0
             $defaultOption.text($defaultOption.text() + ' (Default)')
         inputValue = SchemaUtils.getParameterValue(doc, paramName) if doc
-        unless inputValue?
+        if inputValue == '' || !inputValue?
           inputValue = defaultValue ? ''
-          setSelectValue($input, inputValue)
+          Forms.setInputValue($input, inputValue)
 
   Form.helpers
     isAdmin: -> AuthUtils.isAdmin()
     project: -> Projects.getCurrentId()
     railTypes: -> Typologies.getRailTypeItems()
+    authorName: ->
+      username = @doc?.author
+      if username
+        user = Meteor.users.findOne({username: username})
+        user.profile.name if user
 
   Form.events
     'click .button.view-current': (e, template) ->
@@ -73,16 +78,3 @@ Meteor.startup ->
           else
             console.error('Cannot change camera position - must provide longitude, latitude and elevation',
               position)
-
-isDropdown = ($input) -> $input.parent().hasClass('dropdown')
-isSelectInput = ($input) -> isDropdown($input) || $input.is('select')
-getSelectOption = (value, $input) ->
-  if isDropdown($input)
-    Template.dropdown.getItem($input.parent(), value)
-  else
-    $('option[value="' + value + '"]', $input)
-setSelectValue = ($input, value) ->
-  if isDropdown($input)
-    Template.dropdown.setValue($input.parent(), value)
-  else
-    $input.val(value)

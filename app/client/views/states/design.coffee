@@ -15,7 +15,9 @@ Session.setDefault('entityDisplayMode', 'extrusion')
 collectionToForm =
   entities: 'entityForm'
   typologies: 'typologyForm'
-  lots: 'lotForm'
+  lots:
+    single: 'lotForm'
+    multiple: 'lotBulkForm'
 
 # Various handles which should be removed when the design template is removed
 handles = null
@@ -88,13 +90,27 @@ TemplateClass.rendered = ->
     $('.text', $dropdown).hide()
 
 onEditFormPanel = (args) ->
-  id = args.ids[0]
+  ids = args.ids
   collection = args.collection
-  model = collection.findOne(id)
   collectionName = Collections.getName(collection)
-  formName = collectionToForm[collectionName]
+  formArgs = collectionToForm[collectionName]
+  getSingleFormName = -> if Types.isString(formArgs.single) then formArgs.single else formArgs
+  formName = getSingleFormName()
+  if ids.length == 1
+    isSingle = true
+  else
+    if Types.isString(formArgs.multiple)
+      formName = formArgs.multiple
+      docs = _.map ids, (id) -> collection.findOne(id)
+      data = {docs: docs}
+    else
+      # Multiple are selected, but we only support single.
+      isSingle = true
+  if isSingle
+    id = ids[0]
+    data = {doc: collection.findOne(id)}
   console.debug 'onEdit', arguments, collectionName, formName
-  TemplateClass.addFormPanel templateInstance, Template[formName], model
+  TemplateClass.addFormPanel templateInstance, Template[formName], data
 
 TemplateClass.helpers
   entities: -> Entities.findByProject()
@@ -209,9 +225,9 @@ TemplateClass.removePanel = (template) ->
   $('>.panel:last', $container).show()
   currentPanelView = null
 
-TemplateClass.addFormPanel = (template, formTemplate, doc, settings) ->
+TemplateClass.addFormPanel = (template, formTemplate, data) ->
   template ?= templateInstance
-  data = doc: doc, settings: settings
+  data ?= {}
   TemplateClass.addPanel template, formTemplate, data
 
 TemplateClass.onAtlasLoad = (template, atlas) ->
