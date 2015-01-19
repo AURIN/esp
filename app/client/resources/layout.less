@@ -278,11 +278,17 @@ body {
 
 .reactive-table-navigation {
   font-size: 10px;
-  .form-inline input {
-    font-size: 10px;
-    width: 30px;
-    padding: 4px;
-    text-align: center;
+  .form-inline {
+    .input {
+      width: auto !important;
+    }
+    input {
+      // Conflits with ui.form input.
+      font-size: 10px !important;
+      width: 30px !important;
+      padding: 4px !important;
+      text-align: center !important;
+    }
   }
 }
 
@@ -301,7 +307,7 @@ body {
 }
 
 .collection-table {
-  .extra.menu {
+  .menu {
     > * {
       float: left;
     }
@@ -309,15 +315,18 @@ body {
       box-shadow: none !important;
     }
     .item:before {
-      display: none;
+      &a, &div.button {
+        display: none;
+      }
     }
     .item {
       margin: 0 !important;
       &.button {
-        font-size: 1rem;
+        font-size: 1rem !important;
+        line-height: 1.3 !important;
       }
       .icon {
-        font-size: 1rem;
+        font-size: 1rem !important;
       }
     }
   }
@@ -375,4 +384,8 @@ body {
 
 ::selection {
   background-color: rgba(172, 218, 254, 0.5);
+}
+
+.ui.selection.dropdown .menu {
+  max-height: 600px;
 }

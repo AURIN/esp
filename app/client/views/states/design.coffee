@@ -4,7 +4,6 @@ templateInstance = null
 TemplateClass = Template.design
 
 displayModesCollection = null
-#_nonDevExtrusionModeId = '_nonDevExtrusion'
 @DisplayModes =
   footprint: 'Footprint'
   extrusion: 'Extrusion'
@@ -16,7 +15,9 @@ Session.setDefault('entityDisplayMode', 'extrusion')
 collectionToForm =
   entities: 'entityForm'
   typologies: 'typologyForm'
-  lots: 'lotForm'
+  lots:
+    single: 'lotForm'
+    multiple: 'lotBulkForm'
 
 # Various handles which should be removed when the design template is removed
 handles = null
@@ -84,17 +85,32 @@ TemplateClass.rendered = ->
   # Use icons for display mode dropdowns
   _.each ['.lotDisplayMode.dropdown', '.entityDisplayMode.dropdown'], (cls) ->
     $dropdown = @$(cls)
+    $dropdown.addClass('item')
     $('.dropdown.icon', $dropdown).attr('class', 'photo icon')
     $('.text', $dropdown).hide()
 
 onEditFormPanel = (args) ->
-  id = args.ids[0]
+  ids = args.ids
   collection = args.collection
-  model = collection.findOne(id)
   collectionName = Collections.getName(collection)
-  formName = collectionToForm[collectionName]
+  formArgs = collectionToForm[collectionName]
+  getSingleFormName = -> if Types.isString(formArgs.single) then formArgs.single else formArgs
+  formName = getSingleFormName()
+  if ids.length == 1
+    isSingle = true
+  else
+    if Types.isString(formArgs.multiple)
+      formName = formArgs.multiple
+      docs = _.map ids, (id) -> collection.findOne(id)
+      data = {docs: docs}
+    else
+      # Multiple are selected, but we only support single.
+      isSingle = true
+  if isSingle
+    id = ids[0]
+    data = {doc: collection.findOne(id)}
   console.debug 'onEdit', arguments, collectionName, formName
-  TemplateClass.addFormPanel templateInstance, Template[formName], model
+  TemplateClass.addFormPanel templateInstance, Template[formName], data
 
 TemplateClass.helpers
   entities: -> Entities.findByProject()
@@ -126,8 +142,10 @@ TemplateClass.events
   'change .lotDisplayMode.dropdown': (e) ->
     displayMode = Template.dropdown.getValue(e.currentTarget)
     Session.set('lotDisplayMode', displayMode)
-  'click .allocate.item': (e) ->
-    LotUtils.autoAllocate()
+  'click .allocate.item': (e, template) ->
+    TemplateClass.addFormPanel(template, Template.autoAllocationForm)
+  'click .filter.item': (e, template) ->
+    TemplateClass.addFormPanel(template, Template.lotFilterForm)
   'mousedown .typologies .collection-table tr': (e) ->
     # Drag typology items from the table onto the globe.
     $pin = createDraggableTypology()
@@ -155,7 +173,7 @@ TemplateClass.events
           if lot.entity
             console.error('Remove the existing entity before allocating a typology onto this lot.')
           else
-            Lots.createEntity(lot._id, typologyId)
+            Lots.createEntity(lotId: lot._id, typologyId: typologyId)
           # TODO(aramk) Add to lot
       # If the typology was dragged on the globe, allocate it to any available lots.
       $pin.remove()
@@ -176,9 +194,16 @@ getSidebar = (template) ->
 getEntityTable = (template) -> template.$('.entities .collection-table')
 getTypologyTable = (template) -> template.$('.typologies .collection-table')
 getLotTable = (template) -> template.$('.lots .collection-table')
+
 getPathwayDrawButton = (template) -> template.$('.pathway.draw.button')
 
 TemplateClass.addPanel = (template, panelTemplate, data) ->
+  callback = -> TemplateClass.removePanel template
+  data = Setter.merge({
+    settings:
+      onCancel: callback
+      onSuccess: callback
+  }, data)
   if currentPanelView
     TemplateClass.removePanel(template)
   $container = getSidebar(template)
@@ -200,13 +225,10 @@ TemplateClass.removePanel = (template) ->
   $('>.panel:last', $container).show()
   currentPanelView = null
 
-TemplateClass.addFormPanel = (template, formTemplate, doc, settings) ->
+TemplateClass.addFormPanel = (template, formTemplate, data) ->
   template ?= templateInstance
-  settings ?= {}
-  data = doc: doc, settings: settings
+  data ?= {}
   TemplateClass.addPanel template, formTemplate, data
-  callback = -> TemplateClass.removePanel template
-  settings.onCancel = settings.onSuccess = callback
 
 TemplateClass.onAtlasLoad = (template, atlas) ->
   projectId = Projects.getCurrentId()
@@ -312,7 +334,7 @@ TemplateClass.onAtlasLoad = (template, atlas) ->
 
   # Listen to selections in tables.
   tables = [getEntityTable(template), getLotTable(template)]
-  # Prevent bulk selections of entities when selecting the typology table from needlessly triggering
+# Prevent bulk selections of entities when selecting the typology table from needlessly triggering
   # the table event handlers below or causing infinite loops.
   tableSelectionEnabled = true
   _.each tables, ($table) ->
@@ -323,12 +345,13 @@ TemplateClass.onAtlasLoad = (template, atlas) ->
   # Clicking on a typology selects all entities of that typology.
   $typologyTable = getTypologyTable(template)
   getEntityIdsByTypologyId = (typologyId) ->
-    _.map Entities.find(typology: typologyId).fetch(), (entity) -> entity._id
+    _.map Entities.findByTypology(typologyId).fetch(), (entity) -> entity._id
   $typologyTable.on 'select', (e, id) ->
     tableSelectionEnabled = false
     atlas.publish('entity/select', ids: getEntityIdsByTypologyId(id))
     # Hide all popups so they don't obsruct the entities.
     _.each atlas._managers.popup.getPopups(), (popup) -> popup.hide()
+    tableSelectionEnabled = true
   $typologyTable.on 'deselect', (e, id) ->
     tableSelectionEnabled = false
     atlas.publish('entity/deselect', ids: getEntityIdsByTypologyId(id))
@@ -339,15 +362,13 @@ TemplateClass.onAtlasLoad = (template, atlas) ->
     tableSelectionEnabled = false
     ids = _.map args.ids, (id) -> resolveModelId(id)
     $table = getTable(ids[0])
-    return unless $table
-    Template.collectionTable.addSelection($table, ids)
+    Template.collectionTable.addSelection($table, ids) if $table
     tableSelectionEnabled = true
   atlas.subscribe 'entity/deselect', (args) ->
     tableSelectionEnabled = false
     ids = _.map args.ids, (id) -> resolveModelId(id)
     $table = getTable(ids[0])
-    return unless $table
-    Template.collectionTable.removeSelection($table, ids)
+    Template.collectionTable.removeSelection($table, ids) if $table
     tableSelectionEnabled = true
 
   # Listen to double clicks from Atlas.
@@ -372,103 +393,6 @@ TemplateClass.onAtlasLoad = (template, atlas) ->
     if idParts
       id = idParts[1]
     id
-
-  ##################################################################################################
-  # AMALGAMATION & SUBDIVISION
-  ##################################################################################################
-
-  # Bind atlas event to show/hide the amalgamation button and handle the click event.
-
-  firstSelectedLotId = null
-  $amalgamateButton = template.$('.amalgamate.item').hide()
-  $amalgamateButton.click ->
-    ids = AtlasManager.getSelectedLots()
-    LotUtils.amalgamate(ids)
-  $subdivideButton = template.$('.subdivide.item').hide()
-  $subdivideButton.click ->
-    ids = AtlasManager.getSelectedLots()
-    
-    startDrawing = ->
-      # Ensure lots are displayed as footprints.
-      Session.set('lotDisplayMode', 'footprint')
-      atlas.publish 'entity/draw', {
-        displayMode: 'line'
-        init: (args) -> args.feature.setElevation(2)
-        create: (args) ->
-          feature = args.feature
-          id = feature.getId()
-          vertices = feature.getForm().getVertices()
-          AtlasManager.unrenderEntity(id)
-          LotUtils.subdivide(ids, vertices).fin(cancelSubdivision)
-        update: (args) -> args.feature.getHandles().forEach (handle) -> handle.setElevation(4)
-        cancel: ->
-          console.debug('Drawing cancelled', arguments)
-          feature = args.feature
-          id = feature.getId()
-          AtlasManager.unrenderEntity(id)
-          cancelSubdivision()
-      }
-
-    isActive = $subdivideButton.hasClass('active')
-    if isActive
-      if ids.length == 0
-        throw new Error('Select at least one Lot to subdivide.')
-      startDrawing()
-    else
-      atlas.publish('entity/draw/stop', {validate: false})
-
-  cancelSubdivision = -> $subdivideButton.removeClass('active')
-
-  ##################################################################################################
-  # AUTO-ALIGNMENT
-  ##################################################################################################
-
-  $alignmentButton = template.$('.alignment.item').hide()
-  $alignmentButton.click ->
-    ids = AtlasManager.getSelectedLots()
-    LotUtils.autoAlign(ids)
-
-  atlas.subscribe 'entity/select', (args) ->
-    id = args.ids[0]
-    lot = Lots.findOne(id)
-    return unless lot
-    geoEntity = AtlasManager.getEntity(id)
-    geoEntity
-
-  # Auto-align when adding entities to lots or modifying entities.
-
-  autoAlignEntity = (entity) ->
-    azimuth = SchemaUtils.getParameterValue(entity, 'orientation.azimuth')
-    LotUtils.autoAlign([entity.lot]) unless azimuth?
-
-  Collections.observe Entities.findByProject(),
-    changed: autoAlignEntity
-
-  Collections.observe Lots.findByProject(),
-    added: (newDoc) ->
-      entityId = newDoc.entity
-      if entityId
-        autoAlignEntity(Entities.findOne(entityId))
-    changed: (newDoc, oldDoc) ->
-      entityId = newDoc.entity
-      if !oldDoc.entity && entityId
-        autoAlignEntity(Entities.findOne(entityId))
-
-  ##################################################################################################
-  # LOT-SELECTION
-  ##################################################################################################
-
-  # Hide and show buttons based on the selected Lots.
-  atlas.subscribe 'entity/selection/change', (args) ->
-    ids = AtlasManager.getSelectedLots()
-    idCount = ids.length
-    if idCount == 0
-      firstSelectedLotId = null
-    else if idCount == 1
-      firstSelectedLotId = ids[0]
-    $amalgamateButton.toggle(idCount > 1)
-    $subdivideButton.toggle(idCount > 0)
-    $alignmentButton.toggle(idCount > 0)
 
   ##################################################################################################
   # DRAWING
@@ -498,9 +422,12 @@ TemplateClass.onAtlasLoad = (template, atlas) ->
   $typologyTable.on 'select deselect', onTypologySelectionChange
   onTypologySelectionChange()
 
+  stopDrawing = -> atlas.publish('entity/draw/stop')
+
   $pathwayDrawButton.on 'click', ->
     isActive = $pathwayDrawButton.hasClass('active')
     startDrawing = ->
+      stopDrawing()
       atlas.publish 'entity/draw', {
         displayMode: 'line'
         init: (args) -> args.feature.setElevation(2)
@@ -526,11 +453,12 @@ TemplateClass.onAtlasLoad = (template, atlas) ->
           isActive = $pathwayDrawButton.hasClass('active')
           startDrawing() if isActive
         update: (args) -> args.feature.getHandles().forEach (handle) -> handle.setElevation(4)
-        cancel: ->
+        cancel: (args) ->
           console.debug('Drawing cancelled', arguments)
           feature = args.feature
           id = feature.getId()
           AtlasManager.unrenderEntity(id)
+          $pathwayDrawButton.removeClass('active')
       }
     if isActive
       startDrawing()
@@ -548,4 +476,103 @@ TemplateClass.onAtlasLoad = (template, atlas) ->
             refreshEntity(id)
       cancel: -> refreshEntity(id)
     })
+
+  ##################################################################################################
+  # AMALGAMATION & SUBDIVISION
+  ##################################################################################################
+
+  # Bind atlas event to show/hide the amalgamation button and handle the click event.
+
+  firstSelectedLotId = null
+  $amalgamateButton = template.$('.amalgamate.item').hide()
+  $amalgamateButton.click ->
+    ids = AtlasManager.getSelectedLots()
+    LotUtils.amalgamate(ids)
+  $subdivideButton = template.$('.subdivide.item').hide()
+  $subdivideButton.click ->
+    ids = AtlasManager.getSelectedLots()
+    
+    startDrawing = ->
+      stopDrawing()
+      # Ensure lots are displayed as footprints.
+      Session.set('lotDisplayMode', 'footprint')
+      atlas.publish 'entity/draw', {
+        displayMode: 'line'
+        init: (args) -> args.feature.setElevation(2)
+        create: (args) ->
+          feature = args.feature
+          id = feature.getId()
+          vertices = feature.getForm().getVertices()
+          AtlasManager.unrenderEntity(id)
+          LotUtils.subdivide(ids, vertices).fin(cancelSubdivision)
+        update: (args) -> args.feature.getHandles().forEach (handle) -> handle.setElevation(4)
+        cancel: (args) ->
+          console.debug('Drawing cancelled', arguments)
+          feature = args.feature
+          id = feature.getId()
+          AtlasManager.unrenderEntity(id)
+          cancelSubdivision()
+          $subdivideButton.removeClass('active')
+      }
+
+    isActive = $subdivideButton.hasClass('active')
+    if isActive
+      if ids.length == 0
+        throw new Error('Select at least one Lot to subdivide.')
+      startDrawing()
+    else
+      atlas.publish('entity/draw/stop', {validate: false})
+
+  cancelSubdivision = -> $subdivideButton.removeClass('active')
+
+  ##################################################################################################
+  # AUTO-ALIGNMENT
+  ##################################################################################################
+
+  $alignmentButton = template.$('.alignment.item').hide()
+  $alignmentButton.click ->
+    ids = AtlasManager.getSelectedLots()
+    LotUtils.autoAlign(ids)
+
+  atlas.subscribe 'entity/select', (args) ->
+    id = args.ids[0]
+    lot = Lots.findOne(id)
+    return unless lot
+    geoEntity = AtlasManager.getEntity(id)
+    geoEntity
+
+  # Auto-align when adding new lots or adding/replacing entities on lots.
+
+  autoAlignEntity = (entity) ->
+    azimuth = SchemaUtils.getParameterValue(entity, 'orientation.azimuth')
+    LotUtils.autoAlign([entity.lot]) unless azimuth?
+
+  Collections.observe Lots.findByProject(),
+    added: (newDoc) ->
+      entityId = newDoc.entity
+      if entityId
+        autoAlignEntity(Entities.findOne(entityId))
+    changed: (newDoc, oldDoc) ->
+      entityId = newDoc.entity
+      if entityId && oldDoc.entity != entityId
+        autoAlignEntity(Entities.findOne(entityId))
+
+  ##################################################################################################
+  # LOT-SELECTION
+  ##################################################################################################
+
+  $allocationButton = template.$('.allocate.item').hide()
+
+  # Hide and show buttons based on the selected Lots.
+  atlas.subscribe 'entity/selection/change', (args) ->
+    ids = AtlasManager.getSelectedLots()
+    idCount = ids.length
+    if idCount == 0
+      firstSelectedLotId = null
+    else if idCount == 1
+      firstSelectedLotId = ids[0]
+    $amalgamateButton.toggle(idCount > 1)
+    $subdivideButton.toggle(idCount > 0)
+    $alignmentButton.toggle(idCount > 0)
+    $allocationButton.toggle(idCount > 0)
 

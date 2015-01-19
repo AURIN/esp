@@ -42,8 +42,8 @@ Meteor.startup ->
       migratedModelCount = 0
       # Replaced parameters.general.creator to author. Since no users existed beforehand, set the
       # username as 'admin'.
-      _.each Projects.find().fetch(), (project) ->
-        migratedModelCount += Projects.update(project._id, {
+      _.each Projects.find().fetch(), (model) ->
+        migratedModelCount += Projects.update(model._id, {
           $set:
             author: 'admin'
           $unset:
@@ -64,6 +64,19 @@ Meteor.startup ->
               desc: '...'
           }, {validate: false})
       console.log('Migrated', migratedModelCount, 'models by adding description field.')
+
+  Migrations.add
+    version: 5
+    up: ->
+      migratedModelCount = 0
+      # Add Project#isTemplate as false.
+      Projects.find().forEach (model) ->
+        return if model.isTemplate?
+        migratedModelCount += Projects.update(model._id, {
+          $set:
+            isTemplate: false
+        }, {validate: false})
+      console.log('Migrated', migratedModelCount, 'projects by adding isTemplate field.')
 
   console.log('Migrating to latest version...')
   Migrations.migrateTo('latest')

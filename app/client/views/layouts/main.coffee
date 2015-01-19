@@ -8,6 +8,6 @@ Template.mainLayout.events
     Router.go('projects')
     Projects.setCurrentId(null)
   'click .header .edit.button': ->
-    Template.design.addFormPanel null, Template.projectForm, Projects.getCurrent()
+    Template.design.addFormPanel null, Template.projectForm, {doc: Projects.getCurrent()}
   'click .header .import.button': -> Template.design.addFormPanel null, Template.importForm
   'click .header .zoom.button': -> ProjectUtils.zoomToEntities()

@@ -1,0 +1,23 @@
+<template name="autoAllocationForm">
+  <div class="flex-panel crud form">
+    <div class="lots title"><i class="block layout icon"></i>Auto-Allocation</div>
+    <div class="content">
+      <div class="inner">
+        <div class="ui form segment">
+          {{#autoForm id=formName schema=schema}}
+
+            {{> collectionTable collection="Typologies" items=typologies settings=tableSettings}}
+            {{> afQuickField name="allowNonDevelopment"}}
+            {{> afQuickField name="replace"}}
+
+            <div class="crud buttons">
+              <button type="button" class="ui red cancel button">Close</button>
+              <div class="spacer"></div>
+              <button type="submit" class="ui button submit green">Submit</button>
+            </div>
+          {{/autoForm}}
+        </div>
+      </div>
+    </div>
+  </div>
+</template>

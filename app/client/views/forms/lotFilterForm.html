@@ -1,0 +1,28 @@
+<template name="lotFilterForm">
+  <div class="flex-panel crud form">
+    <div class="lots title"><i class="block layout icon"></i>Lot Selection Filter</div>
+    <div class="content">
+      <div class="inner">
+        <div class="ui form segment">
+          {{#autoForm id=formName schema=schema}}
+
+            {{> afQuickField name="class" type="dropdown" items=classes allowEmpty=true value=defaultClass}}
+            {{> afQuickField name="develop"}}
+            {{> afQuickField name="allocated"}}
+            {{> afQuickField name="fpaMin"}}
+            {{> afQuickField name="fpaMax"}}
+            {{> afQuickField name="heightMin"}}
+            {{> afQuickField name="heightMax"}}
+            {{> afQuickField name="limit"}}
+
+            <div class="crud buttons">
+              <button type="button" class="ui red cancel button">Close</button>
+              <div class="spacer"></div>
+              <button type="submit" class="ui button submit green">Filter</button>
+            </div>
+          {{/autoForm}}
+        </div>
+      </div>
+    </div>
+  </div>
+</template>

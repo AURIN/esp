@@ -676,7 +676,7 @@ projectCategories =
             type: Number
             decimal: true
             units: Units.kgco2m2
-            defaultValue: -20
+            defaultValue: -2
           impermeable:
             label: 'Impermeable'
             type: Number
@@ -908,11 +908,17 @@ ProjectSchema = new SimpleSchema
     label: 'Parameters'
     type: ProjectParametersSchema
     defaultValue: {}
+  isTemplate:
+    label: 'Template?'
+    type: Boolean
+    defaultValue: false
 
 @Projects = new Meteor.Collection 'projects', schema: ProjectSchema
 Projects.attachSchema(ProjectSchema)
 Projects.allow(Collections.allowAll())
-AccountsAurin.addCollectionAuthorization(Projects)
+AccountsAurin.addCollectionAuthorization Projects,
+  # A user has access to their own projects as well as any templates.
+  userSelector: (args) -> {$or: [{author: args.username}, {isTemplate: true}]}
 
 hasSession = typeof Session != 'undefined'
 Projects.setCurrentId = (id) -> Session.set('projectId', id) if hasSession
@@ -954,6 +960,12 @@ Projects.mergeDefaults = (model) ->
   defaults = Projects.getDefaultParameterValues()
   mergeDefaultParameters(model, defaults)
 
+# Template Projects
+
+Projects.before.insert = (userId, doc) ->
+  if doc.isTemplate && !AuthUtils.isAdmin(userId)
+    throw new Error('Only admin user can create template project.')
+
 ####################################################################################################
 # TYPOLOGY SCHEMA DECLARATION
 ####################################################################################################
@@ -990,7 +1002,7 @@ TypologyClasses = Object.freeze({
         color: '#e53b3b'
   MIXED_USE:
     name: 'Mixed Use'
-    color: '#d95f0e' # Orange
+    color: '#756bb1' # Purple
     abbr: 'mu'
   OPEN_SPACE:
     name: 'Open Space'
@@ -1006,17 +1018,17 @@ TypologyClasses = Object.freeze({
     subclasses: ['Freeway', 'Highway', 'Street', 'Footpath', 'Bicycle Path']
   INSTITUTIONAL:
     name: 'Institutional'
-    color: '#756bb1' # Purple
+    color: '#ffae00' # Orange
     abbr: 'i'
     subclasses:
       'School':
-        color: '#756bb1'
+        color: '#ffae00'
       'Tertiary':
-        color: '#a1589b'
+        color: '#ffd200'
       'Hospital':
-        color: '#8e42a1'
+        color: '#ffc63d'
       'Public':
-        color: '#8958a1'
+        color: '#e4ff00'
 })
 
 BuildingClasses = Object.freeze({
@@ -2752,7 +2764,7 @@ typologyCategories =
         desc: 'Greenhouse gas emissions per household per year.'
         type: Number
         decimal: true
-        units: Units.kgco2day
+        units: Units.kgco2year
         calc: '$transport.ghg_household_day * 365'
       ghg_dwellings_day:
         label: 'GHG total Dwellings'
@@ -2766,14 +2778,14 @@ typologyCategories =
         desc: 'Greenhouse gas emissions per household per year.'
         type: Number
         decimal: true
-        units: Units.kgco2day
+        units: Units.kgco2year
         calc: '$transport.ghg_dwellings_day * 365'
       ghg_person_year:
         label: 'GHG per Resident'
         desc: 'Greenhouse gas emissions per resident per year.'
         type: Number
         decimal: true
-        units: Units.kgco2day
+        units: Units.kgco2year
         calc: '$transport.ghg_person_day * 365'
       # MODE SHARE MODEL
       exp_vehpass:
@@ -2935,6 +2947,13 @@ Typologies.getSubclassItems = _.memoize (typologyClass) ->
   allowedValues = options?.allowedValues ? []
   _.map allowedValues, (value) -> {_id: value, name: value}
 
+Typologies.getAllocatableClassItems = ->
+  items = []
+  _.each Typologies.classes, (cls, id) ->
+    unless cls.canAllocateToLot == false
+      items.push(Setter.merge(Setter.clone(cls), {_id: id}))
+  items
+
 # Typologies.getSubclassColors = _.memoize (typologyClass) ->
 #   classArgs = TypologyClasses[typologyClass]
 #   subclasses = classArgs?.subclasses
@@ -3053,8 +3072,9 @@ Typologies.filterParameters = (model) ->
 
 Typologies.findByProject = (projectId) -> SchemaUtils.findByProject(Typologies, projectId)
 
-Typologies.getClassMap = (projectId) ->
-  typologies = Typologies.findByProject(projectId).fetch()
+Typologies.getClassMap = (typologies) ->
+  unless typologies
+    typologies = Typologies.findByProject(projectId).fetch()
   typologyMap = {}
   _.each typologies, (typology) ->
     typologyClass = SchemaUtils.getParameterValue(typology, 'general.class')
@@ -3178,20 +3198,27 @@ Lots.findForDevelopment = (projectId) ->
 Lots.findAvailable = (projectId) ->
   _.filter Lots.findForDevelopment(projectId), (lot) -> !lot.entity
 
-Lots.createEntity = (lotId, typologyId, allowReplace) ->
-  allowReplace ?= false
+Lots.createEntity = (args) ->
+  args = _.extend({allowReplace: false, allowNonDevelopment: false}, args)
+  lotId = args.lotId
+  typologyId = args.typologyId
+  allowReplace = args.allowReplace
   df = Q.defer()
   lot = Lots.findOne(lotId)
-  if lot.entity && !allowReplace
-    throw new Error('Cannot replace entity on existing Lot with ID ' + lotId)
   typology = Typologies.findOne(typologyId)
   if !lot
     throw new Error('No Lot with ID ' + id)
   else if !typology
     throw new Error('No Typology with ID ' + typologyId)
-  # TODO(aramk) Need a warning?
-  #  else if lot.entity?
-  #    throw new Error('Lot with ID ' + id + ' already has entity')
+  oldEntityId = lot.entity
+  oldTypologyId = oldEntityId && Entities.findOne(oldEntityId).typology
+  newTypologyId = typology._id
+  if oldEntityId && !allowReplace
+    throw new Error('Cannot replace entity on existing Lot with ID ' + lotId)
+  else if newTypologyId && oldTypologyId && oldTypologyId == newTypologyId
+    # Prevent creating a new entity if the same typology as the existing is specified.
+    df.resolve(oldEntityId)
+    return df.promise
   classParamId = 'parameters.general.class'
   developParamId = 'parameters.general.develop'
   lotClass = SchemaUtils.getParameterValue(lot, classParamId)
@@ -3199,6 +3226,10 @@ Lots.createEntity = (lotId, typologyId, allowReplace) ->
   # If no class is provided, use the class of the entity's typology.
   unless lotClass
     lotClass = SchemaUtils.getParameterValue(typology, classParamId)
+  if args.allowNonDevelopment
+    # Ensures the lot will be updated as developable and validation will pass.
+    isForDevelopment = true
+    SchemaUtils.setParameterValue(lot, developParamId, true)
   Lots.validateTypology(lot, typologyId).then (result) ->
     if result
       console.error('Cannot create Entity on Lot:', result)
@@ -3221,29 +3252,23 @@ Lots.createEntity = (lotId, typologyId, allowReplace) ->
       lotModifier[developParamId] = isForDevelopment
       Lots.update lotId, {$set: lotModifier}, (err, result) ->
         if err
+          # Remove the newly created entity if the lot could not be updated.
           Entities.remove newEntityId, (removeErr, result) ->
             if removeErr
               df.reject(removeErr)
             else
               df.reject(err)
         else
-          df.resolve(newEntityId)
+          # Remove the existing entity (if any) when replacing.
+          if allowReplace && oldEntityId
+            Entities.remove oldEntityId, (err, result) ->
+              if err
+                console.error('Could not remove old entity with id', oldEntityId, err)
+              else
+                df.resolve(newEntityId)
+          else
+            df.resolve(newEntityId)
   df.promise
-
-Lots.createOrReplaceEntity = (lotId, newTypologyId) ->
-  entityDf = Q.defer()
-  lot = Lots.findOne(lotId)
-  oldEntityId = lot.entity
-  oldTypologyId = oldEntityId && Entities.findOne(oldEntityId).typology
-  if newTypologyId && oldTypologyId != newTypologyId
-    # Create a new entity for the lot, removing the old one.
-    Lots.createEntity(lotId, newTypologyId, true).then(
-      (newEntityId) -> entityDf.resolve(newEntityId)
-      (err) -> entityDf.reject(err)
-    )
-  else
-    entityDf.resolve(oldEntityId)
-  entityDf.promise
 
 Lots.validate = (lot) ->
   entityId = lot.entity
@@ -3615,8 +3640,20 @@ Entities.after.remove (userId, entity) ->
   Lots.update(lot._id, {$unset: {entity: null}}) if lot?
 
 Lots.after.update (userId, lot, fieldNames, modifier) ->
+  # Remove the entity when the lot's entity field is unset.
   if modifier.$unset?.entity != undefined
     Entities.remove(@previous.entity)
+
+Lots.before.update (userId, lot, fieldNames, modifier) ->
+  newLot = Collections.simulateModifierUpdate(lot, modifier)
+  entityId = newLot.entity
+  return unless entityId
+  typologyClass = SchemaUtils.getParameterValue(newLot, 'general.class')
+  entityTypologyClass = Entities.getTypologyClass(entityId)
+  if typologyClass != entityTypologyClass
+    delete modifier.$set?.entity
+    modifier.$unset ?= {}
+    modifier.$unset.entity = null
 
 Lots.after.remove (userId, lot) ->
   # Remove the entity when the lot is removed.

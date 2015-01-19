@@ -317,6 +317,11 @@ module.exports = function(grunt) {
     });
   });
 
+  grunt.registerTask('migrations-lock-reset', 'Resets the lock on the MongoDB database.', function() {
+    shell.cd(APP_DIR);
+    shell.exec('echo \'db.migrations.update({_id:"control"}, {$set:{"locked":false}});\' | meteor mongo')
+  });
+
   grunt.registerTask('default', ['install']);
 
   //////////////////////////////////////////////////////////////////////////////////////////////////

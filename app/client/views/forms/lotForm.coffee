@@ -9,10 +9,6 @@ Meteor.startup ->
     CREATING: 'creating'
     EDITING: 'editing'
 
-  # Used to define an empty record in the typology dropdown. Selecting this removes any existing
-  # entity associated with the lot.
-  #  EMPTY = ':empty'
-
   # TODO(aramk) At the moment only one lot form instance can exist at once.
   getEditState = (name) -> Session.get('edit_' + name)
   setEditState = (name, value) ->
@@ -80,9 +76,10 @@ Meteor.startup ->
       
       # If not for development, there is no dropdown.
       $typologyDropdown = getTypologyDropdown(template)
-      if $typologyDropdown.length > 0
-        newTypologyId = Template.dropdown.getValue($typologyDropdown)
-        Lots.createOrReplaceEntity(id, newTypologyId).then(entityDf.resolve, entityDf.reject)
+      newTypologyId = Template.dropdown.getValue($typologyDropdown)
+      if newTypologyId
+        Lots.createEntity(lotId: id, typologyId: newTypologyId, allowReplace: true)
+            .then(entityDf.resolve, entityDf.reject)
       else
         entityDf.resolve(null)
       
@@ -214,13 +211,7 @@ Meteor.startup ->
 
   # TODO(aramk) Abstract dropdown to allow null selection automatically.
   Form.helpers
-    classes: ->
-      classes = Collections.createTemporary()
-      _.each Typologies.getClassItems(), (item) -> classes.insert(item)
-      _.each Typologies.classes, (cls, id) ->
-        if cls.canAllocateToLot == false
-          classes.remove(id)
-      classes
+    classes: -> Collections.createTemporary(Typologies.getAllocatableClassItems())
     typologyId: -> getTypologyId(@doc)
     typologies: -> getTemplate().typologies
     forDev: -> Session.get('_forDev')
