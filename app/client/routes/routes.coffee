@@ -10,7 +10,7 @@ crudRoute = (collectionName, controller) ->
   controller ?= BaseController
   collectionId = Strings.firstToLowerCase(collectionName)
   singularName = Strings.singular(collectionId)
-  itemRoute = singularName + 'Item'
+  itemRoute = singularName + 'Create'
   editRoute = singularName + 'Edit'
   formName = singularName + 'Form'
   console.debug('crud routes', itemRoute, editRoute, formName)
