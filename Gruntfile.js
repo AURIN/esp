@@ -49,10 +49,6 @@ module.exports = function(grunt) {
   var PUBLIC_PARENT_DIR = 'design';
   var PUBLIC_PARENT_PATH = publicPath(PUBLIC_PARENT_DIR);
 
-  var bowerPaths = [];
-  var npmPaths = [];
-  var gruntPaths = [];
-
   //////////////////////////////////////////////////////////////////////////////////////////////////
   // CONFIG
   //////////////////////////////////////////////////////////////////////////////////////////////////
@@ -126,34 +122,11 @@ module.exports = function(grunt) {
             return value === arg;
           });
         };
-      addTasks('install-bower', 'install-npm', 'install-grunt', 'install-mrt',
-        'install-meteor-packages', 'setup-atlas-resources');
+      addTasks('install-meteor-packages', 'setup-atlas-resources');
     console.log('Running tasks', tasks);
     tasks.forEach(function(task) {
       grunt.task.run(task);
     })
-  });
-
-  grunt.registerTask('install-bower', 'Gets all bower dependencies', function() {
-    // NOTE: No longer necessary since all dependencies are managed with Meteor.
-    // ['.'].concat(bowerPaths).forEach(function(dir) {
-    //   grunt.log.writeln(dir + ': running bower install');
-    //   shell.exec('cd ' + dir + ' && bower install');
-    // });
-  });
-
-  grunt.registerTask('install-npm', 'Gets all node dependencies', function() {
-    npmPaths.forEach(function(dir) {
-      grunt.log.writeln(dir + ': running npm install');
-      shell.exec('cd ' + dir + '&& npm install --cache-min 999999999');
-    });
-  });
-
-  grunt.registerTask('install-grunt', 'Runs "grunt install" on all dependencies.', function() {
-    gruntPaths.forEach(function(dir) {
-      grunt.log.writeln(dir + ': running grunt install');
-      shell.exec('cd ' + dir + ' && grunt install');
-    });
   });
 
   grunt.registerTask('install-mrt', 'Installs Meteorite dependencies.', function() {
