@@ -18,7 +18,12 @@
             {{> afQuickField name="parameters.space.prpn_hardy"}}
             {{> afQuickField name="parameters.space.prpn_imper"}}
 
+            {{> afQuickField name="parameters.space.occupants"}}
+
             <div class="subtitle">Energy Demand</div>
+            {{> afQuickField name="parameters.energy_demand.src_heat" options="allowed"}}
+            {{> afQuickField name="parameters.energy_demand.cop_heat"}}
+            {{> afQuickField name="parameters.energy_demand.eer_cool"}}
             {{> afQuickField name="parameters.energy_demand.src_cook" options="allowed"}}
             {{> afQuickField name="parameters.energy_demand.type_app" options="allowed"}}
             {{> afQuickField name="parameters.energy_demand.size_pv"}}

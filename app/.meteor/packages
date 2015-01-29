@@ -24,7 +24,8 @@ meteorhacks:npm
 matb33:collection-hooks
 npm-container
 mrt:moment
-nooitaf:semantic-ui
+# 1.8.0 causes issues with dropdown
+nooitaf:semantic-ui@=1.7.3
 percolatestudio:percolatestudio-migrations
 raix:handlebar-helpers
 

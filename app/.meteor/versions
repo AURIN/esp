@@ -83,7 +83,7 @@ mongo@1.0.11
 mongo-livedata@1.0.7
 mrt:moment@2.8.1
 natestrauser:font-awesome@4.2.0
-nooitaf:semantic-ui@1.8.0
+nooitaf:semantic-ui@1.7.3
 npm-bcrypt@0.7.7
 npm-container@1.0.0
 observe-sequence@1.0.4
