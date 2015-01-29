@@ -1,9 +1,13 @@
-Template.mainLayout.helpers
+TemplateClass = Template.mainLayout
+
+TemplateClass.rendered = ->
+
+TemplateClass.helpers
   appName: -> AppConfig.name
   stateName: -> Session.get('stateName')
   project: -> Projects.getCurrent()
 
-Template.mainLayout.events
+TemplateClass.events
   'click .header .close.button': ->
     Router.go('projects')
     Projects.setCurrentId(null)
