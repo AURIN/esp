@@ -44,38 +44,30 @@
         isCollection = (c3ml) -> c3ml.type == 'collection'
         uploadIsPolygon = _.every c3mls, (c3ml) -> isPolygon(c3ml) || isCollection(c3ml)
         if uploadIsPolygon
-          c3mlPolygon = _.find c3mls, (c3ml) -> isPolygon(c3ml)
-          unless c3mlPolygon
-            throw new Error('No suitable geometries or meshes found in file.')
-          @handleFootprintUpload(c3mlPolygon, fileObj, template).then(df.resolve, df.reject)
+          hasPolygon = _.some c3mls, (c3ml) -> isPolygon(c3ml)
+          unless hasPolygon
+            throw new Error('File must contain at least one polygon.')
+          paramId = 'geom_2d'
         else
           uploadNotEmpty = _.some c3mls, (c3ml) -> !isCollection(c3ml)
           unless uploadNotEmpty
-            throw new Error('File must contain at least one c3ml entity other than a collection.')
-          @handleMeshUpload(c3mls, fileObj, template).then(df.resolve, df.reject)
+            throw new Error('File must contain at least one geometry.')
+          paramId = 'geom_3d'
+        @handleUpload(c3mls, fileObj, paramId, template).then(df.resolve, df.reject)
       df.reject
     )
     df.promise
 
-  handleFootprintUpload: (c3ml, fileObj, template) ->
+  handleUpload: (c3mls, fileObj, paramId, template) ->
     filename = fileObj.data.blob.name
-    $geom2dInput = $(template.find('[name="parameters.space.geom_2d"]'))
-    $geom2dFilenameInput = $(template.find('[name="parameters.space.geom_2d_filename"]'))
-    WKT.fromC3ml(c3ml).then (wkt) ->
-      # Trigger change to ensure importField controls are updated.
-      $geom2dInput.val(wkt)
-      $geom2dFilenameInput.val(filename).trigger('change')
-
-  handleMeshUpload: (c3mls, fileObj, template) ->
-    filename = fileObj.data.blob.name
-    $geom3dInput = $(template.find('[name="parameters.space.geom_3d"]'))
-    $geom3dFilenameInput = $(template.find('[name="parameters.space.geom_3d_filename"]'))
+    $geomInput = $(template.find('[name="parameters.space.' + paramId + '"]'))
+    $geomFilenameInput = $(template.find('[name="parameters.space.' + paramId + '_filename"]'))
     # Upload the c3ml as a file.
     doc = {c3mls: c3mls}
     docString = JSON.stringify(doc)
     blob = new Blob([docString])
     Files.upload(blob).then (fileObj) ->
       id = fileObj._id
-      $geom3dInput.val(id)
-      $geom3dFilenameInput.val(filename).trigger('change')
+      $geomInput.val(id)
+      $geomFilenameInput.val(filename).trigger('change')
 

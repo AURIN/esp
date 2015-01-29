@@ -24,7 +24,7 @@ meteorhacks:npm
 matb33:collection-hooks
 npm-container
 mrt:moment
-nooitaf:semantic-ui
+nooitaf:semantic-ui@1.8.1
 percolatestudio:percolatestudio-migrations
 raix:handlebar-helpers
 
