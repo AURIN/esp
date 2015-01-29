@@ -400,7 +400,7 @@ module.exports = function(grunt) {
       cmdArgs = cmdArgs.trim().split(/\s+/);
       args.args = cmdArgs.concat(args.args);
     }
-    console.log('Running process: ', cmd, args);
+    console.log('Running process: ', cmd, args.args);
     var proc = child_process.spawn(cmd, args.args, args.options);
     proc.stdout.on('data', function(data) {
       process.stdout.write(data.toString('utf8'));

@@ -1,7 +1,6 @@
 _renderQueue = null
 resetRenderQueue = -> _renderQueue = new DeferredQueueMap()
 evalEngine = null
-
 Meteor.startup ->
   resetRenderQueue()
   evalEngine = new EvaluationEngine(schema: Lots.simpleSchema())

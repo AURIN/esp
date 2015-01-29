@@ -1,7 +1,10 @@
 <template name="mainLayout">
   <div class="ui main container">
     <div class="header">
-      <div class="logo">{{appName}}</div>
+      <div class="aurin-logo"></div>
+      <div class="logo-wrapper">
+        <div class="logo">{{appName}}</div>
+      </div>
       {{#if currentUser}}
         <div class="tools right">
           <div class="state-name">{{stateName}}</div>

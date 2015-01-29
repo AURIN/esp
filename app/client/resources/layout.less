@@ -42,14 +42,35 @@ body {
   display: flex;
   flex-direction: column;
   > .header {
+    position: relative;
+    height: 45px;
     padding: 10px;
     border-bottom: 1px solid #ccc;
+    .logo-wrapper {
+      margin: 0;
+      position: absolute;
+      width: 100%;
+      top: 8px;
+      left: 0;
+      text-align: center;
+    }
     .logo {
       color: @color-orange;
-      float: left;
-      margin-right: 20px;
       font-size: 20px;
       font-weight: bold;
+      text-align: center;
+      margin: 0 auto;
+      display: inline-block;
+      position: relative;
+    }
+    .aurin-logo {
+      background: url('/images/aurin-workbench.png') no-repeat;
+      height: 42px;
+      width: 100px;
+      background-size: contain;
+      position: absolute;
+      top: 0;
+      left: 10px;
     }
     .state-name {
       display: inline-block;
@@ -99,6 +120,9 @@ body {
         box-shadow: none;
       }
     }
+  }
+  &.compact {
+
   }
 }
 
