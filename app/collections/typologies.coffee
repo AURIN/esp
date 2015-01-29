@@ -34,6 +34,7 @@ Units =
   $kL: '$/kL'
   deg: 'degrees'
   GJyear: 'GJ/year'
+  GJyearOccupant: 'GJ/year/occupant'
   ha: 'ha'
   jobs: 'jobs'
   kgco2: 'kg CO_2-e'
@@ -47,6 +48,7 @@ Units =
   kWhday: 'kWh/day'
   kWhyear: 'kWh/year'
   kLyear: 'kL/year'
+  kLyearOccupant: 'kL/year/occupant'
   kLm2year: 'kL/m^2/year'
   km: 'km'
   kmday: 'km/day'
@@ -1052,7 +1054,7 @@ LandClasses = Object.freeze(extendClassMap(OPEN_SPACE: {}, BuildingClasses))
 
 extendLandClasses = (args) -> extendClassMap(args, LandClasses)
 
-classHasIntensity = (typologyClass) ->
+isNonResidentialBuildingClass = (typologyClass) ->
   !!{COMMERCIAL: true, MIXED_USE: true, INSTITUTIONAL: true}[typologyClass]
 
 ClassNames = Object.keys(TypologyClasses)
@@ -1690,14 +1692,6 @@ typologyCategories =
         units: Units.kWhyear
         classes:
           RESIDENTIAL: {}
-      en_hwat:
-        label: 'Hot Water'
-        desc: 'Energy required for hot water heating in the typology.'
-        type: Number
-        decimal: true
-        units: Units.GJyear
-        classes:
-          RESIDENTIAL: {}
       src_hwat:
         label: 'Hot Water Source'
         desc: 'Energy source in the typology used for hot water heating. Used to calculated CO2-e.'
@@ -1706,6 +1700,20 @@ typologyCategories =
         classes:
           RESIDENTIAL:
             defaultValue: 'Electricity'
+      hw_intensity:
+        label: 'Hot Water Intensity'
+        type: Number
+        decimal: true
+        units: Units.GJyearOccupant
+        classes:
+          RESIDENTIAL: {}
+      en_hwat:
+        label: 'Hot Water'
+        desc: 'Energy required for hot water heating in the typology.'
+        type: Number
+        decimal: true
+        units: Units.GJyear
+        calc: '$energy_demand.hw_intensity * $space.occupants'
       en_cook:
         label: 'Cooktop and Oven'
         desc: 'Energy required for cooking in the typology.'
@@ -1874,7 +1882,7 @@ typologyCategories =
         decimal: true
         units: Units.MJyear
         calc: ->
-          if classHasIntensity(Entities.getTypologyClass(@model))
+          if isNonResidentialBuildingClass(Entities.getTypologyClass(@model))
             @calc('$energy_demand.en_use_e + $energy_demand.en_use_g - (KWH_TO_MJ($energy_demand.size_pv * $renewable_energy.pv_output * 365))')
           else
             @calc('$energy_demand.en_app + $energy_demand.en_cook + ($energy_demand.en_hwat * 1000) + KWH_TO_MJ($energy_demand.en_light) + $energy_demand.en_cool + $energy_demand.en_heat - KWH_TO_MJ($energy_demand.en_pv)')
@@ -1945,7 +1953,7 @@ typologyCategories =
         decimal: true
         units: Units.kgco2
         calc: ->
-          if classHasIntensity(Entities.getTypologyClass(@model))
+          if isNonResidentialBuildingClass(Entities.getTypologyClass(@model))
             i_co2_emb = @param('embodied_carbon.i_co2_emb_intensity_value')
           else
             i_co2_emb = @param('embodied_carbon.i_co2_emb')
@@ -2080,7 +2088,7 @@ typologyCategories =
         units: Units.kgco2year
         classes: BuildingClasses
         calc: ->
-          if classHasIntensity(Entities.getTypologyClass(@model))
+          if isNonResidentialBuildingClass(Entities.getTypologyClass(@model))
             @calc('$operating_carbon.co2_op_e + $operating_carbon.co2_op_g')
           else
             @calc('$operating_carbon.co2_heat + $operating_carbon.co2_cool + $operating_carbon.co2_light + $operating_carbon.co2_hwat + $operating_carbon.co2_cook + $operating_carbon.co2_app - ($energy_demand.en_pv * $operating_carbon.elec)')
@@ -2099,12 +2107,50 @@ typologyCategories =
   water_demand:
     label: 'Water Demand'
     items:
+      # NOTE: This is used for residential, whereas i_wu_intensity is used for other classes. Note
+      # that the units vary.
+      i_wu_intensity_pot:
+        label: 'Internal Water Use Intensity - Potable'
+        type: Number
+        decimal: true
+        units: Units.kLyearOccupant
+        classes:
+          RESIDENTIAL: {}
+      i_wu_intensity_bore:
+        label: 'Internal Water Use Intensity - Bore'
+        type: Number
+        decimal: true
+        units: Units.kLyearOccupant
+        classes:
+          RESIDENTIAL: {}
+      i_wu_intensity_rain:
+        label: 'Internal Water Use Intensity - Rain'
+        type: Number
+        decimal: true
+        units: Units.kLyearOccupant
+        classes:
+          RESIDENTIAL: {}
+      i_wu_intensity_treat:
+        label: 'Internal Water Use Intensity - Treated'
+        type: Number
+        decimal: true
+        units: Units.kLyearOccupant
+        classes:
+          RESIDENTIAL: {}
+      i_wu_intensity_grey:
+        label: 'Internal Water Use Intensity - Grey'
+        type: Number
+        decimal: true
+        units: Units.kLyearOccupant
+        classes:
+          RESIDENTIAL: {}
       i_wu_pot:
         label: 'Internal Water Use - Potable'
         desc: 'Internal potable water use of the typology.'
         type: Number
         decimal: true
         units: Units.kLyear
+        calc: '$water_demand.i_wu_intensity_pot * $space.occupants'
         classes:
           RESIDENTIAL: {}
       i_wu_bore:
@@ -2113,6 +2159,7 @@ typologyCategories =
         type: Number
         decimal: true
         units: Units.kLyear
+        calc: '$water_demand.i_wu_intensity_bore * $space.occupants'
         classes:
           RESIDENTIAL: {}
       i_wu_rain:
@@ -2121,6 +2168,7 @@ typologyCategories =
         type: Number
         decimal: true
         units: Units.kLyear
+        calc: '$water_demand.i_wu_intensity_rain * $space.occupants'
         classes:
           RESIDENTIAL: {}
       i_wu_treat:
@@ -2129,6 +2177,7 @@ typologyCategories =
         type: Number
         decimal: true
         units: Units.kLyear
+        calc: '$water_demand.i_wu_intensity_treat * $space.occupants'
         classes:
           RESIDENTIAL: {}
       i_wu_grey:
@@ -2137,6 +2186,7 @@ typologyCategories =
         type: Number
         decimal: true
         units: Units.kLyear
+        calc: '$water_demand.i_wu_intensity_grey * $space.occupants'
         classes:
           RESIDENTIAL: {}
       i_wu_intensity:
@@ -2182,7 +2232,7 @@ typologyCategories =
         decimal: true
         units: Units.kLyear
         calc: ->
-          if classHasIntensity(Entities.getTypologyClass(@model))
+          if isNonResidentialBuildingClass(Entities.getTypologyClass(@model))
             typologyClass = Entities.getTypologyClass(@model)
             if typologyClass == 'MIXED_USE'
               @calc('$water_demand.i_wu_intensity_r * $space.gfa_r + $water_demand.i_wu_intensity_c * $space.gfa_c')
@@ -2286,7 +2336,7 @@ typologyCategories =
         units: Units.kLyear
         calc: ->
           typologyClass = Entities.getTypologyClass(@model)
-          if classHasIntensity(typologyClass)
+          if isNonResidentialBuildingClass(typologyClass)
             i_wu_pot = @param('water_demand.i_wu_total')
           else if typologyClass == 'OPEN_SPACE'
             # Open space has no internal water usage component.
@@ -2390,7 +2440,7 @@ typologyCategories =
         units: Units.$
         classes: BuildingClasses
         calc: ->
-          if classHasIntensity(Entities.getTypologyClass(@model))
+          if isNonResidentialBuildingClass(Entities.getTypologyClass(@model))
             calcEnergyWithIntensityCost.call(@, 'elec', 'e')
           else
             calcEnergyCost.call(@, 'Electricity', 'elec')
@@ -2401,7 +2451,7 @@ typologyCategories =
         units: Units.$
         classes: BuildingClasses
         calc: ->
-          if classHasIntensity(Entities.getTypologyClass(@model))
+          if isNonResidentialBuildingClass(Entities.getTypologyClass(@model))
             calcEnergyWithIntensityCost.call(@, 'gas', 'g')
           else
             calcEnergyCost.call(@, 'Gas', 'gas')
