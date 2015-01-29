@@ -1633,28 +1633,53 @@ typologyCategories =
   energy_demand:
     label: 'Energy Demand'
     items:
-      en_heat:
-        label: 'Heating'
-        desc: 'Energy required for heating the typology.'
-        type: Number
-        decimal: true
-        units: Units.MJyear
-        classes:
-          RESIDENTIAL: {}
       src_heat:
         label: 'Heating Source'
         desc: 'Energy source in the typology used for heating.'
         type: String
         allowedValues: EnergySources
         classes:
-          RESIDENTIAL:
-            defaultValue: 'Gas'
+          RESIDENTIAL: {defaultValue: 'Electricity'}
+      en_heat:
+        label: 'Heating'
+        desc: 'Energy required for heating the typology.'
+        type: Number
+        decimal: true
+        units: Units.MJyear
+        calc: '$energy_demand.thermal_heat / $energy_demand.cop_heat'
+        classes:
+          RESIDENTIAL: {}
       en_cool:
         label: 'Cooling'
         desc: 'Energy required for cooling the typology.'
         type: Number
         decimal: true
         units: Units.MJyear
+        calc: '$energy_demand.thermal_cool / $energy_demand.eer_cool'
+        classes:
+          RESIDENTIAL: {}
+      cop_heat:
+        label: 'Coefficient of Performance (COP)'
+        type: Number
+        decimal: true
+        classes:
+          RESIDENTIAL: {defaultValue: 4}
+      eer_cool:
+        label: 'Energy Efficiency Rating (EER)'
+        type: Number
+        decimal: true
+        classes:
+          RESIDENTIAL: {defaultValue: 4}
+      thermal_heat:
+        label: 'Thermal Heating Energy'
+        type: Number
+        decimal: true
+        classes:
+          RESIDENTIAL: {}
+      thermal_cool:
+        label: 'Thermal Cooling Energy'
+        type: Number
+        decimal: true
         classes:
           RESIDENTIAL: {}
       en_light:
@@ -3511,6 +3536,7 @@ Typologies.calcOutputFromAzimuth = (array, azimuth) ->
   input = azimuth % 360
   Maths.calcUniformBinValue(array, input, 360)
 
+# Changes to these fields will trigger the energy demand calculations.
 azimuthArrayDependencyFieldIds = ['parameters.space.cfa', 'parameters.orientation.azimuth',
   'parameters.orientation.eq_azmth_h', 'parameters.orientation.eq_azmth_c']
 
@@ -3538,8 +3564,8 @@ updateAzimuthEnergyDemand = (userId, doc, fieldNames, modifier) ->
   return unless cfa? && azimuth?
   $set = {}
   items = [
-    {array: eq_azmth_h, energyParamId: 'parameters.energy_demand.en_heat'}
-    {array: eq_azmth_c, energyParamId: 'parameters.energy_demand.en_cool'}
+    {array: eq_azmth_h, energyParamId: 'parameters.energy_demand.thermal_heat'}
+    {array: eq_azmth_c, energyParamId: 'parameters.energy_demand.thermal_cool'}
   ]
   _.each items, (item) ->
     array = item.array

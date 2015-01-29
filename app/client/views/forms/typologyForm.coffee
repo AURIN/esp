@@ -228,8 +228,8 @@ Meteor.startup ->
     cfa = parameters.space?.cfa
     $heating = template.$('[data-name="parameters.orientation.eq_azmth_h"]')
     $cooling = template.$('[data-name="parameters.orientation.eq_azmth_c"]')
-    $heatingOutput = template.$('[name="parameters.energy_demand.en_heat"]')
-    $coolingOutput = template.$('[name="parameters.energy_demand.en_cool"]')
+    $heatingOutput = template.$('[name="parameters.energy_demand.thermal_heat"]')
+    $coolingOutput = template.$('[name="parameters.energy_demand.thermal_cool"]')
     $cfa = getCfaInput(template)
     {
       cfa: {value: cfa, $cfa: $cfa}
