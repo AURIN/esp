@@ -98,11 +98,11 @@ Meteor.startup ->
       migratedModelCount = 0
       fieldsMap =
         'energy_demand.en_hwat': 'energy_demand.hw_intensity'
-        'i_wu_pot': 'water_demand.i_wu_intensity_pot'
-        'i_wu_bore': 'water_demand.i_wu_intensity_bore'
-        'i_wu_rain': 'water_demand.i_wu_intensity_rain'
-        'i_wu_treat': 'water_demand.i_wu_intensity_treat'
-        'i_wu_grey': 'water_demand.i_wu_intensity_grey'
+        'water_demand.i_wu_pot': 'water_demand.i_wu_intensity_pot'
+        'water_demand.i_wu_bore': 'water_demand.i_wu_intensity_bore'
+        'water_demand.i_wu_rain': 'water_demand.i_wu_intensity_rain'
+        'water_demand.i_wu_treat': 'water_demand.i_wu_intensity_treat'
+        'water_demand.i_wu_grey': 'water_demand.i_wu_intensity_grey'
       prefix = 'parameters.'
       Projects.find().forEach (project) ->
         _.each [Typologies, Entities], (collection) ->
