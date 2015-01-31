@@ -61,32 +61,6 @@ if Meteor.isClient
         return Q.when(null)
       collectionId = id + '-' + paramId
       GeometryUtils.buildGeometryFromFile(fileId, {collectionId: collectionId})
-      # df = Q.defer()
-      # # geoEntity = AtlasManager.getEntity(id)
-      # require ['atlas/model/GeoPoint'], (GeoPoint) =>
-      #   @_getGeometryFromFile(id, paramId).then (result) ->
-      #     unless result
-      #       df.resolve(null)
-      #       return
-      #     # Modify the ID of c3ml entities to allow reusing them for multiple collections.
-      #     c3mls = _.map result.c3mls, (c3ml) ->
-      #       c3ml.id = collectionId + ':' + c3ml.id
-      #       c3ml.show = true
-      #       c3ml
-      #     # Ignore all collections in the c3ml, since they don't affect visualisation.
-      #     c3mls = _.filter c3mls, (c3ml) -> c3ml.type != 'collection'
-      #     try
-      #       c3mlEntities = AtlasManager.renderEntities(c3mls)
-      #     catch e
-      #       console.error('Error when rendering mesh entities', e)
-      #     ids = []
-      #     _.each c3mlEntities, (c3mlEntity) ->
-      #       mesh = null
-      #       if c3mlEntity.getForm
-      #         mesh = c3mlEntity.getForm()
-      #         ids.push(c3mlEntity.getId()) if mesh
-      #     AtlasManager.createCollection(collectionId, ids).then(df.resolve, df.reject)
-      # df.promise
 
     _render2dGeometry: (id) ->
       entity = Entities.getFlattened(id)
@@ -142,8 +116,10 @@ if Meteor.isClient
           Q.all(geometryDfs).then(
             (geometries) =>
               if isPathway
+                geoEntity = geometries[0]
                 # A pathway doesn't have any 3d geometry or a lot.
-                df.resolve(geometries[0])
+                @_setUpEntity(geoEntity)
+                df.resolve(geoEntity)
                 return
               @_renderLot(id).then(
                 (lotEntity) =>
@@ -175,19 +151,11 @@ if Meteor.isClient
                         (args) ->
                           geoEntity = AtlasManager.renderEntity(args)
                           geoEntity.setForm(Feature.DisplayMode.FOOTPRINT, entity2d)
-                          args.height && entity2d.setHeight(args.height)
-                          args.elevation && entity2d.setElevation(args.elevation)
+                          args.height? && entity2d.setHeight(args.height)
+                          args.elevation? && entity2d.setElevation(args.elevation)
                           geoEntityDf.resolve(geoEntity)
                         geoEntityDf.reject
                       )
-                      # geoEntity = AtlasManager.renderEntities([{
-                      #   # Ensure the ID of the feature is that of the entity so show/hide works.
-                      #   # The geom_2d has a different ID unless constructed from WKT.
-                      #   id: id
-                      #   type: 'feature'
-                      #   # footprint: entity2d
-                      #   # mesh: entity3d
-                      # }])[0]
                     geoEntityDf.promise.then(
                       (geoEntity) =>
                         if entity3d
@@ -197,8 +165,7 @@ if Meteor.isClient
                           # Apply rotation based on the azimuth.
                           form.setRotation(new Vertex(0, 0, azimuth)) if azimuth?
                         geoEntity.setDisplayMode(Session.get('entityDisplayMode'))
-                        geoEntity.show()
-                        @_setUpPopup(geoEntity)
+                        @_setUpEntity(geoEntity)
                         df.resolve(geoEntity)
                       df.reject
                     )
@@ -207,6 +174,10 @@ if Meteor.isClient
             df.reject
           )
       df.promise
+
+    _setUpEntity: (geoEntity) ->
+      geoEntity.show()
+      @_setUpPopup(geoEntity)
 
     _setUpPopup: (geoEntity) ->
       entity = Entities.getFlattened(geoEntity.getId())
