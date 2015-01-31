@@ -6,13 +6,17 @@
     if geom_2d
       @hasWktGeometry(model).then (isWKT) =>
         if isWKT
-          result = @getWktArea(geom_2d)
+          promise = @getWktArea(geom_2d)
         else
-          @buildGeometryFromFile(geom_2d).then(
-            (geometry) => df.resolve(geometry.getArea())
+          # Create a temporary geometry and check the area.
+          promise = @buildGeometryFromFile(geom_2d, {show: false}).then(
+            (geometry) =>
+              area = geometry.getArea()
+              geometry.remove()
+              df.resolve(area)
             df.reject
           )
-        result.then(df.resolve, df.reject)
+        promise.then(df.resolve, df.reject)
     else
       df.resolve(null)
     df.promise
@@ -20,6 +24,7 @@
   buildGeometryFromFile: (fileId, args) ->
     args = _.extend({
       collectionId: fileId
+      show: true
     }, args)
     collectionId = args.collectionId
     df = Q.defer()
@@ -31,7 +36,7 @@
         # Modify the ID of c3ml entities to allow reusing them for multiple collections.
         c3mls = _.map result.c3mls, (c3ml) ->
           c3ml.id = collectionId + ':' + c3ml.id
-          c3ml.show = true
+          c3ml.show = args.show
           c3ml
         # Ignore all collections in the c3ml, since they don't affect visualisation.
         c3mls = _.filter c3mls, (c3ml) -> c3ml.type != 'collection'
