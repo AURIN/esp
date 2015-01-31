@@ -54,47 +54,39 @@ if Meteor.isClient
       if fileId then Files.downloadJson(fileId) else Q.when(null)
 
     _buildGeometryFromFile: (id, paramId) ->
+      paramId ?= 'geom_3d'
+      entity = Entities.getFlattened(id)
+      fileId = SchemaUtils.getParameterValue(entity, 'space.' + paramId)
+      unless fileId
+        return Q.when(null)
       collectionId = id + '-' + paramId
-      df = Q.defer()
-      # geoEntity = AtlasManager.getEntity(id)
-      require ['atlas/model/GeoPoint'], (GeoPoint) =>
-        @_getGeometryFromFile(id, paramId).then (result) ->
-          unless result
-            df.resolve(null)
-            return
-          # Modify the ID of c3ml entities to allow reusing them for multiple collections.
-          c3mls = _.map result.c3mls, (c3ml) ->
-            c3ml.id = collectionId + ':' + c3ml.id
-            c3ml.show = true
-            c3ml
-          # Ignore all collections in the c3ml, since they don't affect visualisation.
-          c3mls = _.filter c3mls, (c3ml) -> c3ml.type != 'collection'
-          try
-            c3mlEntities = AtlasManager.renderEntities(c3mls)
-          catch e
-            console.error('Error when rendering mesh entities', e)
-          ids = []
-          _.each c3mlEntities, (c3mlEntity) ->
-            mesh = null
-            if c3mlEntity.getForm
-              mesh = c3mlEntity.getForm()
-              ids.push(c3mlEntity.getId()) if mesh
-          AtlasManager.getAtlas().then (atlas) ->
-            collection = atlas.getManager('entity').createCollection(collectionId, {children: ids})
-            # collection = AtlasManager.renderEntities([{
-            #   id: collectionId,
-            #   type: 'collection'
-            #   children: ids
-            # }])[0]
-            df.resolve(collection)
-          # # Add c3mls to a single collection and use it as the mesh display mode for the
-          # # feature.
-          # require ['atlas/model/Collection'], (Collection) ->
-          #   # TODO(aramk) Use dependency injection to prevent the need for passing manually.
-          #   deps = geoEntity._bindDependencies({show: true})
-          #   collection = new Collection('collection-' + id, {entities: ids}, deps)
-          #   df.resolve(collection)
-      df.promise
+      GeometryUtils.buildGeometryFromFile(fileId, {collectionId: collectionId})
+      # df = Q.defer()
+      # # geoEntity = AtlasManager.getEntity(id)
+      # require ['atlas/model/GeoPoint'], (GeoPoint) =>
+      #   @_getGeometryFromFile(id, paramId).then (result) ->
+      #     unless result
+      #       df.resolve(null)
+      #       return
+      #     # Modify the ID of c3ml entities to allow reusing them for multiple collections.
+      #     c3mls = _.map result.c3mls, (c3ml) ->
+      #       c3ml.id = collectionId + ':' + c3ml.id
+      #       c3ml.show = true
+      #       c3ml
+      #     # Ignore all collections in the c3ml, since they don't affect visualisation.
+      #     c3mls = _.filter c3mls, (c3ml) -> c3ml.type != 'collection'
+      #     try
+      #       c3mlEntities = AtlasManager.renderEntities(c3mls)
+      #     catch e
+      #       console.error('Error when rendering mesh entities', e)
+      #     ids = []
+      #     _.each c3mlEntities, (c3mlEntity) ->
+      #       mesh = null
+      #       if c3mlEntity.getForm
+      #         mesh = c3mlEntity.getForm()
+      #         ids.push(c3mlEntity.getId()) if mesh
+      #     AtlasManager.createCollection(collectionId, ids).then(df.resolve, df.reject)
+      # df.promise
 
     _render2dGeometry: (id) ->
       entity = Entities.getFlattened(id)
@@ -108,19 +100,11 @@ if Meteor.isClient
           @toGeoEntityArgs(id, {show: false}).then (entityArgs) =>
             geoEntity = AtlasManager.renderEntity(entityArgs)
             df.resolve(geoEntity)
-            # doRender = (id, geoEntity) =>
-              # AtlasManager.showEntity(id)
-              # @_setUpPopup(geoEntity)
-              # df.resolve(geoEntity)
-            # if typologyClass == 'PATHWAY'
-            #   geoEntity = AtlasManager.renderEntity(entityArgs)
-            #   doRender(id, geoEntity)
-            #   return
         else
-          @._buildGeometryFromFile(id, 'geom_2d').then(df.resolve, df.reject)
+          @_buildGeometryFromFile(id, 'geom_2d').then(df.resolve, df.reject)
       df.promise
 
-    _render3dGeometry: (id) -> @._buildGeometryFromFile(id, 'geom_3d')
+    _render3dGeometry: (id) -> @_buildGeometryFromFile(id, 'geom_3d')
 
     _renderLot: (id) ->
       df = Q.defer()
@@ -142,7 +126,6 @@ if Meteor.isClient
         AtlasManager.showEntity(id)
         df.resolve(geoEntity)
       else
-
         entity = Entities.getFlattened(id)
         geom_2d = SchemaUtils.getParameterValue(entity, 'space.geom_2d')
         azimuth = SchemaUtils.getParameterValue(entity, 'orientation.azimuth')
@@ -159,6 +142,7 @@ if Meteor.isClient
           Q.all(geometryDfs).then(
             (geometries) =>
               if isPathway
+                # A pathway doesn't have any 3d geometry or a lot.
                 df.resolve(geometries[0])
                 return
               @_renderLot(id).then(
@@ -171,29 +155,53 @@ if Meteor.isClient
                     'atlas/model/Vertex'
                   ], (Feature, Vertex) =>
 
+                    # Precondition: 2d geometry is a required for entities.
                     entity2d = geometries[0]
                     entity3d = geometries[1]
                     unless entity2d || entity3d
                       df.resolve(null)
                       return
 
-                    geoEntity = null
+                    # This feature will be used for rendering the 2d geometry as the
+                    # footprint/extrusion and the 3d geometry as the mesh.
+                    geoEntityDf = Q.defer()
                     if isWKT
-                      geoEntity = entity2d
-                      if entity3d
-                        geoEntity.setForm(Feature.DisplayMode.MESH, entity3d)
+                      geoEntityDf.resolve(entity2d)
                     else
-                      throw new Error('construct a new feature and add both the geometries')
-
-                    _.each geoEntity.getForms(), (form) ->
-                      form.setCentroid(lotCentroid)
-                      # Apply rotation based on the azimuth.
-                      form.setRotation(new Vertex(0, 0, azimuth)) if azimuth?
-                    geoEntity.setDisplayMode(Session.get('entityDisplayMode'))
-                    geoEntity.show()
-                    @_setUpPopup(geoEntity)
-                    df.resolve(geoEntity)
-                    # doRender(id, geoEntity)
+                      # If we construct the 2d geometry from a collection of entities rather than
+                      # WKT, the geometry is a collection rather than a feature. Create a new
+                      # feature to store both 2d and 3d geometries.
+                      @toGeoEntityArgs(id, {vertices: null}).then(
+                        (args) ->
+                          geoEntity = AtlasManager.renderEntity(args)
+                          geoEntity.setForm(Feature.DisplayMode.FOOTPRINT, entity2d)
+                          args.height && entity2d.setHeight(args.height)
+                          args.elevation && entity2d.setElevation(args.elevation)
+                          geoEntityDf.resolve(geoEntity)
+                        geoEntityDf.reject
+                      )
+                      # geoEntity = AtlasManager.renderEntities([{
+                      #   # Ensure the ID of the feature is that of the entity so show/hide works.
+                      #   # The geom_2d has a different ID unless constructed from WKT.
+                      #   id: id
+                      #   type: 'feature'
+                      #   # footprint: entity2d
+                      #   # mesh: entity3d
+                      # }])[0]
+                    geoEntityDf.promise.then(
+                      (geoEntity) =>
+                        if entity3d
+                          geoEntity.setForm(Feature.DisplayMode.MESH, entity3d)
+                        _.each geoEntity.getForms(), (form) ->
+                          form.setCentroid(lotCentroid)
+                          # Apply rotation based on the azimuth.
+                          form.setRotation(new Vertex(0, 0, azimuth)) if azimuth?
+                        geoEntity.setDisplayMode(Session.get('entityDisplayMode'))
+                        geoEntity.show()
+                        @_setUpPopup(geoEntity)
+                        df.resolve(geoEntity)
+                      df.reject
+                    )
                 df.reject
               )
             df.reject
