@@ -13,7 +13,7 @@ Meteor.startup ->
         geom = SchemaUtils.getParameterValue(model, 'space.geom')
         mesh = SchemaUtils.getParameterValue(model, 'space.mesh')
         if geom? || mesh?
-          collection.update(model._id, {
+          collection.direct.update({_id: model._id}, {
             $rename:
               'parameters.space.geom': 'parameters.space.geom_2d'
               'parameters.space.mesh': 'parameters.space.geom_3d'
@@ -30,7 +30,7 @@ Meteor.startup ->
       migratedModelCount = 0
       # Schema changes.
       migrateProject = (model) ->
-        Projects.insert(model)
+        Projects.direct.insert(model)
         migratedModelCount++
       OldProjects = new Meteor.Collection 'project'
       _.each OldProjects.find().fetch(), (model) -> migrateProject(model)
@@ -43,7 +43,7 @@ Meteor.startup ->
       # Replaced parameters.general.creator to author. Since no users existed beforehand, set the
       # username as 'admin'.
       _.each Projects.find().fetch(), (model) ->
-        migratedModelCount += Projects.update(model._id, {
+        migratedModelCount += Projects.direct.update({_id: model._id}, {
           $set:
             author: 'admin'
           $unset:
@@ -59,7 +59,7 @@ Meteor.startup ->
       _.each [Typologies, Projects], (collection) ->
         _.each collection.find().fetch(), (model) ->
           return if model.desc?
-          migratedModelCount += collection.update(model._id, {
+          migratedModelCount += collection.direct.update({_id: model._id}, {
             $set:
               desc: '...'
           }, {validate: false})
@@ -72,11 +72,56 @@ Meteor.startup ->
       # Add Project#isTemplate as false.
       Projects.find().forEach (model) ->
         return if model.isTemplate?
-        migratedModelCount += Projects.update(model._id, {
+        migratedModelCount += Projects.direct.update({_id: model._id}, {
           $set:
             isTemplate: false
         }, {validate: false})
       console.log('Migrated', migratedModelCount, 'projects by adding isTemplate field.')
+
+  Migrations.add
+    version: 6
+    up: ->
+      migratedModelCount = 0
+      Projects.find().forEach (project) ->
+        _.each [Typologies, Entities], (collection) ->
+          collection.findByProject(project._id).forEach (model) ->
+            migratedModelCount += collection.direct.update({_id: model._id}, {
+              $rename:
+                'parameters.energy_demand.en_heat': 'parameters.energy_demand.thermal_heat'
+                'parameters.energy_demand.en_cool': 'parameters.energy_demand.thermal_cool'
+            }, {validate: false})
+      console.log('Migrated', migratedModelCount, 'models to COP and EER fields.')
+
+  Migrations.add
+    version: 7
+    up: ->
+      migratedModelCount = 0
+      fieldsMap =
+        'energy_demand.en_hwat': 'energy_demand.hw_intensity'
+        'water_demand.i_wu_pot': 'water_demand.i_wu_intensity_pot'
+        'water_demand.i_wu_bore': 'water_demand.i_wu_intensity_bore'
+        'water_demand.i_wu_rain': 'water_demand.i_wu_intensity_rain'
+        'water_demand.i_wu_treat': 'water_demand.i_wu_intensity_treat'
+        'water_demand.i_wu_grey': 'water_demand.i_wu_intensity_grey'
+      prefix = 'parameters.'
+      Projects.find().forEach (project) ->
+        _.each [Typologies, Entities], (collection) ->
+          collection.findByProject(project._id).forEach (model) ->
+            $set = {}
+            $unset = {}
+            _.each fieldsMap, (intensityField, valueField) ->
+              intensityField = prefix + intensityField
+              valueField = prefix + valueField
+              value = SchemaUtils.getParameterValue(model, valueField)
+              occupants = SchemaUtils.getParameterValue(model, 'space.occupants')
+              if value?
+                $set[intensityField] = value / occupants
+                $unset[valueField] = null
+            migratedModelCount += collection.direct.update({_id: model._id}, {
+              $set: $set
+              $unset: $unset
+            }, {validate: false})
+      console.log('Migrated', migratedModelCount, 'models to water use intensity fields.')
 
   console.log('Migrating to latest version...')
   Migrations.migrateTo('latest')
