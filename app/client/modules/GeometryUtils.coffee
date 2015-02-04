@@ -44,12 +44,7 @@
           c3mlEntities = AtlasManager.renderEntities(c3mls)
         catch e
           console.error('Error when rendering entities', e)
-        ids = []
-        _.each c3mlEntities, (c3mlEntity) ->
-          form = null
-          if c3mlEntity.getForm
-            form = c3mlEntity.getForm()
-            ids.push(c3mlEntity.getId()) if form
+        ids = _.map c3mlEntities, (c3mlEntity) -> c3mlEntity.getId()
         AtlasManager.createCollection(collectionId, ids).then(df.resolve, df.reject)
     df.promise
 

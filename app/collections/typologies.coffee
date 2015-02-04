@@ -901,7 +901,7 @@ ProjectSchema = new SimpleSchema
     label: 'Name'
     type: String
     index: true
-    unique: true
+    unique: false
   desc: descSchema
   author:
     type: String
