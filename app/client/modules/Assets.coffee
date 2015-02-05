@@ -3,13 +3,14 @@
   fromFile: (fileId, args) ->
     df = Q.defer()
     Meteor.call 'assets/import/file', fileId, (err, result) ->
+      console.log('fromFile', arguments)
       if err
         console.error 'Asset import failed', err, fileId
         return
       assetId = result.id
       loadAssets = {}
       loadAssets[assetId] = args.format
-      Meteor.call 'assets/load', loadAssets, (err, result) ->
+      Meteor.call 'assets/load', {assets: loadAssets}, (err, result) ->
         if err
           df.reject(err)
         else

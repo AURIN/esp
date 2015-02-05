@@ -21,23 +21,30 @@
     console.log 'Synthesizing', request
     result = Catalyst.assets.synthesize(request)
     jobId = result.jobId
-    response = Async.runSync (done) ->
-      new Poll().pollJob(jobId).then(
-        (job) -> done(null, job)
-        (err) -> done(err, null)
-      )
-    err = response.error
-    if err
+    try
+      @poll(jobId)
+    catch err
       msg = 'Synthesize failed'
       console.error msg, err
-      throw new Error(err)
-    response.result
+      throw err
 
-  load: (assets) ->
+  load: (args) ->
+    args = _.extend({
+      isForSynthesis: true
+    }, args)
+    actions = {}
+    actionName = if args.geoBlobId? then 'load' else 'loadAsset'
+    actions[actionName] = args
+    @synthesize(actions)
+
+  convert: (assets, formats) ->
     @synthesize
       loadAsset:
-        isForSynthesis: true
+        # No need for generating c3ml and meta-data when converting.
+        isForSynthesis: false
         assets: assets
+      convert:
+        tos: formats
 
   getParameters: (id) ->
     result = @synthesize
@@ -52,6 +59,10 @@
     Catalyst.auth.login()
     Catalyst.assets.download(id)
 
+  downloadJob: (jobId) ->
+    result = @poll(jobId)
+    @download(result.id)
+
   downloadJson: (id) ->
     Catalyst.auth.login()
     Catalyst.assets.downloadJson(id)
@@ -65,44 +76,39 @@
     Catalyst.auth.login()
     Catalyst.assets.metaData.download(id)
 
+  poll: (jobId) ->
+    try
+      Promises.runSync -> new Poll().pollJob(jobId)
+    catch err
+      msg = 'Polling failed'
+      console.error(msg, err)
+      throw err
+
 Meteor.methods
 
-  'assets/import/file': (fileId) ->
-    AssetServer.importFile(fileId)
-
-  'assets/synthesize': (request) ->
-    AssetServer.synthesize(request)
-
-  'assets/load': (assets) ->
-    AssetServer.load(assets)
-
-  'assets/parameters': (id) ->
-    AssetServer.getParameters(id)
-
+  'assets/import/file': (fileId) -> AssetServer.importFile(fileId)
+  'assets/synthesize': (request) -> AssetServer.synthesize(request)
+  'assets/load': (args) -> AssetServer.load(args)
+  'assets/convert': -> AssetServer.convert.apply(AssetServer, arguments)
+  'assets/parameters': (id) -> AssetServer.getParameters(id)
   'assets/formats': ->
     Catalyst.auth.login()
     Catalyst.assets.formats()
-
   'assets/formats/input': ->
     auth = Catalyst.auth.login()
     Catalyst.assets.inputFormats()
-
   'assets/formats/output': ->
     Catalyst.auth.login()
     Catalyst.assets.outputFormats()
-
   'assets/poll': (jobId) ->
     Catalyst.auth.login()
     Catalyst.assets.poll(jobId)
-
-  'assets/download': (id) ->
-    AssetServer.download(id)
-
-  'assets/c3ml/download': (id) ->
-    AssetServer.downloadC3ml(id)
-
-  'assets/metaData/download': (id) ->
-    AssetServer.downloadC3ml(id)
+  'assets/download': (id) -> AssetServer.download(id)
+  'assets/c3ml/download': (id) -> AssetServer.downloadC3ml(id)
+  'assets/metaData/download': (id) -> AssetServer.downloadMetaData(id)
+  'assets/download/url': (id) ->
+    Catalyst.auth.login()
+    Catalyst.assets.getDownloadUrl(id)
 
 # HTTP SERVER
 
@@ -111,44 +117,38 @@ HTTP.methodsMaxDataLength = 1024 * 1024 * 100
 
 HTTP.methods
 
-  'assets/upload':
+  '/assets/upload':
     post: (requestData) ->
       headers = @requestHeaders
       @addHeader('Content-Type', 'application/json')
-      response = Async.runSync (done) ->
-        try
-          stream = Meteor.npmRequire('stream')
-          formidable = Meteor.npmRequire('formidable')
-          IncomingForm = formidable.IncomingForm
-          IncomingForm.prototype.handlePart = (part) ->
-            filename = part.filename
-            # Ignore fields and only handle files.
-            unless filename
-              return
-            bufs = []
-            # TODO(aramk) Use utility method for this.
-            part.on 'data', (chunk) ->
-              bufs.push(chunk)
-            part.on 'end', ->
-              buffer = Buffer.concat(bufs)
-              done(null, {
-                buffer: buffer,
-                mime: part.mime
-                filename: filename
-              })
-          form = new IncomingForm()
-          reader = new stream.Readable()
-          # Prevent "not implemented" errors.
-          reader._read = ->
-          reader.headers = headers
-          form.parse reader, (err, fields, files) -> done(err, null) if err
-          reader.push(requestData)
-          reader.push(null)
-        catch e
-          done(err, null)
-      err = response.error
-      throw err if err
-      data = response.result
+      data = Promises.runSync (done) ->
+        stream = Meteor.npmRequire('stream')
+        formidable = Meteor.npmRequire('formidable')
+        IncomingForm = formidable.IncomingForm
+        IncomingForm.prototype.handlePart = (part) ->
+          filename = part.filename
+          # Ignore fields and only handle files.
+          unless filename
+            return
+          bufs = []
+          # TODO(aramk) Use utility method for this.
+          part.on 'data', (chunk) ->
+            bufs.push(chunk)
+          part.on 'end', ->
+            buffer = Buffer.concat(bufs)
+            done(null, {
+              buffer: buffer,
+              mime: part.mime
+              filename: filename
+            })
+        form = new IncomingForm()
+        reader = new stream.Readable()
+        # Prevent "not implemented" errors.
+        reader._read = ->
+        reader.headers = headers
+        form.parse reader, (err, fields, files) -> done(err, null) if err
+        reader.push(requestData)
+        reader.push(null)
       buffer = data.buffer
       asset = AssetServer.importBuffer(buffer, {
         filename: data.filename
@@ -156,3 +156,22 @@ HTTP.methods
         knownLength: buffer.length
       })
       JSON.stringify(asset)
+
+  '/assets/download/:id':
+    get: (requestData) ->
+      id = this.params.id
+      Catalyst.auth.login()
+      asset = Catalyst.assets.get(id)
+      unless asset
+        throw new Meteor.Error(404, 'Asset with ID ' + id + ' not found')
+      @addHeader('Content-Type', asset.mimeType)
+      @addHeader('Content-Disposition', 'attachment; filename="' + asset.fileName + '.' +
+          asset.format + '"; size="' + asset.fileSize + '"')
+      buffer = Catalyst.assets.downloadBuffer(id)
+      stream = Meteor.npmRequire('stream')
+      reader = new stream.Readable()
+      reader._read = ->
+      res = @createWriteStream()
+      reader.pipe(res)
+      reader.push(buffer)
+      reader.push(null)

@@ -1,4 +1,6 @@
 {
+  "concat-stream": "1.4.7",
+  "formidable": "1.0.15",
   "request": "2.37.0",
-  "formidable": "1.0.15"
+  "shelljs": "0.3.0"
 }

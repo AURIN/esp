@@ -15,14 +15,9 @@ Meteor.methods
   'projects/duplicate': (id) ->
     AuthUtils.authorize Projects.findOne(id), @userId, (doc, user) ->
       AuthUtils.isOwner(doc, user) || doc.isTemplate
-    response = Async.runSync (done) ->
+    Promises.runSync (done) ->
       ProjectUtils.duplicate(id).then Meteor.bindEnvironment (idMaps) ->
         newProjectId = idMaps[Collections.getName(Projects)][id]
         # Set the isTemplate field to false when duplicating a template.
         Projects.update(newProjectId, {$set: {isTemplate: false}})
         done(null, newProjectId)
-    err = response.error
-    if err
-      console.error(err.stack)
-      throw new Error('Duplicating project with ID ' + id + ' failed')
-    response.result

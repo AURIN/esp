@@ -31,7 +31,7 @@ Meteor.startup ->
         assetId = result.id
         loadAssets = {}
         loadAssets[assetId] = format
-        Meteor.call 'assets/load', loadAssets, (err, result) ->
+        Meteor.call 'assets/load', {assets: loadAssets}, (err, result) ->
           if err
             console.error 'Loading assets failed', loadAssets, err
             setLoadingState(false)

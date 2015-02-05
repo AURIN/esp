@@ -10,7 +10,7 @@ class @Poll
   pollJob: (jobId) ->
     df = Q.defer()
     pollFreq = @pollFreq
-    console.log('Polling job', jobId, 'freq', pollFreq);
+    console.log('Polling job', jobId, 'freq', pollFreq)
     pollJob = Meteor.bindEnvironment ->
       Meteor.call 'assets/poll', jobId, (err, job) ->
         if err

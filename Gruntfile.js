@@ -250,28 +250,34 @@ module.exports = function(grunt) {
     }
   });
 
-  grunt.registerTask('meteor', function(arg1) {
+  grunt.registerTask('meteor', function() {
     var done = this.async();
     process.chdir(APP_DIR);
     var proc;
     var env = {
       AURIN_SERVER_URL: 'http://115.146.86.33:8080/envisionauth',
-      AURIN_APP_NAME: 'ESP',
+      AURIN_APP_NAME: 'Lens10',
       METEOR_ADMIN_PASSWORD: 'password',
       METEOR_ADMIN_EMAIL: 'admin@test.com'
     };
-    var args = {options: {env: env}};
-    if (arg1 === 'debug') {
+
+    var args = _.toArray(arguments);
+    var hasArg = _.memoize(function(arg) {
+      return args.indexOf(arg) >= 0;
+    });
+    var processArgs = {options: {env: env}};
+    if (hasArg('debug')) {
       _.extend(env, {
         NODE_OPTIONS: '--debug-brk'
       });
-    } else if (arg1 === 'acs-local') {
+    }
+    if (hasArg('acs-local')) {
       _.extend(env, {
         ACS_ENV: 'local'
       });
     }
     _.extend(env, process.env);
-    proc = runProcess('meteor', args);
+    proc = runProcess('meteor', processArgs);
     proc.on('exit', function() {
       done();
     });
