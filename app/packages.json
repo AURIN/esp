@@ -2,5 +2,6 @@
   "concat-stream": "1.4.7",
   "formidable": "1.0.15",
   "request": "2.37.0",
+  "request-debug": "0.1.1",
   "shelljs": "0.3.0"
 }

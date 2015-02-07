@@ -1,7 +1,9 @@
 @AssetServer =
 
   importFile: (fileId) ->
+    console.log('AssetServer.importFile fileId', fileId)
     buffer = FileUtils.getBuffer(fileId)
+    console.log('AssetServer.importFile importFile', buffer)
     fileObj = Files.findOne(fileId)
     file = fileObj.original
     args = {
@@ -125,7 +127,10 @@ HTTP.methods
         stream = Meteor.npmRequire('stream')
         formidable = Meteor.npmRequire('formidable')
         IncomingForm = formidable.IncomingForm
-        IncomingForm.prototype.handlePart = (part) ->
+        # Create a multipart upload from the
+        form = new IncomingForm()
+        # Append all uploaded parts into a single buffer.
+        form.handlePart = (part) ->
           filename = part.filename
           # Ignore fields and only handle files.
           unless filename
@@ -133,15 +138,16 @@ HTTP.methods
           bufs = []
           # TODO(aramk) Use utility method for this.
           part.on 'data', (chunk) ->
+            console.log('assets/upload received chunk', chunk)
             bufs.push(chunk)
           part.on 'end', ->
             buffer = Buffer.concat(bufs)
+            console.log('assets/upload finished buffer', buffer)
             done(null, {
               buffer: buffer,
               mime: part.mime
               filename: filename
             })
-        form = new IncomingForm()
         reader = new stream.Readable()
         # Prevent "not implemented" errors.
         reader._read = ->
@@ -150,6 +156,7 @@ HTTP.methods
         reader.push(requestData)
         reader.push(null)
       buffer = data.buffer
+      console.log('assets/upload buffer', buffer)
       asset = AssetServer.importBuffer(buffer, {
         filename: data.filename
         contentType: data.mime,
@@ -175,3 +182,24 @@ HTTP.methods
       reader.pipe(res)
       reader.push(buffer)
       reader.push(null)
+
+  '/files/download/:id':
+    get: (requestData) ->
+      id = this.params.id
+      file = Files.findOne(id)
+      console.log('download file', id, file)
+      unless file
+        throw new Meteor.Error(404, 'File with ID ' + id + ' not found')
+      @addHeader('Content-Type', file.type())
+      @addHeader('Content-Disposition', 'attachment; filename="' + file.name() +
+          '"; size="' + file.size() + '"')
+      buffer = FileUtils.getBuffer(id)
+      console.log('file buffer', buffer)
+      stream = Meteor.npmRequire('stream')
+      reader = new stream.Readable()
+      reader._read = ->
+      res = @createWriteStream()
+      reader.pipe(res)
+      reader.push(buffer)
+      reader.push(null)
+

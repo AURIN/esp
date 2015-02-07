@@ -59,7 +59,7 @@
     df.promise
 
   handleUpload: (c3mls, fileObj, paramId, template) ->
-    filename = fileObj.data.blob.name
+    filename = fileObj.name()
     $geomInput = $(template.find('[name="parameters.space.' + paramId + '"]'))
     $geomFilenameInput = $(template.find('[name="parameters.space.' + paramId + '_filename"]'))
     # Upload the c3ml as a file.
