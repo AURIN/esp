@@ -168,7 +168,7 @@ Meteor.startup ->
               valueField = prefix + valueField
               intensity = SchemaUtils.getParameterValue(model, intensityField)
               occupants = SchemaUtils.getParameterValue(model, 'space.occupants')
-              if value?
+              if intensity?
                 $set[valueField] = intensity * occupants
                 $unset[intensityField] = null
             migratedModelCount += collection.direct.update({_id: model._id}, {
