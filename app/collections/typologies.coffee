@@ -2611,7 +2611,7 @@ typologyCategories =
           MIXED_USE: {defaultValue: 0.8}
           INSTITUTIONAL: {defaultValue: 0.9}
       co2_ug_tot:
-        label: 'Total CO2 for Underground Parking'
+        label: 'Underground Parking'
         type: Number
         units: Units.kgco2
         calc: '$parking.co2_ug * $parking.parking_ug'

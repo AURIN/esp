@@ -115,7 +115,7 @@ Meteor.startup ->
               value = SchemaUtils.getParameterValue(model, valueField)
               occupants = SchemaUtils.getParameterValue(model, 'space.occupants')
               if value?
-                $set[intensityField] = value / occupants
+                $set[intensityField] = if occupants != 0 then value / occupants else 0
                 $unset[valueField] = null
             migratedModelCount += collection.direct.update({_id: model._id}, {
               $set: $set
@@ -130,9 +130,11 @@ Meteor.startup ->
       fieldsMap =
         'embodied_carbon.i_co2_emb': 'embodied_carbon.i_co2_emb_intensity'
       prefix = 'parameters.'
+      gfaParamId = 'space.gfa_t'
       Projects.find().forEach (project) ->
         _.each [Typologies, Entities], (collection) ->
           collection.findByProject(project._id).forEach (model) ->
+            EntityUtils.evaluate(model, gfaParamId)
             $set = {}
             $unset = {}
             _.each fieldsMap, (intensityField, valueField) ->
@@ -141,7 +143,7 @@ Meteor.startup ->
               value = SchemaUtils.getParameterValue(model, valueField)
               gfa = SchemaUtils.getParameterValue(model, 'space.gfa_t')
               if value?
-                $set[intensityField] = value / gfa
+                $set[intensityField] = if gfa != 0 then value / gfa else 0
                 $unset[valueField] = null
             migratedModelCount += collection.direct.update({_id: model._id}, {
               $set: $set

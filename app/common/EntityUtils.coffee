@@ -1,8 +1,7 @@
 @EntityUtils = {}
-evalEngine = null
 
-Meteor.startup ->
-  evalEngine = new EvaluationEngine(schema: Entities.simpleSchema())
+evalEngine = null
+getEvalEngine = -> evalEngine ?= new EvaluationEngine(schema: Entities.simpleSchema())
 
 _.extend EntityUtils,
 
@@ -10,7 +9,7 @@ _.extend EntityUtils,
     paramIds = if Types.isArray(paramIds) then paramIds else [paramIds]
     typologyClass = Entities.getTypologyClass(entity)
     Entities.mergeTypology(entity)
-    changes = evalEngine.evaluate(model: entity, paramIds: paramIds, typologyClass: typologyClass)
+    getEvalEngine().evaluate(model: entity, paramIds: paramIds, typologyClass: typologyClass)
 
 if Meteor.isClient
 
@@ -39,7 +38,8 @@ if Meteor.isClient
         }, args)
         if typologyClass == 'PATHWAY'
           widthParamId = 'space.width'
-          evalEngine.evaluate(model: entity, paramIds: [widthParamId], typologyClass: typologyClass)
+          getEvalEngine()
+              .evaluate(model: entity, paramIds: [widthParamId], typologyClass: typologyClass)
           args.width = SchemaUtils.getParameterValue(entity, widthParamId)
           args.style.fillColor = '#000'
           displayMode = 'line'
