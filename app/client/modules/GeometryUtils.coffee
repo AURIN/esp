@@ -45,7 +45,7 @@
         catch e
           console.error('Error when rendering entities', e)
         ids = _.map c3mlEntities, (c3mlEntity) -> c3mlEntity.getId()
-        AtlasManager.createCollection(collectionId, ids).then(df.resolve, df.reject)
+        AtlasManager.createCollection(collectionId, {children: ids}).then(df.resolve, df.reject)
     df.promise
 
   hasWktGeometry: (model) ->

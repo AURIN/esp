@@ -338,27 +338,29 @@ TemplateClass.onAtlasLoad = (template, atlas) ->
   # the table event handlers below or causing infinite loops.
   tableSelectionEnabled = true
   _.each tables, ($table) ->
-    $table.on 'select', (e, ids) ->
-      atlas.publish('entity/select', ids: ids) if tableSelectionEnabled
-    $table.on 'deselect', (e, ids) ->
-      atlas.publish('entity/deselect', ids: ids) if tableSelectionEnabled
+    $table.on 'select', (e, args) ->
+      return unless tableSelectionEnabled
+      selectedIds = args.added
+      deselectedIds = args.removed
+      atlas.publish('entity/select', ids: selectedIds) && selectedIds
+      atlas.publish('entity/deselect', ids: deselectedIds) && deselectedIdsq
+  
   # Clicking on a typology selects all entities of that typology.
   $typologyTable = getTypologyTable(template)
   getEntityIdsByTypologyId = (typologyId) ->
     _.map Entities.findByTypology(typologyId).fetch(), (entity) -> entity._id
-  $typologyTable.on 'select', (e, ids) ->
-    id = ids[0]
+  $typologyTable.on 'select', (e, args) ->
     tableSelectionEnabled = false
-    atlas.publish('entity/select', ids: getEntityIdsByTypologyId(id))
-    # Hide all popups so they don't obsruct the entities.
-    _.each atlas._managers.popup.getPopups(), (popup) -> popup.hide()
+    selectedId = args.added[0]
+    deselectedId = args.removed[0]
+    if deselectedId
+      atlas.publish('entity/deselect', ids: getEntityIdsByTypologyId(deselectedId))
+    if selectedId
+      atlas.publish('entity/select', ids: getEntityIdsByTypologyId(selectedId))
+      # Hide all popups so they don't obsruct the entities.
+      _.each atlas._managers.popup.getPopups(), (popup) -> popup.hide()
     tableSelectionEnabled = true
-  $typologyTable.on 'deselect', (e, ids) ->
-    id = ids[0]
-    tableSelectionEnabled = false
-    atlas.publish('entity/deselect', ids: getEntityIdsByTypologyId(id))
-    tableSelectionEnabled = true
-
+  
   # Select the item in the table when clicking on the globe.
   atlas.subscribe 'entity/select', (args) ->
     tableSelectionEnabled = false
