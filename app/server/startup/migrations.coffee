@@ -123,5 +123,31 @@ Meteor.startup ->
             }, {validate: false})
       console.log('Migrated', migratedModelCount, 'models to water use intensity fields.')
 
+  Migrations.add
+    version: 8
+    up: ->
+      migratedModelCount = 0
+      fieldsMap =
+        'embodied_carbon.i_co2_emb': 'embodied_carbon.i_co2_emb_intensity'
+      prefix = 'parameters.'
+      Projects.find().forEach (project) ->
+        _.each [Typologies, Entities], (collection) ->
+          collection.findByProject(project._id).forEach (model) ->
+            $set = {}
+            $unset = {}
+            _.each fieldsMap, (intensityField, valueField) ->
+              intensityField = prefix + intensityField
+              valueField = prefix + valueField
+              value = SchemaUtils.getParameterValue(model, valueField)
+              gfa = SchemaUtils.getParameterValue(model, 'space.gfa_t')
+              if value?
+                $set[intensityField] = value / gfa
+                $unset[valueField] = null
+            migratedModelCount += collection.direct.update({_id: model._id}, {
+              $set: $set
+              $unset: $unset
+            }, {validate: false})
+      console.log('Migrated', migratedModelCount, 'models to internal embodied co2 intensity.')
+
   console.log('Migrating to latest version...')
   Migrations.migrateTo('latest')

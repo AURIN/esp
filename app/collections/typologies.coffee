@@ -42,6 +42,7 @@ Units =
   kgco2kWh: 'kg CO_2-e/kWh'
   kgco2km: 'kg CO_2-e/km'
   kgco2m2: 'kg CO_2-e/m^2'
+  kgco2space: 'kg CO_2-e/space'
   kgco2year: 'kg CO_2-e/year'
   kW: 'kW'
   kWh: 'kWh'
@@ -810,6 +811,11 @@ projectCategories =
         type: Number
         units: Units.m2vehicle
         defaultValue: 23
+      co2_ug:
+        label: 'CO2 per Underground Parking Space'
+        type: Number
+        units: Units.kgco2space
+        defaultValue: 5395
   transport:
     label: 'Transport'
     items:
@@ -1917,6 +1923,7 @@ typologyCategories =
         decimal: true
         units: Units.kgco2m2
         classes:
+          RESIDENTIAL: {}
           COMMERCIAL:
             subclasses:
               'Retail': {defaultValue: 375}
@@ -1931,14 +1938,6 @@ typologyCategories =
               'Tertiary': {defaultValue: 475}
               'Hospital': {defaultValue: 380}
               'Public': {defaultValue: 375}
-      i_co2_emb:
-        label: 'Internal Embodied'
-        desc: 'CO2 embodied in the materials of the typology.'
-        type: Number
-        decimal: true
-        units: Units.kgco2
-        classes:
-          RESIDENTIAL: {}
       i_co2_emb_intensity_value:
         label: 'Internal Embodied'
         desc: 'CO2 embodied in the materials of the typology calculated using the intensity and GFA.'
@@ -1952,12 +1951,7 @@ typologyCategories =
         type: Number
         decimal: true
         units: Units.kgco2
-        calc: ->
-          if isNonResidentialBuildingClass(Entities.getTypologyClass(@model))
-            i_co2_emb = @param('embodied_carbon.i_co2_emb_intensity_value')
-          else
-            i_co2_emb = @param('embodied_carbon.i_co2_emb')
-          @param('embodied_carbon.e_co2_emb') + i_co2_emb
+        calc: '$embodied_carbon.e_co2_emb + $embodied_carbon.i_co2_emb_intensity_value + $parking.co2_ug_tot'
       pathways:
         label: 'Pathways'
         items:
@@ -2616,6 +2610,11 @@ typologyCategories =
           COMMERCIAL: {defaultValue: 0.9}
           MIXED_USE: {defaultValue: 0.8}
           INSTITUTIONAL: {defaultValue: 0.9}
+      co2_ug_tot:
+        label: 'Total CO2 for Underground Parking'
+        type: Number
+        units: Units.kgco2
+        calc: '$parking.co2_ug * $parking.parking_ug'
   composition:
     label: 'Composition'
     items:

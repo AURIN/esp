@@ -33,7 +33,8 @@ Meteor.startup ->
       {param: 'embodied_carbon.e_co2_green'}
       {param: 'embodied_carbon.e_co2_imp'}
       {param: 'embodied_carbon.e_co2_emb'}
-      {param: 'embodied_carbon.i_co2_emb'}
+      {param: 'embodied_carbon.i_co2_emb_intensity_value'}
+      {param: 'parking.co2_ug_tot'}
       {param: 'embodied_carbon.t_co2_emb'}
 
       {title: 'Operating Carbon'}
