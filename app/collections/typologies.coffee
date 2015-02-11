@@ -1706,20 +1706,14 @@ typologyCategories =
         classes:
           RESIDENTIAL:
             defaultValue: 'Electricity'
-      hw_intensity:
-        label: 'Hot Water Intensity'
-        type: Number
-        decimal: true
-        units: Units.GJyearOccupant
-        classes:
-          RESIDENTIAL: {}
       en_hwat:
         label: 'Hot Water'
         desc: 'Energy required for hot water heating in the typology.'
         type: Number
         decimal: true
         units: Units.GJyear
-        calc: '$energy_demand.hw_intensity * $space.occupants'
+        classes:
+          RESIDENTIAL: {}
       en_cook:
         label: 'Cooktop and Oven'
         desc: 'Energy required for cooking in the typology.'

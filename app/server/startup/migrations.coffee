@@ -151,5 +151,31 @@ Meteor.startup ->
             }, {validate: false})
       console.log('Migrated', migratedModelCount, 'models to internal embodied co2 intensity.')
 
+  Migrations.add
+    version: 9
+    up: ->
+      migratedModelCount = 0
+      fieldsMap =
+        'energy_demand.en_hwat': 'energy_demand.hw_intensity'
+      prefix = 'parameters.'
+      Projects.find().forEach (project) ->
+        _.each [Typologies, Entities], (collection) ->
+          collection.findByProject(project._id).forEach (model) ->
+            $set = {}
+            $unset = {}
+            _.each fieldsMap, (intensityField, valueField) ->
+              intensityField = prefix + intensityField
+              valueField = prefix + valueField
+              intensity = SchemaUtils.getParameterValue(model, intensityField)
+              occupants = SchemaUtils.getParameterValue(model, 'space.occupants')
+              if value?
+                $set[valueField] = intensity * occupants
+                $unset[intensityField] = null
+            migratedModelCount += collection.direct.update({_id: model._id}, {
+              $set: $set
+              $unset: $unset
+            }, {validate: false})
+      console.log('Migrated', migratedModelCount, 'models to hot water energy demand.')
+
   console.log('Migrating to latest version...')
   Migrations.migrateTo('latest')
