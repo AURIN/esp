@@ -86,6 +86,6 @@ TemplateClass.helpers
         args.defaultHandler()
     onDelete: (args) ->
       _.each args.ids, (id) ->
-        Meteor.call('projects/remove', id);
+        Meteor.call('projects/remove', id)
 
 getTemplate = -> Template.instance()

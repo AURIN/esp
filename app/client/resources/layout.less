@@ -123,8 +123,25 @@ body {
       }
     }
   }
-  &.compact {
-
+  > .footer {
+    text-align: center;
+    color: #999;
+    position: relative;
+    padding: 5px;
+    border-top: 1px solid #ccc;
+    a {
+      margin: 0 10px;
+      color: #999;
+      text-decoration: none;
+      &:hover {
+        text-decoration: underline;
+      }
+    }
+    .version {
+      position: absolute;
+      right: 5px;
+      top: 5px;
+    }
   }
 }
 
@@ -227,6 +244,7 @@ body {
     color: red;
     font-weight: normal;
   }
+
   .footer {
     padding: 10px;
     .required:before {

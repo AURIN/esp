@@ -6,6 +6,7 @@ TemplateClass.helpers
   appName: -> AppConfig.name
   stateName: -> Session.get('stateName')
   project: -> Projects.getCurrent()
+  helpUrl: -> AppConfig.helpUrl
 
 TemplateClass.events
   'click .header .close.button': ->

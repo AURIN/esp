@@ -1928,7 +1928,7 @@ typologyCategories =
         decimal: true
         units: Units.kgco2m2
         classes:
-          RESIDENTIAL: {}
+          RESIDENTIAL: {defaultValue: 180}
           COMMERCIAL:
             subclasses:
               'Retail': {defaultValue: 375}
@@ -1949,14 +1949,14 @@ typologyCategories =
         type: Number
         decimal: true
         units: Units.kgco2
-        calc: '$embodied_carbon.i_co2_emb_intensity * $space.gfa_t + $parking.co2_ug_tot'
+        calc: '$embodied_carbon.i_co2_emb_intensity * $space.gfa_t'
       t_co2_emb:
         label: 'Total Embodied'
         desc: 'Total CO2 embodied in the property.'
         type: Number
         decimal: true
         units: Units.kgco2
-        calc: '$embodied_carbon.e_co2_emb + $embodied_carbon.i_co2_emb_intensity_value'
+        calc: '$embodied_carbon.e_co2_emb + $embodied_carbon.i_co2_emb_intensity_value + $parking.co2_ug_tot'
       pathways:
         label: 'Pathways'
         items:
@@ -2219,8 +2219,8 @@ typologyCategories =
         decimal: true
         classes: extendClassesWithDefault(extendBuildingClasses(), 0.5)
       share_i_wu_to_grey:
-        label: 'Internal Proportion Greywater'
-        desc: 'The proportion of internal water use from greywater.'
+        label: 'Share of Internal Water Use to Greywater'
+        desc: 'Share of the total internal water use waste diverted to greywater.'
         type: Number
         decimal: true
         classes: extendClassesWithDefault(extendBuildingClasses(), 0.3)
@@ -2273,18 +2273,6 @@ typologyCategories =
         decimal: true
         units: Units.kLyear
         calc: '$water_demand.e_wd_lawn + $water_demand.e_wd_ap + $water_demand.e_wd_hp'
-      e_prpn_pot:
-        label: 'External Proportion Potable Water'
-        type: Number
-        decimal: true
-        desc: 'Proportion of water as potable water.'
-        classes: extendClassesWithDefault(extendLandClasses(), 1)
-      e_prpn_bore:
-        label: 'External Proportion Bore Water'
-        type: Number
-        decimal: true
-        desc: 'Proportion of irrigation as bore water.'
-        classes: extendClassesWithDefault(extendLandClasses(), 0)
       e_wu_pot:
         label: 'External Water Use - Potable'
         type: Number
@@ -2304,7 +2292,11 @@ typologyCategories =
         type: Number
         desc: 'External greywater use.'
         units: Units.kLyear
-        calc: '$water_demand.share_i_wu_to_grey * $water_demand.i_wu_total'
+        calc: ->
+          if @param('water_demand.grey_sys')
+            @calc('$water_demand.share_i_wu_to_grey * $water_demand.i_wu_total')
+          else
+            0
       e_wu_rain:
         label: 'External Water Use - Rainwater'
         type: Number

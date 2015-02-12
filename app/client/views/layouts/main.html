@@ -16,11 +16,15 @@
             <div class="ui close icon button" title="Close Project"><i class="remove icon"></i></div>
           {{/if}}
           {{> aurinUserNav}}
+          <a class="ui help icon button" title="Help" href="{{helpUrl}}" target="_blank">
+            <i class="help circle icon"></i>
+          </a>
         </div>
       {{/if}}
     </div>
     <div class="content">
       {{> yield}}
     </div>
+    {{> footer}}
   </div>
 </template>
