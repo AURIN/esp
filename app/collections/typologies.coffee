@@ -344,12 +344,12 @@ projectCategories =
         decimal: true
         units: Units.kLm2year
         defaultValue: 0.7275
-      avg_annual_rain:
+      avg_annual_rainfall:
         label: 'Average Annual Rainfall'
         units: Units.mm
         type: Number
         decimal: true
-        defaultValue: 600
+        defaultValue: 700
       rain_sys_eff:
         label: 'Rainwater System Efficiency'
         type: Number
@@ -2207,7 +2207,11 @@ typologyCategories =
         type: Number
         decimal: true
         units: Units.kLyear
-        calc: '$external_water.avg_annual_rain * $space.fpa * $external_water.rain_sys_eff'
+        calc: ->
+          if @param('water_demand.rain_sys')
+            @calc('$space.fpa * $external_water.avg_annual_rainfall / 1000 * $external_water.rain_sys_eff')
+          else
+            0
       i_share_rain:
         label: 'Share of Rainwater Used Internally'
         desc: 'Share of the total rainwater supply used internally in the typology.'
@@ -2293,7 +2297,7 @@ typologyCategories =
         desc: 'External bore water use.'
         units: Units.kLyear
         calc: ->
-          value = @calc('($water_demand.e_wd_total - $water_demand.e_wu_rain - $water_demand.e_wu_grey) * share_e_wu_pot')
+          value = @calc('($water_demand.e_wd_total - $water_demand.e_wu_rain - $water_demand.e_wu_grey) * $water_demand.share_e_wu_pot')
           if value < 0 then 0 else value
       e_wu_grey:
         label: 'External Water Use - Greywater'
