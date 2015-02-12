@@ -98,7 +98,7 @@ Meteor.startup ->
       migratedModelCount = 0
       fieldsMap =
         'energy_demand.en_hwat': 'energy_demand.hw_intensity'
-        'water_demand.i_wu_pot': 'water_demand.i_wu_intensity_pot'
+        'water_demand.i_wu_pot': 'water_demand.i_wu_intensity_occ'
         'water_demand.i_wu_bore': 'water_demand.i_wu_intensity_bore'
         'water_demand.i_wu_rain': 'water_demand.i_wu_intensity_rain'
         'water_demand.i_wu_treat': 'water_demand.i_wu_intensity_treat'

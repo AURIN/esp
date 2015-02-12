@@ -100,20 +100,19 @@
               {{> afQuickField name="parameters.embodied_carbon.i_co2_emb_intensity"}}
 
               <div class="subtitle">Water Demand</div>
-              {{> afQuickField name="parameters.water_demand.i_wu_intensity_pot"}}
-              {{> afQuickField name="parameters.water_demand.i_wu_intensity_bore"}}
-              {{> afQuickField name="parameters.water_demand.i_wu_intensity_rain"}}
-              {{> afQuickField name="parameters.water_demand.i_wu_intensity_treat"}}
-              {{> afQuickField name="parameters.water_demand.i_wu_intensity_grey"}}
-              {{> afQuickField name="parameters.water_demand.i_wu_intensity"}}
+              {{> afQuickField name="parameters.water_demand.i_wu_intensity_occ"}}
+              {{> afQuickField name="parameters.water_demand.i_wu_intensity_m2"}}
               {{> afQuickField name="parameters.water_demand.i_wu_intensity_r"}}
               {{> afQuickField name="parameters.water_demand.i_wu_intensity_c"}}
+              {{> afQuickField name="parameters.water_demand.rain_sys"}}
+              {{> afQuickField name="parameters.water_demand.grey_sys"}}
+              {{> afQuickField name="parameters.water_demand.rain_supply"}}
+              {{> afQuickField name="parameters.water_demand.i_share_rain"}}
+              {{> afQuickField name="parameters.water_demand.share_i_wu_to_grey"}}
+              {{> afQuickField name="parameters.water_demand.share_e_wu_pot"}}
 
               {{> afQuickField name="parameters.water_demand.e_prpn_pot"}}
               {{> afQuickField name="parameters.water_demand.e_prpn_bore"}}
-              {{> afQuickField name="parameters.water_demand.e_prpn_storm"}}
-              {{> afQuickField name="parameters.water_demand.e_prpn_treat"}}
-              {{> afQuickField name="parameters.water_demand.e_prpn_grey"}}
 
               <div class="subtitle">Financial</div>
               {{> afQuickField name="parameters.financial.build_type" type="dropdown" items=buildTypes}}
