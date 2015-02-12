@@ -22,11 +22,9 @@ Meteor.startup ->
       {param: 'water_demand.e_wd_ap', label: 'Annuals Water Demand'}
       {param: 'water_demand.e_wd_hp', label: 'Hardy Water Demand'}
       {param: 'water_demand.e_wd_total', label: 'Total Water Demand'}
-      {param: 'water_demand.e_wu_pot'}
       {param: 'water_demand.e_wu_rain'}
       {param: 'water_demand.e_wu_bore'}
       {param: 'water_demand.e_wu_grey'}
-      {param: 'water_demand.rain_supply'}
 
       {title: 'Stormwater'}
       {param: 'stormwater.runoff'}

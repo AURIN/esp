@@ -177,5 +177,19 @@ Meteor.startup ->
             }, {validate: false})
       console.log('Migrated', migratedModelCount, 'models to hot water energy demand.')
 
+  Migrations.add
+    version: 10
+    up: ->
+      migratedModelCount = 0
+      Projects.find().forEach (project) ->
+        _.each [Typologies, Entities], (collection) ->
+          collection.findByProject(project._id).forEach (model) ->
+            migratedModelCount += collection.direct.update({_id: model._id}, {
+              $rename:
+                'water_demand.i_wu_intensity_pot': 'water_demand.i_wu_intensity_occ'
+                'water_demand.i_wu_intensity': 'water_demand.i_wu_intensity_m2'
+            }, {validate: false})
+      console.log('Migrated', migratedModelCount, 'models by renaming internal water use intensity fields.')
+
   console.log('Migrating to latest version...')
   Migrations.migrateTo('latest')
