@@ -2147,7 +2147,7 @@ typologyCategories =
         classes:
           RESIDENTIAL: {}
       i_wu_rain:
-        label: 'Internal Water Use – Rainwater'
+        label: 'Internal Water Use - Rainwater'
         desc: 'Internal rainwater use of the typology.'
         type: Number
         decimal: true
@@ -2229,7 +2229,7 @@ typologyCategories =
         desc: 'Share of balance water demand to be supplied by bore water versus potable water.'
         type: Number
         decimal: true
-        classes: extendClassesWithDefault(extendBuildingClasses(), 0.5)
+        classes: extendClassesWithDefault(extendBuildingClasses(), 0)
       i_wu_total:
         label: 'Internal Water Use - Total'
         desc: 'Total internal water use of the typology.'
@@ -2276,12 +2276,14 @@ typologyCategories =
       e_wu_pot:
         label: 'External Water Use - Potable'
         type: Number
+        decimal: true
         desc: 'External potable water use.'
         units: Units.kLyear
         calc: '$water_demand.e_wd_total - $water_demand.e_wu_bore - $water_demand.e_wu_rain - $water_demand.e_wu_grey'
       e_wu_bore:
         label: 'External Water Use - Bore'
         type: Number
+        decimal: true
         desc: 'External bore water use.'
         units: Units.kLyear
         calc: ->
@@ -2290,6 +2292,7 @@ typologyCategories =
       e_wu_grey:
         label: 'External Water Use - Greywater'
         type: Number
+        decimal: true
         desc: 'External greywater use.'
         units: Units.kLyear
         calc: ->
@@ -2300,6 +2303,7 @@ typologyCategories =
       e_wu_rain:
         label: 'External Water Use - Rainwater'
         type: Number
+        decimal: true
         desc: 'External rainwater use.'
         units: Units.kLyear
         calc: '(1 - $water_demand.i_share_rain) * $water_demand.rain_supply'

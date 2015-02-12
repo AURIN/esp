@@ -7,7 +7,7 @@
           {{#autoForm collection=collection id=formName doc=doc type=formType}}
             {{> afQuickField name="name"}}
             {{> afQuickField name="desc"}}
-            {{> afQuickField name="typology" type="dropdown" items=typologies}}
+            {{> afQuickField name="typology" type="dropdown" items=typologies sorted=true}}
 
             <div class="subtitle">Space</div>
             <!-- TODO(aramk) Add same widget used in typology schema. -->
