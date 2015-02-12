@@ -39,10 +39,10 @@ Meteor.startup ->
       {param: 'water_demand.i_wu_total'}
 
       {param: 'water_demand.e_wu_pot'}
+      {param: 'water_demand.e_wu_rain'}
       {param: 'water_demand.e_wu_bore'}
-      {param: 'water_demand.e_wu_storm'}
-      {param: 'water_demand.e_wu_treat'}
       {param: 'water_demand.e_wu_grey'}
+      {param: 'water_demand.rain_supply'}
 
       {param: 'water_demand.e_wd_lawn'}
       {param: 'water_demand.e_wd_ap'}

@@ -98,7 +98,7 @@ Meteor.startup ->
       migratedModelCount = 0
       fieldsMap =
         'energy_demand.en_hwat': 'energy_demand.hw_intensity'
-        'water_demand.i_wu_pot': 'water_demand.i_wu_intensity_pot'
+        'water_demand.i_wu_pot': 'water_demand.i_wu_intensity_occ'
         'water_demand.i_wu_bore': 'water_demand.i_wu_intensity_bore'
         'water_demand.i_wu_rain': 'water_demand.i_wu_intensity_rain'
         'water_demand.i_wu_treat': 'water_demand.i_wu_intensity_treat'
@@ -176,6 +176,20 @@ Meteor.startup ->
               $unset: $unset
             }, {validate: false})
       console.log('Migrated', migratedModelCount, 'models to hot water energy demand.')
+
+  Migrations.add
+    version: 10
+    up: ->
+      migratedModelCount = 0
+      Projects.find().forEach (project) ->
+        _.each [Typologies, Entities], (collection) ->
+          collection.findByProject(project._id).forEach (model) ->
+            migratedModelCount += collection.direct.update({_id: model._id}, {
+              $rename:
+                'parameters.water_demand.i_wu_intensity_pot': 'parameters.water_demand.i_wu_intensity_occ'
+                'parameters.water_demand.i_wu_intensity': 'parameters.water_demand.i_wu_intensity_m2'
+            }, {validate: false})
+      console.log('Migrated', migratedModelCount, 'models by renaming internal water use intensity fields.')
 
   console.log('Migrating to latest version...')
   Migrations.migrateTo('latest')
