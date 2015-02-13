@@ -278,7 +278,7 @@ Meteor.startup ->
     someHaveEntities = _.some lots, (lot) -> lot.entity?
     if someHaveEntities
       throw new Error('Cannot amalgamate Lots which have Entities.')
-    require ['subdiv/Polygon'], (Polygon) =>
+    require ['atlas/lib/subdiv/Polygon'], (Polygon) =>
       WKT.getWKT (wkt) =>
         polygons = []
         # Used for globalising and localising points.
@@ -322,7 +322,7 @@ Meteor.startup ->
     someHaveEntities = _.some lots, (lot) -> lot.entity?
     if someHaveEntities
       throw new Error('Cannot subdivide Lots which have Entities.')
-    require ['subdiv/Polygon', 'subdiv/Line'], (Polygon, Line) =>
+    require ['atlas/lib/subdiv/Polygon', 'atlas/lib/subdiv/Line'], (Polygon, Line) =>
       WKT.getWKT (wkt) =>
         polygons = []
         # Used for globalising and localising points.
@@ -394,9 +394,9 @@ Meteor.startup ->
       return df.promise
     WKT.getWKT (wkt) ->
       require [
-        'subdiv/AlignmentCalculator',
-        'subdiv/Polygon',
-        'subdiv/util/GeographicUtil'
+        'atlas/lib/subdiv/AlignmentCalculator',
+        'atlas/lib/subdiv/Polygon',
+        'atlas/lib/subdiv/util/GeographicUtil'
       ], (AlignmentCalculator, Polygon, GeographicUtil) ->
         polyMap = {}
         polygons = Lots.findByProject().map (lot) ->

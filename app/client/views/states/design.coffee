@@ -89,13 +89,15 @@ TemplateClass.rendered = ->
     $('.dropdown.icon', $dropdown).attr('class', 'photo icon')
     $('.text', $dropdown).hide()
 
+getSingleFormName = (formArgs) ->
+  if Types.isString(formArgs.single) then formArgs.single else formArgs
+
 onEditFormPanel = (args) ->
   ids = args.ids
   collection = args.collection
   collectionName = Collections.getName(collection)
   formArgs = collectionToForm[collectionName]
-  getSingleFormName = -> if Types.isString(formArgs.single) then formArgs.single else formArgs
-  formName = getSingleFormName()
+  formName = getSingleFormName(formArgs)
   if ids.length == 1
     isSingle = true
   else
@@ -126,7 +128,8 @@ TemplateClass.helpers
       if collection == Entities
         throw new Error('Cannot directly create an entity - assign a Typology to a Lot.')
       collectionName = Collections.getName(collection)
-      formName = collectionToForm[collectionName]
+      formArgs = collectionToForm[collectionName]
+      formName = getSingleFormName(formArgs)
       console.debug 'onCreate', arguments, collectionName, formName
       TemplateClass.addFormPanel templateInstance, Template[formName]
     onEdit: onEditFormPanel
