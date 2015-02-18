@@ -44,7 +44,8 @@ Router.route 'design',
     return unless Meteor.user()
     projectId = @params._id
     [Meteor.subscribe('projects'), Meteor.subscribe('entities', projectId),
-      Meteor.subscribe('typologies', projectId), Meteor.subscribe('lots', projectId)]
+      Meteor.subscribe('typologies', projectId), Meteor.subscribe('lots', projectId),
+      Meteor.subscribe('layers', projectId)]
   controller: DesignController
 
 Router.onBeforeAction ->

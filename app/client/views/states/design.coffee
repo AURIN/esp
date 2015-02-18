@@ -15,12 +15,15 @@ Session.setDefault('entityDisplayMode', 'extrusion')
 collectionToForm =
   entities: 'entityForm'
   typologies: 'typologyForm'
+  layers: 'layerForm'
   lots:
     single: 'lotForm'
     multiple: 'lotBulkForm'
 
 # Various handles which should be removed when the design template is removed
 handles = null
+# Handles for PubSub subscriptions.
+pubsubHandles = null
 
 # The current Blaze.View rendered in the left sidebar.
 currentPanelView = null
@@ -39,10 +42,12 @@ TemplateClass.created = ->
   displayModesCollection = Collections.createTemporary()
   _.each DisplayModes, (name, id) ->
     displayModesCollection.insert({value: id, label: name})
+  pubsubHandles = []
   handles = []
 
 TemplateClass.destroyed = ->
   _.each handles, (handle) -> handle.stop()
+  _.each pubsubHandles, (handle) -> PubSub.unsubscribe(handle)
   EntityUtils.beforeAtlasUnload()
   LotUtils.beforeAtlasUnload()
   AtlasManager.removeAtlas()
@@ -69,13 +74,15 @@ TemplateClass.rendered = ->
       TemplateClass.onAtlasLoad(template, cesiumAtlas)
 
   # Move extra buttons into collection tables
-  _.each ['lots', 'typologies', 'entities'], (type) =>
+  _.each ['lots', 'typologies', 'entities', 'layers'], (type) =>
     $table = $(@find('.' + type + ' .collection-table'))
     $buttons = $(@find('.' + type + ' .extra.menu')).addClass('item')
     $('.crud.menu', $table).after($buttons)
 
   # Remove create button for entities.
   $(@find('.entities .collection-table .create.item')).remove()
+  # Remove create button for layers.
+  $(@find('.layers .collection-table .create.item')).remove()
 
   # Add popups to fields
   @$('.has-popup').popup()
@@ -118,6 +125,7 @@ TemplateClass.helpers
   entities: -> Entities.findByProject()
   lots: -> Lots.findByProject()
   typologies: -> Typologies.findByProject()
+  layers: -> Layers.findByProject()
   tableSettings: ->
     fields: [
       key: 'name'
@@ -142,6 +150,9 @@ TemplateClass.events
   'change .entityDisplayMode.dropdown': (e) ->
     displayMode = Template.dropdown.getValue(e.currentTarget)
     Session.set('entityDisplayMode', displayMode)
+  'click .entities .zoom.item': ->
+    ids = Template.tree.getSelectedIds(getEntityTable())
+    AtlasManager.zoomToEntities(ids)
   'change .lotDisplayMode.dropdown': (e) ->
     displayMode = Template.dropdown.getValue(e.currentTarget)
     Session.set('lotDisplayMode', displayMode)
@@ -185,6 +196,24 @@ TemplateClass.events
       $body.removeClass('dragging')
     $body.mousemove(mouseMoveHandler)
     $body.mouseup(mouseUpHandler)
+  'click .layers .import.item': ->
+    Template.design.addFormPanel null, Template.importForm, {isLayer: true}
+    AtlasManager.zoomToEntities(ids)
+  'click .layers .zoom.item': (e, template) ->
+    $table = getLayerTable(template)
+    tableTemplate = Templates.getInstanceFromElement($table)
+    ids = Template.collectionTable.getSelectedIds($table)
+    dfs = _.map ids, (id) ->
+      LayerUtils.render(id)
+    Q.all(dfs).then -> AtlasManager.zoomToEntities(ids)
+  'check .layers': (e, template, checkEvent) ->
+    layerId = checkEvent.data._id
+    isVisible = checkEvent.checked
+    layer = AtlasManager.getEntity(layerId)
+    if layer
+      layer.setVisibility(isVisible)
+    else if isVisible
+      LayerUtils.render(layerId)
 
 createDraggableTypology = ->
   $pin = $('<div class="draggable-typology"></div>') # <i class="building icon"></i>
@@ -197,6 +226,7 @@ getSidebar = (template) ->
 getEntityTable = (template) -> template.$('.entities .collection-table')
 getTypologyTable = (template) -> template.$('.typologies .collection-table')
 getLotTable = (template) -> template.$('.lots .collection-table')
+getLayerTable = (template) -> getTemplate(template).$('.layers .collection-table')
 
 getPathwayDrawButton = (template) -> template.$('.pathway.draw.button')
 
@@ -236,6 +266,11 @@ TemplateClass.addFormPanel = (template, formTemplate, data) ->
 TemplateClass.onAtlasLoad = (template, atlas) ->
   projectId = Projects.getCurrentId()
 
+  $entityTable = getEntityTable(template)
+  $typologyTree = getTypologyTable(template)
+  $lotTable = getLotTable(template)
+  $layerTable = getLayerTable(template)
+
   ##################################################################################################
   # VISUALISATION MAINTENANCE
   ##################################################################################################
@@ -246,6 +281,7 @@ TemplateClass.onAtlasLoad = (template, atlas) ->
   lots = Lots.findByProject()
   entities = Entities.findByProject()
   typologies = Typologies.findByProject()
+  layers = Layers.findByProject()
   # Listen to changes to Lots and (un)render them as needed.
   handles.push Collections.observe lots,
     added: (lot) ->
@@ -324,6 +360,23 @@ TemplateClass.onAtlasLoad = (template, atlas) ->
           refreshEntity(entity._id)
   }
 
+  # Rendering Layers.
+  renderLayer = (id) -> LayerUtils.render(id)
+  unrenderLayer = (id) -> LayerUtils.unrender(id)
+  refreshEntity = (id) ->
+    unrenderLayer(id)
+    renderLayer(id)
+  handles.push Collections.observe layers,
+    added: (layer) ->
+      renderLayer(layer._id)
+    changed: (newLayer, oldLayer) ->
+      id = newLayer._id
+      refreshLayer(id)
+    removed: (layer) ->
+      unrenderLayer(layer._id)
+  # Render existing Entities.
+  _.each layers.fetch(), (layer) -> renderLayer(layer._id)
+
   ##################################################################################################
   # SELECTION
   ##################################################################################################
@@ -331,12 +384,12 @@ TemplateClass.onAtlasLoad = (template, atlas) ->
   # Determine what table should be used for the given doc type.
   getTable = (docId) ->
     if Entities.findOne(docId)
-      getEntityTable(template)
+      $entityTable
     else if Lots.findOne(docId)
-      getLotTable(template)
+      $lotTable
 
   # Listen to selections in tables.
-  tables = [getEntityTable(template), getLotTable(template)]
+  tables = [$entityTable, $lotTable]
 # Prevent bulk selections of entities when selecting the typology table from needlessly triggering
   # the table event handlers below or causing infinite loops.
   tableSelectionEnabled = true
@@ -349,7 +402,6 @@ TemplateClass.onAtlasLoad = (template, atlas) ->
       atlas.publish('entity/deselect', ids: deselectedIds) && deselectedIdsq
   
   # Clicking on a typology selects all entities of that typology.
-  $typologyTable = getTypologyTable(template)
   getEntityIdsByTypologyId = (typologyId) ->
     _.map Entities.findByTypology(typologyId).fetch(), (entity) -> entity._id
   $typologyTable.on 'select', (e, args) ->
@@ -392,6 +444,12 @@ TemplateClass.onAtlasLoad = (template, atlas) ->
     if collection == Entities && Entities.getTypologyClass(id) == 'PATHWAY'
       editGeoEntity(id)
 
+  # Check the checkboxes when rendering into layers.
+  pubsubHandles.push PubSub.subscribe 'layer/show', (msg, id) ->
+    tableTemplate = Templates.getInstanceFromElement(getLayerTable(template))
+    $row = Template.collectionTable.getRow(id, tableTemplate)
+    $('[type="checkbox"]', $row).prop('checked', true)
+
   resolveModelId = (id) ->
     # When clicking on children of a GeoEntity collection, take the prefix as the ID of the
     # underlying Entity.
@@ -406,7 +464,6 @@ TemplateClass.onAtlasLoad = (template, atlas) ->
   ##################################################################################################
 
   # Selecting typologies in the table shows and hides the draw button for pathways.
-  $typologyTable = getTypologyTable(template)
   $pathwayDrawButton = getPathwayDrawButton(template)
   
   getSelectedTypology = ->
@@ -582,4 +639,20 @@ TemplateClass.onAtlasLoad = (template, atlas) ->
     $subdivideButton.toggle(idCount > 0)
     $alignmentButton.toggle(idCount > 0)
     $allocationButton.toggle(idCount > 0)
+
+  ##################################################################################################
+  # ZOOM
+  ##################################################################################################
+
+  $entityZoomButton = template.$('.entities .zoom.item').hide()
+  $layerZoomButton = template.$('.layers .zoom.item').hide()
+
+  _.each [
+    {element: $entityTree, templateClass: Template.tree, zoomButton: $entityZoomButton}
+    {element: $layerTable, templateClass: Template.collectionTable, zoomButton: $layerZoomButton}
+  ], (item) ->
+    $element = item.element
+    $element.on 'select', (args) ->
+      ids = item.templateClass.getSelectedIds($element)
+      $(item.zoomButton).toggle(ids.length > 0)
 

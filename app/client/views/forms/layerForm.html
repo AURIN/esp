@@ -1,0 +1,21 @@
+<template name="layerForm">
+  <div class="flex-panel crud form">
+    <div class="layers title"><i class="content icon"></i>Entity</div>
+    <div class="content">
+      <div class="inner">
+        <div class="ui form segment">
+          {{#autoForm collection=collection id=formName doc=doc type=formType}}
+          {{> afQuickField name="name"}}
+          {{> afQuickField name="desc"}}
+
+          <div class="crud buttons">
+            <button type="button" class="ui red cancel button">Cancel</button>
+            <div class="spacer"></div>
+            <button type="submit" class="ui button submit green">{{submitText}}</button>
+          </div>
+          {{/autoForm}}
+        </div>
+      </div>
+    </div>
+  </div>
+</template>

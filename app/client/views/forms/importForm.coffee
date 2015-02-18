@@ -5,6 +5,7 @@ Meteor.startup ->
     collection: Collections.createTemporary()
     onRender: ->
       template = @
+      data = @data ? {}
       isLoading = false
       setLoadingState = (loading) ->
         if loading != isLoading
@@ -27,7 +28,7 @@ Meteor.startup ->
         format = 'shp'
         onSuccess = ->
           setLoadingState(false)
-          template.data?.settings?.onSuccess()
+          data.settings?.onSuccess()
         assetId = result.id
         loadAssets = {}
         loadAssets[assetId] = format
@@ -37,12 +38,14 @@ Meteor.startup ->
             setLoadingState(false)
           else
             body = result.body
+            
             # Use geoBlobId instead of original assetId to ensure IDs in the c3ml match
             # those in the parameter response.
             LotUtils.fromAsset({
               assetId: body.geoBlobId
               c3mlId: body.c3mlId
               metaDataId: body.metaDataId
+              isLayer: data.isLayer
             }).then((lotIds) ->
               LotUtils.renderAllAndZoom()
               onSuccess?()

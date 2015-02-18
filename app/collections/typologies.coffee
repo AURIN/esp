@@ -3723,3 +3723,21 @@ Lots.after.remove (userId, lot) ->
 Typologies.after.remove (userId, typology) ->
   # Remove entities when the typology is removed.
   _.each Entities.findByTypology(typology._id).fetch(), (entity) -> Entities.remove(entity._id)
+
+####################################################################################################
+# LAYERS
+####################################################################################################
+
+LayerSchema = new SimpleSchema
+  name:
+    type: String
+    index: true
+    unique: false
+  desc: descSchema
+  parameters: parametersSchema
+  project: projectSchema
+
+@Layers = new Meteor.Collection 'layers'
+Layers.attachSchema(LayerSchema)
+Layers.allow(Collections.allowAll())
+Layers.findByProject = (projectId) -> SchemaUtils.findByProject(Layers, projectId)
