@@ -13,6 +13,7 @@ aramk:file-upload@0.2.1
 aramk:pubsub@1.5.0
 aramk:q@1.0.1_1
 aramk:requirejs@2.1.15_1
+aramk:tinycolor@1.1.0_1
 aramk:utility@0.6.0
 aslagle:reactive-table@0.4.2
 autoupdate@1.1.5
@@ -114,6 +115,7 @@ urbanetic:accounts-local@0.1.1
 urbanetic:atlas@0.7.0_5
 urbanetic:atlas-cesium@0.7.0_5
 urbanetic:atlas-util@0.2.4
+urbanetic:subdiv@0.5.2_1
 url@1.0.3
 webapp@1.1.6
 webapp-hashing@1.0.2
