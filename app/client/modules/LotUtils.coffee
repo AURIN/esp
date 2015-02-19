@@ -322,7 +322,7 @@ Meteor.startup ->
     someHaveEntities = _.some lots, (lot) -> lot.entity?
     if someHaveEntities
       throw new Error('Cannot subdivide Lots which have Entities.')
-    require ['subdiv/Polygon', 'atlas/lib/subdiv/Line'], (Polygon, Line) =>
+    require ['subdiv/Polygon', 'subdiv/Line'], (Polygon, Line) =>
       WKT.getWKT (wkt) =>
         polygons = []
         # Used for globalising and localising points.

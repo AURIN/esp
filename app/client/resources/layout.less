@@ -59,6 +59,7 @@ body {
     .logo {
       color: @color-orange;
       font-size: 20px;
+      line-height: 28px;
       font-weight: bold;
       // text-align: center;
       // margin: 0 auto;
@@ -67,7 +68,7 @@ body {
     }
     .aurin-logo {
       background: url('/images/aurin-workbench.png') no-repeat;
-      height: 42px;
+      height: 40px;
       width: 100px;
       background-size: contain;
       position: absolute;
@@ -142,8 +143,15 @@ body {
       top: 5px;
     }
   }
-  &.login > .footer {
-    display: none;
+  &.login {
+    > .footer {
+      display: none;
+    }
+  }
+  &.design {
+    > .header {
+      border-bottom: none;
+    }
   }
 }
 
