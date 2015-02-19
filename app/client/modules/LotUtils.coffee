@@ -437,12 +437,12 @@ Meteor.startup ->
     Lots.findByProject().forEach (lot) ->
       df = GeometryUtils.getModelArea(lot)
       areaDfs.push(df)
-      df.then (results) ->
+      df.then (area) ->
         if args.indexByArea
-          areaModels = fpas[results.area] ?= []
-          areaModels.push(results)
+          areaModels = fpas[area] ?= []
+          areaModels.push(lot._id)
         else
-          fpas[lot._id] = results
+          fpas[lot._id] = area
     Q.all(areaDfs).then -> fpas
 
   removeByIds: (ids) ->

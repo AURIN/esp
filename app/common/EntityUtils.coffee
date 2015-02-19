@@ -208,4 +208,10 @@ if Meteor.isClient
       df.resolve()
       df.promise
 
+    renderAll: ->
+      renderDfs = []
+      models = Entities.findByProject().fetch()
+      _.each models, (model) => renderDfs.push(@render(model._id))
+      Q.all(renderDfs)
+
     beforeAtlasUnload: -> resetRenderQueue()

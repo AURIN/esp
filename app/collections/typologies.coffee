@@ -3368,8 +3368,8 @@ Lots.validateTypology = (lot, typologyId) ->
     # Ensure the geometry of the typology will fit in the lot.
     areaDfs = [GeometryUtils.getModelArea(typology), GeometryUtils.getModelArea(lot)]
     Q.all(areaDfs).then (results) ->
-      lotArea = results.pop()?.area
-      typologyArea = results.pop()?.area
+      lotArea = results.pop()
+      typologyArea = results.pop()
       if lotArea? && typologyArea? && lotArea <= typologyArea
         df.resolve('Typology must have area less than or equal to the Lot.')
       else

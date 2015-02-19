@@ -1,7 +1,18 @@
 @GeometryUtils =
 
+  # Deferred promises to prevent multiple requests for area for the same model interfering when they
+  # try to create collections with the same ID.
+  _areaDfs: {}
+
   getModelArea: (model) ->
+    df = @_areaDfs[model._id]
+    if df
+      return df.promise
     df = Q.defer()
+    @_areaDfs[model._id] = df
+    df.promise.fin =>
+      delete @_areaDfs[model._id]
+
     geom_2d = SchemaUtils.getParameterValue(model, 'space.geom_2d')
     if geom_2d
       @hasWktGeometry(model).then (isWKT) =>
@@ -60,6 +71,7 @@
   getWktArea: (wktStr) ->
     df = Q.defer()
     WKT.getWKT (wkt) ->
+      # TODO(aramk) This is inaccurate - use UTM 
       geometry = wkt.openLayersGeometryFromWKT(wktStr)
       df.resolve(geometry.getGeodesicArea())
     df.promise
