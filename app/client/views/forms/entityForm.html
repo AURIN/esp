@@ -7,11 +7,18 @@
           {{#autoForm collection=collection id=formName doc=doc type=formType}}
             {{> afQuickField name="name"}}
             {{> afQuickField name="desc" rows=3}}
-            {{> afQuickField name="typology" type="dropdown" items=typologies sorted=true}}
+
+            <div class="form-group typology-input">
+              <label class="control-label"><div class="value">Typology</div></label>
+              <div>
+                <input type="text" class="form-control" value="{{typologyName}}" disabled>
+                <div class="ui icon mini button typology">
+                  <i class="icon pencil"></i>
+                </div>
+              </div>
+            </div>
 
             <div class="subtitle">Space</div>
-            <!-- TODO(aramk) Add same widget used in typology schema. -->
-            <!--{{> afQuickField name="parameters.space.geom_2d"}}-->
 
             {{> afQuickField name="parameters.space.prpn_lawn"}}
             {{> afQuickField name="parameters.space.prpn_annu"}}

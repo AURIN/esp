@@ -186,6 +186,9 @@ TemplateClass.events
     $body.mousemove(mouseMoveHandler)
     $body.mouseup(mouseUpHandler)
 
+PubSub.subscribe 'typology/edit/form', (msg, typologyId) ->
+  onEditFormPanel(ids: [typologyId], collection: Typologies)
+
 createDraggableTypology = ->
   $pin = $('<div class="draggable-typology"></div>') # <i class="building icon"></i>
   $('body').append($pin)
@@ -387,7 +390,7 @@ TemplateClass.onAtlasLoad = (template, atlas) ->
     return unless collection
     entity = collection.findOne(id)
     return unless entity
-    onEditFormPanel ids: [id], collection: collection
+    onEditFormPanel(ids: [id], collection: collection)
     # If double clicking a pathway, switch to edit mode.
     if collection == Entities && Entities.getTypologyClass(id) == 'PATHWAY'
       editGeoEntity(id)

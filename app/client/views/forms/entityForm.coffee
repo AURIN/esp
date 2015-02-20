@@ -92,7 +92,10 @@ Meteor.startup ->
           $input.prepend($option)
           Forms.setInputValue($input, '')
       
-      unless entityValue?
+      # For all non-input fields (e.g. checkboxes), set the value of the entity field. Input
+      # checkboxes use placeholders instead to allow inheriting values from the typology.
+      if !entityValue? && !$input.is('input')
+        Forms.setInputValue($input, typologyValue)
         if typologyValue?
           Forms.setInputValue($input, typologyValue)
         else if defaultValue?
@@ -122,3 +125,10 @@ Meteor.startup ->
 
   Form.helpers
     typologies: -> Typologies.findByProject()
+    typologyName: -> Typologies.findOne(@doc?.typology)?.name ? 'None'
+
+  Form.events
+    'click .typology.button': (e, template) ->
+      typologyId = template.data.doc?.typology
+      return unless typologyId
+      PubSub.publish('typology/edit/form', typologyId)

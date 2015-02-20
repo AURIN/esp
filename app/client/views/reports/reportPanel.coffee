@@ -22,11 +22,9 @@ renderDf = null
 
 renderReport = _.debounce(
   (id) ->
-    return if Q.isPending(renderDf?.promise)
     # Delay rendering of reports until all entities and lots are rendered to ensure area calculations
     # do not fail.
-    Q.all([EntityUtils.renderAll(), LotUtils.renderAll()]).then ->
-      _renderReport(id)
+    EntityUtils.renderAll().then -> _renderReport(id)
   300
 )
 
