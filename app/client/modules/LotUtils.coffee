@@ -297,7 +297,11 @@ Meteor.startup ->
           polygons.push(polygon)
         combinedPolygon = polygons.shift()
         _.each polygons, (polygon) ->
-          combinedPolygon = combinedPolygon.union(polygon, {sortPoints: false, smoothPoints: false})[0]
+          nextCombination = combinedPolygon.union(polygon,
+              {sortPoints: false, smoothPoints: false})
+          if nextCombination.length != 1
+            throw new Error('Amalgamation failed: ' + nextCombination.length + ' polygons produced')
+          combinedPolygon = nextCombination[0]
         combinedLot = Lots.findOne(ids[0])
         delete combinedLot._id
         combinedPolygon.globalizePoints(referencePoint)

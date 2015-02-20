@@ -340,7 +340,7 @@ TemplateClass.onAtlasLoad = (template, atlas) ->
 
   # Listen to selections in tables.
   tables = [getEntityTable(template), getLotTable(template)]
-# Prevent bulk selections of entities when selecting the typology table from needlessly triggering
+  # Prevent bulk selections of entities when selecting the typology table from needlessly triggering
   # the table event handlers below or causing infinite loops.
   tableSelectionEnabled = true
   _.each tables, ($table) ->
@@ -565,7 +565,7 @@ TemplateClass.onAtlasLoad = (template, atlas) ->
     Lots.after.update (userId, newDoc) ->
       oldDoc = @previous
       entityId = newDoc.entity
-      if entityId && oldDoc.entity != entityId
+      if entityId && oldDoc?.entity != entityId
         autoAlignEntity(Entities.findOne(entityId))
 
   ##################################################################################################
