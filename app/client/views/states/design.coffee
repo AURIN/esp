@@ -557,12 +557,13 @@ TemplateClass.onAtlasLoad = (template, atlas) ->
     azimuth = SchemaUtils.getParameterValue(entity, 'orientation.azimuth')
     LotUtils.autoAlign([entity.lot]) unless azimuth?
 
-  Collections.observe Lots.findByProject(),
-    added: (newDoc) ->
-      entityId = newDoc.entity
+  if Meteor.isClient
+    Lots.after.insert (userId, doc) ->
+      entityId = doc.entity
       if entityId
         autoAlignEntity(Entities.findOne(entityId))
-    changed: (newDoc, oldDoc) ->
+    Lots.after.update (userId, newDoc) ->
+      oldDoc = @previous
       entityId = newDoc.entity
       if entityId && oldDoc.entity != entityId
         autoAlignEntity(Entities.findOne(entityId))

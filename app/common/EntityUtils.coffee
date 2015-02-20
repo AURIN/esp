@@ -14,7 +14,9 @@ _.extend EntityUtils,
 if Meteor.isClient
 
   _renderQueue = null
-  resetRenderQueue = -> _renderQueue = new DeferredQueueMap()
+  resetRenderQueue = ->
+    _renderQueue?.clear()
+    _renderQueue = new DeferredQueueMap()
   Meteor.startup -> resetRenderQueue()
 
   _.extend EntityUtils,

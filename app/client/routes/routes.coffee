@@ -33,6 +33,10 @@ DesignController = BaseController.extend
 ProjectsController = BaseController.extend
   template: 'projects'
   waitOn: -> Meteor.subscribe('projects') if Meteor.user()
+  onAfterAction: ->
+    # Using onAfterAction so the project ID is still defined while the template is being destroyed
+    # and doesn't cause reactive changes.
+    Projects.setCurrentId(null)
 
 Router.route '/', -> @render('projects')
 

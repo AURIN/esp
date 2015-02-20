@@ -108,6 +108,10 @@ Meteor.startup ->
       updateFields.call(@)
       $typologyInput = getTypologyInput.call(@)
       $typologyInput.on 'change', => updateFields.call(@)
+      # Select only the entity currently being edited (if any) so it's clear to the user.
+      doc = @data.doc
+      if doc
+        AtlasManager.setSelection([doc._id])
     hooks:
       formToDoc: (doc) ->
         doc.project = Projects.getCurrentId()
