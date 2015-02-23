@@ -22,9 +22,9 @@ renderDf = null
 
 renderReport = _.debounce(
   (id) ->
-    # Delay rendering of reports until all entities and lots are rendered to ensure area calculations
-    # do not fail.
-    EntityUtils.renderAll().then -> _renderReport(id)
+    # Delay rendering of reports until all entities and lots are rendered to ensure area
+    # calculations do not fail. We should render the reports even if some entities failed to render.
+    EntityUtils.renderAll().fin(-> _renderReport(id)).done()
   300
 )
 

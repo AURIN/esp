@@ -85,11 +85,11 @@ if Meteor.isClient
     _renderLot: (id) ->
       df = Q.defer()
       entity = Entities.findOne(id)
-      lot = Lots.findOne(entity.lot)
+      lotId = entity.lot
+      lot = Lots.findOne(lotId)
       unless lot
         EntityUtils.unrender(id)
-        throw new Error('Rendered geoEntity does not have an accompanying lot.')
-      lotId = lot._id
+        throw new Error('Rendered geoEntity ' + id + ' does not have an accompanying lot ' + lotId)
       LotUtils.render(lotId).then(df.resolve, df.reject)
       df.promise
 
@@ -98,6 +98,8 @@ if Meteor.isClient
     _render: (id) ->
       df = Q.defer()
       geoEntity = AtlasManager.getEntity(id)
+      # All the geometry added during rendering. If rendering fails, these are all discarded.
+      addedGeometry = []
       if geoEntity
         AtlasManager.showEntity(id)
         df.resolve(geoEntity)
@@ -117,6 +119,7 @@ if Meteor.isClient
             geometryDfs.push(@_render3dGeometry(id))
           Q.all(geometryDfs).then(
             (geometries) =>
+              _.each geometries, (geometry) -> addedGeometry.push(geometry) if geometry
               if isPathway
                 geoEntity = geometries[0]
                 # A pathway doesn't have any 3d geometry or a lot.
@@ -153,6 +156,7 @@ if Meteor.isClient
                         (args) ->
                           geoEntity = AtlasManager.renderEntity(args)
                           geoEntity.setForm(Feature.DisplayMode.FOOTPRINT, entity2d)
+                          addedGeometry.push(geoEntity)
                           args.height? && entity2d.setHeight(args.height)
                           args.elevation? && entity2d.setElevation(args.elevation)
                           geoEntityDf.resolve(geoEntity)
@@ -175,6 +179,10 @@ if Meteor.isClient
               )
             df.reject
           )
+      df.promise.fail ->
+        # Remove any entities which failed to render to avoid leaving them within Atlas.
+        console.error('Failed to render entity ' + id)
+        _.each addedGeometry, (geometry) -> geometry.remove()
       df.promise
 
     _setUpEntity: (geoEntity) ->
