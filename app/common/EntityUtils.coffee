@@ -83,15 +83,13 @@ if Meteor.isClient
     _render3dGeometry: (id) -> @_buildGeometryFromFile(id, 'geom_3d')
 
     _renderLot: (id) ->
-      df = Q.defer()
       entity = Entities.findOne(id)
       lotId = entity.lot
       lot = Lots.findOne(lotId)
       unless lot
         EntityUtils.unrender(id)
-        throw new Error('Rendered geoEntity ' + id + ' does not have an accompanying lot ' + lotId)
-      LotUtils.render(lotId).then(df.resolve, df.reject)
-      df.promise
+        return Q.reject('Rendered geoEntity ' + id + ' does not have an accompanying lot ' + lotId)
+      LotUtils.render(lotId)
 
     render: (id) -> _renderQueue.add(id, => @_render(id))
 

@@ -273,17 +273,17 @@ Meteor.startup ->
   amalgamate: (ids) ->
     df = Q.defer()
     if ids.length < 2
-      throw new Error('At least two Lots are needed to amalgamate.')
+      return Q.reject('At least two Lots are needed to amalgamate.')
     lots = Lots.find({_id: {$in: ids}}).fetch()
     someHaveEntities = _.some lots, (lot) -> lot.entity?
     if someHaveEntities
-      throw new Error('Cannot amalgamate Lots which have Entities.')
+      return Q.reject('Cannot amalgamate Lots which have Entities.')
     require ['subdiv/Polygon'], (Polygon) =>
       WKT.getWKT (wkt) =>
         polygons = []
         # Used for globalising and localising points.
         referencePoint = null
-        _.each lots, (lot) ->
+        success = _.all lots, (lot) ->
           geom_2d = SchemaUtils.getParameterValue(lot, 'space.geom_2d')
           vertices = wkt.verticesFromWKT(geom_2d)[0]
           polygon = new Polygon(vertices)
@@ -293,15 +293,21 @@ Meteor.startup ->
             # Each Lot must be touching at least one other Lot.
             someTouching = _.some polygons, (otherPolygon) -> polygon.intersects(otherPolygon)
             unless someTouching
-              throw new Error('Lots must be contiguous to amalgamate.')
+              df.reject('Lots must be contiguous to amalgamate.')
+              return false
           polygons.push(polygon)
+          true
+        return unless success
         combinedPolygon = polygons.shift()
-        _.each polygons, (polygon) ->
+        success = _.all polygons, (polygon) ->
           nextCombination = combinedPolygon.union(polygon,
               {sortPoints: false, smoothPoints: false})
           if nextCombination.length != 1
-            throw new Error('Amalgamation failed: ' + nextCombination.length + ' polygons produced')
+            df.reject('Amalgamation failed: ' + nextCombination.length + ' polygons produced')
+            return false
           combinedPolygon = nextCombination[0]
+          true
+        return unless success
         combinedLot = Lots.findOne(ids[0])
         delete combinedLot._id
         combinedPolygon.globalizePoints(referencePoint)
@@ -319,13 +325,13 @@ Meteor.startup ->
     df.promise
 
   subdivide: (ids, linePoints) ->
-    df = Q.defer()
     if ids.length == 0
-      throw new Error('At least one Lot is needed to subdivide.')
+      return Q.reject('At least one Lot is needed to subdivide.')
     lots = Lots.find({_id: {$in: ids}}).fetch()
     someHaveEntities = _.some lots, (lot) -> lot.entity?
     if someHaveEntities
-      throw new Error('Cannot subdivide Lots which have Entities.')
+      return Q.reject('Cannot subdivide Lots which have Entities.')
+    df = Q.defer()
     require ['subdiv/Polygon', 'subdiv/Line'], (Polygon, Line) =>
       WKT.getWKT (wkt) =>
         polygons = []
