@@ -191,5 +191,15 @@ Meteor.startup ->
             }, {validate: false})
       console.log('Migrated', migratedModelCount, 'models by renaming internal water use intensity fields.')
 
+  Migrations.add
+    version: 11
+    up: ->
+      migratedModelCount = 0
+      Projects.find().forEach (project) ->
+        _.each [Typologies, Entities], (collection) ->
+          SchemaUtils.removeCalcFields(collection)
+          migratedModelCount += collection.find().count()
+      console.log('Migrated', migratedModelCount, 'models by removing calculated fields.')
+
   console.log('Migrating to latest version...')
   Migrations.migrateTo('latest')

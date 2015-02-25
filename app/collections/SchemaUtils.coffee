@@ -2,7 +2,7 @@ global = @
 
 @SchemaUtils =
 
-  getField: (fieldId, collection) -> collection.simpleSchema().schema(fieldId)
+  getField: (fieldId, arg) -> Collections.getSchema(arg).schema(fieldId)
 
 # Traverse the given schema and call the given callback with the field schema and ID.
   forEachFieldSchema: (schema, callback) ->
@@ -109,3 +109,34 @@ global = @
         values[model._id] = value
     values
 
+  getOutputParamSchemas: (arg, paramIds) ->
+    schema = Collections.getSchema(arg)
+    unless paramIds
+      paramIds = schema._schemaKeys
+    schemas = {}
+    for key in paramIds
+      key = ParamUtils.addPrefix(key)
+      schema = @getField(key, arg)
+      if schema?
+        if schema.calc?
+          # Skip input fields which never need to be evaluated.
+          schemas[key] = schema
+      else
+        console.error('Skipping unknown parameter', key, 'not found in schema', schema)
+    schemas
+
+if Meteor.isServer
+
+  SchemaUtils.removeCalcFields = (arg) ->
+    collection = Collections.get(arg)
+    unless collection
+      throw new Error('Could not resolve collection.')
+    docs = Collections.getItems(arg)
+    unless docs
+      throw new Error('Could not resolve docs.')
+    schemas = @getOutputParamSchemas(arg)
+    $unset = {}
+    _.each schemas, (schema, paramId) ->
+      $unset[paramId] = null
+    console.log('Removing calculated fields:', Object.keys($unset))
+    _.each docs, (doc) -> collection.update(doc._id, {$unset: $unset})

@@ -6,10 +6,13 @@ class @EvaluationEngine
       throw new Error('No schema provided')
 
   evaluate: (args) ->
+    args = _.extend({
+      removeCalcFields: true
+    }, args)
     model = args.model
     typologyClass = args.typologyClass
     changes = {}
-    schemas = @getOutputParamSchemas(args.paramIds)
+    schemas = SchemaUtils.getOutputParamSchemas(@schema, args.paramIds)
     project = args.project ? Projects.findOne(model.project) ? Projects.getCurrent()
     unless project
       throw new Error('No project provided')
@@ -75,6 +78,11 @@ class @EvaluationEngine
         schema: schema
       }), CalcContext)
 
+    # Remove any calculated fields stored in the model which may be left from a previous session.
+    if args.removeCalcFields
+      _.each schemas, (schema, paramId) ->
+        SchemaUtils.setParameterValue(model, paramId, undefined)
+
     # Go through output parameters and calculate them recursively.
     _.each schemas, (schema, paramId) ->
       classOptions = schema.classes
@@ -88,21 +96,6 @@ class @EvaluationEngine
       if result?
         changes[paramId] = result
     changes
-
-  getOutputParamSchemas: (paramIds) ->
-    unless paramIds
-      paramIds = @schema._schemaKeys
-    schemas = {}
-    for key in paramIds
-      key = ParamUtils.addPrefix(key)
-      schema = @getParamSchema(key)
-      if schema?
-        if schema.calc?
-          # Skip input fields which never need to be evaluated.
-          schemas[key] = schema
-      else
-        console.error('Skipping unknown parameter', key, 'not found in schema', schema)
-    schemas
 
   setResult: (model, paramId, value) ->
     SchemaUtils.setParameterValue(model, paramId, value)
