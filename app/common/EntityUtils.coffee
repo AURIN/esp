@@ -2,6 +2,8 @@
 
 evalEngine = null
 getEvalEngine = -> evalEngine ?= new EvaluationEngine(schema: Entities.simpleSchema())
+FILL_COLOR = '#fff'
+BORDER_COLOR = '#666'
 
 _.extend EntityUtils,
 
@@ -35,8 +37,8 @@ if Meteor.isClient
           zIndex: 1
           displayMode: displayMode
           style:
-            fillColor: '#ccc'
-            borderColor: '#666'
+            fillColor: FILL_COLOR
+            borderColor: BORDER_COLOR
         }, args)
         if typologyClass == 'PATHWAY'
           widthParamId = 'space.width'
@@ -62,7 +64,10 @@ if Meteor.isClient
       unless fileId
         return Q.when(null)
       collectionId = id + '-' + paramId
-      GeometryUtils.buildGeometryFromFile(fileId, {collectionId: collectionId})
+      style =
+        fillColor: FILL_COLOR
+        borderColor: BORDER_COLOR
+      GeometryUtils.buildGeometryFromFile(fileId, {collectionId: collectionId, style: style})
 
     _render2dGeometry: (id) ->
       entity = Entities.getFlattened(id)
