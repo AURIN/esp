@@ -81,3 +81,5 @@ iron-router-progress
 /urbanetic:accounts-local
 /aldeed:autoform
 /aslagle:reactive-table
+/urbanetic:*
+/aramk:*

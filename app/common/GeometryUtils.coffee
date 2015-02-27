@@ -50,7 +50,7 @@
           c3ml.show = args.show
           c3ml
         # Ignore all collections in the c3ml, since they don't affect visualisation.
-        c3mls = _.filter c3mls, (c3ml) -> c3ml.type != 'collection'
+        c3mls = _.filter c3mls, (c3ml) -> AtlasConverter.sanitizeType(c3ml.type) != 'collection'
         try
           c3mlEntities = AtlasManager.renderEntities(c3mls)
         catch e

@@ -1,3 +1,6 @@
+# Change this to perform importing on the client for testing.
+USE_SERVER = true
+
 Meteor.startup ->
 
   Form = Forms.defineModelForm
@@ -23,30 +26,33 @@ Meteor.startup ->
         console.error 'Uploading assets failed', err
         setLoadingState(false)
       dropzone.on 'success', (file, result) ->
+        unless result
+          onError(file)
+          return
         console.log('Successful dropdown upload', arguments)
-        format = 'shp'
+        filename = file.name
+        assetArgs = {
+          c3mls: result.c3mls
+          projectId: Projects.getCurrentId()
+          filename: filename
+        }
         onSuccess = ->
+          data.settings?.onSuccess()
+          LotUtils.renderAllAndZoom()
+        onFinish = ->
           setLoadingState(false)
-          template.data?.settings?.onSuccess()
-        assetId = result.id
-        loadAssets = {}
-        loadAssets[assetId] = format
-        Meteor.call 'assets/load', {assets: loadAssets}, (err, result) ->
-          if err
-            console.error 'Loading assets failed', loadAssets, err
-            setLoadingState(false)
-          else
-            body = result.body
-            # Use geoBlobId instead of original assetId to ensure IDs in the c3ml match
-            # those in the parameter response.
-            LotUtils.fromAsset({
-              assetId: body.geoBlobId
-              c3mlId: body.c3mlId
-              metaDataId: body.metaDataId
-            }).then((lotIds) ->
-              LotUtils.renderAllAndZoom()
-              onSuccess?()
-            ).fin -> setLoadingState(false)
+        handleImport(assetArgs, USE_SERVER).then(onSuccess).fin(onFinish).done()
 
       dropzone.on 'error', (file, errorMessage) ->
         console.error('Error uploading file', arguments)
+
+handleImport = (assetArgs, useServer) ->
+  if useServer then handleImportServer(assetArgs) else handleImportClient(assetArgs)
+
+handleImportServer = (assetArgs) ->
+  df = Q.defer()
+  Meteor.call 'lots/from/asset', assetArgs, (err, result) ->
+    if err then df.reject(err) else df.resolve()
+  df.promise
+
+handleImportClient = (assetArgs) -> LotUtils.fromAsset(assetArgs)

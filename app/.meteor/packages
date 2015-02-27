@@ -44,6 +44,8 @@ aramk:dropdown
 # These come last so RequireJS doesn't cause issues.
 aramk:requirejs
 aramk:file-upload
+
+urbanetic:aurin-acs
 urbanetic:accounts-aurin
 urbanetic:accounts-local
 urbanetic:atlas
