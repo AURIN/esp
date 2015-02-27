@@ -196,9 +196,9 @@ Meteor.startup ->
 
   Form.events
     'change [data-name="parameters.space.geom_2d"] input': (e, template) ->
-      GeometryImportFields.importFieldHandler(e, template, ['shp'])
+      GeometryImportFields.importFieldHandler(e.target, template, {acceptedFormats: ['shp']})
     'change [data-name="parameters.space.geom_3d"] input': (e, template) ->
-      GeometryImportFields.importFieldHandler(e, template, ['kmz'])
+      GeometryImportFields.importFieldHandler(e.target, template, {acceptedFormats: ['kmz']})
 
   # AZIMUTH ARRAY
   

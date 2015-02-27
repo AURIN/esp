@@ -215,6 +215,9 @@ TemplateClass.events
     else if isVisible
       LayerUtils.render(layerId)
 
+PubSub.subscribe 'typology/edit/form', (msg, typologyId) ->
+  onEditFormPanel(ids: [typologyId], collection: Typologies)
+
 createDraggableTypology = ->
   $pin = $('<div class="draggable-typology"></div>') # <i class="building icon"></i>
   $('body').append($pin)
@@ -390,7 +393,7 @@ TemplateClass.onAtlasLoad = (template, atlas) ->
 
   # Listen to selections in tables.
   tables = [$entityTable, $lotTable]
-# Prevent bulk selections of entities when selecting the typology table from needlessly triggering
+  # Prevent bulk selections of entities when selecting the typology table from needlessly triggering
   # the table event handlers below or causing infinite loops.
   tableSelectionEnabled = true
   _.each tables, ($table) ->
@@ -439,7 +442,7 @@ TemplateClass.onAtlasLoad = (template, atlas) ->
     return unless collection
     entity = collection.findOne(id)
     return unless entity
-    onEditFormPanel ids: [id], collection: collection
+    onEditFormPanel(ids: [id], collection: collection)
     # If double clicking a pathway, switch to edit mode.
     if collection == Entities && Entities.getTypologyClass(id) == 'PATHWAY'
       editGeoEntity(id)
@@ -611,14 +614,15 @@ TemplateClass.onAtlasLoad = (template, atlas) ->
     azimuth = SchemaUtils.getParameterValue(entity, 'orientation.azimuth')
     LotUtils.autoAlign([entity.lot]) unless azimuth?
 
-  Collections.observe Lots.findByProject(),
-    added: (newDoc) ->
-      entityId = newDoc.entity
+  if Meteor.isClient
+    Lots.after.insert (userId, doc) ->
+      entityId = doc.entity
       if entityId
         autoAlignEntity(Entities.findOne(entityId))
-    changed: (newDoc, oldDoc) ->
+    Lots.after.update (userId, newDoc) ->
+      oldDoc = @previous
       entityId = newDoc.entity
-      if entityId && oldDoc.entity != entityId
+      if entityId && oldDoc?.entity != entityId
         autoAlignEntity(Entities.findOne(entityId))
 
   ##################################################################################################

@@ -112,7 +112,7 @@ incrementName = (name) ->
 
   zoomToEntities: ->
     if Lots.findByProject().count() > 0
-      LotUtils.renderAllAndZoom()
+      LotUtils.renderAllAndZoom().fail => @zoomToProject()
     else
       @zoomToProject()
 

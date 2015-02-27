@@ -78,10 +78,9 @@ Meteor.startup ->
       limit = doc.limit
       lotIds = []
       LotUtils.getAreas().then (results) ->
-        _.some results, (result) ->
+        _.some results, (area, lotId) ->
           return true if limit? && lotIds.length >= limit
-          lot = result.model
-          area = result.area
+          lot = Lots.findOne(lotId)
           height = SchemaUtils.getParameterValue(lot, 'space.height')
           if SchemaUtils.getParameterValue(lot, 'general.class') != typologyClass ||
               (fpaMin? && area < fpaMin) || (fpaMax? && area > fpaMax) ||
@@ -90,7 +89,7 @@ Meteor.startup ->
               SchemaUtils.getParameterValue(lot, 'general.develop') != develop ||
               lot.entity? != allocated
             return false
-          lotIds.push(lot._id)
+          lotIds.push(lotId)
           return false
         AtlasManager.deselectAllEntities()
         AtlasManager.selectEntities(lotIds)

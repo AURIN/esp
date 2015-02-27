@@ -1,7 +1,18 @@
 @GeometryUtils =
 
+  # Deferred promises to prevent multiple requests for area for the same model interfering when they
+  # try to create collections with the same ID.
+  _areaDfs: {}
+
   getModelArea: (model) ->
+    df = @_areaDfs[model._id]
+    if df
+      return df.promise
     df = Q.defer()
+    @_areaDfs[model._id] = df
+    df.promise.fin =>
+      delete @_areaDfs[model._id]
+
     geom_2d = SchemaUtils.getParameterValue(model, 'space.geom_2d')
     if geom_2d
       @hasWktGeometry(model).then (isWKT) =>
@@ -39,7 +50,7 @@
           c3ml.show = args.show
           c3ml
         # Ignore all collections in the c3ml, since they don't affect visualisation.
-        c3mls = _.filter c3mls, (c3ml) -> c3ml.type != 'collection'
+        c3mls = _.filter c3mls, (c3ml) -> AtlasConverter.sanitizeType(c3ml.type) != 'collection'
         try
           c3mlEntities = AtlasManager.renderEntities(c3mls)
         catch e
@@ -60,6 +71,7 @@
   getWktArea: (wktStr) ->
     df = Q.defer()
     WKT.getWKT (wkt) ->
+      # TODO(aramk) This is inaccurate - use UTM 
       geometry = wkt.openLayersGeometryFromWKT(wktStr)
       df.resolve(geometry.getGeodesicArea())
     df.promise

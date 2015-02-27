@@ -2143,7 +2143,7 @@ typologyCategories =
         type: Number
         decimal: true
         units: Units.kLyear
-        calc: '$water_demand.i_wu_total - $water_demand.i_wu_rain'
+        calc: -> Math.max(@calc('$water_demand.i_wu_total - $water_demand.i_wu_rain'), 0)
         classes:
           RESIDENTIAL: {}
       i_wu_rain:
@@ -2288,7 +2288,7 @@ typologyCategories =
         units: Units.kLyear
         calc: ->
           value = @calc('($water_demand.e_wd_total - $water_demand.e_wu_rain - $water_demand.e_wu_grey) * $water_demand.share_e_wu_pot')
-          if value < 0 then 0 else value
+          Math.max(value, 0)
       e_wu_grey:
         label: 'External Water Use - Greywater'
         type: Number
@@ -3368,8 +3368,8 @@ Lots.validateTypology = (lot, typologyId) ->
     # Ensure the geometry of the typology will fit in the lot.
     areaDfs = [GeometryUtils.getModelArea(typology), GeometryUtils.getModelArea(lot)]
     Q.all(areaDfs).then (results) ->
-      lotArea = results.pop()?.area
-      typologyArea = results.pop()?.area
+      lotArea = results.pop()
+      typologyArea = results.pop()
       if lotArea? && typologyArea? && lotArea <= typologyArea
         df.resolve('Typology must have area less than or equal to the Lot.')
       else

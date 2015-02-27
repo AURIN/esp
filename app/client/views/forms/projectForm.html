@@ -6,7 +6,7 @@
         <div class="ui form segment">
           {{#autoForm collection=collection id=formName doc=doc type=formType}}
           {{> afQuickField name="name"}}
-          {{> afQuickField name="desc"}}
+          {{> afQuickField name="desc" rows=3}}
           {{#if isAdmin}}
             {{> afQuickField name="isTemplate"}}
           {{/if}}

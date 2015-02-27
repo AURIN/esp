@@ -2,6 +2,8 @@
 
 evalEngine = null
 getEvalEngine = -> evalEngine ?= new EvaluationEngine(schema: Entities.simpleSchema())
+FILL_COLOR = '#fff'
+BORDER_COLOR = '#666'
 
 _.extend EntityUtils,
 
@@ -14,7 +16,9 @@ _.extend EntityUtils,
 if Meteor.isClient
 
   _renderQueue = null
-  resetRenderQueue = -> _renderQueue = new DeferredQueueMap()
+  resetRenderQueue = ->
+    _renderQueue?.clear()
+    _renderQueue = new DeferredQueueMap()
   Meteor.startup -> resetRenderQueue()
 
   _.extend EntityUtils,
@@ -33,8 +37,8 @@ if Meteor.isClient
           zIndex: 1
           displayMode: displayMode
           style:
-            fillColor: '#ccc'
-            borderColor: '#666'
+            fillColor: FILL_COLOR
+            borderColor: BORDER_COLOR
         }, args)
         if typologyClass == 'PATHWAY'
           widthParamId = 'space.width'
@@ -60,7 +64,10 @@ if Meteor.isClient
       unless fileId
         return Q.when(null)
       collectionId = id + '-' + paramId
-      GeometryUtils.buildGeometryFromFile(fileId, {collectionId: collectionId})
+      style =
+        fillColor: FILL_COLOR
+        borderColor: BORDER_COLOR
+      GeometryUtils.buildGeometryFromFile(fileId, {collectionId: collectionId, style: style})
 
     _render2dGeometry: (id) ->
       entity = Entities.getFlattened(id)
@@ -81,21 +88,21 @@ if Meteor.isClient
     _render3dGeometry: (id) -> @_buildGeometryFromFile(id, 'geom_3d')
 
     _renderLot: (id) ->
-      df = Q.defer()
       entity = Entities.findOne(id)
-      lot = Lots.findOne(entity.lot)
+      lotId = entity.lot
+      lot = Lots.findOne(lotId)
       unless lot
         EntityUtils.unrender(id)
-        throw new Error('Rendered geoEntity does not have an accompanying lot.')
-      lotId = lot._id
-      LotUtils.render(lotId).then(df.resolve, df.reject)
-      df.promise
+        return Q.reject('Rendered geoEntity ' + id + ' does not have an accompanying lot ' + lotId)
+      LotUtils.render(lotId)
 
     render: (id) -> _renderQueue.add(id, => @_render(id))
 
     _render: (id) ->
       df = Q.defer()
       geoEntity = AtlasManager.getEntity(id)
+      # All the geometry added during rendering. If rendering fails, these are all discarded.
+      addedGeometry = []
       if geoEntity
         AtlasManager.showEntity(id)
         df.resolve(geoEntity)
@@ -115,6 +122,7 @@ if Meteor.isClient
             geometryDfs.push(@_render3dGeometry(id))
           Q.all(geometryDfs).then(
             (geometries) =>
+              _.each geometries, (geometry) -> addedGeometry.push(geometry) if geometry
               if isPathway
                 geoEntity = geometries[0]
                 # A pathway doesn't have any 3d geometry or a lot.
@@ -151,6 +159,7 @@ if Meteor.isClient
                         (args) ->
                           geoEntity = AtlasManager.renderEntity(args)
                           geoEntity.setForm(Feature.DisplayMode.FOOTPRINT, entity2d)
+                          addedGeometry.push(geoEntity)
                           args.height? && entity2d.setHeight(args.height)
                           args.elevation? && entity2d.setElevation(args.elevation)
                           geoEntityDf.resolve(geoEntity)
@@ -173,6 +182,10 @@ if Meteor.isClient
               )
             df.reject
           )
+      df.promise.fail ->
+        # Remove any entities which failed to render to avoid leaving them within Atlas.
+        console.error('Failed to render entity ' + id)
+        _.each addedGeometry, (geometry) -> geometry.remove()
       df.promise
 
     _setUpEntity: (geoEntity) ->
@@ -207,5 +220,11 @@ if Meteor.isClient
       AtlasManager.unrenderEntity(id)
       df.resolve()
       df.promise
+
+    renderAll: ->
+      renderDfs = []
+      models = Entities.findByProject().fetch()
+      _.each models, (model) => renderDfs.push(@render(model._id))
+      Q.all(renderDfs)
 
     beforeAtlasUnload: -> resetRenderQueue()

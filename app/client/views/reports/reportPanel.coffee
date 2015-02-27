@@ -20,7 +20,15 @@ $currentReport = null
 precinctReportId = 'precinctReport'
 renderDf = null
 
-renderReport = (id) ->
+renderReport = _.debounce(
+  (id) ->
+    # Delay rendering of reports until all entities and lots are rendered to ensure area
+    # calculations do not fail. We should render the reports even if some entities failed to render.
+    EntityUtils.renderAll().fin(-> _renderReport(id)).done()
+  300
+)
+
+_renderReport = (id) ->
   unless id?
     throw new Error('No report ID provided for rendering')
   report = reports.findOne(id)
@@ -101,7 +109,6 @@ refreshReport = ->
     renderReport(id)
   else
     clearPanel()
-PubSub.subscribe 'report/refresh', -> refreshReport()
 
 clearPanel = ->
   $reportPanelContent.empty()
@@ -121,14 +128,13 @@ TemplateClass.created = ->
   @data.reports = reports
   # Listen for changes to the entity selection and refresh reports.
   AtlasManager.getAtlas().then (atlas) ->
-    atlas.subscribe 'entity/selection/change', ->
-      console.debug('entity/selection/change', @, arguments)
-      refreshReport()
+    atlas.subscribe 'entity/selection/change', -> refreshReport()
 
 TemplateClass.rendered = ->
   $reportPanelContent = @$('.content')
   $reportDropdown = getReportsDropdown()
   clearPanel()
+  
   getRefreshButton().on 'click', refreshReport
   getDownloadButton().on 'click', ->
     renderDf.promise.then (args) ->
@@ -143,6 +149,10 @@ TemplateClass.rendered = ->
     # dropdown to become "" and so forth.
     id = Template.dropdown.getValue($reportDropdown) || null
     currentReportId.set(id)
+  
+  @pubsubTokens = []
+  @pubsubTokens.push PubSub.subscribe 'report/refresh', -> refreshReport()
+  
   # Refresh report on changes to the current report. Don't render the report until told to so
   # Atlas entities are rendered beforehand and GFA can be calculated.
   shouldRun = false
@@ -154,6 +164,7 @@ TemplateClass.rendered = ->
 
 TemplateClass.destroyed = ->
   currentReportId.set(null)
+  _.each @pubsubTokens, (token) -> PubSub.unsubscribe(token)
 
 TemplateClass.helpers
   reports: -> reports

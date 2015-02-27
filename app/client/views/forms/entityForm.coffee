@@ -59,6 +59,9 @@ Meteor.startup ->
       unless isParamField
         continue
 
+      entity = @data.doc
+      entityValue = SchemaUtils.getParameterValue(entity, paramName) if entity
+
       # For a dropdown field, show the inherited or default value with labels.
       if $input.is('select')
         origInput = origInputs[key]
@@ -66,6 +69,7 @@ Meteor.startup ->
           # This field has been modified before - replace with a clone of the original.
           $origInput = origInputs[key].clone()
           $input.replaceWith($origInput)
+          $origInput.val($input.val())
           $input = $origInput
         else
           # The field is in its original state - store a clone.
@@ -80,20 +84,22 @@ Meteor.startup ->
           $defaultOption = getSelectOption(defaultValue, $input)
           if $defaultOption.length > 0
             $defaultOption.text($defaultOption.text() + ' (Default)')
-        entity = @data.doc
-        entityValue = SchemaUtils.getParameterValue(entity, paramName) if entity
-          # Only show None if we don't have a set or inherited value
-        unless entityValue?
-          if typologyValue?
-            $input.val(typologyValue)
-          else if defaultValue?
-            $input.val(defaultValue)
-          else
-            # TODO(aramk) This is not available if a value or default value exists, since we cannot
-            # override with null yet.
-            $option = $('<option value="">None</option>')
-            $input.prepend($option)
-            $input.val('')
+        # Only show None if we don't have a set or inherited value
+        if !entityValue? && !typologyValue? && !defaultValue?
+          # TODO(aramk) This is not available if a value or default value exists, since we cannot
+          # override with null yet.
+          $option = $('<option value="">None</option>')
+          $input.prepend($option)
+          Forms.setInputValue($input, '')
+      
+      # For all non-input fields (e.g. checkboxes), set the value of the entity field. Input
+      # checkboxes use placeholders instead to allow inheriting values from the typology.
+      if !entityValue? && !$input.is('input')
+        Forms.setInputValue($input, typologyValue)
+        if typologyValue?
+          Forms.setInputValue($input, typologyValue)
+        else if defaultValue?
+          Forms.setInputValue($input, defaultValue)
 
   Form = Forms.defineModelForm
     name: 'entityForm'
@@ -102,6 +108,10 @@ Meteor.startup ->
       updateFields.call(@)
       $typologyInput = getTypologyInput.call(@)
       $typologyInput.on 'change', => updateFields.call(@)
+      # Select only the entity currently being edited (if any) so it's clear to the user.
+      doc = @data.doc
+      if doc
+        AtlasManager.setSelection([doc._id])
     hooks:
       formToDoc: (doc) ->
         doc.project = Projects.getCurrentId()
@@ -119,3 +129,10 @@ Meteor.startup ->
 
   Form.helpers
     typologies: -> Typologies.findByProject()
+    typologyName: -> Typologies.findOne(@doc?.typology)?.name ? 'None'
+
+  Form.events
+    'click .typology.button': (e, template) ->
+      typologyId = template.data.doc?.typology
+      return unless typologyId
+      PubSub.publish('typology/edit/form', typologyId)

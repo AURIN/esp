@@ -1,3 +1,5 @@
+bindMeteor = Meteor.bindEnvironment.bind(Meteor)
+
 _renderQueue = null
 resetRenderQueue = -> _renderQueue = new DeferredQueueMap()
 evalEngine = null
@@ -9,9 +11,10 @@ Meteor.startup ->
 
 # Handles a assets/synthesize response to create lots.
   fromAsset: (args) ->
+    projectId = args.projectId ? Projects.getCurrentId()
     existingDf = Q.defer()
     # If lots already exist in the project, ask the user if they should be removed first.
-    existingLots = Lots.findByProject().fetch()
+    existingLots = Lots.findByProject(projectId).fetch()
     if existingLots.length > 0
       result = window.confirm('Are you sure you want to replace the existing Lots in the project?')
       if result
@@ -28,41 +31,23 @@ Meteor.startup ->
 
     createDf = Q.defer()
     existingDf.promise.then(
-      ->
-        Meteor.call 'assets/c3ml/download', args.c3mlId, (err, c3mls) ->
-          if err
-            console.error(err)
-            createDf.reject(err)
-            return
-          Meteor.call 'assets/metaData/download', args.metaDataId, (err, metaData) ->
-            if err
-              console.error(err)
-              createDf.reject(err)
-              return
-            Meteor.call 'assets/parameters', args.assetId, (err, params) ->
-              if err
-                console.error(err)
-                createDf.reject(err)
-                return
-              _.extend(args, {c3mls: c3mls, metaData: metaData, params: params})
-              LotUtils._fromAsset(args).then(createDf.resolve, createDf.reject)
+      bindMeteor -> LotUtils._fromAsset(args).then(createDf.resolve, createDf.reject)
       createDf.reject
     )
     createDf.promise
 
   _fromAsset: (args) ->
     df = Q.defer()
-    lotDfs = []
+    modelDfs = []
     c3mls = args.c3mls
-    metaData = args.metaData
-    params = args.params
+    projectId = args.projectId ? Projects.getCurrentId()
     polygonC3mls = []
     _.each c3mls, (c3ml) ->
-      if c3ml.type == 'polygon'
+      if AtlasConverter.sanitizeType(c3ml.type) == 'polygon'
         polygonC3mls.push(c3ml)
     _.each polygonC3mls, (c3ml, i) ->
       entityId = c3ml.id
-      entityParams = params[entityId] ? {}
+      entityParams = c3ml.properties ? {}
       lotId = entityParams.propid
       # If the ID is a float value, remove the decimals.
       idIsNumber = Strings.isNumber(lotId)
@@ -72,15 +57,15 @@ Meteor.startup ->
       if c3ml.coordinates.length == 0
         return
       lotDf = Q.defer()
-      lotDfs.push(lotDf.promise)
-      WKT.fromC3ml(c3ml).then (wkt) ->
+      modelDfs.push(lotDf.promise)
+      WKT.fromC3ml(c3ml).then bindMeteor (wkt) ->
         name = lotId ? 'Lot #' + (i + 1)
         classId = Typologies.getClassByName(entityParams.landuse)
         develop = Booleans.parse(entityParams.develop ? entityParams.redev ? true)
         height = entityParams.height ? c3ml.height
         lot =
           name: name
-          project: Projects.getCurrentId()
+          project: projectId
           parameters:
             general:
               class: classId
@@ -95,27 +80,33 @@ Meteor.startup ->
             lotDf.reject(err)
           else
             lotDf.resolve(insertId)
-    Q.all(lotDfs).then(
-      ->
-        projectId = Projects.getCurrentId()
-        # If the project doesn't have lat, lng location, set it as that found in this file.
-        location = Projects.getLocationCoords(projectId)
-        if location.latitude? && location.longitude?
-          df.resolve()
-        else
-          assetPosition = metaData.lookAt?.position
-          if assetPosition?
-            console.debug 'Setting project location', assetPosition
-            Projects.setLocationCoords(projectId,
-              {longitude: assetPosition.x, latitude: assetPosition.y}).then(df.resolve, df.reject)
+    Q.all(modelDfs).then(
+      bindMeteor ->
+        requirejs ['atlas/model/GeoPoint'], bindMeteor (GeoPoint) ->
+          importCount = modelDfs.length
+          resolve = -> df.resolve(importCount)
+          console.log 'Imported ' + importCount + ' entities'
+          # If the project doesn't have lat, lng location, set it as that found in this file.
+          location = Projects.getLocationCoords(projectId)
+          if location.latitude? && location.longitude?
+            resolve()
           else
-            df.resolve()
+            assetPosition = null
+            _.some c3mls, (c3ml) ->
+              position = c3ml.coordinates[0] ? c3ml.geoLocation
+              if position
+                assetPosition = new GeoPoint(position)
+            if assetPosition?
+              console.log 'Setting project location', assetPosition
+              Projects.setLocationCoords(projectId, assetPosition).then(resolve, df.reject)
+            else
+              resolve()
       df.reject
     )
     df.promise
 
   toGeoEntityArgs: (id) ->
-    AtlasConverter.getInstance().then (converter) =>
+    AtlasConverter.getInstance().then bindMeteor (converter) =>
       lot = Lots.findOne(id)
       typologyClass = SchemaUtils.getParameterValue(lot, 'general.class')
       isForDevelopment = SchemaUtils.getParameterValue(lot, 'general.develop')
@@ -182,7 +173,7 @@ Meteor.startup ->
       AtlasManager.showEntity(id)
       df.resolve(entity)
     else
-      @toGeoEntityArgs(id).then (entityArgs) ->
+      @toGeoEntityArgs(id).then bindMeteor (entityArgs) ->
         entity = AtlasManager.renderEntity(entityArgs)
         df.resolve(entity)
     df.promise
@@ -273,17 +264,17 @@ Meteor.startup ->
   amalgamate: (ids) ->
     df = Q.defer()
     if ids.length < 2
-      throw new Error('At least two Lots are needed to amalgamate.')
+      return Q.reject('At least two Lots are needed to amalgamate.')
     lots = Lots.find({_id: {$in: ids}}).fetch()
     someHaveEntities = _.some lots, (lot) -> lot.entity?
     if someHaveEntities
-      throw new Error('Cannot amalgamate Lots which have Entities.')
+      return Q.reject('Cannot amalgamate Lots which have Entities.')
     require ['subdiv/Polygon'], (Polygon) =>
       WKT.getWKT (wkt) =>
         polygons = []
         # Used for globalising and localising points.
         referencePoint = null
-        _.each lots, (lot) ->
+        success = _.all lots, (lot) ->
           geom_2d = SchemaUtils.getParameterValue(lot, 'space.geom_2d')
           vertices = wkt.verticesFromWKT(geom_2d)[0]
           polygon = new Polygon(vertices)
@@ -293,11 +284,21 @@ Meteor.startup ->
             # Each Lot must be touching at least one other Lot.
             someTouching = _.some polygons, (otherPolygon) -> polygon.intersects(otherPolygon)
             unless someTouching
-              throw new Error('Lots must be contiguous to amalgamate.')
+              df.reject('Lots must be contiguous to amalgamate.')
+              return false
           polygons.push(polygon)
+          true
+        return unless success
         combinedPolygon = polygons.shift()
-        _.each polygons, (polygon) ->
-          combinedPolygon = combinedPolygon.union(polygon, {sortPoints: false, smoothPoints: false})[0]
+        success = _.all polygons, (polygon) ->
+          nextCombination = combinedPolygon.union(polygon,
+              {sortPoints: false, smoothPoints: false})
+          if nextCombination.length != 1
+            df.reject('Amalgamation failed: ' + nextCombination.length + ' polygons produced')
+            return false
+          combinedPolygon = nextCombination[0]
+          true
+        return unless success
         combinedLot = Lots.findOne(ids[0])
         delete combinedLot._id
         combinedPolygon.globalizePoints(referencePoint)
@@ -315,14 +316,14 @@ Meteor.startup ->
     df.promise
 
   subdivide: (ids, linePoints) ->
-    df = Q.defer()
     if ids.length == 0
-      throw new Error('At least one Lot is needed to subdivide.')
+      return Q.reject('At least one Lot is needed to subdivide.')
     lots = Lots.find({_id: {$in: ids}}).fetch()
     someHaveEntities = _.some lots, (lot) -> lot.entity?
     if someHaveEntities
-      throw new Error('Cannot subdivide Lots which have Entities.')
-    require ['subdiv/Polygon', 'atlas/lib/subdiv/Line'], (Polygon, Line) =>
+      return Q.reject('Cannot subdivide Lots which have Entities.')
+    df = Q.defer()
+    require ['subdiv/Polygon', 'subdiv/Line'], (Polygon, Line) =>
       WKT.getWKT (wkt) =>
         polygons = []
         # Used for globalising and localising points.
@@ -437,12 +438,12 @@ Meteor.startup ->
     Lots.findByProject().forEach (lot) ->
       df = GeometryUtils.getModelArea(lot)
       areaDfs.push(df)
-      df.then (results) ->
+      df.then (area) ->
         if args.indexByArea
-          areaModels = fpas[results.area] ?= []
-          areaModels.push(results)
+          areaModels = fpas[area] ?= []
+          areaModels.push(lot._id)
         else
-          fpas[lot._id] = results
+          fpas[lot._id] = area
     Q.all(areaDfs).then -> fpas
 
   removeByIds: (ids) ->
@@ -455,3 +456,7 @@ Meteor.startup ->
     Q.all(dfs)
 
   beforeAtlasUnload: -> resetRenderQueue()
+
+if Meteor.isServer
+  Meteor.methods
+    'lots/from/asset': (args) -> Promises.runSync -> LotUtils.fromAsset(args)

@@ -23,7 +23,6 @@ kidovate:tinycolor
 meteorhacks:npm
 matb33:collection-hooks
 npm-container
-mrt:moment
 nooitaf:semantic-ui
 percolatestudio:percolatestudio-migrations
 raix:handlebar-helpers
@@ -45,6 +44,8 @@ aramk:dropdown
 # These come last so RequireJS doesn't cause issues.
 aramk:requirejs
 aramk:file-upload
+
+urbanetic:aurin-acs
 urbanetic:accounts-aurin
 urbanetic:accounts-local
 urbanetic:atlas
