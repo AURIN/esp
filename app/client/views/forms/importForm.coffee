@@ -8,6 +8,7 @@ Meteor.startup ->
     collection: Collections.createTemporary()
     onRender: ->
       template = @
+      data = @data ? {}
       isLoading = false
       setLoadingState = (loading) ->
         if loading != isLoading
