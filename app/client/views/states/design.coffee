@@ -126,21 +126,13 @@ TemplateClass.helpers
   lots: -> Lots.findByProject()
   typologies: -> Typologies.findByProject()
   layers: -> Layers.findByProject()
-  tableSettings: ->
-    fields: [
-      key: 'name'
-      label: 'Name'
-    ]
-    onCreate: (args) ->
-      collection = args.collection
-      if collection == Entities
-        throw new Error('Cannot directly create an entity - assign a Typology to a Lot.')
-      collectionName = Collections.getName(collection)
-      formArgs = collectionToForm[collectionName]
-      formName = getSingleFormName(formArgs)
-      console.debug 'onCreate', arguments, collectionName, formName
-      TemplateClass.addFormPanel templateInstance, Template[formName]
-    onEdit: onEditFormPanel
+  tableSettings: -> getTableSettings()
+  layerTableSettings: ->
+    settings = getTableSettings()
+    settings.checkbox =
+      # Unchecked state by default
+      getValue: (layer) -> false
+    settings
   displayModes: -> displayModesCollection.find(value: {$not: '_nonDevExtrusion'})
   lotDisplayModes: -> displayModesCollection.find(value: {$not: 'mesh'})
   defaultEntityDisplayMode: -> Session.get('entityDisplayMode')
@@ -198,7 +190,6 @@ TemplateClass.events
     $body.mouseup(mouseUpHandler)
   'click .layers .import.item': ->
     Template.design.addFormPanel null, Template.importForm, {isLayer: true}
-    AtlasManager.zoomToEntities(ids)
   'click .layers .zoom.item': (e, template) ->
     $table = getLayerTable(template)
     tableTemplate = Templates.getInstanceFromElement($table)
@@ -266,11 +257,29 @@ TemplateClass.addFormPanel = (template, formTemplate, data) ->
   data ?= {}
   TemplateClass.addPanel template, formTemplate, data
 
+getTableSettings = ->
+  fields: [
+    key: 'name'
+    label: 'Name'
+  ]
+  onCreate: (args) ->
+    collection = args.collection
+    if collection == Entities
+      throw new Error('Cannot directly create an entity - assign a Typology to a Lot.')
+    collectionName = Collections.getName(collection)
+    formArgs = collectionToForm[collectionName]
+    formName = getSingleFormName(formArgs)
+    console.debug 'onCreate', arguments, collectionName, formName
+    TemplateClass.addFormPanel templateInstance, Template[formName]
+  onEdit: onEditFormPanel
+
+getTemplate = (template) -> Templates.getNamedInstance('design', template)
+
 TemplateClass.onAtlasLoad = (template, atlas) ->
   projectId = Projects.getCurrentId()
 
   $entityTable = getEntityTable(template)
-  $typologyTree = getTypologyTable(template)
+  $typologyTable = getTypologyTable(template)
   $lotTable = getLotTable(template)
   $layerTable = getLayerTable(template)
 
@@ -652,7 +661,7 @@ TemplateClass.onAtlasLoad = (template, atlas) ->
   $layerZoomButton = template.$('.layers .zoom.item').hide()
 
   _.each [
-    {element: $entityTree, templateClass: Template.tree, zoomButton: $entityZoomButton}
+    {element: $entityTable, templateClass: Template.tree, zoomButton: $entityZoomButton}
     {element: $layerTable, templateClass: Template.collectionTable, zoomButton: $layerZoomButton}
   ], (item) ->
     $element = item.element

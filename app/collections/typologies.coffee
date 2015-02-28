@@ -3733,8 +3733,14 @@ LayerSchema = new SimpleSchema
     type: String
     index: true
     unique: false
-  desc: descSchema
-  parameters: parametersSchema
+  desc: extendSchema descSchema,
+    optional: true
+  parameters:
+    label: 'Parameters'
+    type: EntityParametersSchema
+    # Necessary to allow required fields within.
+    optional: false
+    defaultValue: {}
   project: projectSchema
 
 @Layers = new Meteor.Collection 'layers'

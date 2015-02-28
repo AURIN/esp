@@ -9,23 +9,28 @@ Meteor.startup ->
 
 @LotUtils =
 
-# Handles a assets/synthesize response to create lots.
+  # Handles a assets/synthesize response to create lots.
   fromAsset: (args) ->
+    c3mls = args.c3mls
     projectId = args.projectId ? Projects.getCurrentId()
+    isLayer = args.isLayer
+    console.log('args', args)
+    if isLayer
+      return LayerUtils.fromC3mls c3mls,
+        projectId: projectId
+        name: args.filename ? c3mls[0].id
+
     existingDf = Q.defer()
-    # If lots already exist in the project, ask the user if they should be removed first.
+    # If lots already exist in the project, ask the user if they should be removed first. If on the
+    # server, remove the lots without asking.
     existingLots = Lots.findByProject(projectId).fetch()
     if existingLots.length > 0
-      result = window.confirm('Are you sure you want to replace the existing Lots in the project?')
-      if result
-        removeDfs = _.map existingLots, (lot) ->
-          removeDf = Q.defer()
-          Lots.remove lot._id, (err, result) ->
-            if err then removeDf.reject(err) else removeDf.resolve(result)
-          removeDf.promise
-        Q.all(removeDfs).then(existingDf.resolve, existingDf.reject)
-      else
-        existingDf.reject('Lot creation cancelled')
+      removeDfs = _.map existingLots, (lot) ->
+        removeDf = Q.defer()
+        Lots.remove lot._id, (err, result) ->
+          if err then removeDf.reject(err) else removeDf.resolve(result)
+        removeDf.promise
+      Q.all(removeDfs).then(existingDf.resolve, existingDf.reject)
     else
       existingDf.resolve()
 
@@ -276,7 +281,7 @@ Meteor.startup ->
         referencePoint = null
         success = _.all lots, (lot) ->
           geom_2d = SchemaUtils.getParameterValue(lot, 'space.geom_2d')
-          vertices = wkt.verticesFromWKT(geom_2d)[0]
+          vertices = wkt.verticesFromWKT(geom_2d)
           polygon = new Polygon(vertices)
           referencePoint = polygon.getPoints()[0] unless referencePoint
           polygon.localizePoints(referencePoint)
@@ -330,7 +335,7 @@ Meteor.startup ->
         referencePoint = null
         _.each lots, (lot) ->
           geom_2d = SchemaUtils.getParameterValue(lot, 'space.geom_2d')
-          vertices = wkt.verticesFromWKT(geom_2d)[0]
+          vertices = wkt.verticesFromWKT(geom_2d)
           polygon = new Polygon(vertices, {sortPoints: false})
           polygon.id = lot._id
           referencePoint = polygon.getPoints()[0] unless referencePoint
@@ -402,7 +407,7 @@ Meteor.startup ->
         polyMap = {}
         polygons = Lots.findByProject().map (lot) ->
           geom_2d = SchemaUtils.getParameterValue(lot, 'space.geom_2d')
-          vertices = wkt.verticesFromWKT(geom_2d)[0]
+          vertices = wkt.verticesFromWKT(geom_2d)
           polygon = new Polygon(vertices).smoothPoints()
           GeographicUtil.localizePointGeometry(polygon)
           polyMap[lot._id] = polygon
