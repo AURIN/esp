@@ -7,7 +7,7 @@
           {{#autoForm collection=collection id=formName doc=doc type=formType}}
           {{> afQuickField name="name"}}
           {{> afQuickField name="desc"}}
-          {{> afQuickField name="displayMode"}}
+          {{> afQuickField name="parameters.general.displayMode" type="dropdown" items=displayModes labelAttr="label" valueAttr="value"}}
           <div class="crud buttons">
             <button type="button" class="ui red cancel button">Cancel</button>
             <div class="spacer"></div>

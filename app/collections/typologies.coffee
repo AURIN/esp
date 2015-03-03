@@ -3254,6 +3254,9 @@ Lots.findByTypology = (typologyId) ->
 Lots.findForDevelopment = (projectId) ->
   _.filter Lots.findByProject(projectId).fetch(), (lot) ->
     SchemaUtils.getParameterValue(lot, 'general.develop')
+Lots.findNotForDevelopment = (projectId) ->
+  _.filter Lots.findByProject(projectId).fetch(), (lot) ->
+    !SchemaUtils.getParameterValue(lot, 'general.develop')
 Lots.findAvailable = (projectId) ->
   _.filter Lots.findForDevelopment(projectId), (lot) -> !lot.entity
 
@@ -3728,7 +3731,7 @@ Typologies.after.remove (userId, typology) ->
 # LAYERS
 ####################################################################################################
 
-LayerDisplayModes =
+@LayerDisplayModes =
   extrusion: 'Extrusion'
   nonDevExtrusion: 'Extrude Non-Develop'
 layerCategories = Setter.clone(entityCategories)
@@ -3749,7 +3752,7 @@ LayerSchema = new SimpleSchema
     optional: true
   parameters:
     label: 'Parameters'
-    type: EntityParametersSchema
+    type: LayerParametersSchema
     # Necessary to allow required fields within.
     optional: false
     defaultValue: {}
@@ -3759,3 +3762,4 @@ LayerSchema = new SimpleSchema
 Layers.attachSchema(LayerSchema)
 Layers.allow(Collections.allowAll())
 Layers.findByProject = (projectId) -> SchemaUtils.findByProject(Layers, projectId)
+Layers.getDisplayModeItems = -> _.map LayerDisplayModes, (value, key) -> {label: value, value: key}

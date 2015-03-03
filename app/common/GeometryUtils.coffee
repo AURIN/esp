@@ -75,3 +75,7 @@
       geometry = wkt.openLayersGeometryFromWKT(wktStr)
       df.resolve(geometry.getGeodesicArea())
     df.promise
+
+  toUtmVertices: (vertexedEntity) ->
+    _.map vertexedEntity.getVertices(), (point) -> point.toUtm().coord
+

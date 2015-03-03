@@ -11,7 +11,6 @@ displayModesCollection = null
   _nonDevExtrusion: 'Extrude Non-Develop'
 Session.setDefault('lotDisplayMode', 'footprint')
 Session.setDefault('entityDisplayMode', 'extrusion')
-Session.setDefault('layerDisplayMode', 'extrusion')
 
 collectionToForm =
   entities: 'entityForm'
@@ -132,16 +131,16 @@ TemplateClass.helpers
   tableSettings: -> getTableSettings()
   layerTableSettings: ->
     settings = getTableSettings()
+    settings.multiSelect = false
     settings.checkbox =
       # Unchecked state by default
       getValue: (layer) -> false
     settings
   displayModes: -> displayModesCollection.find(value: {$not: '_nonDevExtrusion'})
   lotDisplayModes: -> displayModesCollection.find(value: {$not: 'mesh'})
-  layerDisplayModes: -> displayModesCollection.find(value: {$nin: ['footprint', 'mesh']})
+  layerDisplayModes: -> Layers.getDisplayModeItems()
   defaultEntityDisplayMode: -> Session.get('entityDisplayMode')
   defaultLotDisplayMode: -> Session.get('lotDisplayMode')
-  defaultLayerDisplayMode: -> Session.get('layerDisplayMode')
 
 TemplateClass.events
   'change .entityDisplayMode.dropdown': (e) ->
@@ -211,7 +210,7 @@ TemplateClass.events
     isVisible = checkEvent.checked
     layer = AtlasManager.getEntity(layerId)
     if layer
-      layer.setVisibility(isVisible)
+      if isVisible then LayerUtils.show(layerId) else LayerUtils.hide(layerId)
     else if isVisible
       LayerUtils.render(layerId)
 
@@ -297,7 +296,7 @@ TemplateClass.onAtlasLoad = (template, atlas) ->
   ##################################################################################################
 
   # Rendering Lots.
-  renderLot = (id) -> LotUtils.render(id)
+  renderLot = (id) -> Q.all([LotUtils.render(id), LayerUtils.renderAllDisplayModes()])
   unrenderLot = (id) -> LotUtils.unrender(id)
   lots = Lots.findByProject()
   entities = Entities.findByProject()
@@ -680,7 +679,6 @@ TemplateClass.onAtlasLoad = (template, atlas) ->
 
   $entityZoomButton = template.$('.entities .zoom.item').hide()
   $layerZoomButton = template.$('.layers .zoom.item').hide()
-  $layerDisplayModeButton = template.$('.layers .layerDisplayMode').hide()
 
   _.each [
     {element: $entityTable, templateClass: Template.collectionTable, buttons: [$entityZoomButton]}
@@ -690,4 +688,17 @@ TemplateClass.onAtlasLoad = (template, atlas) ->
     $element.on 'select', (args) ->
       ids = item.templateClass.getSelectedIds($element)
       _.each item.buttons, ($button) -> $button.toggle(ids.length > 0)
+
+  ##################################################################################################
+  # LAYERS
+  ##################################################################################################
+
+  $layerDisplayModeButton = template.$('.layers .layerDisplayMode').hide()
+  $layerTable.on 'select', (args) ->
+    ids = Template.collectionTable.getSelectedIds($layerTable)
+    $layerDisplayModeButton.toggle(ids.length > 0)
+    layer = Layers.findOne(ids[0])
+    return unless layer
+    displayMode = SchemaUtils.getParameterValue(layer, 'general.displayMode')
+    Template.dropdown.setValue($layerDisplayModeButton, displayMode)
 

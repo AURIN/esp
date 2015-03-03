@@ -3,7 +3,8 @@ bindMeteor = Meteor.bindEnvironment.bind(Meteor)
 renderCount = new ReactiveVar(0)
 incrementRenderCount = -> renderCount.set(renderCount.get() + 1)
 decrementRenderCount = -> renderCount.set(renderCount.get() - 1)
-FILL_COLOR = '#ccc'
+FILL_COLOR = '#888'
+BORDER_COLOR = '#333'
 
 @LayerUtils =
 
@@ -60,20 +61,25 @@ FILL_COLOR = '#ccc'
       return df.promise
     geoEntity = AtlasManager.getEntity(id)
     if geoEntity
-      @show(id)
-      df.resolve(geoEntity)
+      @show(id).then(
+        -> df.resolve(geoEntity)
+        df.reject
+      )
     else
       @_renderLayer(id).then(
         (geoEntity) =>
           PubSub.publish('layer/show', id)
-          df.resolve(geoEntity)
+          @renderDisplayMode(id).then(
+            -> df.resolve(geoEntity)
+            df.reject
+          )
         df.reject
       )
     df.promise
 
   _renderLayer: (id) ->
     df = Q.defer()
-    @_getGeometry(id).then (data) ->
+    @_getGeometry(id).then (data) =>
       unless data
         df.resolve(null)
         return
@@ -90,20 +96,54 @@ FILL_COLOR = '#ccc'
       if c3mlEntities.length > 1
         entityIds = _.map c3mlEntities, (entity) -> entity.getId()
         # Create a collection of all the added features.
-        requirejs ['atlas/model/Collection'], (Collection) ->
+        requirejs ['atlas/model/Collection'], (Collection) =>
           # TODO(aramk) Use dependency injection to prevent the need for passing manually.
           deps = c3mlEntities[0]._bindDependencies({})
-          collection = new Collection(id, {entities: entityIds, color: FILL_COLOR}, deps)
+          data = {entities: entityIds, color: FILL_COLOR, borderColor: BORDER_COLOR}
+          collection = new Collection(id, data, deps)
           df.resolve(collection)
       else
         df.resolve(c3mlEntities[0])
     df.promise
 
+  renderDisplayMode: (id) ->
+    df = Q.defer()
+    layer = Layers.findOne(id)
+    displayMode = SchemaUtils.getParameterValue(layer, 'general.displayMode')
+    # All other display modes don't require any extra handling
+    return Q.when(null) unless displayMode == 'nonDevExtrusion'
+    requirejs ['subdiv/Polygon'], (Polygon) ->
+      devLotPolygons = _.map Lots.findNotForDevelopment(), (lot) ->
+        new Polygon(GeometryUtils.toUtmVertices(AtlasManager.getEntity(lot._id)))
+      footprintPolygons = {}
+      collection = AtlasManager.getEntity(id)
+      collection.getEntities().forEach (footprintGeoEntity) ->
+        return unless footprintGeoEntity.getVertices?
+        footprintId = footprintGeoEntity.getId()
+        footprintPolygons[footprintId] =
+            new Polygon(GeometryUtils.toUtmVertices(footprintGeoEntity))
+      _.each footprintPolygons, (footprintPolygon, footprintId) ->
+        intersectsLot = _.some devLotPolygons, (devLotPolygon) ->
+          footprintPolygon.intersects(devLotPolygon)
+        footprintGeoEntity = AtlasManager.getEntity(footprintId)
+        footprintGeoEntity.setVisibility(intersectsLot)
+      df.resolve()
+    df.promise
+
+  renderAllDisplayModes: ->
+    dfs = []
+    Layers.findByProject().forEach (layer) =>
+      id = layer._id
+      layerGeoEntity = AtlasManager.getEntity(id)
+      if layerGeoEntity && layerGeoEntity.isVisible()
+        dfs.push(@renderDisplayMode(id))
+    Q.all(dfs)
+
   unrender: (id) -> AtlasManager.unrenderEntity(id)
 
   show: (id) ->
     if AtlasManager.showEntity(id)
-      PubSub.publish('layer/show', id)
+      @renderDisplayMode(id).then -> PubSub.publish('layer/show', id)
 
   hide: (id) ->
     if AtlasManager.hideEntity(id)
@@ -134,7 +174,7 @@ FILL_COLOR = '#ccc'
   resetRenderCount: -> renderCount.set(0)
 
   setDisplayMode: (id, displayMode) ->
-    Layers.upsert(id, {$set: {'general.displayMode': displayMode}})
+    Layers.update(id, {$set: {'parameters.general.displayMode': displayMode}})
 
   getDisplayMode: (id, displayMode) ->
     SchemaUtils.getParameterValue(Layers.findOne(id), 'general.displayMode')

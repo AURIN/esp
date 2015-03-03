@@ -11,3 +11,4 @@ Meteor.startup ->
 
   Form.helpers
     types: -> Layers
+    displayModes: -> Layers.getDisplayModeItems()
