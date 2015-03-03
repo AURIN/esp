@@ -699,6 +699,6 @@ TemplateClass.onAtlasLoad = (template, atlas) ->
     $layerDisplayModeButton.toggle(ids.length > 0)
     layer = Layers.findOne(ids[0])
     return unless layer
-    displayMode = SchemaUtils.getParameterValue(layer, 'general.displayMode')
+    displayMode = LayerUtils.getDisplayMode(layer._id)
     Template.dropdown.setValue($layerDisplayModeButton, displayMode)
 

@@ -109,7 +109,7 @@ BORDER_COLOR = '#333'
   renderDisplayMode: (id) ->
     df = Q.defer()
     layer = Layers.findOne(id)
-    displayMode = SchemaUtils.getParameterValue(layer, 'general.displayMode')
+    displayMode = @getDisplayMode(id)
     # All other display modes don't require any extra handling
     return Q.when(null) unless displayMode == 'nonDevExtrusion'
     requirejs ['subdiv/Polygon'], (Polygon) ->
@@ -176,5 +176,5 @@ BORDER_COLOR = '#333'
   setDisplayMode: (id, displayMode) ->
     Layers.update(id, {$set: {'parameters.general.displayMode': displayMode}})
 
-  getDisplayMode: (id, displayMode) ->
-    SchemaUtils.getParameterValue(Layers.findOne(id), 'general.displayMode')
+  getDisplayMode: (id) ->
+    SchemaUtils.getParameterValue(Layers.findOne(id), 'general.displayMode') ? 'nonDevExtrusion'
