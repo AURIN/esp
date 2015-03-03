@@ -148,7 +148,7 @@ TemplateClass.events
     displayMode = Template.dropdown.getValue(e.currentTarget)
     Session.set('entityDisplayMode', displayMode)
   'click .entities .zoom.item': ->
-    ids = Template.tree.getSelectedIds(getEntityTable())
+    ids = Template.collectionTable.getSelectedIds(getEntityTable())
     AtlasManager.zoomToEntities(ids)
   'change .lotDisplayMode.dropdown': (e) ->
     displayMode = Template.dropdown.getValue(e.currentTarget)
@@ -360,7 +360,7 @@ TemplateClass.onAtlasLoad = (template, atlas) ->
   reactiveToDisplayMode(Entities, Entities.findByProject(), 'entityDisplayMode')
 
   hasParamChanged = (paramName, newDoc, oldDoc) ->
-    newValue = SchemaUtils.getParameterValue(newdoc, paramName)
+    newValue = SchemaUtils.getParameterValue(newDoc, paramName)
     oldValue = SchemaUtils.getParameterValue(oldDoc, paramName)
     newValue != oldValue
 
@@ -405,7 +405,7 @@ TemplateClass.onAtlasLoad = (template, atlas) ->
       hasChanged = _.some([
           'general.displayMode', 'space.geom_2d', 'space.geom_3d', 'space.height'
         ]
-        (paramName) -> hasParamChanged(paramName, newTypology, oldTypology)
+        (paramName) -> hasParamChanged(paramName, newLayer, oldLayer)
       )
       if hasChanged
         refreshLayer(newLayer._id)
@@ -683,7 +683,7 @@ TemplateClass.onAtlasLoad = (template, atlas) ->
   $layerDisplayModeButton = template.$('.layers .layerDisplayMode').hide()
 
   _.each [
-    {element: $entityTable, templateClass: Template.tree, buttons: [$entityZoomButton]}
+    {element: $entityTable, templateClass: Template.collectionTable, buttons: [$entityZoomButton]}
     {element: $layerTable, templateClass: Template.collectionTable, buttons: [$layerZoomButton]}
   ], (item) ->
     $element = item.element
