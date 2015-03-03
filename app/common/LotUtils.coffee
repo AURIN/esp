@@ -16,9 +16,7 @@ Meteor.startup ->
     isLayer = args.isLayer
     console.log('args', args)
     if isLayer
-      return LayerUtils.fromC3mls c3mls,
-        projectId: projectId
-        name: args.filename ? c3mls[0].id
+      return LayerUtils.fromAsset(args)
 
     existingDf = Q.defer()
     # If lots already exist in the project, ask the user if they should be removed first. If on the
@@ -274,7 +272,7 @@ Meteor.startup ->
     someHaveEntities = _.some lots, (lot) -> lot.entity?
     if someHaveEntities
       return Q.reject('Cannot amalgamate Lots which have Entities.')
-    require ['subdiv/Polygon'], (Polygon) =>
+    requirejs ['subdiv/Polygon'], (Polygon) =>
       WKT.getWKT (wkt) =>
         polygons = []
         # Used for globalising and localising points.
@@ -328,7 +326,7 @@ Meteor.startup ->
     if someHaveEntities
       return Q.reject('Cannot subdivide Lots which have Entities.')
     df = Q.defer()
-    require ['subdiv/Polygon', 'subdiv/Line'], (Polygon, Line) =>
+    requirejs ['subdiv/Polygon', 'subdiv/Line'], (Polygon, Line) =>
       WKT.getWKT (wkt) =>
         polygons = []
         # Used for globalising and localising points.
@@ -399,7 +397,7 @@ Meteor.startup ->
       df.reject('No lots with entities found for auto-alignment.')
       return df.promise
     WKT.getWKT (wkt) ->
-      require [
+      requirejs [
         'subdiv/AlignmentCalculator',
         'subdiv/Polygon',
         'subdiv/util/GeographicUtil'

@@ -39,7 +39,7 @@
     }, args)
     collectionId = args.collectionId
     df = Q.defer()
-    require ['atlas/model/GeoPoint'], (GeoPoint) ->
+    requirejs ['atlas/model/GeoPoint'], (GeoPoint) ->
       Files.downloadJson(fileId).then (result) ->
         unless result
           df.resolve(null)

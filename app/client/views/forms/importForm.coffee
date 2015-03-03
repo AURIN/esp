@@ -1,5 +1,5 @@
 # Change this to perform importing on the client for testing.
-USE_SERVER = true
+USE_SERVER = false
 
 Meteor.startup ->
 
@@ -56,6 +56,9 @@ Meteor.startup ->
 
       dropzone.on 'error', (file, errorMessage) ->
         console.error('Error uploading file', arguments)
+  
+  Form.helpers
+    collectionName: -> if @isLayer then 'Layers' else 'Lots'
 
 handleImport = (assetArgs, useServer) ->
   if useServer then handleImportServer(assetArgs) else handleImportClient(assetArgs)

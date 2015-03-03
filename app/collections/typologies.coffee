@@ -3728,6 +3728,18 @@ Typologies.after.remove (userId, typology) ->
 # LAYERS
 ####################################################################################################
 
+LayerDisplayModes =
+  extrusion: 'Extrusion'
+  nonDevExtrusion: 'Extrude Non-Develop'
+layerCategories = Setter.clone(entityCategories)
+layerCategories.general.items.displayMode =
+  label: 'Display Mode'
+  type: String
+  allowedValues: Object.keys(LayerDisplayModes)
+  optional: true
+LayerParametersSchema = createCategoriesSchema
+  categories: layerCategories
+
 LayerSchema = new SimpleSchema
   name:
     type: String

@@ -3,14 +3,26 @@ bindMeteor = Meteor.bindEnvironment.bind(Meteor)
 renderCount = new ReactiveVar(0)
 incrementRenderCount = -> renderCount.set(renderCount.get() + 1)
 decrementRenderCount = -> renderCount.set(renderCount.get() - 1)
+FILL_COLOR = '#ccc'
 
 @LayerUtils =
 
-  fromC3mls: (c3mls, args) ->
+  fromAsset: (args) ->
     args = Setter.merge({}, args)
     df = Q.defer()
     projectId = args.projectId ? Projects.getCurrentId()
-    
+
+    # Add heights to c3ml based on height property. Only keep polygons which we can use as
+    # footprints.
+    c3mls = []
+    _.each args.c3mls, (c3ml) ->
+      return unless c3ml.type == 'polygon'
+      layerParams = c3ml.properties ? {}
+      height = layerParams.height
+      if height
+        c3ml.height = parseFloat(height)
+
+    args.name ?= args.filename ? c3mls[0]?.id
     doc = {c3mls: c3mls, project: projectId}
     docString = JSON.stringify(doc)
     file = new FS.File()
@@ -23,7 +35,7 @@ decrementRenderCount = -> renderCount.set(renderCount.get() - 1)
         project: projectId
         parameters:
           space:
-          # TODO(aramk) This is no longer just for 3d - could be any geometry.
+            # TODO(aramk) This is no longer just for 3d - could be any geometry.
             geom_3d: fileObj._id
       Layers.insert model, (err, insertId) ->
         if err
@@ -78,14 +90,16 @@ decrementRenderCount = -> renderCount.set(renderCount.get() - 1)
       if c3mlEntities.length > 1
         entityIds = _.map c3mlEntities, (entity) -> entity.getId()
         # Create a collection of all the added features.
-        require ['atlas/model/Collection'], (Collection) ->
+        requirejs ['atlas/model/Collection'], (Collection) ->
           # TODO(aramk) Use dependency injection to prevent the need for passing manually.
           deps = c3mlEntities[0]._bindDependencies({})
-          collection = new Collection(id, {entities: entityIds}, deps)
+          collection = new Collection(id, {entities: entityIds, color: FILL_COLOR}, deps)
           df.resolve(collection)
       else
         df.resolve(c3mlEntities[0])
     df.promise
+
+  unrender: (id) -> AtlasManager.unrenderEntity(id)
 
   show: (id) ->
     if AtlasManager.showEntity(id)
@@ -101,9 +115,7 @@ decrementRenderCount = -> renderCount.set(renderCount.get() - 1)
     if meshFileId
       Files.downloadJson(meshFileId)
     else
-      meshDf = Q.defer()
-      meshDf.resolve(null)
-      meshDf.promise
+      Q.when(null)
 
   renderAll: ->
     renderDfs = []
@@ -121,3 +133,8 @@ decrementRenderCount = -> renderCount.set(renderCount.get() - 1)
 
   resetRenderCount: -> renderCount.set(0)
 
+  setDisplayMode: (id, displayMode) ->
+    Layers.upsert(id, {$set: {'general.displayMode': displayMode}})
+
+  getDisplayMode: (id, displayMode) ->
+    SchemaUtils.getParameterValue(Layers.findOne(id), 'general.displayMode')

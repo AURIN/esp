@@ -134,7 +134,7 @@ if Meteor.isClient
                   # If the geoEntity was rendered using the Typology geometry, centre it based on the Lot.
                   lotCentroid = lotEntity.getCentroid()
 
-                  require [
+                  requirejs [
                     'atlas/model/Feature',
                     'atlas/model/Vertex'
                   ], (Feature, Vertex) =>
@@ -215,11 +215,7 @@ if Meteor.isClient
             $('.title', $popup).css('color', typologyClass.color)
         })
 
-    unrender: (id) -> _renderQueue.add id, ->
-      df = Q.defer()
-      AtlasManager.unrenderEntity(id)
-      df.resolve()
-      df.promise
+    unrender: (id) -> _renderQueue.add id, -> AtlasManager.unrenderEntity(id)
 
     renderAll: ->
       renderDfs = []
