@@ -8,6 +8,9 @@ BORDER_COLOR = '#333'
 
 @LayerUtils =
 
+  displayModeRenderEnabled: true
+  displayModeDf: null
+
   fromAsset: (args) ->
     args = Setter.merge({}, args)
     df = Q.defer()
@@ -108,30 +111,36 @@ BORDER_COLOR = '#333'
     df.promise
 
   renderDisplayMode: (id) ->
-    df = Q.defer()
+    return Q.when() unless @displayModeRenderEnabled
     layer = Layers.findOne(id)
     displayMode = @getDisplayMode(id)
     # All other display modes don't require any extra handling
     return Q.when(null) unless displayMode == 'nonDevExtrusion'
+    df = @displayModeDf
+    return df.promise if df
+    df = @displayModeDf = Q.defer()
     requirejs ['subdiv/Polygon'], (Polygon) ->
-      devLotPolygons = _.map Lots.findNotForDevelopment(), (lot) ->
-        new Polygon(GeometryUtils.toUtmVertices(AtlasManager.getEntity(lot._id)))
-      footprintPolygons = {}
-      collection = AtlasManager.getEntity(id)
-      unless collection
-        df.reject('Cannot render display mode - no layer entity')
-        return
-      collection.getEntities().forEach (footprintGeoEntity) ->
-        return unless footprintGeoEntity.getVertices?
-        footprintId = footprintGeoEntity.getId()
-        footprintPolygons[footprintId] =
-            new Polygon(GeometryUtils.toUtmVertices(footprintGeoEntity))
-      _.each footprintPolygons, (footprintPolygon, footprintId) ->
-        intersectsLot = _.some devLotPolygons, (devLotPolygon) ->
-          footprintPolygon.intersects(devLotPolygon)
-        footprintGeoEntity = AtlasManager.getEntity(footprintId)
-        footprintGeoEntity.setVisibility(intersectsLot)
-      df.resolve()
+      lotPromises = _.map Lots.findNotForDevelopment(), (lot) -> LotUtils.render(lot._id)
+      Q.all(lotPromises).then (geoEntities) ->
+        devLotPolygons = _.map geoEntities, (geoEntity) ->
+          new Polygon(GeometryUtils.toUtmVertices(geoEntity))
+        footprintPolygons = {}
+        collection = AtlasManager.getEntity(id)
+        unless collection
+          df.reject('Cannot render display mode - no layer entity')
+          return
+        collection.getEntities().forEach (footprintGeoEntity) ->
+          return unless footprintGeoEntity.getVertices?
+          footprintId = footprintGeoEntity.getId()
+          footprintPolygons[footprintId] =
+              new Polygon(GeometryUtils.toUtmVertices(footprintGeoEntity))
+        _.each footprintPolygons, (footprintPolygon, footprintId) ->
+          intersectsLot = _.some devLotPolygons, (devLotPolygon) ->
+            footprintPolygon.intersects(devLotPolygon)
+          footprintGeoEntity = AtlasManager.getEntity(footprintId)
+          footprintGeoEntity.setVisibility(intersectsLot)
+        df.resolve()
+    df.promise.fin => @displayModeDf = null
     df.promise
 
   renderAllDisplayModes: ->
@@ -142,6 +151,8 @@ BORDER_COLOR = '#333'
       if layerGeoEntity && layerGeoEntity.isVisible()
         dfs.push(@renderDisplayMode(id))
     Q.all(dfs)
+
+  setDisplayModeRenderEnabled: (enabled) -> @displayModeRenderEnabled = enabled
 
   unrender: (id) -> AtlasManager.unrenderEntity(id)
 
