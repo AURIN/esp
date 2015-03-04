@@ -1,5 +1,5 @@
 # Change this to perform importing on the client for testing.
-USE_SERVER = false
+USE_SERVER = true
 
 Meteor.startup ->
 
@@ -58,7 +58,7 @@ Meteor.startup ->
         console.error('Error uploading file', arguments)
   
   Form.helpers
-    collectionName: -> if @isLayer then 'Layers' else 'Lots'
+    collectionName: -> if @isLayer then 'Footprints' else 'Lots'
 
 handleImport = (assetArgs, useServer) ->
   if useServer then handleImportServer(assetArgs) else handleImportClient(assetArgs)

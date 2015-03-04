@@ -17,11 +17,12 @@ BORDER_COLOR = '#333'
     # footprints.
     c3mls = []
     _.each args.c3mls, (c3ml) ->
-      return unless c3ml.type == 'polygon'
+      return unless AtlasConverter.sanitizeType(c3ml.type) == 'polygon'
       layerParams = c3ml.properties ? {}
       height = layerParams.height
       if height
         c3ml.height = parseFloat(height)
+      c3mls.push(c3ml)
 
     args.name ?= args.filename ? c3mls[0]?.id
     doc = {c3mls: c3mls, project: projectId}
@@ -88,7 +89,7 @@ BORDER_COLOR = '#333'
       unless c3mls
         c3mls = [data]
       # Ignore all collections in the c3ml, since they don't affect visualisation of the layer.
-      c3mls = _.filter c3mls, (c3ml) -> c3ml.type != 'collection'
+      c3mls = _.filter c3mls, (c3ml) -> AtlasConverter.sanitizeType(c3ml.type) != 'collection'
       if c3mls.length == 1
         # Ensure the ID of the layer is assigned if only a single entity rendered.
         c3mls[0].id = id
@@ -117,6 +118,9 @@ BORDER_COLOR = '#333'
         new Polygon(GeometryUtils.toUtmVertices(AtlasManager.getEntity(lot._id)))
       footprintPolygons = {}
       collection = AtlasManager.getEntity(id)
+      unless collection
+        df.reject('Cannot render display mode - no layer entity')
+        return
       collection.getEntities().forEach (footprintGeoEntity) ->
         return unless footprintGeoEntity.getVertices?
         footprintId = footprintGeoEntity.getId()
@@ -142,8 +146,17 @@ BORDER_COLOR = '#333'
   unrender: (id) -> AtlasManager.unrenderEntity(id)
 
   show: (id) ->
+    df = Q.defer()
     if AtlasManager.showEntity(id)
-      @renderDisplayMode(id).then -> PubSub.publish('layer/show', id)
+      @renderDisplayMode(id).then(
+        ->
+          PubSub.publish('layer/show', id)
+          df.resolve()
+        df.reject
+      )
+    else
+      df.resolve()
+    df.promise
 
   hide: (id) ->
     if AtlasManager.hideEntity(id)
@@ -174,6 +187,8 @@ BORDER_COLOR = '#333'
   resetRenderCount: -> renderCount.set(0)
 
   setDisplayMode: (id, displayMode) ->
+    existingDisplayMode = @getDisplayMode(id)
+    return unless existingDisplayMode != displayMode
     Layers.update(id, {$set: {'parameters.general.displayMode': displayMode}})
 
   getDisplayMode: (id) ->

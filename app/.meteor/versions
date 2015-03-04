@@ -9,7 +9,7 @@ anti:i18n@0.4.3
 application-configuration@1.0.4
 aramk:collection-table@0.3.3
 aramk:dropdown@0.4.1
-aramk:file-upload@0.2.2
+aramk:file-upload@0.2.3
 aramk:pubsub@1.5.0
 aramk:q@1.0.1_1
 aramk:requirejs@2.1.15_1
