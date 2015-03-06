@@ -45,7 +45,7 @@ incrementName = (name) ->
       project.name = @getNextAvailableName(project.name)
 
     createDfs = []
-    collectionMap = CollectionUtils.getAll()
+    collectionMap = Collections.getMap(CollectionUtils.getAll())
     _.each collectionMap, (collection, name) ->
       idMap = idMaps[name] = {}
       _.each json[name], (model) ->

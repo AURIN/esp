@@ -50,6 +50,7 @@ TemplateClass.destroyed = ->
   _.each pubsubHandles, (handle) -> PubSub.unsubscribe(handle)
   EntityUtils.beforeAtlasUnload()
   LotUtils.beforeAtlasUnload()
+  LayerUtils.destroyDisplayMode()
   AtlasManager.removeAtlas()
 
 TemplateClass.rendered = ->
@@ -296,7 +297,7 @@ TemplateClass.onAtlasLoad = (template, atlas) ->
   ##################################################################################################
 
   # Rendering Lots.
-  renderLot = (id) -> Q.all([LotUtils.render(id), LayerUtils.renderAllDisplayModes()])
+  renderLot = (id) -> LotUtils.render(id)
   unrenderLot = (id) -> LotUtils.unrender(id)
   lots = Lots.findByProject()
   entities = Entities.findByProject()
@@ -701,4 +702,5 @@ TemplateClass.onAtlasLoad = (template, atlas) ->
     return unless layer
     displayMode = LayerUtils.getDisplayMode(layer._id)
     Template.dropdown.setValue($layerDisplayModeButton, displayMode)
+  LayerUtils.setUpDisplayMode()
 

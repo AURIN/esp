@@ -9,7 +9,15 @@ BORDER_COLOR = '#333'
 @LayerUtils =
 
   displayModeRenderEnabled: true
-  displayModeDf: null
+  displayModeRenderHandle: null
+  displayModeDfs: null
+  # A map of layer ID to a map of layer c3ml IDs to lot IDs - only for those intersecting.
+  # intersectionCache: null
+  # lotToLayerMap: null
+  # lotPolyCache: null
+  # layerPolyCache: null
+  displayModeDirty: null
+  displayModeHandles: null
 
   fromAsset: (args) ->
     args = Setter.merge({}, args)
@@ -51,7 +59,11 @@ BORDER_COLOR = '#333'
           df.resolve(insertId)
     df.promise
 
-  render: (id) ->
+  render: (id, args) ->
+    args = _.extend({
+      renderDisplayMode: true
+      showOnRender: true
+    }, args)
     df = Q.defer()
     incrementRenderCount()
     df.promise.fin -> decrementRenderCount()
@@ -65,18 +77,24 @@ BORDER_COLOR = '#333'
       return df.promise
     geoEntity = AtlasManager.getEntity(id)
     if geoEntity
-      @show(id).then(
-        -> df.resolve(geoEntity)
-        df.reject
-      )
+      if args.showOnRender
+        @show(id).then(
+          -> df.resolve(geoEntity)
+          df.reject
+        )
+      else
+        df.resolve(geoEntity)
     else
       @_renderLayer(id).then(
         (geoEntity) =>
           PubSub.publish('layer/show', id)
-          @renderDisplayMode(id).then(
-            -> df.resolve(geoEntity)
-            df.reject
-          )
+          if args.renderDisplayMode
+            @renderDisplayMode(id).then(
+              -> df.resolve(geoEntity)
+              df.reject
+            )
+          else
+            df.resolve(geoEntity)
         df.reject
       )
     df.promise
@@ -110,46 +128,142 @@ BORDER_COLOR = '#333'
         df.resolve(c3mlEntities[0])
     df.promise
 
-  renderDisplayMode: (id) ->
+  # Hides footprint polygons in the layer which don't intersect with a non-development lot. If Lot
+  # IDs are passed, only the footprint polygons which intersect with the lot are modified.
+  renderDisplayMode: (id, lotIds) ->
     return Q.when() unless @displayModeRenderEnabled
     layer = Layers.findOne(id)
     displayMode = @getDisplayMode(id)
+    emptyPromise = Q.when(null)
     # All other display modes don't require any extra handling
-    return Q.when(null) unless displayMode == 'nonDevExtrusion'
-    df = @displayModeDf
+    return emptyPromise unless displayMode == 'nonDevExtrusion'
+    
+    dirty = @displayModeDirty
+    # cache = @_setUpInterectionCache()
+    return emptyPromise unless dirty[id]
+
+    df = @displayModeDfs[id]
     return df.promise if df
-    df = @displayModeDf = Q.defer()
-    requirejs ['subdiv/Polygon'], (Polygon) ->
-      lotPromises = _.map Lots.findNotForDevelopment(), (lot) -> LotUtils.render(lot._id)
-      Q.all(lotPromises).then (geoEntities) ->
-        devLotPolygons = _.map geoEntities, (geoEntity) ->
-          new Polygon(GeometryUtils.toUtmVertices(geoEntity))
-        footprintPolygons = {}
-        collection = AtlasManager.getEntity(id)
-        unless collection
-          df.reject('Cannot render display mode - no layer entity')
-          return
-        collection.getEntities().forEach (footprintGeoEntity) ->
-          return unless footprintGeoEntity.getVertices?
-          footprintId = footprintGeoEntity.getId()
-          footprintPolygons[footprintId] =
-              new Polygon(GeometryUtils.toUtmVertices(footprintGeoEntity))
-        _.each footprintPolygons, (footprintPolygon, footprintId) ->
-          intersectsLot = _.some devLotPolygons, (devLotPolygon) ->
-            footprintPolygon.intersects(devLotPolygon)
-          footprintGeoEntity = AtlasManager.getEntity(footprintId)
-          footprintGeoEntity.setVisibility(intersectsLot)
-        df.resolve()
-    df.promise.fin => @displayModeDf = null
+    df = @displayModeDfs[id] = Q.defer()
+
+    subsetLots = lotIds?
+    unless lotIds
+      lotIds = _.map Lots.findNotForDevelopment(), (lot) -> lot._id
+    clearTimeout(@displayModeRenderHandle)
+    @displayModeRenderHandle = setTimeout(
+      =>
+        requirejs ['subdiv/Polygon'], (Polygon) =>
+          lotPromises = _.map lotIds, (lotId) -> LotUtils.render(lotId)
+          Q.all(lotPromises).then (geoEntities) =>
+            lotPolygons = _.map geoEntities, (geoEntity) ->
+              polygon = new Polygon(GeometryUtils.toUtmVertices(geoEntity))
+              polygon.id = geoEntity.getId()
+              polygon
+            footprintPolygons = {}
+            # Prevent a deadlock by not waiting on display mode rendering when waiting for the
+            # layer to render. Prevent showing the footprints on render if we are given a subset of
+            # lots, since we don't want hidden non-intersecting footprints to be shown.
+            @render(id, {
+              renderDisplayMode: false
+              showOnRender: !subsetLots
+            }).then (collection) ->
+              unless collection
+                df.reject('Cannot render display mode - no layer entity')
+                return
+              collection.getEntities().forEach (footprintGeoEntity) ->
+                return unless footprintGeoEntity.getVertices?
+                footprintId = footprintGeoEntity.getId()
+                footprintPolygons[footprintId] =
+                    new Polygon(GeometryUtils.toUtmVertices(footprintGeoEntity))
+              _.each footprintPolygons, (footprintPolygon, footprintId) ->
+                intersectsLot = null
+                _.some lotPolygons, (lotPolygon) ->
+                  lotId = lotPolygon.id
+                  lotIsNonDev =
+                      !SchemaUtils.getParameterValue(Lots.findOne(lotId), 'general.develop')
+                  intersects = footprintPolygon.intersects(lotPolygon)
+                  # If a subset of the lots are provided, don't modify the visibility of
+                  # non-intersecting footprints, since they are not affected.
+                  if subsetLots && !intersects
+                    return
+                  else
+                    intersectsLot = intersects && lotIsNonDev
+                footprintGeoEntity = AtlasManager.getEntity(footprintId)
+                # Ignore null value which indicates no changes should be made.
+                if intersectsLot?
+                  footprintGeoEntity.setVisibility(intersectsLot)
+              delete dirty[id]
+              console.log('df resolved')
+              df.resolve()
+      1000
+    )
+    df.promise.fin =>
+      console.log('fin')
+      delete @displayModeDfs[id]
     df.promise
 
-  renderAllDisplayModes: ->
+  setUpDisplayMode: ->
+    handles = @displayModeHandles = []
+    dirty = @displayModeDirty
+    @displayModeDfs = {}
+    if dirty?
+      return dirty
+    dirty = @displayModeDirty = {}
+    setDirty = (layer) =>
+      dirty[layer._id] = true
+      @renderDisplayMode(layer._id)
+    setAllDirty = (lot) =>
+      lotIds = if lot then [lot._id] else undefined
+      Layers.findByProject().forEach (layer) =>
+        dirty[layer._id] = true
+        @renderDisplayMode(layer._id, lotIds)
+    removeDirty = (doc) -> delete dirty[doc._id]
+
+    # Any changes to layers and lots will make the layer re-render for the changed lots.
+    handles.push Collections.observe(Layers.findByProject(), {
+      added: setDirty
+      changed: setDirty
+      removed: removeDirty
+    })
+    handles.push Collections.observe(Lots.findByProject(), {
+      added: setAllDirty
+      changed: setAllDirty
+      removed: setAllDirty
+    })
+    # Initially, all layers are dirty.
+    setAllDirty()
+    dirty
+
+  destroyDisplayMode: ->
+    _.each @displayModeHandles, (handle) -> handle.stop()
+    @displayModeHandles = null
+    @displayModeDirty = null
+    dfs = @displayModeDfs
+    _.each dfs, (df) -> df.reject()
+    @displayModeDfs = null
+
+  # _setUpInterectionCache: ->
+  #   cache = @intersectionCache
+  #   if cache?
+  #     return cache
+  #   cache = @intersectionCache ?= {}
+  #   Collection.observe Layers, (doc) ->
+  #     cache[doc._id] = {
+  #       intersections: {}
+  #       # A map of Lot IDs used to invalidate the cache when 
+  #       lots: {}
+  #     }
+  #   Collection.observe Layers, (doc) ->
+  #     cache[doc._id] = {}
+  #   cache
+
+  renderAllDisplayModes: (lotIds) ->
     dfs = []
     Layers.findByProject().forEach (layer) =>
       id = layer._id
       layerGeoEntity = AtlasManager.getEntity(id)
       if layerGeoEntity && layerGeoEntity.isVisible()
-        dfs.push(@renderDisplayMode(id))
+        dfs.push(@renderDisplayMode(id, lotIds))
     Q.all(dfs)
 
   setDisplayModeRenderEnabled: (enabled) -> @displayModeRenderEnabled = enabled
