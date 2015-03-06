@@ -1,4 +1,5 @@
 @EntityUtils = {}
+bindMeteor = Meteor.bindEnvironment.bind(Meteor)
 
 evalEngine = null
 getEvalEngine = -> evalEngine ?= new EvaluationEngine(schema: Entities.simpleSchema())
@@ -24,7 +25,7 @@ if Meteor.isClient
   _.extend EntityUtils,
 
     toGeoEntityArgs: (id, args) ->
-      AtlasConverter.getInstance().then (converter) ->
+      AtlasConverter.getInstance().then bindMeteor (converter) ->
         entity = Entities.getFlattened(id)
         typology = Typologies.findOne(entity.typology)
         typologyClass = Entities.getTypologyClass(id)
@@ -75,10 +76,10 @@ if Meteor.isClient
       unless geom_2d
         return Q.when(null)
       df = Q.defer()
-      WKT.getWKT (wkt) =>
+      WKT.getWKT bindMeteor (wkt) =>
         isWKT = wkt.isWKT(geom_2d)
         if isWKT
-          @toGeoEntityArgs(id, {show: false}).then (entityArgs) =>
+          @toGeoEntityArgs(id, {show: false}).then bindMeteor (entityArgs) =>
             geoEntity = AtlasManager.renderEntity(entityArgs)
             df.resolve(geoEntity)
         else
@@ -114,14 +115,14 @@ if Meteor.isClient
         typologyClass = Entities.getTypologyClass(id)
         isPathway = typologyClass == 'PATHWAY'
 
-        WKT.getWKT (wkt) =>
+        WKT.getWKT bindMeteor (wkt) =>
           isWKT = wkt.isWKT(geom_2d)
         
           geometryDfs = [@_render2dGeometry(id)]
           unless isPathway
             geometryDfs.push(@_render3dGeometry(id))
           Q.all(geometryDfs).then(
-            (geometries) =>
+            bindMeteor (geometries) =>
               _.each geometries, (geometry) -> addedGeometry.push(geometry) if geometry
               if isPathway
                 geoEntity = geometries[0]
@@ -130,14 +131,14 @@ if Meteor.isClient
                 df.resolve(geoEntity)
                 return
               @_renderLot(id).then(
-                (lotEntity) =>
+                bindMeteor (lotEntity) =>
                   # If the geoEntity was rendered using the Typology geometry, centre it based on the Lot.
                   lotCentroid = lotEntity.getCentroid()
 
                   requirejs [
                     'atlas/model/Feature',
                     'atlas/model/Vertex'
-                  ], (Feature, Vertex) =>
+                  ], bindMeteor (Feature, Vertex) =>
 
                     # Precondition: 2d geometry is a required for entities.
                     entity2d = geometries[0]
@@ -156,7 +157,7 @@ if Meteor.isClient
                       # WKT, the geometry is a collection rather than a feature. Create a new
                       # feature to store both 2d and 3d geometries.
                       @toGeoEntityArgs(id, {vertices: null}).then(
-                        (args) ->
+                        bindMeteor (args) ->
                           geoEntity = AtlasManager.renderEntity(args)
                           geoEntity.setForm(Feature.DisplayMode.FOOTPRINT, entity2d)
                           addedGeometry.push(geoEntity)
@@ -166,7 +167,7 @@ if Meteor.isClient
                         geoEntityDf.reject
                       )
                     geoEntityDf.promise.then(
-                      (geoEntity) =>
+                      bindMeteor (geoEntity) =>
                         if entity3d
                           geoEntity.setForm(Feature.DisplayMode.MESH, entity3d)
                         _.each geoEntity.getForms(), (form) ->

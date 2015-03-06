@@ -3763,3 +3763,12 @@ Layers.attachSchema(LayerSchema)
 Layers.allow(Collections.allowAll())
 Layers.findByProject = (projectId) -> SchemaUtils.findByProject(Layers, projectId)
 Layers.getDisplayModeItems = -> _.map LayerDisplayModes, (value, key) -> {label: value, value: key}
+
+####################################################################################################
+# COLLECTIONS
+####################################################################################################
+
+@CollectionUtils =
+  getAll: -> [Projects, Entities, Typologies, Lots, Layers]
+
+
