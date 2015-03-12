@@ -84,7 +84,7 @@ Meteor.startup ->
         entityDf.resolve(null)
       
       # Remove the drawn/edited Lot if it's temporary.
-      if currentGeoEntity? && !Lots.findOne(currentGeoEntity.getId())
+      if currentGeoEntity? && !Lots.findOne(AtlasIdMap.getAppId(currentGeoEntity.getId()))
         currentGeoEntity.remove()
       
       entityDf.promise

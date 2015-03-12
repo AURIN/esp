@@ -181,7 +181,7 @@ TemplateClass.events
         lot = null
         _.some entities, (entity) ->
           feature = entity.getParent()
-          lot = Lots.findOne(feature.getId())
+          lot = Lots.findOne(AtlasIdMap.getAppId(feature.getId()))
           lot
         if lot
           # TODO(aramk) Refactor with the logic in the lot form.
@@ -354,7 +354,8 @@ TemplateClass.onAtlasLoad = (template, atlas) ->
       if collection.allowsMultipleDisplayModes?
         ids = _.filter ids, (id) -> collection.allowsMultipleDisplayModes(id)
       _.each AtlasManager.getEntitiesByIds(ids), (entity) ->
-        entity.setDisplayMode(getDisplayMode(entity.getId()))
+        console.log('entity', entity)
+        entity.setDisplayMode(getDisplayMode(AtlasIdMap.getAppId(entity.getId())))
 
   reactiveToDisplayMode(Lots, Lots.findByProject(), 'lotDisplayMode', LotUtils.getDisplayMode)
   reactiveToDisplayMode(Entities, Entities.findByProject(), 'entityDisplayMode')
@@ -432,8 +433,8 @@ TemplateClass.onAtlasLoad = (template, atlas) ->
       return unless tableSelectionEnabled
       selectedIds = args.added
       deselectedIds = args.removed
-      atlas.publish('entity/select', ids: selectedIds) && selectedIds
-      atlas.publish('entity/deselect', ids: deselectedIds) && deselectedIdsq
+      AtlasManager.selectEntities(selectedIds)
+      AtlasManager.deselectEntities(deselectedIds)
   
   # Clicking on a typology selects all entities of that typology.
   getEntityIdsByTypologyId = (typologyId) ->
@@ -443,9 +444,9 @@ TemplateClass.onAtlasLoad = (template, atlas) ->
     selectedId = args.added[0]
     deselectedId = args.removed[0]
     if deselectedId
-      atlas.publish('entity/deselect', ids: getEntityIdsByTypologyId(deselectedId))
+      AtlasManager.deselectEntities(getEntityIdsByTypologyId(deselectedId))
     if selectedId
-      atlas.publish('entity/select', ids: getEntityIdsByTypologyId(selectedId))
+      AtlasManager.selectEntities(getEntityIdsByTypologyId(selectedId))
       # Hide all popups so they don't obsruct the entities.
       _.each atlas._managers.popup.getPopups(), (popup) -> popup.hide()
     tableSelectionEnabled = true
@@ -453,20 +454,20 @@ TemplateClass.onAtlasLoad = (template, atlas) ->
   # Select the item in the table when clicking on the globe.
   atlas.subscribe 'entity/select', (args) ->
     tableSelectionEnabled = false
-    ids = _.map args.ids, (id) -> resolveModelId(id)
+    ids = _.map args.ids, (id) -> AtlasManager.resolveModelId(id)
     $table = getTable(ids[0])
     Template.collectionTable.addSelection($table, ids) if $table
     tableSelectionEnabled = true
   atlas.subscribe 'entity/deselect', (args) ->
     tableSelectionEnabled = false
-    ids = _.map args.ids, (id) -> resolveModelId(id)
+    ids = _.map args.ids, (id) -> AtlasManager.resolveModelId(id)
     $table = getTable(ids[0])
     Template.collectionTable.removeSelection($table, ids) if $table
     tableSelectionEnabled = true
 
   # Listen to double clicks from Atlas.
   atlas.subscribe 'entity/dblclick', (args) ->
-    id = resolveModelId(args.id)
+    id = AtlasManager.resolveModelId(args.id)
     collections = [Entities, Lots]
     collection = _.find collections, (collection) -> collection.findOne(id) && collection
     # Ignore this event when clicking on entities we don't manage in collections.
@@ -484,14 +485,14 @@ TemplateClass.onAtlasLoad = (template, atlas) ->
     $row = Template.collectionTable.getRow(id, tableTemplate)
     $('[type="checkbox"]', $row).prop('checked', true)
 
-  resolveModelId = (id) ->
-    # When clicking on children of a GeoEntity collection, take the prefix as the ID of the
-    # underlying Entity.
-    reChildEntityId = /(^[^:]+):[^:]+$/
-    idParts = id.match(reChildEntityId)
-    if idParts
-      id = idParts[1]
-    id
+  # resolveModelId = (id) ->
+  #   # When clicking on children of a GeoEntity collection, take the prefix as the ID of the
+  #   # underlying Entity.
+  #   reChildEntityId = /(^[^:]+):[^:]+$/
+  #   idParts = id.match(reChildEntityId)
+  #   if idParts
+  #     id = idParts[1]
+  #   id
 
   ##################################################################################################
   # DRAWING
@@ -535,9 +536,8 @@ TemplateClass.onAtlasLoad = (template, atlas) ->
           # TODO(aramk) Generate an incremented name.
           name = subclass
           feature = args.feature
-          id = feature.getId()
           vertices = feature.getForm().getVertices()
-          AtlasManager.unrenderEntity(id)
+          feature.remove()
           if vertices.length > 2 || (vertices.length == 2 && !vertices[0].equals(vertices[1]))
             WKT.polylineFromVertices vertices, (wktStr) ->
               Entities.insert
@@ -553,9 +553,7 @@ TemplateClass.onAtlasLoad = (template, atlas) ->
         update: (args) -> args.feature.getHandles().forEach (handle) -> handle.setElevation(4)
         cancel: (args) ->
           console.debug('Drawing cancelled', arguments)
-          feature = args.feature
-          id = feature.getId()
-          AtlasManager.unrenderEntity(id)
+          args.feature.remove()
           $pathwayDrawButton.removeClass('active')
       }
     if isActive
@@ -584,11 +582,11 @@ TemplateClass.onAtlasLoad = (template, atlas) ->
   firstSelectedLotId = null
   $amalgamateButton = template.$('.amalgamate.item').hide()
   $amalgamateButton.click ->
-    ids = AtlasManager.getSelectedLots()
+    ids = LotUtils.getSelectedLots()
     LotUtils.amalgamate(ids)
   $subdivideButton = template.$('.subdivide.item').hide()
   $subdivideButton.click ->
-    ids = AtlasManager.getSelectedLots()
+    ids = LotUtils.getSelectedLots()
     
     startDrawing = ->
       stopDrawing()
@@ -599,16 +597,13 @@ TemplateClass.onAtlasLoad = (template, atlas) ->
         init: (args) -> args.feature.setElevation(2)
         create: (args) ->
           feature = args.feature
-          id = feature.getId()
           vertices = feature.getForm().getVertices()
-          AtlasManager.unrenderEntity(id)
+          feature.remove()
           LotUtils.subdivide(ids, vertices).fin(cancelSubdivision)
         update: (args) -> args.feature.getHandles().forEach (handle) -> handle.setElevation(4)
         cancel: (args) ->
           console.debug('Drawing cancelled', arguments)
-          feature = args.feature
-          id = feature.getId()
-          AtlasManager.unrenderEntity(id)
+          args.feature.remove()
           cancelSubdivision()
           $subdivideButton.removeClass('active')
       }
@@ -629,7 +624,7 @@ TemplateClass.onAtlasLoad = (template, atlas) ->
 
   $alignmentButton = template.$('.alignment.item').hide()
   $alignmentButton.click ->
-    ids = AtlasManager.getSelectedLots()
+    ids = LotUtils.getSelectedLots()
     LotUtils.autoAlign(ids)
 
   atlas.subscribe 'entity/select', (args) ->
@@ -663,7 +658,7 @@ TemplateClass.onAtlasLoad = (template, atlas) ->
 
   # Hide and show buttons based on the selected Lots.
   atlas.subscribe 'entity/selection/change', (args) ->
-    ids = AtlasManager.getSelectedLots()
+    ids = LotUtils.getSelectedLots()
     idCount = ids.length
     if idCount == 0
       firstSelectedLotId = null

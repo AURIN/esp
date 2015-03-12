@@ -194,7 +194,7 @@ if Meteor.isClient
       @_setUpPopup(geoEntity)
 
     _setUpPopup: (geoEntity) ->
-      entity = Entities.getFlattened(geoEntity.getId())
+      entity = Entities.getFlattened(AtlasIdMap.getAppId(geoEntity.getId()))
       typology = Typologies.findOne(entity.typology)
       typologyClassId = SchemaUtils.getParameterValue(entity, 'general.class')
       typologyClass = Typologies.classes[typologyClassId]

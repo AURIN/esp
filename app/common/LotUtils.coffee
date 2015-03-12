@@ -200,6 +200,8 @@ Meteor.startup ->
     ids = _.map Lots.findByProject().fetch(), (entity) -> entity._id
     AtlasManager.zoomToEntities(ids)
 
+  getSelectedLots: -> _.filter AtlasManager.getSelectedFeatureIds(), (id) -> Lots.findOne(id)
+
   # Allocate a set of typologies to a set of lots.
   # @param {Object} args
   # @param {Array.<String>} lotIds

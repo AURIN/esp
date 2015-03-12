@@ -188,7 +188,7 @@ BORDER_COLOR = '#333'
                     return
                   else
                     intersectsLot = intersects && lotIsNonDev
-                footprintGeoEntity = AtlasManager.getEntity(footprintId)
+                footprintGeoEntity = AtlasManager.getEntity(AtlasIdMap.getAppId(footprintId))
                 # Ignore null value which indicates no changes should be made.
                 if intersectsLot?
                   footprintGeoEntity.setVisibility(intersectsLot)

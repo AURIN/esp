@@ -2223,7 +2223,7 @@ typologyCategories =
         desc: 'Share of the total internal water use waste diverted to greywater.'
         type: Number
         decimal: true
-        classes: extendClassesWithDefault(extendBuildingClasses(), 0.3)
+        classes: extendClassesWithDefault(extendBuildingClasses(), 0.75)
       share_e_wu_pot:
         label: 'External Share of Balance - Bore vs Potable'
         desc: 'Share of balance water demand to be supplied by bore water versus potable water.'
