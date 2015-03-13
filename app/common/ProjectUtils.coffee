@@ -17,7 +17,8 @@ incrementName = (name) ->
       throw new Error('Project with ID ' + id + ' not found')
     result = {}
     result[Collections.getName(Projects)] = [project]
-    _.each Collections.getMap([Entities, Typologies, Lots]), (collection, name) ->
+    collections = _.without(CollectionUtils.getAll(), Projects)
+    _.each Collections.getMap(collections), (collection, name) ->
       result[name] = collection.findByProject(id).fetch()
     result
 
@@ -44,7 +45,7 @@ incrementName = (name) ->
       project.name = @getNextAvailableName(project.name)
 
     createDfs = []
-    collectionMap = Collections.getMap([Projects, Entities, Typologies, Lots])
+    collectionMap = Collections.getMap(CollectionUtils.getAll())
     _.each collectionMap, (collection, name) ->
       idMap = idMaps[name] = {}
       _.each json[name], (model) ->

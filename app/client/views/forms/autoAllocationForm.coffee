@@ -23,7 +23,7 @@ Meteor.startup ->
       console.log('onSubmit', arguments)
       $table = getTypologyTable()
       typologyIds = Template.collectionTable.getSelectedIds($table)
-      lotIds = AtlasManager.getSelectedLots()
+      lotIds = LotUtils.getSelectedLots()
       if typologyIds.length == 0
         alert('Please select a Typology.')
       else if lotIds.length == 0

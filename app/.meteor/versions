@@ -7,14 +7,14 @@ aldeed:collection2@2.3.1
 aldeed:simple-schema@1.1.0
 anti:i18n@0.4.3
 application-configuration@1.0.4
-aramk:collection-table@0.3.2
-aramk:dropdown@0.4.0
-aramk:file-upload@0.2.1
+aramk:collection-table@0.3.3
+aramk:dropdown@0.4.1
+aramk:file-upload@0.2.4
 aramk:pubsub@1.5.0
 aramk:q@1.0.1_1
 aramk:requirejs@2.1.15_1
 aramk:tinycolor@1.1.0_1
-aramk:utility@0.6.0
+aramk:utility@0.7.0
 aslagle:reactive-table@0.4.2
 autoupdate@1.1.5
 awatson1978:dropzone@1.0.2
@@ -72,7 +72,7 @@ less@1.0.12
 livedata@1.0.12
 localstorage@1.0.2
 logging@1.0.6
-matb33:collection-hooks@0.7.6
+matb33:collection-hooks@0.7.11
 meteor@1.1.4
 meteor-platform@1.2.1
 meteorhacks:async@1.0.0
@@ -84,7 +84,6 @@ momentjs:moment@2.9.0
 mongo@1.0.11
 mongo-livedata@1.0.7
 mrt:moment@2.8.1
-nooitaf:semantic-ui@1.8.1
 npm-bcrypt@0.7.7
 npm-container@1.0.0
 observe-sequence@1.0.4
@@ -99,6 +98,7 @@ reactive-var@1.0.4
 reload@1.1.2
 retry@1.0.2
 routepolicy@1.0.4
+semantic:ui-css@1.11.2
 service-configuration@1.0.3
 session@1.0.5
 sha@1.0.2
@@ -115,7 +115,7 @@ urbanetic:accounts-aurin@0.1.2
 urbanetic:accounts-local@0.1.1
 urbanetic:atlas@0.7.0_6
 urbanetic:atlas-cesium@0.7.0_6
-urbanetic:atlas-util@0.2.4
+urbanetic:atlas-util@0.2.5
 urbanetic:aurin-acs@0.1.0
 urbanetic:subdiv@0.5.3
 url@1.0.3

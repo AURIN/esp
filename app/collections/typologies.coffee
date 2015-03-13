@@ -2223,7 +2223,7 @@ typologyCategories =
         desc: 'Share of the total internal water use waste diverted to greywater.'
         type: Number
         decimal: true
-        classes: extendClassesWithDefault(extendBuildingClasses(), 0.3)
+        classes: extendClassesWithDefault(extendBuildingClasses(), 0.75)
       share_e_wu_pot:
         label: 'External Share of Balance - Bore vs Potable'
         desc: 'Share of balance water demand to be supplied by bore water versus potable water.'
@@ -3254,6 +3254,9 @@ Lots.findByTypology = (typologyId) ->
 Lots.findForDevelopment = (projectId) ->
   _.filter Lots.findByProject(projectId).fetch(), (lot) ->
     SchemaUtils.getParameterValue(lot, 'general.develop')
+Lots.findNotForDevelopment = (projectId) ->
+  _.filter Lots.findByProject(projectId).fetch(), (lot) ->
+    !SchemaUtils.getParameterValue(lot, 'general.develop')
 Lots.findAvailable = (projectId) ->
   _.filter Lots.findForDevelopment(projectId), (lot) -> !lot.entity
 
@@ -3723,3 +3726,49 @@ Lots.after.remove (userId, lot) ->
 Typologies.after.remove (userId, typology) ->
   # Remove entities when the typology is removed.
   _.each Entities.findByTypology(typology._id).fetch(), (entity) -> Entities.remove(entity._id)
+
+####################################################################################################
+# LAYERS
+####################################################################################################
+
+@LayerDisplayModes =
+  extrusion: 'Extrusion'
+  nonDevExtrusion: 'Extrude Non-Develop'
+layerCategories = Setter.clone(entityCategories)
+layerCategories.general.items.displayMode =
+  label: 'Display Mode'
+  type: String
+  allowedValues: Object.keys(LayerDisplayModes)
+  optional: true
+LayerParametersSchema = createCategoriesSchema
+  categories: layerCategories
+
+LayerSchema = new SimpleSchema
+  name:
+    type: String
+    index: true
+    unique: false
+  desc: extendSchema descSchema,
+    optional: true
+  parameters:
+    label: 'Parameters'
+    type: LayerParametersSchema
+    # Necessary to allow required fields within.
+    optional: false
+    defaultValue: {}
+  project: projectSchema
+
+@Layers = new Meteor.Collection 'layers'
+Layers.attachSchema(LayerSchema)
+Layers.allow(Collections.allowAll())
+Layers.findByProject = (projectId) -> SchemaUtils.findByProject(Layers, projectId)
+Layers.getDisplayModeItems = -> _.map LayerDisplayModes, (value, key) -> {label: value, value: key}
+
+####################################################################################################
+# COLLECTIONS
+####################################################################################################
+
+@CollectionUtils =
+  getAll: -> [Projects, Entities, Typologies, Lots, Layers]
+
+

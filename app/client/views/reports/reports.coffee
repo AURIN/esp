@@ -34,7 +34,7 @@
 
       renderedFields = []
       $fields = $(@find('.fields'))
-      require ['atlas/util/NumberFormatter'], (NumberFormatter) =>
+      requirejs ['atlas/util/NumberFormatter'], (NumberFormatter) =>
         formatter = new NumberFormatter()
         for field in fields
           try

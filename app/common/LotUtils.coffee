@@ -9,23 +9,26 @@ Meteor.startup ->
 
 @LotUtils =
 
-# Handles a assets/synthesize response to create lots.
+  # Handles a assets/synthesize response to create lots.
   fromAsset: (args) ->
+    c3mls = args.c3mls
     projectId = args.projectId ? Projects.getCurrentId()
+    isLayer = args.isLayer
+    console.log('args', args)
+    if isLayer
+      return LayerUtils.fromAsset(args)
+
     existingDf = Q.defer()
-    # If lots already exist in the project, ask the user if they should be removed first.
+    # If lots already exist in the project, ask the user if they should be removed first. If on the
+    # server, remove the lots without asking.
     existingLots = Lots.findByProject(projectId).fetch()
     if existingLots.length > 0
-      result = window.confirm('Are you sure you want to replace the existing Lots in the project?')
-      if result
-        removeDfs = _.map existingLots, (lot) ->
-          removeDf = Q.defer()
-          Lots.remove lot._id, (err, result) ->
-            if err then removeDf.reject(err) else removeDf.resolve(result)
-          removeDf.promise
-        Q.all(removeDfs).then(existingDf.resolve, existingDf.reject)
-      else
-        existingDf.reject('Lot creation cancelled')
+      removeDfs = _.map existingLots, (lot) ->
+        removeDf = Q.defer()
+        Lots.remove lot._id, (err, result) ->
+          if err then removeDf.reject(err) else removeDf.resolve(result)
+        removeDf.promise
+      Q.all(removeDfs).then(existingDf.resolve, existingDf.reject)
     else
       existingDf.resolve()
 
@@ -197,6 +200,33 @@ Meteor.startup ->
     ids = _.map Lots.findByProject().fetch(), (entity) -> entity._id
     AtlasManager.zoomToEntities(ids)
 
+  getSelectedLots: -> _.filter AtlasManager.getSelectedFeatureIds(), (id) -> Lots.findOne(id)
+
+  setUp: ->
+    # Auto-align when adding new lots or adding/replacing entities on lots.
+    return if @isSetUp
+
+    autoAlignEntity = bindMeteor (entity) ->
+      azimuth = SchemaUtils.getParameterValue(entity, 'orientation.azimuth')
+      LotUtils.autoAlign([entity.lot]) unless azimuth?
+
+    if Meteor.isServer
+
+      Lots.after.insert bindMeteor (userId, doc) ->
+        entityId = doc.entity
+        if entityId
+          autoAlignEntity(Entities.findOne(entityId))
+
+      Lots.after.update bindMeteor (userId, newDoc) ->
+        oldDoc = @previous
+        entityId = newDoc.entity
+        # TODO(aramk) For some reason, updating lots asynchronously can cause them to have no previous
+        # document defined, so in this case we also run the auto-alignment.
+        if entityId && (!oldDoc || oldDoc.entity != entityId)
+          autoAlignEntity(Entities.findOne(entityId))
+
+    @isSetUp = true
+
   # Allocate a set of typologies to a set of lots.
   # @param {Object} args
   # @param {Array.<String>} lotIds
@@ -249,7 +279,7 @@ Meteor.startup ->
         )
         validateDfs.push(validateDf.promise)
 
-      Q.all(validateDfs).then (results) ->
+      Q.all(validateDfs).then bindMeteor (results) ->
         typologies = _.filter results, (result) -> result?
         if typologies.length > 0
           typology = Arrays.getRandomItem(typologies)
@@ -269,14 +299,14 @@ Meteor.startup ->
     someHaveEntities = _.some lots, (lot) -> lot.entity?
     if someHaveEntities
       return Q.reject('Cannot amalgamate Lots which have Entities.')
-    require ['subdiv/Polygon'], (Polygon) =>
-      WKT.getWKT (wkt) =>
+    requirejs ['subdiv/Polygon'], (Polygon) =>
+      WKT.getWKT bindMeteor (wkt) =>
         polygons = []
         # Used for globalising and localising points.
         referencePoint = null
         success = _.all lots, (lot) ->
           geom_2d = SchemaUtils.getParameterValue(lot, 'space.geom_2d')
-          vertices = wkt.verticesFromWKT(geom_2d)[0]
+          vertices = wkt.verticesFromWKT(geom_2d)
           polygon = new Polygon(vertices)
           referencePoint = polygon.getPoints()[0] unless referencePoint
           polygon.localizePoints(referencePoint)
@@ -323,14 +353,14 @@ Meteor.startup ->
     if someHaveEntities
       return Q.reject('Cannot subdivide Lots which have Entities.')
     df = Q.defer()
-    require ['subdiv/Polygon', 'subdiv/Line'], (Polygon, Line) =>
-      WKT.getWKT (wkt) =>
+    requirejs ['subdiv/Polygon', 'subdiv/Line'], (Polygon, Line) =>
+      WKT.getWKT bindMeteor (wkt) =>
         polygons = []
         # Used for globalising and localising points.
         referencePoint = null
         _.each lots, (lot) ->
           geom_2d = SchemaUtils.getParameterValue(lot, 'space.geom_2d')
-          vertices = wkt.verticesFromWKT(geom_2d)[0]
+          vertices = wkt.verticesFromWKT(geom_2d)
           polygon = new Polygon(vertices, {sortPoints: false})
           polygon.id = lot._id
           referencePoint = polygon.getPoints()[0] unless referencePoint
@@ -390,19 +420,20 @@ Meteor.startup ->
     _.each ids, (id) ->
       lot = Lots.findOne(id)
       alignLots.push(lot) if lot.entity
+    projectId = Lots.findOne(ids[0])?.project
     unless alignLots.length > 0
       df.reject('No lots with entities found for auto-alignment.')
       return df.promise
-    WKT.getWKT (wkt) ->
-      require [
+    WKT.getWKT bindMeteor (wkt) ->
+      requirejs [
         'subdiv/AlignmentCalculator',
         'subdiv/Polygon',
         'subdiv/util/GeographicUtil'
-      ], (AlignmentCalculator, Polygon, GeographicUtil) ->
+      ], bindMeteor (AlignmentCalculator, Polygon, GeographicUtil) ->
         polyMap = {}
-        polygons = Lots.findByProject().map (lot) ->
+        polygons = Lots.findByProject(projectId).map (lot) ->
           geom_2d = SchemaUtils.getParameterValue(lot, 'space.geom_2d')
-          vertices = wkt.verticesFromWKT(geom_2d)[0]
+          vertices = wkt.verticesFromWKT(geom_2d)
           polygon = new Polygon(vertices).smoothPoints()
           GeographicUtil.localizePointGeometry(polygon)
           polyMap[lot._id] = polygon
@@ -456,6 +487,8 @@ Meteor.startup ->
     Q.all(dfs)
 
   beforeAtlasUnload: -> resetRenderQueue()
+
+LotUtils.setUp()
 
 if Meteor.isServer
   Meteor.methods

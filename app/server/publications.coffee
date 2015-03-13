@@ -1,5 +1,5 @@
 Meteor.startup ->
-  _.each [Entities, Typologies, Lots], (collection) ->
+  _.each [Entities, Typologies, Lots, Layers], (collection) ->
     collectionId = Collections.getName(collection)
     Meteor.publish collectionId, (projectId) ->
       unless projectId

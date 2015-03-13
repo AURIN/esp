@@ -15,12 +15,15 @@ Session.setDefault('entityDisplayMode', 'extrusion')
 collectionToForm =
   entities: 'entityForm'
   typologies: 'typologyForm'
+  layers: 'layerForm'
   lots:
     single: 'lotForm'
     multiple: 'lotBulkForm'
 
 # Various handles which should be removed when the design template is removed
 handles = null
+# Handles for PubSub subscriptions.
+pubsubHandles = null
 
 # The current Blaze.View rendered in the left sidebar.
 currentPanelView = null
@@ -39,12 +42,15 @@ TemplateClass.created = ->
   displayModesCollection = Collections.createTemporary()
   _.each DisplayModes, (name, id) ->
     displayModesCollection.insert({value: id, label: name})
+  pubsubHandles = []
   handles = []
 
 TemplateClass.destroyed = ->
   _.each handles, (handle) -> handle.stop()
+  _.each pubsubHandles, (handle) -> PubSub.unsubscribe(handle)
   EntityUtils.beforeAtlasUnload()
   LotUtils.beforeAtlasUnload()
+  LayerUtils.destroyDisplayMode()
   AtlasManager.removeAtlas()
 
 TemplateClass.rendered = ->
@@ -54,7 +60,7 @@ TemplateClass.rendered = ->
 
   # Don't show Atlas viewer if disabled.
   unless Window.getVarBool('atlas') == false
-    require [
+    requirejs [
       'atlas-cesium/core/CesiumAtlas',
       'atlas/lib/utility/Log'
     ], (CesiumAtlas, Log) ->
@@ -69,13 +75,15 @@ TemplateClass.rendered = ->
       TemplateClass.onAtlasLoad(template, cesiumAtlas)
 
   # Move extra buttons into collection tables
-  _.each ['lots', 'typologies', 'entities'], (type) =>
+  _.each ['lots', 'typologies', 'entities', 'layers'], (type) =>
     $table = $(@find('.' + type + ' .collection-table'))
     $buttons = $(@find('.' + type + ' .extra.menu')).addClass('item')
     $('.crud.menu', $table).after($buttons)
 
   # Remove create button for entities.
   $(@find('.entities .collection-table .create.item')).remove()
+  # Remove create button for layers.
+  $(@find('.layers .collection-table .create.item')).remove()
 
   # Add popups to fields
   @$('.has-popup').popup()
@@ -83,7 +91,9 @@ TemplateClass.rendered = ->
   @$('.toggle').state()
 
   # Use icons for display mode dropdowns
-  _.each ['.lotDisplayMode.dropdown', '.entityDisplayMode.dropdown'], (cls) ->
+  selectors = ['.lotDisplayMode.dropdown', '.entityDisplayMode.dropdown',
+      '.layerDisplayMode.dropdown']
+  _.each selectors, (cls) ->
     $dropdown = @$(cls)
     $dropdown.addClass('item')
     $('.dropdown.icon', $dropdown).attr('class', 'photo icon')
@@ -118,23 +128,18 @@ TemplateClass.helpers
   entities: -> Entities.findByProject()
   lots: -> Lots.findByProject()
   typologies: -> Typologies.findByProject()
-  tableSettings: ->
-    fields: [
-      key: 'name'
-      label: 'Name'
-    ]
-    onCreate: (args) ->
-      collection = args.collection
-      if collection == Entities
-        throw new Error('Cannot directly create an entity - assign a Typology to a Lot.')
-      collectionName = Collections.getName(collection)
-      formArgs = collectionToForm[collectionName]
-      formName = getSingleFormName(formArgs)
-      console.debug 'onCreate', arguments, collectionName, formName
-      TemplateClass.addFormPanel templateInstance, Template[formName]
-    onEdit: onEditFormPanel
+  layers: -> Layers.findByProject()
+  tableSettings: -> getTableSettings()
+  layerTableSettings: ->
+    settings = getTableSettings()
+    settings.multiSelect = false
+    settings.checkbox =
+      # Unchecked state by default
+      getValue: (layer) -> false
+    settings
   displayModes: -> displayModesCollection.find(value: {$not: '_nonDevExtrusion'})
   lotDisplayModes: -> displayModesCollection.find(value: {$not: 'mesh'})
+  layerDisplayModes: -> Layers.getDisplayModeItems()
   defaultEntityDisplayMode: -> Session.get('entityDisplayMode')
   defaultLotDisplayMode: -> Session.get('lotDisplayMode')
 
@@ -142,9 +147,16 @@ TemplateClass.events
   'change .entityDisplayMode.dropdown': (e) ->
     displayMode = Template.dropdown.getValue(e.currentTarget)
     Session.set('entityDisplayMode', displayMode)
+  'click .entities .zoom.item': ->
+    ids = Template.collectionTable.getSelectedIds(getEntityTable())
+    AtlasManager.zoomToEntities(ids)
   'change .lotDisplayMode.dropdown': (e) ->
     displayMode = Template.dropdown.getValue(e.currentTarget)
     Session.set('lotDisplayMode', displayMode)
+  'change .layerDisplayMode.dropdown': (e) ->
+    displayMode = Template.dropdown.getValue(e.currentTarget)
+    ids = Template.collectionTable.getSelectedIds(getLayerTable())
+    _.each ids, (id) -> LayerUtils.setDisplayMode(id, displayMode)
   'click .allocate.item': (e, template) ->
     TemplateClass.addFormPanel(template, Template.autoAllocationForm)
   'click .filter.item': (e, template) ->
@@ -169,7 +181,7 @@ TemplateClass.events
         lot = null
         _.some entities, (entity) ->
           feature = entity.getParent()
-          lot = Lots.findOne(feature.getId())
+          lot = Lots.findOne(AtlasIdMap.getAppId(feature.getId()))
           lot
         if lot
           # TODO(aramk) Refactor with the logic in the lot form.
@@ -185,6 +197,23 @@ TemplateClass.events
       $body.removeClass('dragging')
     $body.mousemove(mouseMoveHandler)
     $body.mouseup(mouseUpHandler)
+  'click .layers .import.item': ->
+    Template.design.addFormPanel null, Template.importForm, {isLayer: true}
+  'click .layers .zoom.item': (e, template) ->
+    $table = getLayerTable(template)
+    tableTemplate = Templates.getInstanceFromElement($table)
+    ids = Template.collectionTable.getSelectedIds($table)
+    dfs = _.map ids, (id) ->
+      LayerUtils.render(id)
+    Q.all(dfs).then -> AtlasManager.zoomToEntities(ids)
+  'check .layers': (e, template, checkEvent) ->
+    layerId = checkEvent.data._id
+    isVisible = checkEvent.checked
+    layer = AtlasManager.getEntity(layerId)
+    if layer
+      if isVisible then LayerUtils.show(layerId) else LayerUtils.hide(layerId)
+    else if isVisible
+      LayerUtils.render(layerId)
 
 PubSub.subscribe 'typology/edit/form', (msg, typologyId) ->
   onEditFormPanel(ids: [typologyId], collection: Typologies)
@@ -200,6 +229,7 @@ getSidebar = (template) ->
 getEntityTable = (template) -> template.$('.entities .collection-table')
 getTypologyTable = (template) -> template.$('.typologies .collection-table')
 getLotTable = (template) -> template.$('.lots .collection-table')
+getLayerTable = (template) -> getTemplate(template).$('.layers .collection-table')
 
 getPathwayDrawButton = (template) -> template.$('.pathway.draw.button')
 
@@ -236,8 +266,31 @@ TemplateClass.addFormPanel = (template, formTemplate, data) ->
   data ?= {}
   TemplateClass.addPanel template, formTemplate, data
 
+getTableSettings = ->
+  fields: [
+    key: 'name'
+    label: 'Name'
+  ]
+  onCreate: (args) ->
+    collection = args.collection
+    if collection == Entities
+      throw new Error('Cannot directly create an entity - assign a Typology to a Lot.')
+    collectionName = Collections.getName(collection)
+    formArgs = collectionToForm[collectionName]
+    formName = getSingleFormName(formArgs)
+    console.debug 'onCreate', arguments, collectionName, formName
+    TemplateClass.addFormPanel templateInstance, Template[formName]
+  onEdit: onEditFormPanel
+
+getTemplate = (template) -> Templates.getNamedInstance('design', template)
+
 TemplateClass.onAtlasLoad = (template, atlas) ->
   projectId = Projects.getCurrentId()
+
+  $entityTable = getEntityTable(template)
+  $typologyTable = getTypologyTable(template)
+  $lotTable = getLotTable(template)
+  $layerTable = getLayerTable(template)
 
   ##################################################################################################
   # VISUALISATION MAINTENANCE
@@ -249,6 +302,7 @@ TemplateClass.onAtlasLoad = (template, atlas) ->
   lots = Lots.findByProject()
   entities = Entities.findByProject()
   typologies = Typologies.findByProject()
+  layers = Layers.findByProject()
   # Listen to changes to Lots and (un)render them as needed.
   handles.push Collections.observe lots,
     added: (lot) ->
@@ -300,18 +354,20 @@ TemplateClass.onAtlasLoad = (template, atlas) ->
       if collection.allowsMultipleDisplayModes?
         ids = _.filter ids, (id) -> collection.allowsMultipleDisplayModes(id)
       _.each AtlasManager.getEntitiesByIds(ids), (entity) ->
-        entity.setDisplayMode(getDisplayMode(entity.getId()))
+        console.log('entity', entity)
+        entity.setDisplayMode(getDisplayMode(AtlasIdMap.getAppId(entity.getId())))
 
   reactiveToDisplayMode(Lots, Lots.findByProject(), 'lotDisplayMode', LotUtils.getDisplayMode)
   reactiveToDisplayMode(Entities, Entities.findByProject(), 'entityDisplayMode')
 
+  hasParamChanged = (paramName, newDoc, oldDoc) ->
+    newValue = SchemaUtils.getParameterValue(newDoc, paramName)
+    oldValue = SchemaUtils.getParameterValue(oldDoc, paramName)
+    newValue != oldValue
+
   # Re-render entities of a typology when fields affecting visualisation are changed.
   handles.push Collections.observe typologies, {
     changed: (newTypology, oldTypology) ->
-      hasParamChanged = (paramName) ->
-        newValue = SchemaUtils.getParameterValue(newTypology, paramName)
-        oldValue = SchemaUtils.getParameterValue(oldTypology, paramName)
-        newValue != oldValue
       hasChanged = _.some([
           'general.class', 'space.geom_2d', 'space.geom_3d', 'space.height', 'orientation.azimuth',
           'composition.rd_lanes', 'composition.rd_width', 'composition.rd_mat',
@@ -320,11 +376,40 @@ TemplateClass.onAtlasLoad = (template, atlas) ->
           'composition.bp_lanes', 'composition.bp_width', 'composition.bp_mat',
           'composition.ve_lanes', 'composition.ve_width'
         ]
-        (paramName) -> hasParamChanged(paramName)
+        (paramName) -> hasParamChanged(paramName, newTypology, oldTypology)
       )
       if hasChanged
         _.each Entities.findByTypology(newTypology._id).fetch(), (entity) ->
           refreshEntity(entity._id)
+  }
+
+  # Rendering Layers.
+  renderLayer = (id) -> LayerUtils.render(id)
+  unrenderLayer = (id) -> LayerUtils.unrender(id)
+  refreshLayer = (id) ->
+    unrenderLayer(id)
+    renderLayer(id)
+  handles.push Collections.observe layers,
+    added: (layer) ->
+      renderLayer(layer._id)
+    changed: (newLayer, oldLayer) ->
+      id = newLayer._id
+      refreshLayer(id)
+    removed: (layer) ->
+      unrenderLayer(layer._id)
+  # Render existing Entities.
+  _.each layers.fetch(), (layer) -> renderLayer(layer._id)
+
+  # Re-render entities of a typology when fields affecting visualisation are changed.
+  handles.push Collections.observe layers, {
+    changed: (newLayer, oldLayer) ->
+      hasChanged = _.some([
+          'general.displayMode', 'space.geom_2d', 'space.geom_3d', 'space.height'
+        ]
+        (paramName) -> hasParamChanged(paramName, newLayer, oldLayer)
+      )
+      if hasChanged
+        refreshLayer(newLayer._id)
   }
 
   ##################################################################################################
@@ -334,12 +419,12 @@ TemplateClass.onAtlasLoad = (template, atlas) ->
   # Determine what table should be used for the given doc type.
   getTable = (docId) ->
     if Entities.findOne(docId)
-      getEntityTable(template)
+      $entityTable
     else if Lots.findOne(docId)
-      getLotTable(template)
+      $lotTable
 
   # Listen to selections in tables.
-  tables = [getEntityTable(template), getLotTable(template)]
+  tables = [$entityTable, $lotTable]
   # Prevent bulk selections of entities when selecting the typology table from needlessly triggering
   # the table event handlers below or causing infinite loops.
   tableSelectionEnabled = true
@@ -348,11 +433,10 @@ TemplateClass.onAtlasLoad = (template, atlas) ->
       return unless tableSelectionEnabled
       selectedIds = args.added
       deselectedIds = args.removed
-      atlas.publish('entity/select', ids: selectedIds) && selectedIds
-      atlas.publish('entity/deselect', ids: deselectedIds) && deselectedIdsq
+      AtlasManager.selectEntities(selectedIds)
+      AtlasManager.deselectEntities(deselectedIds)
   
   # Clicking on a typology selects all entities of that typology.
-  $typologyTable = getTypologyTable(template)
   getEntityIdsByTypologyId = (typologyId) ->
     _.map Entities.findByTypology(typologyId).fetch(), (entity) -> entity._id
   $typologyTable.on 'select', (e, args) ->
@@ -360,9 +444,9 @@ TemplateClass.onAtlasLoad = (template, atlas) ->
     selectedId = args.added[0]
     deselectedId = args.removed[0]
     if deselectedId
-      atlas.publish('entity/deselect', ids: getEntityIdsByTypologyId(deselectedId))
+      AtlasManager.deselectEntities(getEntityIdsByTypologyId(deselectedId))
     if selectedId
-      atlas.publish('entity/select', ids: getEntityIdsByTypologyId(selectedId))
+      AtlasManager.selectEntities(getEntityIdsByTypologyId(selectedId))
       # Hide all popups so they don't obsruct the entities.
       _.each atlas._managers.popup.getPopups(), (popup) -> popup.hide()
     tableSelectionEnabled = true
@@ -370,20 +454,20 @@ TemplateClass.onAtlasLoad = (template, atlas) ->
   # Select the item in the table when clicking on the globe.
   atlas.subscribe 'entity/select', (args) ->
     tableSelectionEnabled = false
-    ids = _.map args.ids, (id) -> resolveModelId(id)
+    ids = _.map args.ids, (id) -> AtlasManager.resolveModelId(id)
     $table = getTable(ids[0])
     Template.collectionTable.addSelection($table, ids) if $table
     tableSelectionEnabled = true
   atlas.subscribe 'entity/deselect', (args) ->
     tableSelectionEnabled = false
-    ids = _.map args.ids, (id) -> resolveModelId(id)
+    ids = _.map args.ids, (id) -> AtlasManager.resolveModelId(id)
     $table = getTable(ids[0])
     Template.collectionTable.removeSelection($table, ids) if $table
     tableSelectionEnabled = true
 
   # Listen to double clicks from Atlas.
   atlas.subscribe 'entity/dblclick', (args) ->
-    id = resolveModelId(args.id)
+    id = AtlasManager.resolveModelId(args.id)
     collections = [Entities, Lots]
     collection = _.find collections, (collection) -> collection.findOne(id) && collection
     # Ignore this event when clicking on entities we don't manage in collections.
@@ -395,21 +479,17 @@ TemplateClass.onAtlasLoad = (template, atlas) ->
     if collection == Entities && Entities.getTypologyClass(id) == 'PATHWAY'
       editGeoEntity(id)
 
-  resolveModelId = (id) ->
-    # When clicking on children of a GeoEntity collection, take the prefix as the ID of the
-    # underlying Entity.
-    reChildEntityId = /(^[^:]+):[^:]+$/
-    idParts = id.match(reChildEntityId)
-    if idParts
-      id = idParts[1]
-    id
+  # Check the checkboxes when rendering into layers.
+  pubsubHandles.push PubSub.subscribe 'layer/show', (msg, id) ->
+    tableTemplate = Templates.getInstanceFromElement(getLayerTable(template))
+    $row = Template.collectionTable.getRow(id, tableTemplate)
+    $('[type="checkbox"]', $row).prop('checked', true)
 
   ##################################################################################################
   # DRAWING
   ##################################################################################################
 
   # Selecting typologies in the table shows and hides the draw button for pathways.
-  $typologyTable = getTypologyTable(template)
   $pathwayDrawButton = getPathwayDrawButton(template)
   
   getSelectedTypology = ->
@@ -447,9 +527,8 @@ TemplateClass.onAtlasLoad = (template, atlas) ->
           # TODO(aramk) Generate an incremented name.
           name = subclass
           feature = args.feature
-          id = feature.getId()
           vertices = feature.getForm().getVertices()
-          AtlasManager.unrenderEntity(id)
+          feature.remove()
           if vertices.length > 2 || (vertices.length == 2 && !vertices[0].equals(vertices[1]))
             WKT.polylineFromVertices vertices, (wktStr) ->
               Entities.insert
@@ -465,9 +544,7 @@ TemplateClass.onAtlasLoad = (template, atlas) ->
         update: (args) -> args.feature.getHandles().forEach (handle) -> handle.setElevation(4)
         cancel: (args) ->
           console.debug('Drawing cancelled', arguments)
-          feature = args.feature
-          id = feature.getId()
-          AtlasManager.unrenderEntity(id)
+          args.feature.remove()
           $pathwayDrawButton.removeClass('active')
       }
     if isActive
@@ -496,11 +573,11 @@ TemplateClass.onAtlasLoad = (template, atlas) ->
   firstSelectedLotId = null
   $amalgamateButton = template.$('.amalgamate.item').hide()
   $amalgamateButton.click ->
-    ids = AtlasManager.getSelectedLots()
+    ids = LotUtils.getSelectedLots()
     LotUtils.amalgamate(ids)
   $subdivideButton = template.$('.subdivide.item').hide()
   $subdivideButton.click ->
-    ids = AtlasManager.getSelectedLots()
+    ids = LotUtils.getSelectedLots()
     
     startDrawing = ->
       stopDrawing()
@@ -511,16 +588,13 @@ TemplateClass.onAtlasLoad = (template, atlas) ->
         init: (args) -> args.feature.setElevation(2)
         create: (args) ->
           feature = args.feature
-          id = feature.getId()
           vertices = feature.getForm().getVertices()
-          AtlasManager.unrenderEntity(id)
+          feature.remove()
           LotUtils.subdivide(ids, vertices).fin(cancelSubdivision)
         update: (args) -> args.feature.getHandles().forEach (handle) -> handle.setElevation(4)
         cancel: (args) ->
           console.debug('Drawing cancelled', arguments)
-          feature = args.feature
-          id = feature.getId()
-          AtlasManager.unrenderEntity(id)
+          args.feature.remove()
           cancelSubdivision()
           $subdivideButton.removeClass('active')
       }
@@ -541,7 +615,7 @@ TemplateClass.onAtlasLoad = (template, atlas) ->
 
   $alignmentButton = template.$('.alignment.item').hide()
   $alignmentButton.click ->
-    ids = AtlasManager.getSelectedLots()
+    ids = LotUtils.getSelectedLots()
     LotUtils.autoAlign(ids)
 
   atlas.subscribe 'entity/select', (args) ->
@@ -551,23 +625,6 @@ TemplateClass.onAtlasLoad = (template, atlas) ->
     geoEntity = AtlasManager.getEntity(id)
     geoEntity
 
-  # Auto-align when adding new lots or adding/replacing entities on lots.
-
-  autoAlignEntity = (entity) ->
-    azimuth = SchemaUtils.getParameterValue(entity, 'orientation.azimuth')
-    LotUtils.autoAlign([entity.lot]) unless azimuth?
-
-  if Meteor.isClient
-    Lots.after.insert (userId, doc) ->
-      entityId = doc.entity
-      if entityId
-        autoAlignEntity(Entities.findOne(entityId))
-    Lots.after.update (userId, newDoc) ->
-      oldDoc = @previous
-      entityId = newDoc.entity
-      if entityId && oldDoc?.entity != entityId
-        autoAlignEntity(Entities.findOne(entityId))
-
   ##################################################################################################
   # LOT-SELECTION
   ##################################################################################################
@@ -576,7 +633,7 @@ TemplateClass.onAtlasLoad = (template, atlas) ->
 
   # Hide and show buttons based on the selected Lots.
   atlas.subscribe 'entity/selection/change', (args) ->
-    ids = AtlasManager.getSelectedLots()
+    ids = LotUtils.getSelectedLots()
     idCount = ids.length
     if idCount == 0
       firstSelectedLotId = null
@@ -586,4 +643,34 @@ TemplateClass.onAtlasLoad = (template, atlas) ->
     $subdivideButton.toggle(idCount > 0)
     $alignmentButton.toggle(idCount > 0)
     $allocationButton.toggle(idCount > 0)
+
+  ##################################################################################################
+  # SELECTION BASED BUTTONS
+  ##################################################################################################
+
+  $entityZoomButton = template.$('.entities .zoom.item').hide()
+  $layerZoomButton = template.$('.layers .zoom.item').hide()
+
+  _.each [
+    {element: $entityTable, templateClass: Template.collectionTable, buttons: [$entityZoomButton]}
+    {element: $layerTable, templateClass: Template.collectionTable, buttons: [$layerZoomButton]}
+  ], (item) ->
+    $element = item.element
+    $element.on 'select', (args) ->
+      ids = item.templateClass.getSelectedIds($element)
+      _.each item.buttons, ($button) -> $button.toggle(ids.length > 0)
+
+  ##################################################################################################
+  # LAYERS
+  ##################################################################################################
+
+  $layerDisplayModeButton = template.$('.layers .layerDisplayMode').hide()
+  $layerTable.on 'select', (args) ->
+    ids = Template.collectionTable.getSelectedIds($layerTable)
+    $layerDisplayModeButton.toggle(ids.length > 0)
+    layer = Layers.findOne(ids[0])
+    return unless layer
+    displayMode = LayerUtils.getDisplayMode(layer._id)
+    Template.dropdown.setValue($layerDisplayModeButton, displayMode)
+  LayerUtils.setUpDisplayMode()
 

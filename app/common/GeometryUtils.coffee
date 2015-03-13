@@ -1,3 +1,5 @@
+bindMeteor = Meteor.bindEnvironment.bind(Meteor)
+
 @GeometryUtils =
 
   # Deferred promises to prevent multiple requests for area for the same model interfering when they
@@ -15,13 +17,13 @@
 
     geom_2d = SchemaUtils.getParameterValue(model, 'space.geom_2d')
     if geom_2d
-      @hasWktGeometry(model).then (isWKT) =>
+      @hasWktGeometry(model).then bindMeteor (isWKT) =>
         if isWKT
           promise = @getWktArea(geom_2d)
         else
           # Create a temporary geometry and check the area.
           promise = @buildGeometryFromFile(geom_2d, {show: false}).then(
-            (geometry) =>
+            bindMeteor (geometry) =>
               area = geometry.getArea()
               geometry.remove()
               df.resolve(area)
@@ -39,8 +41,8 @@
     }, args)
     collectionId = args.collectionId
     df = Q.defer()
-    require ['atlas/model/GeoPoint'], (GeoPoint) ->
-      Files.downloadJson(fileId).then (result) ->
+    requirejs ['atlas/model/GeoPoint'], bindMeteor (GeoPoint) ->
+      Files.downloadJson(fileId).then bindMeteor (result) ->
         unless result
           df.resolve(null)
           return
@@ -70,8 +72,12 @@
 
   getWktArea: (wktStr) ->
     df = Q.defer()
-    WKT.getWKT (wkt) ->
+    WKT.getWKT bindMeteor (wkt) ->
       # TODO(aramk) This is inaccurate - use UTM 
       geometry = wkt.openLayersGeometryFromWKT(wktStr)
       df.resolve(geometry.getGeodesicArea())
     df.promise
+
+  toUtmVertices: (vertexedEntity) ->
+    _.map vertexedEntity.getVertices(), (point) -> point.toUtm().coord
+
