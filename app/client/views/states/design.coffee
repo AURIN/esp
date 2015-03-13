@@ -485,15 +485,6 @@ TemplateClass.onAtlasLoad = (template, atlas) ->
     $row = Template.collectionTable.getRow(id, tableTemplate)
     $('[type="checkbox"]', $row).prop('checked', true)
 
-  # resolveModelId = (id) ->
-  #   # When clicking on children of a GeoEntity collection, take the prefix as the ID of the
-  #   # underlying Entity.
-  #   reChildEntityId = /(^[^:]+):[^:]+$/
-  #   idParts = id.match(reChildEntityId)
-  #   if idParts
-  #     id = idParts[1]
-  #   id
-
   ##################################################################################################
   # DRAWING
   ##################################################################################################
@@ -633,22 +624,6 @@ TemplateClass.onAtlasLoad = (template, atlas) ->
     return unless lot
     geoEntity = AtlasManager.getEntity(id)
     geoEntity
-
-  # Auto-align when adding new lots or adding/replacing entities on lots.
-
-  autoAlignEntity = (entity) ->
-    azimuth = SchemaUtils.getParameterValue(entity, 'orientation.azimuth')
-    LotUtils.autoAlign([entity.lot]) unless azimuth?
-
-  Lots.after.insert (userId, doc) ->
-    entityId = doc.entity
-    if entityId
-      autoAlignEntity(Entities.findOne(entityId))
-  Lots.after.update (userId, newDoc) ->
-    oldDoc = @previous
-    entityId = newDoc.entity
-    if entityId && oldDoc?.entity != entityId
-      autoAlignEntity(Entities.findOne(entityId))
 
   ##################################################################################################
   # LOT-SELECTION

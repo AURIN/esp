@@ -202,6 +202,31 @@ Meteor.startup ->
 
   getSelectedLots: -> _.filter AtlasManager.getSelectedFeatureIds(), (id) -> Lots.findOne(id)
 
+  setUp: ->
+    # Auto-align when adding new lots or adding/replacing entities on lots.
+    return if @isSetUp
+
+    autoAlignEntity = bindMeteor (entity) ->
+      azimuth = SchemaUtils.getParameterValue(entity, 'orientation.azimuth')
+      LotUtils.autoAlign([entity.lot]) unless azimuth?
+
+    if Meteor.isServer
+
+      Lots.after.insert bindMeteor (userId, doc) ->
+        entityId = doc.entity
+        if entityId
+          autoAlignEntity(Entities.findOne(entityId))
+
+      Lots.after.update bindMeteor (userId, newDoc) ->
+        oldDoc = @previous
+        entityId = newDoc.entity
+        # TODO(aramk) For some reason, updating lots asynchronously can cause them to have no previous
+        # document defined, so in this case we also run the auto-alignment.
+        if entityId && (!oldDoc || oldDoc.entity != entityId)
+          autoAlignEntity(Entities.findOne(entityId))
+
+    @isSetUp = true
+
   # Allocate a set of typologies to a set of lots.
   # @param {Object} args
   # @param {Array.<String>} lotIds
@@ -254,7 +279,7 @@ Meteor.startup ->
         )
         validateDfs.push(validateDf.promise)
 
-      Q.all(validateDfs).then (results) ->
+      Q.all(validateDfs).then bindMeteor (results) ->
         typologies = _.filter results, (result) -> result?
         if typologies.length > 0
           typology = Arrays.getRandomItem(typologies)
@@ -275,7 +300,7 @@ Meteor.startup ->
     if someHaveEntities
       return Q.reject('Cannot amalgamate Lots which have Entities.')
     requirejs ['subdiv/Polygon'], (Polygon) =>
-      WKT.getWKT (wkt) =>
+      WKT.getWKT bindMeteor (wkt) =>
         polygons = []
         # Used for globalising and localising points.
         referencePoint = null
@@ -329,7 +354,7 @@ Meteor.startup ->
       return Q.reject('Cannot subdivide Lots which have Entities.')
     df = Q.defer()
     requirejs ['subdiv/Polygon', 'subdiv/Line'], (Polygon, Line) =>
-      WKT.getWKT (wkt) =>
+      WKT.getWKT bindMeteor (wkt) =>
         polygons = []
         # Used for globalising and localising points.
         referencePoint = null
@@ -395,17 +420,18 @@ Meteor.startup ->
     _.each ids, (id) ->
       lot = Lots.findOne(id)
       alignLots.push(lot) if lot.entity
+    projectId = Lots.findOne(ids[0])?.project
     unless alignLots.length > 0
       df.reject('No lots with entities found for auto-alignment.')
       return df.promise
-    WKT.getWKT (wkt) ->
+    WKT.getWKT bindMeteor (wkt) ->
       requirejs [
         'subdiv/AlignmentCalculator',
         'subdiv/Polygon',
         'subdiv/util/GeographicUtil'
-      ], (AlignmentCalculator, Polygon, GeographicUtil) ->
+      ], bindMeteor (AlignmentCalculator, Polygon, GeographicUtil) ->
         polyMap = {}
-        polygons = Lots.findByProject().map (lot) ->
+        polygons = Lots.findByProject(projectId).map (lot) ->
           geom_2d = SchemaUtils.getParameterValue(lot, 'space.geom_2d')
           vertices = wkt.verticesFromWKT(geom_2d)
           polygon = new Polygon(vertices).smoothPoints()
@@ -461,6 +487,8 @@ Meteor.startup ->
     Q.all(dfs)
 
   beforeAtlasUnload: -> resetRenderQueue()
+
+LotUtils.setUp()
 
 if Meteor.isServer
   Meteor.methods

@@ -72,7 +72,7 @@ less@1.0.12
 livedata@1.0.12
 localstorage@1.0.2
 logging@1.0.6
-matb33:collection-hooks@0.7.6
+matb33:collection-hooks@0.7.11
 meteor@1.1.4
 meteor-platform@1.2.1
 meteorhacks:async@1.0.0
@@ -84,7 +84,6 @@ momentjs:moment@2.9.0
 mongo@1.0.11
 mongo-livedata@1.0.7
 mrt:moment@2.8.1
-nooitaf:semantic-ui@1.8.1
 npm-bcrypt@0.7.7
 npm-container@1.0.0
 observe-sequence@1.0.4
@@ -99,6 +98,7 @@ reactive-var@1.0.4
 reload@1.1.2
 retry@1.0.2
 routepolicy@1.0.4
+semantic:ui-css@1.11.2
 service-configuration@1.0.3
 session@1.0.5
 sha@1.0.2
