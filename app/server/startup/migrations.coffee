@@ -87,8 +87,8 @@ Meteor.startup ->
           collection.findByProject(project._id).forEach (model) ->
             migratedModelCount += collection.direct.update({_id: model._id}, {
               $rename:
-                'parameters.energy_demand.en_heat': 'parameters.energy_demand.thermal_heat'
-                'parameters.energy_demand.en_cool': 'parameters.energy_demand.thermal_cool'
+                'parameters.energy_demand.en_heat': 'parameters.energy_demand.therm_en_heat'
+                'parameters.energy_demand.en_cool': 'parameters.energy_demand.therm_en_cool'
             }, {validate: false})
       console.log('Migrated', migratedModelCount, 'models to COP and EER fields.')
 
@@ -200,6 +200,20 @@ Meteor.startup ->
           SchemaUtils.removeCalcFields(collection)
           migratedModelCount += collection.find().count()
       console.log('Migrated', migratedModelCount, 'models by removing calculated fields.')
+
+  Migrations.add
+    version: 12
+    up: ->
+      migratedModelCount = 0
+      Projects.find().forEach (project) ->
+        _.each [Typologies, Entities], (collection) ->
+          collection.findByProject(project._id).forEach (model) ->
+            migratedModelCount += collection.direct.update({_id: model._id}, {
+              $rename:
+                'parameters.energy_demand.thermal_heat': 'parameters.energy_demand.therm_en_heat'
+                'parameters.energy_demand.thermal_cool': 'parameters.energy_demand.therm_en_cool'
+            }, {validate: false})
+      console.log('Migrated', migratedModelCount, 'models by renaming internal water use intensity fields.')
 
   console.log('Migrating to latest version...')
   Migrations.migrateTo('latest')

@@ -21,7 +21,7 @@ class @EvaluationEngine
     getValueOrCalc = (paramId) =>
       # NOTE: Parameters may reference other parameters which were not requested for evaluation, so
       # don't restrict searching to within the given paramIds.
-      unless @getParamSchema(paramId) || @isGlobalParam(paramId)
+      unless @getParamSchema(paramId)
         throw new Error('Cannot find parameter with ID ' + paramId)
       # Use existing calculated value if available. NOTE: do not sanitize to allow checking whether
       # the value exists.
@@ -41,17 +41,14 @@ class @EvaluationEngine
         result = calc.call(calc.context)
         result = @sanitizeParamValue(paramId, result)
         # Store the calculated value to prevent calculating again.
-        @setResult(model, paramId, result)
+        target = if @isGlobalParam(paramId) then project else model
+        @setResult(target, paramId, result)
         result
       else
         throw new Error('Invalid calculation property - must be function, is of type ' +
           Types.getTypeOf(calc))
 
-    getValue = (paramId) =>
-      value = SchemaUtils.getParameterValue(model, paramId)
-      unless value?
-        value = getGlobalValue(paramId)
-      value
+    getValue = (paramId) => SchemaUtils.getParameterValue(model, paramId) ? getGlobalValue(paramId)
 
     getGlobalValue = (paramId) -> SchemaUtils.getParameterValue(project, paramId)
 
@@ -100,7 +97,9 @@ class @EvaluationEngine
   setResult: (model, paramId, value) ->
     SchemaUtils.setParameterValue(model, paramId, value)
 
-  getParamSchema: (paramId) -> @schema.schema(ParamUtils.addPrefix(paramId))
+  getParamSchema: (paramId) ->
+    paramId = ParamUtils.addPrefix(paramId)
+    @schema.schema(paramId) ? @getGlobalParamSchema(paramId)
 
   isOutputParam: (paramId) ->
     schema = @getParamSchema(paramId)
@@ -115,7 +114,10 @@ class @EvaluationEngine
         value = Math.round(value)
     value
 
-  isGlobalParam: (paramId) -> Projects.simpleSchema().schema(ParamUtils.addPrefix(paramId))
+  getGlobalParamSchema: (paramId) ->
+    Projects.simpleSchema().schema(ParamUtils.addPrefix(paramId))
+
+  isGlobalParam: (paramId) -> @getGlobalParamSchema(paramId)?
 
 NULL_VALUE = 0
 sanitizeValue = (value) -> value ? 0

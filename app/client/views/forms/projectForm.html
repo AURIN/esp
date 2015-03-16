@@ -47,6 +47,8 @@
           {{> afQuickField name="parameters.utilities.price_usage_elec"}}
           {{> afQuickField name="parameters.utilities.price_supply_gas"}}
           {{> afQuickField name="parameters.utilities.price_usage_gas"}}
+          {{> afQuickField name="parameters.utilities.price_supply_cogen"}}
+          {{> afQuickField name="parameters.utilities.price_usage_cogen"}}
           {{> afQuickField name="parameters.utilities.price_supply_water"}}
           {{> afQuickField name="parameters.utilities.price_usage_water"}}
 
@@ -144,6 +146,17 @@
           {{> afQuickField name="parameters.energy.fitout.en_basic_hp_app"}}
           {{> afQuickField name="parameters.energy.fitout.en_aff_avg_app"}}
           {{> afQuickField name="parameters.energy.fitout.en_aff_hp_app"}}
+
+          <div class="subsubtitle">Cogen/Trigen</div>
+          {{> afQuickField name="parameters.energy.cogen.spec.plant_size"}}
+          {{> afQuickField name="parameters.energy.cogen.spec.plant_eff"}}
+          {{> afQuickField name="parameters.energy.cogen.spec.cop_heat"}}
+          {{> afQuickField name="parameters.energy.cogen.spec.cop_cool"}}
+          {{> afQuickField name="parameters.energy.cogen.operation.op_hrs_day"}}
+          {{> afQuickField name="parameters.energy.cogen.operation.op_days_wk"}}
+          {{> afQuickField name="parameters.energy.cogen.operation.op_wks_year"}}
+          {{> afQuickField name="parameters.energy.cogen.thermal.prpn_heat_cap"}}
+          {{> afQuickField name="parameters.energy.cogen.thermal.prpn_th_en_h"}}
 
           <div class="subtitle">Parking</div>
           {{> afQuickField name="parameters.parking.prk_area_veh"}}
