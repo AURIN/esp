@@ -24,6 +24,7 @@ meteorhacks:npm
 matb33:collection-hooks
 npm-container
 semantic:ui-css
+semantic:ui-icon
 percolatestudio:percolatestudio-migrations
 raix:handlebar-helpers
 
