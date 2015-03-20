@@ -14,7 +14,6 @@ Meteor.startup ->
     c3mls = args.c3mls
     projectId = args.projectId ? Projects.getCurrentId()
     isLayer = args.isLayer
-    console.log('args', args)
     if isLayer
       return LayerUtils.fromAsset(args)
 

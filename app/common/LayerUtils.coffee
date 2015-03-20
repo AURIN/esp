@@ -193,12 +193,10 @@ BORDER_COLOR = '#333'
                 if intersectsLot?
                   footprintGeoEntity.setVisibility(intersectsLot)
               delete dirty[id]
-              console.log('df resolved')
               df.resolve()
       1000
     )
     df.promise.fin =>
-      console.log('fin')
       delete @displayModeDfs[id]
     df.promise
 
