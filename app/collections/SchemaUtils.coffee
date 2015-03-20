@@ -121,8 +121,14 @@ global = @
         if schema.calc?
           # Skip input fields which never need to be evaluated.
           schemas[key] = schema
-      else
-        console.error('Skipping unknown parameter', key, 'not found in schema', schema)
+    schemas
+
+  getParamSchemas: (arg, paramIds) ->
+    schemas = {}
+    _.each paramIds, (paramId) =>
+      field = @getField(ParamUtils.addPrefix(paramId), arg)
+      if field?
+        schemas[paramId] = field
     schemas
 
 if Meteor.isServer

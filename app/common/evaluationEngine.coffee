@@ -11,8 +11,12 @@ class @EvaluationEngine
     }, args)
     model = args.model
     typologyClass = args.typologyClass
-    changes = {}
-    schemas = SchemaUtils.getOutputParamSchemas(@schema, args.paramIds)
+    results = {}
+    typologyFieldSchemas = SchemaUtils.getParamSchemas(@schema, args.paramIds)
+    projectSchema = Collections.getSchema(Projects)
+    projectFieldSchemas = SchemaUtils.getParamSchemas(projectSchema, args.paramIds)
+    fieldSchemas = {}
+    _.extend(fieldSchemas, typologyFieldSchemas, projectFieldSchemas)
     project = args.project ? Projects.findOne(model.project) ? Projects.getCurrent()
     unless project
       throw new Error('No project provided')
@@ -77,11 +81,11 @@ class @EvaluationEngine
 
     # Remove any calculated fields stored in the model which may be left from a previous session.
     if args.removeCalcFields
-      _.each schemas, (schema, paramId) ->
+      _.each fieldSchemas, (schema, paramId) ->
         SchemaUtils.setParameterValue(model, paramId, undefined)
 
     # Go through output parameters and calculate them recursively.
-    _.each schemas, (schema, paramId) ->
+    _.each fieldSchemas, (schema, paramId) ->
       classOptions = schema.classes
       # Ignore schema if field doesn't allow typology class.
       return if typologyClass? && classOptions? && !classOptions[typologyClass]
@@ -91,8 +95,8 @@ class @EvaluationEngine
       catch e
         console.error('Failed to evaluate parameter', paramId, e)
       if result?
-        changes[paramId] = result
-    changes
+        results[paramId] = result
+    results
 
   setResult: (model, paramId, value) ->
     SchemaUtils.setParameterValue(model, paramId, value)
@@ -114,8 +118,7 @@ class @EvaluationEngine
         value = Math.round(value)
     value
 
-  getGlobalParamSchema: (paramId) ->
-    Projects.simpleSchema().schema(ParamUtils.addPrefix(paramId))
+  getGlobalParamSchema: (paramId) -> SchemaUtils.getField(ParamUtils.addPrefix(paramId), Projects)
 
   isGlobalParam: (paramId) -> @getGlobalParamSchema(paramId)?
 

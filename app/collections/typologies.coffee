@@ -852,7 +852,7 @@ projectCategories =
                 type: Number
                 decimal: true
                 units: Units.kW
-                defaultValue: 0
+                defaultValue: 50
               plant_eff:
                 desc: 'Power plant efficiency.'
                 label: 'Power Plant Efficiency'
@@ -955,28 +955,6 @@ projectCategories =
                 type: Number
                 decimal: true
                 defaultValue: 0.5
-          balance:
-            label: 'Balance of Supply'
-            items:
-              excess_elec:
-                desc: 'Balance of electricity remaining after precinct object use.'
-                label: 'Excess Electricity Generated'
-                type: Number
-                units: Units.MJyear
-                calc: '<formula>'
-                # calc: '$energy.cogen.output.elec_output - $energy.cogen..elec'
-              excess_heat:
-                desc: 'Balance of heating energy remaining after precinct object use.'
-                label: 'Excess Heating Energy Generated'
-                type: Number
-                units: Units.MJyear
-                calc: '<formula>'
-              excess_cool:
-                desc: 'Balance of cooling energy remaining after precinct object use.'
-                label: 'Excess Cooling Energy Generated'
-                type: Number
-                units: Units.MJyear
-                calc: '<formula>'
           operating_carbon:
             label: 'Operating Carbon'
             items:
@@ -1139,7 +1117,7 @@ projectCategories =
         decimal: true
         defaultValue: 0.22
 
-ProjectParametersSchema = createCategoriesSchema
+@ProjectParametersSchema = createCategoriesSchema
   categories: projectCategories
 
 ProjectSchema = new SimpleSchema
@@ -2511,13 +2489,34 @@ typologyCategories =
             desc: 'Total thermal energy demand.'
             type: Number
             units: Units.MJ
-            calc: '$cogen.heat + $cogen.cool + $cogen.hwat'
+            calc: '$cogen.demand.heat + $cogen.demand.cool + $cogen.demand.hwat'
           total:
             label: 'Total'
             desc: 'Total demand for cogen/trigen energy.'
             type: Number
             units: Units.MJ
-            calc: '$cogen.elec + $cogen.therm'
+            calc: '$cogen.demand.elec + $cogen.demand.therm'
+      balance:
+        label: 'Balance of Supply'
+        items:
+          excess_elec:
+            desc: 'Balance of electricity remaining after precinct object use.'
+            label: 'Excess Electricity Generated'
+            type: Number
+            units: Units.MJyear
+            calc: '$energy.cogen.output.elec_output - $cogen.demand.elec'
+          excess_heat:
+            desc: 'Balance of heating energy remaining after precinct object use.'
+            label: 'Excess Heating Energy Generated'
+            type: Number
+            units: Units.MJyear
+            calc: '$energy.cogen.output.th_en_heat - $cogen.demand.heat - $cogen.demand.hwat'
+          excess_cool:
+            desc: 'Balance of cooling energy remaining after precinct object use.'
+            label: 'Excess Cooling Energy Generated'
+            type: Number
+            units: Units.MJyear
+            calc: '$energy.cogen.output.th_en_cool - $cogen.demand.cool'
   water_demand:
     label: 'Water Demand'
     items:

@@ -8,7 +8,8 @@ ReportTemplates = [
   'mixedUseReport'
   'institutionalReport'
   'transportReport'
-  'precinctReport'
+  'precinctReport',
+  'cogenReport'
 ]
 
 TemplateClass = Template.reportPanel

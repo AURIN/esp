@@ -68,7 +68,7 @@
     param = field.param
     unless param?
       return Setter.clone(field)
-    paramSchema = ParametersSchema.schema(param)
+    paramSchema = ParamUtils.getParamSchema(param)
     unless paramSchema
       throw new Error('Could not find schema for param: ' + param)
     label = field.label ? paramSchema.label ? Strings.toTitleCase(param)
@@ -84,7 +84,7 @@
       units = field.units
       label = field.label
       value = field.value
-      paramSchema = ParametersSchema.schema(param)
+      paramSchema = ParamUtils.getParamSchema(param)
       type = paramSchema.type
       unless Numbers.isDefined(value)
         value = 'N/A'
