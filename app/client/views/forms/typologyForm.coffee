@@ -112,6 +112,8 @@ Meteor.startup ->
     # Toggle visibility of azimuth array inputs.
     azimuthClasses = SchemaUtils.getField('parameters.orientation.azimuth', Typologies).classes
     @$('.azimuth-array').toggle(!!azimuthClasses[typologyClass])
+    # This needs to be called each time we update fields since it binds to select fields, which
+    # are re-created each time.
     Tracker.nonreactive => Form.updateCogenFields(@)
     # Toggle visibility of the fields. Apply a class to allow both this and individual event
     # handlers to detemine visibility. The field is only visible if it's both available in the class
@@ -128,6 +130,7 @@ Meteor.startup ->
     $azimuthFields.on('keyup', _.debounce(onAzimuthChange, 300))
     # Bind event to build type dropdown
     getBuildTypeSelect(@).on 'change', => Form.updateBuildType(@)
+    Form.updateWaterFields(@)
 
   Form = Forms.defineModelForm
     name: 'typologyForm'
@@ -250,9 +253,10 @@ Meteor.startup ->
     _.each template.cogenHandles, (handle) -> handle.stop()
     # Selecting cogen as the source for sources should hide certain fields which are not used.
     handles = template.cogenHandles = []
-    _.each CogenSourceMap, (toggleParamId, sourceParamId) =>
-      sourceParamId = ParamUtils.addPrefix('energy_demand.' + sourceParamId)
-      toggleParamId = ParamUtils.addPrefix('energy_demand.' + toggleParamId)
+    prefix = 'energy_demand.'
+    _.each CogenSourceMap, (toggleParamId, sourceParamId) ->
+      sourceParamId = ParamUtils.addPrefix(prefix + sourceParamId)
+      toggleParamId = ParamUtils.addPrefix(prefix + toggleParamId)
       $source = Form.getFieldElement(sourceParamId)
       $toggle = Form.getFieldElement(toggleParamId)
       reactiveVar = new ReactiveVar($source.val())
@@ -261,6 +265,30 @@ Meteor.startup ->
         value = reactiveVar.get()
         isVisible = value != Typologies.EnergySources.COGEN
         $toggle.parent().toggle(isVisible)
+
+  # WATER
+
+  WaterSourceMap =
+    rain_sys: ['i_share_rain', 'share_i_wu_to_grey']
+    grey_sys: ['share_e_wu_pot']
+  
+  Form.updateWaterFields = (template) ->
+    # Cancel previous dependencies.
+    _.each template.waterHandles, (handle) -> handle.stop()
+    # Only show water fields if their system is enabled.
+    handles = template.waterHandles = []
+    prefix = 'water_demand.'
+    _.each WaterSourceMap, (toggleParamIds, sourceParamId) ->
+      sourceParamId = ParamUtils.addPrefix(prefix + sourceParamId)
+      $source = Form.getFieldElement(sourceParamId)
+      _.each toggleParamIds, (toggleParamId) ->
+        toggleParamId = ParamUtils.addPrefix(prefix + toggleParamId)
+        $toggle = Form.getFieldElement(toggleParamId)
+        reactiveVar = new ReactiveVar($source.is(':checked'))
+        Templates.bindVarToCheckbox($source, reactiveVar)
+        handles.push template.autorun ->
+          value = reactiveVar.get()
+          $toggle.parent().toggle(!!value)
 
   # ELEMENTS
 
