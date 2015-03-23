@@ -329,7 +329,7 @@ projectCategories =
         decimal: true
         units: Units.$MJ
         defaultValue: 0.024
-      price_supply_cogen: 
+      price_supply_cogen:
         label: 'Cogen/Trigen Supply Charge'
         type: Number
         decimal: true
@@ -1291,6 +1291,9 @@ ENERGY_SOURCE_ELEC = 'Electricity'
 ENERGY_SOURCE_GAS = 'Gas'
 ENERGY_SOURCE_COGEN = 'Cogen/Trigen'
 EnergySources = [ENERGY_SOURCE_ELEC, ENERGY_SOURCE_GAS, ENERGY_SOURCE_COGEN]
+EnergySources.ELEC = ENERGY_SOURCE_ELEC
+EnergySources.GAS = ENERGY_SOURCE_GAS
+EnergySources.COGEN = ENERGY_SOURCE_COGEN
 
 ResidentialSubclasses = Object.keys(TypologyClasses.RESIDENTIAL.subclasses)
 CommercialSubclasses = Object.keys(TypologyClasses.COMMERCIAL.subclasses)
@@ -3349,8 +3352,8 @@ TypologySchema = new SimpleSchema
 
 @Typologies = new Meteor.Collection 'typologies'
 Typologies.attachSchema(TypologySchema)
-Typologies.classes = TypologyClasses
-Typologies.units = Units
+Typologies.Classes = TypologyClasses
+Typologies.EnergySources = EnergySources
 Typologies.allow(Collections.allowAll())
 
 Typologies.getClassByName = _.memoize (name) ->
@@ -3368,7 +3371,7 @@ Typologies.getClassByName = _.memoize (name) ->
 #       matchedId = id
 
 Typologies.getClassItems = ->
-  _.map Typologies.classes, (cls, id) -> Setter.merge(Setter.clone(cls), {_id: id})
+  _.map Typologies.Classes, (cls, id) -> Setter.merge(Setter.clone(cls), {_id: id})
 
 Typologies.getSubclassItems = _.memoize (typologyClass) ->
   field = SchemaUtils.getField('parameters.general.subclass', Typologies)
@@ -3378,7 +3381,7 @@ Typologies.getSubclassItems = _.memoize (typologyClass) ->
 
 Typologies.getAllocatableClassItems = ->
   items = []
-  _.each Typologies.classes, (cls, id) ->
+  _.each Typologies.Classes, (cls, id) ->
     unless cls.canAllocateToLot == false
       items.push(Setter.merge(Setter.clone(cls), {_id: id}))
   items
@@ -3733,7 +3736,7 @@ Lots.validateTypology = (lot, typologyId) ->
   typologyClass = SchemaUtils.getParameterValue(typology, classParamId)
   isForDevelopment = SchemaUtils.getParameterValue(lot, developParamId)
   canAllocate = false
-  classArgs = Typologies.classes[typologyClass]
+  classArgs = Typologies.Classes[typologyClass]
   if classArgs.canAllocateToLot == false
     df.resolve('Typology with class ' + typologyClass + ' cannot be allocated to a Lot.')
   else if typologyId && !isForDevelopment

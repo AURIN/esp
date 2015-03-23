@@ -197,7 +197,7 @@ if Meteor.isClient
       entity = Entities.getFlattened(AtlasIdMap.getAppId(geoEntity.getId()))
       typology = Typologies.findOne(entity.typology)
       typologyClassId = SchemaUtils.getParameterValue(entity, 'general.class')
-      typologyClass = Typologies.classes[typologyClassId]
+      typologyClass = Typologies.Classes[typologyClassId]
       subclass = SchemaUtils.getParameterValue(entity, 'general.subclass')
       AtlasManager.getAtlas().then (atlas) ->
         atlas.publish('popup/onSelection', {

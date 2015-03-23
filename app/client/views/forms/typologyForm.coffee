@@ -112,6 +112,7 @@ Meteor.startup ->
     # Toggle visibility of azimuth array inputs.
     azimuthClasses = SchemaUtils.getField('parameters.orientation.azimuth', Typologies).classes
     @$('.azimuth-array').toggle(!!azimuthClasses[typologyClass])
+    Tracker.nonreactive => Form.updateCogenFields(@)
     # Toggle visibility of the fields. Apply a class to allow both this and individual event
     # handlers to detemine visibility. The field is only visible if it's both available in the class
     # and also not hidden by event handlers.
@@ -131,28 +132,19 @@ Meteor.startup ->
   Form = Forms.defineModelForm
     name: 'typologyForm'
     collection: collection
+    onCreate: ->
+      @reactiveClass = new ReactiveVar()
+      @reactiveSubClass = new ReactiveVar()
     onRender: ->
       bindEvents.call(@)
+      $class = getClassInput(@)
       $subclass = getSubclassSelect(@)
-      # Prevent infinite loop when updating the fields changes the subclasses dropdown.
-      preventSubclassChange = false
-      getClassInput(@).on 'change', =>
-        # Remove the subclass when selecting a different class and wait for the new subclass to
-        # populate.
-        preventSubclassChange = true
-        Template.dropdown.setValue($subclass, null)
+      Template.dropdown.bindVarToElement($class, @reactiveClass)
+      Template.dropdown.bindVarToElement($subclass, @reactiveSubClass)
+      @autorun =>
+        typologyClass = @reactiveClass.get()
+        subclass = @reactiveSubClass.get()
         updateFields.call(@)
-        preventSubclassChange = false
-      # Prevent dropdown from triggering value changes when updating fields when the value has not
-      # actually changed.
-      onSubClassChange = =>
-        return if preventSubclassChange
-        preventSubclassChange = true
-        # Prevent updating the subclass collection which will result in unnecessary updates and
-        # delays.
-        updateFields.call(@, {populateSubclasses: false})
-        preventSubclassChange = false
-      $subclass.on 'change', _.throttle(onSubClassChange, 1000, {trailing: false})
       doc = @data.doc
       updateFieldsArgs = {}
       # Since subclass is used to determine values, pass in the doc value initially since the input
@@ -245,6 +237,30 @@ Meteor.startup ->
   Form.updateBuildType = (template) ->
     buildType = getBuildTypeValue(template)
     getCostOfConstructionInput(template).parent().toggle(buildType == 'Custom')
+
+  # COGEN
+
+  CogenSourceMap =
+    src_heat: 'cop_heat'
+    src_cool: 'eer_cool'
+    src_hwat: 'cop_hws'
+
+  Form.updateCogenFields = (template) ->
+    # Cancel previous dependencies.
+    _.each template.cogenHandles, (handle) -> handle.stop()
+    # Selecting cogen as the source for sources should hide certain fields which are not used.
+    handles = template.cogenHandles = []
+    _.each CogenSourceMap, (toggleParamId, sourceParamId) =>
+      sourceParamId = ParamUtils.addPrefix('energy_demand.' + sourceParamId)
+      toggleParamId = ParamUtils.addPrefix('energy_demand.' + toggleParamId)
+      $source = Form.getFieldElement(sourceParamId)
+      $toggle = Form.getFieldElement(toggleParamId)
+      reactiveVar = new ReactiveVar($source.val())
+      Templates.bindVarToElement($source, reactiveVar)
+      handles.push template.autorun ->
+        value = reactiveVar.get()
+        isVisible = value != Typologies.EnergySources.COGEN
+        $toggle.parent().toggle(isVisible)
 
   # ELEMENTS
 
