@@ -108,6 +108,8 @@ autoLabel = (field, id) ->
 createCategorySchemaObj = (cat, catId, args) ->
   catSchemaFields = {}
   hasRequiredField = false
+  # Category-wide classes definition.
+  catClasses = cat.classes
   _.each cat.items, (item, itemId) ->
     if item.items?
       result = createCategorySchemaObj(item, itemId, args)
@@ -120,6 +122,8 @@ createCategorySchemaObj = (cat, catId, args) ->
       if fieldSchema.optional == false
         hasRequiredField = true
       autoLabel(fieldSchema, itemId)
+      if catClasses
+        fieldSchema.classes ?= catClasses
       # If defaultValue is used, put it into "classes" to prevent SimpleSchema from storing this
       # value in the doc. We want to inherit this value at runtime for all classes, but not
       # persist it in multiple documents in case we want to change it later in the schema.
@@ -325,7 +329,7 @@ projectCategories =
         decimal: true
         units: Units.$MJ
         defaultValue: 0.024
-      price_supply_cogen:
+      price_supply_cogen: 
         label: 'Cogen/Trigen Supply Charge'
         type: Number
         decimal: true
@@ -1592,14 +1596,12 @@ typologyCategories =
         desc: 'BOM climate zone number.'
         label: 'Climate Zone'
         type: Number
-        classes:
-          RESIDENTIAL: {}
+        classes: RESIDENTIAL: {}
       type:
         type: String
         desc: 'Version of the subclass.'
         allowedValues: TypologyTypes
-        classes:
-          RESIDENTIAL: {}
+        classes: RESIDENTIAL: {}
   space:
     label: 'Space'
     items:
@@ -1673,15 +1675,13 @@ typologyCategories =
         type: Number
         decimal: true
         units: Units.m2
-        classes:
-          MIXED_USE: {}
+        classes: MIXED_USE: {}
       gfa_c:
         label: 'Commercial Gross Floor Area'
         type: Number
         decimal: true
         units: Units.m2
-        classes:
-          MIXED_USE: {}
+        classes: MIXED_USE: {}
       gfa_t:
         label: 'Gross Floor Area'
         desc: 'Gross floor area of all the rooms in the typology.'
@@ -1700,8 +1700,7 @@ typologyCategories =
         type: Number
         decimal: true
         units: Units.m2
-        classes: extendBuildingClasses
-          COMMERCIAL: false
+        classes: RESIDENTIAL: {}
       storeys:
         label: 'Storeys'
         desc: 'Number of floors/storeys in the typology.'
@@ -1729,16 +1728,14 @@ typologyCategories =
           _.each ['rd', 'prk', 'fp', 'bp', 've'], (prefix) =>
             sum += @param('composition.' + prefix + '_lanes') * @param('composition.' + prefix + '_width')
           sum
-        classes:
-          PATHWAY: {}
+        classes: PATHWAY: {}
       area:
         label: 'Total Path Area'
         type: Number
         decimal: true
         units: Units.m2
         calc: '$space.width * $space.length'
-        classes:
-          PATHWAY: {}
+        classes: PATHWAY: {}
       plot_ratio:
         label: 'Plot Ratio'
         desc: 'The building footprint area divided by the lot size.'
@@ -1898,8 +1895,7 @@ typologyCategories =
         desc: 'Energy source in the typology used for heating.'
         type: String
         allowedValues: EnergySources
-        classes:
-          RESIDENTIAL: {defaultValue: ENERGY_SOURCE_ELEC}
+        classes: RESIDENTIAL: {defaultValue: ENERGY_SOURCE_ELEC}
       en_heat:
         label: 'Heating'
         desc: 'Energy required for heating the typology.'
@@ -1912,15 +1908,13 @@ typologyCategories =
             therm_en_heat
           else
             therm_en_heat / @param('energy_demand.cop_heat')
-        classes:
-          RESIDENTIAL: {}
+        classes: RESIDENTIAL: {}
       src_cool:
         label: 'Cooling Source'
         desc: 'Energy source in the typology used for cooling.'
         type: String
         allowedValues: _.without(EnergySources, ENERGY_SOURCE_GAS)
-        classes:
-          RESIDENTIAL: {defaultValue: ENERGY_SOURCE_ELEC}
+        classes: RESIDENTIAL: {defaultValue: ENERGY_SOURCE_ELEC}
       en_cool:
         label: 'Cooling'
         desc: 'Energy required for cooling the typology.'
@@ -1933,50 +1927,42 @@ typologyCategories =
             therm_en_cool
           else
             therm_en_cool / @param('energy_demand.eer_cool')
-        classes:
-          RESIDENTIAL: {}
+        classes: RESIDENTIAL: {}
       cop_heat:
         label: 'Coefficient of Performance (COP)'
         type: Number
         decimal: true
-        classes:
-          RESIDENTIAL: {defaultValue: 4}
+        classes: RESIDENTIAL: {defaultValue: 4}
       eer_cool:
         label: 'Energy Efficiency Rating (EER)'
         type: Number
         decimal: true
-        classes:
-          RESIDENTIAL: {defaultValue: 4}
+        classes: RESIDENTIAL: {defaultValue: 4}
       therm_en_heat:
         label: 'Thermal Heating Energy'
         units: Units.MJyear
         type: Number
         decimal: true
-        classes:
-          RESIDENTIAL: {}
+        classes: RESIDENTIAL: {}
       therm_en_cool:
         label: 'Thermal Cooling Energy'
         units: Units.MJyear
         type: Number
         decimal: true
-        classes:
-          RESIDENTIAL: {}
+        classes: RESIDENTIAL: {}
       en_light:
         label: 'Lighting'
         desc: 'Energy required for lighting the typology.'
         type: Number
         decimal: true
         units: Units.kWhyear
-        classes:
-          RESIDENTIAL: {}
+        classes: RESIDENTIAL: {}
       src_hwat:
         label: 'Hot Water Source'
         desc: 'Energy source in the typology used for hot water heating. Used to calculated CO2-e.'
         type: String
         allowedValues: EnergySources
-        classes:
-          RESIDENTIAL:
-            defaultValue: ENERGY_SOURCE_ELEC
+        classes: RESIDENTIAL: {defaultValue: ENERGY_SOURCE_ELEC}
       en_hwat:
         label: 'Hot Water'
         desc: 'Energy required for hot water heating in the typology.'
@@ -1989,8 +1975,7 @@ typologyCategories =
             therm_en_hwat
           else
             therm_en_hwat / @param('energy_demand.cop_hws')
-        classes:
-          RESIDENTIAL: {}
+        classes: RESIDENTIAL: {}
       therm_en_hwat:
         label: 'Hot Water Thermal'
         type: Number
@@ -2009,17 +1994,14 @@ typologyCategories =
         decimal: true
         units: Units.MJyear
         calc: 'IF($energy_demand.src_cook=="Electricity", $energy.fitout.en_elec_oven, IF($energy_demand.src_cook=="Gas", $energy.fitout.en_gas_oven)) * ($space.num_0br + $space.num_1br + $space.num_2br + $space.num_3plus)'
-        classes:
-          RESIDENTIAL: {}
+        classes: RESIDENTIAL: {}
     # TODO(aramk) Default value should be based on src_cook.
       src_cook:
         label: 'Cooktop and Oven Source'
         desc: 'Energy source in the typology used for cooking. Used to calculate CO2-e.'
         type: String
         allowedValues: EnergySources
-        classes:
-          RESIDENTIAL:
-            defaultValue: ENERGY_SOURCE_ELEC
+        classes: RESIDENTIAL: {defaultValue: ENERGY_SOURCE_ELEC}
       en_elec:
         label: 'Operating Electricity'
         desc: 'Operating electricity demand'
@@ -2056,7 +2038,7 @@ typologyCategories =
             value += @param('energy_demand.en_cook')
           value
       prpn_elec_scheme:
-        label: 'Proportion Electricity – Scheme vs Cogen'
+        label: 'Proportion Electricity - Scheme vs Cogen'
         desc: 'Proportion of total electricity demand sourced from scheme power, versus scheme plus cogeneration.'
         type: Number
         decimal: true
@@ -2106,9 +2088,7 @@ typologyCategories =
         desc: 'Type of appliance fit out.'
         type: String
         allowedValues: Object.keys(ApplianceTypes),
-        classes:
-          RESIDENTIAL:
-            defaultValue: 'Basic - Avg Performance'
+        classes: RESIDENTIAL: {defaultValue: 'Basic - Avg Performance'}
       en_int_e:
         desc: 'Electricity energy use intensity of the typology.'
         label: 'Energy Use Intensity - Electricity'
@@ -2135,16 +2115,14 @@ typologyCategories =
         type: Number
         decimal: true
         units: Units.MJm2year
-        classes:
-          MIXED_USE: {defaultValue: 535}
+        classes: MIXED_USE: {defaultValue: 535}
       en_int_e_c:
         label: 'Commercial Energy Intensity - Electricity'
         desc: 'Commercial electricity energy use intensity of the typology.'
         type: Number
         decimal: true
         units: Units.MJm2year
-        classes:
-          MIXED_USE: {defaultValue: 1140}
+        classes: MIXED_USE: {defaultValue: 1140}
       en_use_e:
         desc: 'Electricity energy use of the typology.'
         label: 'Energy Use - Electricity'
@@ -2183,16 +2161,14 @@ typologyCategories =
         type: Number
         decimal: true
         units: Units.MJm2year
-        classes:
-          MIXED_USE: {defaultValue: 455}
+        classes: MIXED_USE: {defaultValue: 455}
       en_int_g_c:
         label: 'Commercial Energy Intensity - Gas'
         desc: 'Commercial gas energy use intensity of the typology.'
         type: Number
         decimal: true
         units: Units.MJm2year
-        classes:
-          MIXED_USE: {defaultValue: 465}
+        classes: MIXED_USE: {defaultValue: 465}
       # en_int_g_t:
       #   desc: 'Gas energy use intensity of the typology.'
       #   label: 'Energy Use Intensity - Gas'
@@ -2451,6 +2427,7 @@ typologyCategories =
         calc: 'MJ_TO_KWH($energy_demand.en_use_g) * $operating_carbon.elec'
   cogen:
     label: 'Cogen/Trigen'
+    classes: RESIDENTIAL: {}
     items:
       demand:
         items:
@@ -2458,13 +2435,15 @@ typologyCategories =
             label: 'Electricity'
             desc: 'Electricity energy demand.'
             type: Number
-            units: Units.MJ
+            decimal: true
+            units: Units.MJyear
             calc: '$energy_demand.en_elec_cogen'
           heat:
             label: 'Heating'
             desc: 'Space heating energy demand.'
             type: Number
-            units: Units.MJ
+            decimal: true
+            units: Units.MJyear
             calc: ->
               if @param('energy_demand.src_heat') == ENERGY_SOURCE_COGEN
                 @param('energy_demand.therm_en_heat')
@@ -2472,7 +2451,8 @@ typologyCategories =
             label: 'Cooling'
             desc: 'Space cooling energy demand.'
             type: Number
-            units: Units.MJ
+            decimal: true
+            units: Units.MJyear
             calc: ->
               if @param('energy_demand.src_cool') == ENERGY_SOURCE_COGEN
                 @param('energy_demand.therm_en_cool')
@@ -2480,20 +2460,23 @@ typologyCategories =
             label: 'Hot Water'
             desc: 'Hot water heating energy demand.'
             type: Number
-            units: Units.MJ
+            decimal: true
+            units: Units.MJyear
             calc: ->
               if @param('energy_demand.src_hwat') == ENERGY_SOURCE_COGEN
-                @param('energy_demand.therm_en_hwat')
+                @param('energy_demand.therm_en_hwat') * 1000
           therm:
             label: 'Total Thermal'
             desc: 'Total thermal energy demand.'
             type: Number
+            decimal: true
             units: Units.MJ
             calc: '$cogen.demand.heat + $cogen.demand.cool + $cogen.demand.hwat'
           total:
             label: 'Total'
             desc: 'Total demand for cogen/trigen energy.'
             type: Number
+            decimal: true
             units: Units.MJ
             calc: '$cogen.demand.elec + $cogen.demand.therm'
       balance:
@@ -2528,29 +2511,25 @@ typologyCategories =
         type: Number
         decimal: true
         units: Units.kLyearOccupant
-        classes:
-          RESIDENTIAL: {}
+        classes: RESIDENTIAL: {}
       i_wu_intensity_rain:
         label: 'Internal Water Use Intensity - Rain'
         type: Number
         decimal: true
         units: Units.kLyearOccupant
-        classes:
-          RESIDENTIAL: {}
+        classes: RESIDENTIAL: {}
       i_wu_intensity_treat:
         label: 'Internal Water Use Intensity - Treated'
         type: Number
         decimal: true
         units: Units.kLyearOccupant
-        classes:
-          RESIDENTIAL: {}
+        classes: RESIDENTIAL: {}
       i_wu_intensity_grey:
         label: 'Internal Water Use Intensity - Grey'
         type: Number
         decimal: true
         units: Units.kLyearOccupant
-        classes:
-          RESIDENTIAL: {}
+        classes: RESIDENTIAL: {}
       i_wu_pot:
         label: 'Internal Water Use - Potable'
         desc: 'Internal potable water use of the typology.'
@@ -2558,8 +2537,7 @@ typologyCategories =
         decimal: true
         units: Units.kLyear
         calc: -> Math.max(@calc('$water_demand.i_wu_total - $water_demand.i_wu_rain'), 0)
-        classes:
-          RESIDENTIAL: {}
+        classes: RESIDENTIAL: {}
       i_wu_rain:
         label: 'Internal Water Use - Rainwater'
         desc: 'Internal rainwater use of the typology.'
@@ -2567,8 +2545,7 @@ typologyCategories =
         decimal: true
         units: Units.kLyear
         calc: '$water_demand.rain_supply * $water_demand.i_share_rain'
-        classes:
-          RESIDENTIAL: {}
+        classes: RESIDENTIAL: {}
       i_wu_intensity_m2:
         label: 'Internal Water Use Intensity'
         desc: 'Internal potable water use intensity of the typology.'
@@ -2595,16 +2572,14 @@ typologyCategories =
         type: Number
         decimal: true
         units: Units.kLm2year
-        classes:
-          MIXED_USE: {defaultValue: 2.70}
+        classes: MIXED_USE: {defaultValue: 2.70}
       i_wu_intensity_c:
         label: 'Internal Water Use Intensity - Commercial'
         desc: 'Commercial internal potable water use intensity of the typology.'
         type: Number
         decimal: true
         units: Units.kLm2year
-        classes:
-          MIXED_USE: {defaultValue: 1.70}
+        classes: MIXED_USE: {defaultValue: 1.70}
       rain_sys:
         label: 'Rainwater System'
         desc: 'Whether the typology includes a rainwater capture system.'
@@ -2859,8 +2834,7 @@ typologyCategories =
         desc: 'Operating costs due to cogen usage.'
         type: Number
         units: Units.$
-        classes:
-          RESIDENTIAL: {}
+        classes: RESIDENTIAL: {}
         calc: ->
           calcEnergyCost2.call(@, 'cogen')
       cost_op_w:
@@ -2959,16 +2933,12 @@ typologyCategories =
         label: 'Azimuth Heating Energy Array'
         desc: 'Equation to predict heating energy use as a function of degrees azimuth.'
         type: String
-        classes: extendBuildingClasses
-          COMMERCIAL: false
-          MIXED_USE: false
+        classes: RESIDENTIAL: {}
       eq_azmth_c:
         label: 'Azimuth Cooling Energy Array'
         desc: 'Equation to predict cooling energy use as a function of degrees azimuth.'
         type: String
-        classes: extendBuildingClasses
-          COMMERCIAL: false
-          MIXED_USE: false
+        classes: RESIDENTIAL: {}
   parking:
     label: 'Parking'
     items:
@@ -2977,8 +2947,7 @@ typologyCategories =
         desc: 'Number of garage parking spaces.'
         type: Number
         units: Units.spaces
-        classes:
-          RESIDENTIAL: {}
+        classes: RESIDENTIAL: {}
       parking_ug:
         label: 'Parking Spaces - Underground'
         desc: 'Number of underground parking spaces.'
@@ -3037,18 +3006,14 @@ typologyCategories =
         label: 'No. Road Lanes'
         type: Number
         units: Units.lanes
-        classes:
-          PATHWAY:
-            defaultValue: 0
+        classes: PATHWAY: {defaultValue: 0}
       rd_width:
         desc: 'Width of the road for vehicular movement.'
         label: 'Road Width'
         type: Number
         decimal: true
         units: Units.m
-        classes:
-          PATHWAY:
-            defaultValue: 3.5
+        classes: PATHWAY: {defaultValue: 3.5}
       rd_area:
         desc: 'Area of the drawn road for vehicular movement.'
         label: 'Road Area'
@@ -3061,26 +3026,20 @@ typologyCategories =
         label: 'Road Profile'
         type: String
         allowedValues: Object.keys(RoadMaterialTypes)
-        classes:
-          PATHWAY:
-            defaultValue: 'Full Depth Asphalt'
+        classes: PATHWAY: {defaultValue: 'Full Depth Asphalt'}
       prk_lanes:
         desc: 'Number of lanes for vehicle parking.'
         label: 'No. Parking Lanes'
         type: Number
         units: Units.lanes
-        classes:
-          PATHWAY:
-            defaultValue: 0
+        classes: PATHWAY: {defaultValue: 0}
       prk_width:
         desc: 'Width of the drawn pathway for vehicle parking.'
         label: 'Parking Width'
         type: Number
         decimal: true
         units: Units.m
-        classes:
-          PATHWAY:
-            defaultValue: 3
+        classes: PATHWAY: {defaultValue: 3}
       prk_area:
         desc: 'Area of a drawn pathway for vehicle parking.'
         label: 'Parking Area'
@@ -3093,26 +3052,20 @@ typologyCategories =
         label: 'Parking Profile'
         type: String
         allowedValues: Object.keys(RoadMaterialTypes)
-        classes:
-          PATHWAY:
-            defaultValue: 'Full Depth Asphalt'
+        classes: PATHWAY: {defaultValue: 'Full Depth Asphalt'}
       fp_lanes:
         desc: 'Number of footpath lanes for pedestrian movement.'
         label: 'No. Footpath Lanes'
         type: Number
         units: Units.lanes
-        classes:
-          PATHWAY:
-            defaultValue: 0
+        classes: PATHWAY: {defaultValue: 0}
       fp_width:
         desc: 'Width of a footpath for pedestrian movement.'
         label: 'Footpath Width'
         type: Number
         decimal: true
         units: Units.m
-        classes:
-          PATHWAY:
-            defaultValue: 2
+        classes: PATHWAY: {defaultValue: 2}
       fp_area:
         desc: 'Area of the drawn pedestrian footpath.'
         label: 'Footpath Area'
@@ -3125,26 +3078,20 @@ typologyCategories =
         label: 'Footpath Profile'
         type: String
         allowedValues: Object.keys(FootpathMaterialTypes)
-        classes:
-          PATHWAY:
-            defaultValue: 'Concrete'
+        classes: PATHWAY: {defaultValue: 'Concrete'}
       bp_lanes:
         desc: 'Number of bicycle path lanes for cyclist movement.'
         label: 'No. Bicycle Path Lanes'
         type: Number
         units: Units.lanes
-        classes:
-          PATHWAY:
-            defaultValue: 0
+        classes: PATHWAY: {defaultValue: 0}
       bp_width:
         desc: 'Width of a bicycle path lane for cyclist movement.'
         label: 'Bicycle Path Width'
         type: Number
         decimal: true
         units: Units.m
-        classes:
-          PATHWAY:
-            defaultValue: 2
+        classes: PATHWAY: {defaultValue: 2}
       bp_area:
         desc: 'Area of the drawn bicycle path.'
         label: 'Bicycle Path Area'
@@ -3157,26 +3104,20 @@ typologyCategories =
         label: 'Bicycle Path Profile'
         type: String
         allowedValues: Object.keys(BicyclePathMaterialTypes)
-        classes:
-          PATHWAY:
-            defaultValue: 'Asphalt'
+        classes: PATHWAY: {defaultValue: 'Asphalt'}
       ve_lanes:
         desc: 'Number of verge strips as a buffer for the pathway.'
         label: 'No. Verge Strips'
         type: Number
         units: Units.lanes
-        classes:
-          PATHWAY:
-            defaultValue: 2
+        classes: PATHWAY: {defaultValue: 2}
       ve_width:
         desc: 'Width of verge as a buffer for the pathway.'
         label: 'Verge Width'
         type: Number
         decimal: true
         units: Units.m
-        classes:
-          PATHWAY:
-            defaultValue: 2
+        classes: PATHWAY: {defaultValue: 2}
       ve_area:
         desc: 'Area of the drawn verge.'
         label: 'Verge Area'
@@ -3527,7 +3468,8 @@ Typologies.getExcludedDefaultParameters = _.memoize (typologyClass) ->
   excluded = {}
   SchemaUtils.forEachFieldSchema ParametersSchema, (fieldSchema, paramId) ->
     classes = fieldSchema.classes
-    if classes and !classes[typologyClass]
+    # Exclude the field unless it's permitted explicitly or if all classes are permitted.
+    if Typologies.excludesClassOptions(fieldSchema, typologyClass)
       excluded[paramId] = true
   Typologies.unflattenParameters(excluded, false)
 
@@ -3595,6 +3537,10 @@ Typologies.validate = (typology) ->
       typologyClass) unless SchemaUtils.getParameterValue(typology, fieldId)?
 
 Collections.addValidation(Typologies, Typologies.validate)
+
+Typologies.excludesClassOptions = (schema, typologyClass) ->
+  classOptions = schema.classes
+  typologyClass? && classOptions? && !classOptions[typologyClass] && !classOptions.ALL
 
 ####################################################################################################
 # LOT SCHEMA DEFINITION

@@ -81,14 +81,14 @@ class @EvaluationEngine
 
     # Remove any calculated fields stored in the model which may be left from a previous session.
     if args.removeCalcFields
-      _.each fieldSchemas, (schema, paramId) ->
-        SchemaUtils.setParameterValue(model, paramId, undefined)
+      _.each fieldSchemas, (schema, paramId) =>
+        if @isOutputParam(paramId)
+          SchemaUtils.setParameterValue(model, paramId, undefined)
 
     # Go through output parameters and calculate them recursively.
     _.each fieldSchemas, (schema, paramId) ->
-      classOptions = schema.classes
       # Ignore schema if field doesn't allow typology class.
-      return if typologyClass? && classOptions? && !classOptions[typologyClass]
+      return if Typologies.excludesClassOptions(schema, typologyClass)
       # TODO(aramk) Detect cycles and throw exceptions to prevent infinite loops.
       try
         result = getValueOrCalc(paramId)

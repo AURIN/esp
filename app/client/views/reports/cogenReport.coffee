@@ -20,8 +20,8 @@ Meteor.startup ->
 
       {param: 'energy.cogen.operation.op_hrs_day', aggregate: 'average'}
       {param: 'energy.cogen.operation.op_days_wk', aggregate: 'average'}
-      {param: 'energy.cogen.operation.op_days_wk', aggregate: 'average'}
       {param: 'energy.cogen.operation.op_wks_year', aggregate: 'average'}
+      {param: 'energy.cogen.operation.op_hrs_year', aggregate: 'average'}
 
       {param: 'energy.cogen.output.elec_output', aggregate: 'average'}
       {param: 'energy.cogen.output.th_en_heat', aggregate: 'average'}

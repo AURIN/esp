@@ -82,6 +82,7 @@ Meteor.startup ->
       {param: 'financial.cost_op_w'}
       {param: 'financial.cost_op_t'}
       {param: 'financial.cost_op_t', label: 'Average Operating Cost', aggregate: 'average'}
+      {param: 'financial.cost_op_cogen'}
 
       {title: 'Parking'}
       {param: 'parking.parking_ga'}
