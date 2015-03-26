@@ -13,7 +13,7 @@ Meteor.startup ->
         geom = SchemaUtils.getParameterValue(model, 'space.geom')
         mesh = SchemaUtils.getParameterValue(model, 'space.mesh')
         if geom? || mesh?
-          migratedModelCount += maybeRename(model._id, {
+          migratedModelCount += maybeRename(collection, model._id, {
             'parameters.space.geom': 'parameters.space.geom_2d'
             'parameters.space.mesh': 'parameters.space.geom_3d'
           })
@@ -83,7 +83,7 @@ Meteor.startup ->
       Projects.find().forEach (project) ->
         _.each [Typologies, Entities], (collection) ->
           collection.findByProject(project._id).forEach (model) ->
-            migratedModelCount += maybeRename(model._id, {
+            migratedModelCount += maybeRename(collection, model._id, {
               'parameters.energy_demand.en_heat': 'parameters.energy_demand.therm_en_heat'
               'parameters.energy_demand.en_cool': 'parameters.energy_demand.therm_en_cool'
             })
@@ -172,7 +172,7 @@ Meteor.startup ->
       Projects.find().forEach (project) ->
         _.each [Typologies, Entities], (collection) ->
           collection.findByProject(project._id).forEach (model) ->
-            migratedModelCount += maybeRename(id, {
+            migratedModelCount += maybeRename(collection, model._id, {
               'parameters.water_demand.i_wu_intensity_pot': 'parameters.water_demand.i_wu_intensity_occ'
               'parameters.water_demand.i_wu_intensity': 'parameters.water_demand.i_wu_intensity_m2'
             })
@@ -195,7 +195,7 @@ Meteor.startup ->
       Projects.find().forEach (project) ->
         _.each [Typologies, Entities], (collection) ->
           collection.findByProject(project._id).forEach (model) ->
-            migratedModelCount += maybeRename(model._id, {
+            migratedModelCount += maybeRename(collection, model._id, {
               'parameters.energy_demand.thermal_heat': 'parameters.energy_demand.therm_en_heat'
               'parameters.energy_demand.thermal_cool': 'parameters.energy_demand.therm_en_cool'
             })
@@ -208,7 +208,7 @@ Meteor.startup ->
       modifier.$set = $set
     if Object.keys($unset).length > 0
       modifier.$unset = $unset
-    return 0 if Object.keys(modifier) == 0
+    return 0 if Object.keys(modifier).length == 0
     collection.direct.update({_id: id}, modifier, {validate: false})
 
   maybeRename = (collection, id, $rename) ->
@@ -220,7 +220,7 @@ Meteor.startup ->
     _.each $rename, (repl, fieldId) ->
       unless doc[fieldId]?
         delete $rename[fieldId]
-    return 0 if Object.keys($rename) == 0
+    return 0 if Object.keys($rename).length == 0
     collection.direct.update({_id: id}, {$rename: $rename}, {validate: false})
 
   console.log('Migrating to latest version...')
