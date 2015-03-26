@@ -13,12 +13,10 @@ Meteor.startup ->
         geom = SchemaUtils.getParameterValue(model, 'space.geom')
         mesh = SchemaUtils.getParameterValue(model, 'space.mesh')
         if geom? || mesh?
-          collection.direct.update({_id: model._id}, {
-            $rename:
-              'parameters.space.geom': 'parameters.space.geom_2d'
-              'parameters.space.mesh': 'parameters.space.geom_3d'
-          }, {validate: false})
-          migratedModelCount++
+          migratedModelCount += maybeRename(model._id, {
+            'parameters.space.geom': 'parameters.space.geom_2d'
+            'parameters.space.mesh': 'parameters.space.geom_3d'
+          })
       _.each Typologies.find().fetch(), (model) -> migrateGeom(model, Typologies)
       _.each Entities.find().fetch(), (model) -> migrateGeom(model, Entities)
       _.each Lots.find().fetch(), (model) -> migrateGeom(model, Lots)
@@ -85,11 +83,10 @@ Meteor.startup ->
       Projects.find().forEach (project) ->
         _.each [Typologies, Entities], (collection) ->
           collection.findByProject(project._id).forEach (model) ->
-            migratedModelCount += collection.direct.update({_id: model._id}, {
-              $rename:
-                'parameters.energy_demand.en_heat': 'parameters.energy_demand.therm_en_heat'
-                'parameters.energy_demand.en_cool': 'parameters.energy_demand.therm_en_cool'
-            }, {validate: false})
+            migratedModelCount += maybeRename(model._id, {
+              'parameters.energy_demand.en_heat': 'parameters.energy_demand.therm_en_heat'
+              'parameters.energy_demand.en_cool': 'parameters.energy_demand.therm_en_cool'
+            })
       console.log('Migrated', migratedModelCount, 'models to COP and EER fields.')
 
   Migrations.add
@@ -175,11 +172,10 @@ Meteor.startup ->
       Projects.find().forEach (project) ->
         _.each [Typologies, Entities], (collection) ->
           collection.findByProject(project._id).forEach (model) ->
-            migratedModelCount += collection.direct.update({_id: model._id}, {
-              $rename:
-                'parameters.water_demand.i_wu_intensity_pot': 'parameters.water_demand.i_wu_intensity_occ'
-                'parameters.water_demand.i_wu_intensity': 'parameters.water_demand.i_wu_intensity_m2'
-            }, {validate: false})
+            migratedModelCount += maybeRename(id, {
+              'parameters.water_demand.i_wu_intensity_pot': 'parameters.water_demand.i_wu_intensity_occ'
+              'parameters.water_demand.i_wu_intensity': 'parameters.water_demand.i_wu_intensity_m2'
+            })
       console.log('Migrated', migratedModelCount, 'models by renaming internal water use intensity fields.')
 
   Migrations.add
@@ -199,11 +195,10 @@ Meteor.startup ->
       Projects.find().forEach (project) ->
         _.each [Typologies, Entities], (collection) ->
           collection.findByProject(project._id).forEach (model) ->
-            migratedModelCount += collection.direct.update({_id: model._id}, {
-              $rename:
-                'parameters.energy_demand.thermal_heat': 'parameters.energy_demand.therm_en_heat'
-                'parameters.energy_demand.thermal_cool': 'parameters.energy_demand.therm_en_cool'
-            }, {validate: false})
+            migratedModelCount += maybeRename(model._id, {
+              'parameters.energy_demand.thermal_heat': 'parameters.energy_demand.therm_en_heat'
+              'parameters.energy_demand.thermal_cool': 'parameters.energy_demand.therm_en_cool'
+            })
       console.log('Migrated', migratedModelCount, 'models by renaming internal water use intensity fields.')
 
   maybeUpdate = (collection, id, $set, $unset) ->
@@ -215,6 +210,18 @@ Meteor.startup ->
       modifier.$unset = $unset
     return 0 if Object.keys(modifier) == 0
     collection.direct.update({_id: id}, modifier, {validate: false})
+
+  maybeRename = (collection, id, $rename) ->
+    # Prevent renaming non-existent fields of a doc to prevent MondoDB errors.
+    $rename = Setter.clone($rename)
+    doc = collection.findOne(id)
+    Objects.flattenProperties(doc)
+    return 0 unless doc?
+    _.each $rename, (repl, fieldId) ->
+      unless doc[fieldId]?
+        delete $rename[fieldId]
+    return 0 if Object.keys($rename) == 0
+    collection.direct.update({_id: id}, {$rename: $rename}, {validate: false})
 
   console.log('Migrating to latest version...')
   Migrations.migrateTo('latest')
