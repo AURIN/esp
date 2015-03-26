@@ -2,6 +2,7 @@ Meteor.startup ->
   Reports.define
     name: 'cogenReport'
     title: 'Cogen/Trigen Report'
+    typologyClass: 'RESIDENTIAL'
 
     fields: [
       {title: 'Demand for Cogen/Trigen Energy'}
@@ -26,9 +27,6 @@ Meteor.startup ->
       {param: 'energy.cogen.output.elec_output', aggregate: 'average'}
       {param: 'energy.cogen.output.th_en_heat', aggregate: 'average'}
       {param: 'energy.cogen.output.th_en_cool', aggregate: 'average'}
-
-      {param: 'energy.cogen.thermal.prpn_heat_cap', aggregate: 'average'}
-      {param: 'energy.cogen.thermal.prpn_th_en_h', aggregate: 'average'}
 
       {param: 'cogen.balance.excess_elec'}
       {param: 'cogen.balance.excess_heat'}

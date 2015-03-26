@@ -79,12 +79,15 @@ TemplateClass.helpers
       label: 'Name'
     ]
     onEdit: (args) ->
-      if args.model.isTemplate && !AuthUtils.isAdmin()
+      id = args.ids[0]
+      return unless id
+      model = args.collection.findOne(id)
+      if model.isTemplate && !AuthUtils.isAdmin()
         alert('Only admin users can edit template projects. Click duplicate to create an ' +
           'editable copy.')
         return
       if args.event?.type == 'dblclick'
-        goToPrecinctDesign(args.ids[0])
+        goToPrecinctDesign(id)
       else
         args.defaultHandler()
     onDelete: (args) ->

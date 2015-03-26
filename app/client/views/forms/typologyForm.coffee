@@ -28,7 +28,7 @@ Meteor.startup ->
     Forms.getRequiredLabels($fields).remove()
     $paramInputs = []
     $wrappers = {show: [], hide: []}
-    for key, input of Forms.getSchemaInputs(@, collection)
+    _.each Form.getSchemaInputs(@), (input, key) ->
       fieldSchema = input.field
       isParamField = ParamUtils.hasPrefix(key)
       paramName = ParamUtils.removePrefix(key) if isParamField
@@ -57,7 +57,7 @@ Meteor.startup ->
 
       Forms.addRequiredLabel($label) if classOptions?.optional == false
 
-      continue unless isParamField
+      return unless isParamField
 
       if $input.is('select')
         origInput = origInputs[key]
@@ -269,8 +269,8 @@ Meteor.startup ->
   # WATER
 
   WaterSourceMap =
-    rain_sys: ['i_share_rain', 'share_i_wu_to_grey']
-    grey_sys: ['share_e_wu_pot']
+    rain_sys: ['i_share_rain']
+    grey_sys: ['share_i_wu_to_grey']
   
   Form.updateWaterFields = (template) ->
     # Cancel previous dependencies.

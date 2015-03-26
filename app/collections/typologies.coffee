@@ -2003,7 +2003,7 @@ typologyCategories =
         label: 'Cooktop and Oven Source'
         desc: 'Energy source in the typology used for cooking. Used to calculate CO2-e.'
         type: String
-        allowedValues: EnergySources
+        allowedValues: _.without(EnergySources, EnergySources.COGEN)
         classes: RESIDENTIAL: {defaultValue: ENERGY_SOURCE_ELEC}
       en_elec:
         label: 'Operating Electricity'
@@ -2054,7 +2054,7 @@ typologyCategories =
         decimal: true 
         calc: '$energy_demand.prpn_elec_scheme * $energy_demand.en_elec'
       en_elec_cogen:
-        label: 'Scheme Electricity'
+        label: 'Cogen Electricity'
         desc: 'Electricity demand supplied by scheme power.'
         units: Units.MJyear
         type: Number

@@ -28,6 +28,11 @@ Meteor.startup ->
       {param: 'energy_demand.en_app'}
       {param: 'energy_demand.en_pv'}
       {param: 'energy_demand.en_total'}
+      {param: 'energy_demand.en_elec'}
+      {param: 'energy_demand.en_gas'}
+      {param: 'energy_demand.en_cogen'}
+      {param: 'energy_demand.en_elec_scheme'}
+      {param: 'energy_demand.en_elec_cogen'}
 
       {title: 'Embodied Carbon'}
       {param: 'embodied_carbon.e_co2_green'}
@@ -79,10 +84,10 @@ Meteor.startup ->
       {param: 'financial.cost_prop', label: 'Average Property Cost', aggregate: 'average'}
       {param: 'financial.cost_op_e'}
       {param: 'financial.cost_op_g'}
+      {param: 'financial.cost_op_cogen'}
       {param: 'financial.cost_op_w'}
       {param: 'financial.cost_op_t'}
       {param: 'financial.cost_op_t', label: 'Average Operating Cost', aggregate: 'average'}
-      {param: 'financial.cost_op_cogen'}
 
       {title: 'Parking'}
       {param: 'parking.parking_ga'}
