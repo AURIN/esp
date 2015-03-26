@@ -117,10 +117,7 @@ Meteor.startup ->
               if value?
                 $set[intensityField] = if occupants != 0 then value / occupants else 0
                 $unset[valueField] = null
-            migratedModelCount += collection.direct.update({_id: model._id}, {
-              $set: $set
-              $unset: $unset
-            }, {validate: false})
+            migratedModelCount += maybeUpdate(collection, model._id, $set, $unset)
       console.log('Migrated', migratedModelCount, 'models to water use intensity fields.')
 
   Migrations.add
@@ -145,10 +142,7 @@ Meteor.startup ->
               if value?
                 $set[intensityField] = if gfa != 0 then value / gfa else 0
                 $unset[valueField] = null
-            migratedModelCount += collection.direct.update({_id: model._id}, {
-              $set: $set
-              $unset: $unset
-            }, {validate: false})
+            migratedModelCount += maybeUpdate(collection, model._id, $set, $unset)
       console.log('Migrated', migratedModelCount, 'models to internal embodied co2 intensity.')
 
   Migrations.add
@@ -171,10 +165,7 @@ Meteor.startup ->
               if intensity?
                 $set[valueField] = intensity * occupants
                 $unset[intensityField] = null
-            migratedModelCount += collection.direct.update({_id: model._id}, {
-              $set: $set
-              $unset: $unset
-            }, {validate: false})
+            migratedModelCount += maybeUpdate(collection, model._id, $set, $unset)
       console.log('Migrated', migratedModelCount, 'models to hot water energy demand.')
 
   Migrations.add
@@ -214,6 +205,16 @@ Meteor.startup ->
                 'parameters.energy_demand.thermal_cool': 'parameters.energy_demand.therm_en_cool'
             }, {validate: false})
       console.log('Migrated', migratedModelCount, 'models by renaming internal water use intensity fields.')
+
+  maybeUpdate = (collection, id, $set, $unset) ->
+    # Prevent updating if the $set or $unset are empty to prevent MongoDB errors.
+    modifier = {}
+    if Object.keys($set).length > 0
+      modifier.$set = $set
+    if Object.keys($unset).length > 0
+      modifier.$unset = $unset
+    return 0 if Object.keys(modifier) == 0
+    collection.direct.update({_id: id}, modifier, {validate: false})
 
   console.log('Migrating to latest version...')
   Migrations.migrateTo('latest')

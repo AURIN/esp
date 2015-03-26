@@ -144,5 +144,4 @@ if Meteor.isServer
     $unset = {}
     _.each schemas, (schema, paramId) ->
       $unset[paramId] = null
-    console.log('Removing calculated fields:', Object.keys($unset))
-    _.each docs, (doc) -> collection.update(doc._id, {$unset: $unset})
+    _.each docs, (doc) -> collection.direct.update(doc._id, {$unset: $unset})
