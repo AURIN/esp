@@ -12,11 +12,6 @@ class @EvaluationEngine
     model = args.model
     typologyClass = args.typologyClass
     results = {}
-    typologyFieldSchemas = SchemaUtils.getParamSchemas(@schema, args.paramIds)
-    projectSchema = Collections.getSchema(Projects)
-    projectFieldSchemas = SchemaUtils.getParamSchemas(projectSchema, args.paramIds)
-    fieldSchemas = {}
-    _.extend(fieldSchemas, typologyFieldSchemas, projectFieldSchemas)
     project = args.project ? Projects.findOne(model.project) ? Projects.getCurrent()
     unless project
       throw new Error('No project provided')
@@ -79,11 +74,16 @@ class @EvaluationEngine
         schema: schema
       }), CalcContext)
 
+    typologyFieldSchemas = SchemaUtils.getParamSchemas(@schema, args.paramIds)
+    projectSchema = Collections.getSchema(Projects)
+    projectFieldSchemas = SchemaUtils.getParamSchemas(projectSchema, args.paramIds)
+    fieldSchemas = {}
+    _.extend(fieldSchemas, typologyFieldSchemas, projectFieldSchemas)
+
     # Remove any calculated fields stored in the model which may be left from a previous session.
     if args.removeCalcFields
-      _.each fieldSchemas, (schema, paramId) =>
-        if @isOutputParam(paramId)
-          SchemaUtils.setParameterValue(model, paramId, undefined)
+      _.each SchemaUtils.getOutputParamSchemas(@schema), (schema, paramId) =>
+        SchemaUtils.setParameterValue(model, paramId, undefined)
 
     # Go through output parameters and calculate them recursively.
     _.each fieldSchemas, (schema, paramId) ->

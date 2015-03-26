@@ -49,7 +49,7 @@ Units =
   kgco2kWh: 'kg CO_2-e/kWh'
   kgco2km: 'kg CO_2-e/km'
   kgco2m2: 'kg CO_2-e/m^2'
-  kgco2mj: 'kg CO_2-e/MJ'
+  kgco2MJ: 'kg CO_2-e/MJ'
   kgco2space: 'kg CO_2-e/space'
   kgco2year: 'kg CO_2-e/year'
   kW: 'kW'
@@ -288,6 +288,20 @@ projectCategories =
         decimal: true
         units: Units.kgco2kWh
         defaultValue: 0.229
+      elec_mj:
+        label: 'Carbon per MJ - Electricity'
+        type: Number
+        decimal: true
+        units: Units.kgco2MJ
+        # We must divide by 3.6 since MJ is in the denominator.
+        calc: 'MJ_TO_KWH($operating_carbon.elec)'
+      gas_mj:
+        label: 'Carbon per MJ - Gas'
+        type: Number
+        decimal: true
+        units: Units.kgco2MJ
+        # We must divide by 3.6 since MJ is in the denominator.
+        calc: 'MJ_TO_KWH($operating_carbon.gas)'
       vkt:
         label: 'Carbon per vehicle km travelled'
         type: Number
@@ -967,7 +981,7 @@ projectCategories =
                 label: 'CO2 - Total Plant'
                 type: Number
                 units: Units.kgco2year
-                calc: '$energy.cogen.input.gas_en_input * KWH_TO_MJ($operating_carbon.gas)'
+                calc: '$energy.cogen.input.gas_en_input * $operating_carbon.gas_mj'
               prpn_co2_e:
                 desc: 'Proportion of the power plant\'s CO2 attributable to electricity generation.'
                 label: 'Proportion CO2 - Electricity'
@@ -1009,21 +1023,21 @@ projectCategories =
                 label: 'CO2 Intensity - Electricity'
                 type: Number
                 decimal: true
-                units: Units.kgco2mj
+                units: Units.kgco2MJ
                 calc: '$energy.cogen.operating_carbon.co2_op_e_cogen / $energy.cogen.output.elec_output'
               co2_int_heat:
                 desc: 'CO2 intensity of power plant\'s hot thermal energy.'
                 label: 'CO2 Intensity - Hot Thermal'
                 type: Number
                 decimal: true
-                units: Units.kgco2mj
+                units: Units.kgco2MJ
                 calc: '$energy.cogen.operating_carbon.co2_op_h_cogen / $energy.cogen.output.th_en_heat'
               co2_int_cool:
                 desc: 'CO2 intensity of power plant\'s cold thermal energy.'
                 label: 'CO2 Intensity - Cold Thermal'
                 type: Number
                 decimal: true
-                units: Units.kgco2mj
+                units: Units.kgco2MJ
                 calc: '$energy.cogen.operating_carbon.co2_op_c_cogen / $energy.cogen.output.th_en_cool'
   parking:
     label: 'Parking'
@@ -1503,12 +1517,13 @@ calcEnergyC02 = (sourceParamId, energyParamId, cogenIntensityParamId) ->
 
 calcEnergyCogenC02 = (type) ->
   elec_output = @param('energy.cogen.output.elec_output')
-  elec_rate = @calc('KWH_TO_MJ($operating_carbon.elec)')
+  elec_rate = @calc('$operating_carbon.elec_mj')
+  gas_rate = @calc('$operating_carbon.gas_mj')
   th_en_heat = @param('energy.cogen.output.th_en_heat')
   th_en_cool = @param('energy.cogen.output.th_en_cool')
 
   elec_emissions = elec_output * elec_rate
-  heat_emissions = th_en_heat / 0.75 * elec_rate
+  heat_emissions = th_en_heat / 0.75 * gas_rate
   cool_emissions = th_en_cool / 4 * elec_rate
 
   emissionsMap = {elec: elec_emissions, heat: heat_emissions, cool: cool_emissions}
@@ -2395,7 +2410,7 @@ typologyCategories =
         type: Number
         decimal: true
         units: Units.kgco2year
-        calc: '$energy_demand.en_app * KWH_TO_MJ($operating_carbon.elec) * $energy_demand.prpn_elec_scheme + $energy_demand.en_app * $energy.cogen.operating_carbon.co2_int_elec * (1 - $energy_demand.prpn_elec_scheme)'
+        calc: '$energy_demand.en_app * $operating_carbon.elec_mj * $energy_demand.prpn_elec_scheme + $energy_demand.en_app * $energy.cogen.operating_carbon.co2_int_elec * (1 - $energy_demand.prpn_elec_scheme)'
       co2_trans:
         label: 'Transport'
         desc: 'CO2-e emissions due to transport.'
