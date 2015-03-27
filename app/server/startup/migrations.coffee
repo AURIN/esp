@@ -201,6 +201,36 @@ Meteor.startup ->
             })
       console.log('Migrated', migratedModelCount, 'models by renaming internal water use intensity fields.')
 
+  Migrations.add
+    version: 13
+    up: ->
+      filesList = FileUtils.getFileSystemList()
+      console.log('Removing references to non-existent files', filesList)
+      return unless filesList.length > 0
+      
+      filesMap = {}
+      _.each filesList, (file) ->
+        filesMap[file] = true
+
+      migratedModelCount = 0
+      Projects.find().forEach (project) ->
+        console.log('Project', project)
+        Typologies.findByProject(project._id).forEach (model) ->
+          _.each ['geom_2d', 'geom_3d'], (suffix) ->
+            paramId = ParamUtils.addPrefix('space.' + suffix)
+            filenameParamId = paramId + '_filename'
+            value = SchemaUtils.getParameterValue(model, paramId)
+            origFilename = SchemaUtils.getParameterValue(model, filenameParamId)
+            if Files.findOne(value)
+              filename = 'files-' + value + '-undefined'
+              unless filesMap[filename]
+                $unset = {}
+                $unset[paramId] = null
+                migratedModelCount += Typologies.direct.update({_id: model._id}, {$unset: $unset})
+                console.log('Removed:', model.name, suffix, filename, origFilename)
+        console.log('')
+      console.log('Migrated', migratedModelCount, 'models by removing invalid file references.')
+
   maybeUpdate = (collection, id, $set, $unset) ->
     # Prevent updating if the $set or $unset are empty to prevent MongoDB errors.
     modifier = {}

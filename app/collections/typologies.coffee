@@ -1628,10 +1628,10 @@ typologyCategories =
         type: String
         desc: '2D footprint geometry of the typology.'
         classes: extendBuildingClasses
-          RESIDENTIAL: {optional: false}
-          COMMERCIAL: {optional: false}
-          INSTITUTIONAL: {optional: false}
-          MIXED_USE: {optional: false}
+          # RESIDENTIAL: {optional: false}
+          # COMMERCIAL: {optional: false}
+          # INSTITUTIONAL: {optional: false}
+          # MIXED_USE: {optional: false}
           # Pathway typologies don't have geometry - it is defined in the entities - so this is
           # optional.
           PATHWAY: {}

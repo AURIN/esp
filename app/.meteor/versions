@@ -7,13 +7,13 @@ aldeed:collection2@2.3.2
 aldeed:simple-schema@1.3.0
 anti:i18n@0.4.3
 aramk:collection-table@0.3.3
-aramk:dropdown@0.4.1
+aramk:dropdown@0.4.2
 aramk:file-upload@0.2.4
 aramk:pubsub@1.5.0
 aramk:q@1.0.1_1
 aramk:requirejs@2.1.15_1
 aramk:tinycolor@1.1.0_1
-aramk:utility@0.8.0
+aramk:utility@0.8.1
 aslagle:reactive-table@0.4.2
 autoupdate@1.2.0
 awatson1978:dropzone@1.0.2
@@ -113,7 +113,7 @@ urbanetic:accounts-aurin@0.1.2
 urbanetic:accounts-local@0.1.1
 urbanetic:atlas@0.8.0
 urbanetic:atlas-cesium@0.8.0
-urbanetic:atlas-util@0.2.5
+urbanetic:atlas-util@0.2.6
 urbanetic:aurin-acs@0.1.0
 urbanetic:subdiv@0.5.3
 url@1.0.4
