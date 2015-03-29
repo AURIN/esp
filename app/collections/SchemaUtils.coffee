@@ -111,18 +111,23 @@ global = @
 
   getOutputParamSchemas: (arg, paramIds) ->
     schema = Collections.getSchema(arg)
-    unless paramIds
+    if paramIds
+      paramIds = _.map paramIds, (paramId) -> ParamUtils.addPrefix(paramId)
+    else
       paramIds = schema._schemaKeys
     schemas = {}
     for key in paramIds
-      key = ParamUtils.addPrefix(key)
-      schema = @getField(key, arg)
-      if schema?
-        if schema.calc?
-          # Skip input fields which never need to be evaluated.
-          schemas[key] = schema
-      else
-        console.error('Skipping unknown parameter', key, 'not found in schema', schema)
+      fieldSchema = @getField(key, arg)
+      if fieldSchema?.calc?
+        schemas[key] = schema
+    schemas
+
+  getParamSchemas: (arg, paramIds) ->
+    schemas = {}
+    _.each paramIds, (paramId) =>
+      field = @getField(ParamUtils.addPrefix(paramId), arg)
+      if field?
+        schemas[paramId] = field
     schemas
 
 if Meteor.isServer
@@ -138,5 +143,8 @@ if Meteor.isServer
     $unset = {}
     _.each schemas, (schema, paramId) ->
       $unset[paramId] = null
-    console.log('Removing calculated fields:', Object.keys($unset))
-    _.each docs, (doc) -> collection.update(doc._id, {$unset: $unset})
+    return 0 unless Object.keys($unset).length > 0
+    total = 0
+    _.each docs, (doc) ->
+      total += collection.direct.update(doc._id, {$unset: $unset})
+    total

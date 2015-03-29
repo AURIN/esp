@@ -112,7 +112,7 @@ Meteor.startup ->
       lot = Lots.findOne(id)
       typologyClass = SchemaUtils.getParameterValue(lot, 'general.class')
       isForDevelopment = SchemaUtils.getParameterValue(lot, 'general.develop')
-      typologyClassArgs = Typologies.classes[typologyClass]
+      typologyClassArgs = Typologies.Classes[typologyClass]
       # Reduce saturation of non-develop lots. Ensure full saturation for develop lots.
       color = '#ccc'
       if typologyClassArgs

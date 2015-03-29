@@ -13,12 +13,10 @@ Meteor.startup ->
         geom = SchemaUtils.getParameterValue(model, 'space.geom')
         mesh = SchemaUtils.getParameterValue(model, 'space.mesh')
         if geom? || mesh?
-          collection.direct.update({_id: model._id}, {
-            $rename:
-              'parameters.space.geom': 'parameters.space.geom_2d'
-              'parameters.space.mesh': 'parameters.space.geom_3d'
-          }, {validate: false})
-          migratedModelCount++
+          migratedModelCount += maybeRename(collection, model._id, {
+            'parameters.space.geom': 'parameters.space.geom_2d'
+            'parameters.space.mesh': 'parameters.space.geom_3d'
+          })
       _.each Typologies.find().fetch(), (model) -> migrateGeom(model, Typologies)
       _.each Entities.find().fetch(), (model) -> migrateGeom(model, Entities)
       _.each Lots.find().fetch(), (model) -> migrateGeom(model, Lots)
@@ -85,11 +83,10 @@ Meteor.startup ->
       Projects.find().forEach (project) ->
         _.each [Typologies, Entities], (collection) ->
           collection.findByProject(project._id).forEach (model) ->
-            migratedModelCount += collection.direct.update({_id: model._id}, {
-              $rename:
-                'parameters.energy_demand.en_heat': 'parameters.energy_demand.thermal_heat'
-                'parameters.energy_demand.en_cool': 'parameters.energy_demand.thermal_cool'
-            }, {validate: false})
+            migratedModelCount += maybeRename(collection, model._id, {
+              'parameters.energy_demand.en_heat': 'parameters.energy_demand.therm_en_heat'
+              'parameters.energy_demand.en_cool': 'parameters.energy_demand.therm_en_cool'
+            })
       console.log('Migrated', migratedModelCount, 'models to COP and EER fields.')
 
   Migrations.add
@@ -117,10 +114,7 @@ Meteor.startup ->
               if value?
                 $set[intensityField] = if occupants != 0 then value / occupants else 0
                 $unset[valueField] = null
-            migratedModelCount += collection.direct.update({_id: model._id}, {
-              $set: $set
-              $unset: $unset
-            }, {validate: false})
+            migratedModelCount += maybeUpdate(collection, model._id, $set, $unset)
       console.log('Migrated', migratedModelCount, 'models to water use intensity fields.')
 
   Migrations.add
@@ -145,10 +139,7 @@ Meteor.startup ->
               if value?
                 $set[intensityField] = if gfa != 0 then value / gfa else 0
                 $unset[valueField] = null
-            migratedModelCount += collection.direct.update({_id: model._id}, {
-              $set: $set
-              $unset: $unset
-            }, {validate: false})
+            migratedModelCount += maybeUpdate(collection, model._id, $set, $unset)
       console.log('Migrated', migratedModelCount, 'models to internal embodied co2 intensity.')
 
   Migrations.add
@@ -171,10 +162,7 @@ Meteor.startup ->
               if intensity?
                 $set[valueField] = intensity * occupants
                 $unset[intensityField] = null
-            migratedModelCount += collection.direct.update({_id: model._id}, {
-              $set: $set
-              $unset: $unset
-            }, {validate: false})
+            migratedModelCount += maybeUpdate(collection, model._id, $set, $unset)
       console.log('Migrated', migratedModelCount, 'models to hot water energy demand.')
 
   Migrations.add
@@ -184,11 +172,10 @@ Meteor.startup ->
       Projects.find().forEach (project) ->
         _.each [Typologies, Entities], (collection) ->
           collection.findByProject(project._id).forEach (model) ->
-            migratedModelCount += collection.direct.update({_id: model._id}, {
-              $rename:
-                'parameters.water_demand.i_wu_intensity_pot': 'parameters.water_demand.i_wu_intensity_occ'
-                'parameters.water_demand.i_wu_intensity': 'parameters.water_demand.i_wu_intensity_m2'
-            }, {validate: false})
+            migratedModelCount += maybeRename(collection, model._id, {
+              'parameters.water_demand.i_wu_intensity_pot': 'parameters.water_demand.i_wu_intensity_occ'
+              'parameters.water_demand.i_wu_intensity': 'parameters.water_demand.i_wu_intensity_m2'
+            })
       console.log('Migrated', migratedModelCount, 'models by renaming internal water use intensity fields.')
 
   Migrations.add
@@ -200,6 +187,71 @@ Meteor.startup ->
           SchemaUtils.removeCalcFields(collection)
           migratedModelCount += collection.find().count()
       console.log('Migrated', migratedModelCount, 'models by removing calculated fields.')
+
+  Migrations.add
+    version: 12
+    up: ->
+      migratedModelCount = 0
+      Projects.find().forEach (project) ->
+        _.each [Typologies, Entities], (collection) ->
+          collection.findByProject(project._id).forEach (model) ->
+            migratedModelCount += maybeRename(collection, model._id, {
+              'parameters.energy_demand.thermal_heat': 'parameters.energy_demand.therm_en_heat'
+              'parameters.energy_demand.thermal_cool': 'parameters.energy_demand.therm_en_cool'
+            })
+      console.log('Migrated', migratedModelCount, 'models by renaming internal water use intensity fields.')
+
+  Migrations.add
+    version: 13
+    up: ->
+      filesList = FileUtils.getFileSystemList()
+      console.log('Removing references to non-existent files', filesList)
+      return unless filesList.length > 0
+      
+      filesMap = {}
+      _.each filesList, (file) ->
+        filesMap[file] = true
+
+      migratedModelCount = 0
+      Projects.find().forEach (project) ->
+        console.log('Project', project)
+        Typologies.findByProject(project._id).forEach (model) ->
+          _.each ['geom_2d', 'geom_3d'], (suffix) ->
+            paramId = ParamUtils.addPrefix('space.' + suffix)
+            filenameParamId = paramId + '_filename'
+            value = SchemaUtils.getParameterValue(model, paramId)
+            origFilename = SchemaUtils.getParameterValue(model, filenameParamId)
+            if Files.findOne(value)
+              filename = 'files-' + value + '-undefined'
+              unless filesMap[filename]
+                $unset = {}
+                $unset[paramId] = null
+                migratedModelCount += Typologies.direct.update({_id: model._id}, {$unset: $unset})
+                console.log('Removed:', model.name, suffix, filename, origFilename)
+        console.log('')
+      console.log('Migrated', migratedModelCount, 'models by removing invalid file references.')
+
+  maybeUpdate = (collection, id, $set, $unset) ->
+    # Prevent updating if the $set or $unset are empty to prevent MongoDB errors.
+    modifier = {}
+    if Object.keys($set).length > 0
+      modifier.$set = $set
+    if Object.keys($unset).length > 0
+      modifier.$unset = $unset
+    return 0 if Object.keys(modifier).length == 0
+    collection.direct.update({_id: id}, modifier, {validate: false})
+
+  maybeRename = (collection, id, $rename) ->
+    # Prevent renaming non-existent fields of a doc to prevent MondoDB errors.
+    $rename = Setter.clone($rename)
+    doc = collection.findOne(id)
+    Objects.flattenProperties(doc)
+    return 0 unless doc?
+    _.each $rename, (repl, fieldId) ->
+      unless doc[fieldId]?
+        delete $rename[fieldId]
+    return 0 if Object.keys($rename).length == 0
+    collection.direct.update({_id: id}, {$rename: $rename}, {validate: false})
 
   console.log('Migrating to latest version...')
   Migrations.migrateTo('latest')

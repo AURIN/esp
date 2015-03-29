@@ -19,7 +19,7 @@ Meteor.startup ->
     onRender: ->
       docs = @data.docs
       # Populate all form fields with any common values across docs if possible.
-      _.each Forms.getSchemaInputs(@, schema), (input, key) ->
+      _.each Form.getSchemaInputs(@), (input, key) ->
         isParamField = ParamUtils.hasPrefix(key)
         return unless isParamField
         $input = $(input.node)

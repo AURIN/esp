@@ -11,8 +11,7 @@ class @EvaluationEngine
     }, args)
     model = args.model
     typologyClass = args.typologyClass
-    changes = {}
-    schemas = SchemaUtils.getOutputParamSchemas(@schema, args.paramIds)
+    results = {}
     project = args.project ? Projects.findOne(model.project) ? Projects.getCurrent()
     unless project
       throw new Error('No project provided')
@@ -21,7 +20,7 @@ class @EvaluationEngine
     getValueOrCalc = (paramId) =>
       # NOTE: Parameters may reference other parameters which were not requested for evaluation, so
       # don't restrict searching to within the given paramIds.
-      unless @getParamSchema(paramId) || @isGlobalParam(paramId)
+      unless @getParamSchema(paramId)
         throw new Error('Cannot find parameter with ID ' + paramId)
       # Use existing calculated value if available. NOTE: do not sanitize to allow checking whether
       # the value exists.
@@ -41,17 +40,14 @@ class @EvaluationEngine
         result = calc.call(calc.context)
         result = @sanitizeParamValue(paramId, result)
         # Store the calculated value to prevent calculating again.
-        @setResult(model, paramId, result)
+        target = if @isGlobalParam(paramId) then project else model
+        @setResult(target, paramId, result)
         result
       else
         throw new Error('Invalid calculation property - must be function, is of type ' +
           Types.getTypeOf(calc))
 
-    getValue = (paramId) =>
-      value = SchemaUtils.getParameterValue(model, paramId)
-      unless value?
-        value = getGlobalValue(paramId)
-      value
+    getValue = (paramId) => SchemaUtils.getParameterValue(model, paramId) ? getGlobalValue(paramId)
 
     getGlobalValue = (paramId) -> SchemaUtils.getParameterValue(project, paramId)
 
@@ -78,29 +74,36 @@ class @EvaluationEngine
         schema: schema
       }), CalcContext)
 
+    typologyFieldSchemas = SchemaUtils.getParamSchemas(@schema, args.paramIds)
+    projectSchema = Collections.getSchema(Projects)
+    projectFieldSchemas = SchemaUtils.getParamSchemas(projectSchema, args.paramIds)
+    fieldSchemas = {}
+    _.extend(fieldSchemas, typologyFieldSchemas, projectFieldSchemas)
+
     # Remove any calculated fields stored in the model which may be left from a previous session.
     if args.removeCalcFields
-      _.each schemas, (schema, paramId) ->
+      _.each SchemaUtils.getOutputParamSchemas(@schema), (schema, paramId) =>
         SchemaUtils.setParameterValue(model, paramId, undefined)
 
     # Go through output parameters and calculate them recursively.
-    _.each schemas, (schema, paramId) ->
-      classOptions = schema.classes
+    _.each fieldSchemas, (schema, paramId) ->
       # Ignore schema if field doesn't allow typology class.
-      return if typologyClass? && classOptions? && !classOptions[typologyClass]
+      return if Typologies.excludesClassOptions(schema, typologyClass)
       # TODO(aramk) Detect cycles and throw exceptions to prevent infinite loops.
       try
         result = getValueOrCalc(paramId)
       catch e
         console.error('Failed to evaluate parameter', paramId, e)
       if result?
-        changes[paramId] = result
-    changes
+        results[paramId] = result
+    results
 
   setResult: (model, paramId, value) ->
     SchemaUtils.setParameterValue(model, paramId, value)
 
-  getParamSchema: (paramId) -> @schema.schema(ParamUtils.addPrefix(paramId))
+  getParamSchema: (paramId) ->
+    paramId = ParamUtils.addPrefix(paramId)
+    @schema.schema(paramId) ? @getGlobalParamSchema(paramId)
 
   isOutputParam: (paramId) ->
     schema = @getParamSchema(paramId)
@@ -115,7 +118,9 @@ class @EvaluationEngine
         value = Math.round(value)
     value
 
-  isGlobalParam: (paramId) -> Projects.simpleSchema().schema(ParamUtils.addPrefix(paramId))
+  getGlobalParamSchema: (paramId) -> SchemaUtils.getField(ParamUtils.addPrefix(paramId), Projects)
+
+  isGlobalParam: (paramId) -> @getGlobalParamSchema(paramId)?
 
 NULL_VALUE = 0
 sanitizeValue = (value) -> value ? 0

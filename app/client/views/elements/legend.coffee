@@ -1,3 +1,3 @@
 Template.legend.helpers
   items: ->
-    _.map Typologies.classes, (args, name) -> args
+    _.map Typologies.Classes, (args, name) -> args

@@ -28,7 +28,7 @@ Meteor.startup ->
     Forms.getRequiredLabels($fields).remove()
     $paramInputs = []
     $wrappers = {show: [], hide: []}
-    for key, input of Forms.getSchemaInputs(@, collection)
+    _.each Form.getSchemaInputs(@), (input, key) ->
       fieldSchema = input.field
       isParamField = ParamUtils.hasPrefix(key)
       paramName = ParamUtils.removePrefix(key) if isParamField
@@ -57,7 +57,7 @@ Meteor.startup ->
 
       Forms.addRequiredLabel($label) if classOptions?.optional == false
 
-      continue unless isParamField
+      return unless isParamField
 
       if $input.is('select')
         origInput = origInputs[key]
@@ -112,6 +112,9 @@ Meteor.startup ->
     # Toggle visibility of azimuth array inputs.
     azimuthClasses = SchemaUtils.getField('parameters.orientation.azimuth', Typologies).classes
     @$('.azimuth-array').toggle(!!azimuthClasses[typologyClass])
+    # This needs to be called each time we update fields since it binds to select fields, which
+    # are re-created each time.
+    Tracker.nonreactive => Form.updateCogenFields(@)
     # Toggle visibility of the fields. Apply a class to allow both this and individual event
     # handlers to detemine visibility. The field is only visible if it's both available in the class
     # and also not hidden by event handlers.
@@ -127,32 +130,24 @@ Meteor.startup ->
     $azimuthFields.on('keyup', _.debounce(onAzimuthChange, 300))
     # Bind event to build type dropdown
     getBuildTypeSelect(@).on 'change', => Form.updateBuildType(@)
+    Form.updateWaterFields(@)
 
   Form = Forms.defineModelForm
     name: 'typologyForm'
     collection: collection
+    onCreate: ->
+      @reactiveClass = new ReactiveVar()
+      @reactiveSubClass = new ReactiveVar()
     onRender: ->
       bindEvents.call(@)
+      $class = getClassInput(@)
       $subclass = getSubclassSelect(@)
-      # Prevent infinite loop when updating the fields changes the subclasses dropdown.
-      preventSubclassChange = false
-      getClassInput(@).on 'change', =>
-        # Remove the subclass when selecting a different class and wait for the new subclass to
-        # populate.
-        preventSubclassChange = true
-        Template.dropdown.setValue($subclass, null)
+      Template.dropdown.bindVarToElement($class, @reactiveClass)
+      Template.dropdown.bindVarToElement($subclass, @reactiveSubClass)
+      @autorun =>
+        typologyClass = @reactiveClass.get()
+        subclass = @reactiveSubClass.get()
         updateFields.call(@)
-        preventSubclassChange = false
-      # Prevent dropdown from triggering value changes when updating fields when the value has not
-      # actually changed.
-      onSubClassChange = =>
-        return if preventSubclassChange
-        preventSubclassChange = true
-        # Prevent updating the subclass collection which will result in unnecessary updates and
-        # delays.
-        updateFields.call(@, {populateSubclasses: false})
-        preventSubclassChange = false
-      $subclass.on 'change', _.throttle(onSubClassChange, 1000, {trailing: false})
       doc = @data.doc
       updateFieldsArgs = {}
       # Since subclass is used to determine values, pass in the doc value initially since the input
@@ -228,8 +223,8 @@ Meteor.startup ->
     cfa = parameters.space?.cfa
     $heating = template.$('[data-name="parameters.orientation.eq_azmth_h"]')
     $cooling = template.$('[data-name="parameters.orientation.eq_azmth_c"]')
-    $heatingOutput = template.$('[name="parameters.energy_demand.thermal_heat"]')
-    $coolingOutput = template.$('[name="parameters.energy_demand.thermal_cool"]')
+    $heatingOutput = template.$('[name="parameters.energy_demand.therm_en_heat"]')
+    $coolingOutput = template.$('[name="parameters.energy_demand.therm_en_cool"]')
     $cfa = getCfaInput(template)
     {
       cfa: {value: cfa, $cfa: $cfa}
@@ -245,6 +240,55 @@ Meteor.startup ->
   Form.updateBuildType = (template) ->
     buildType = getBuildTypeValue(template)
     getCostOfConstructionInput(template).parent().toggle(buildType == 'Custom')
+
+  # COGEN
+
+  CogenSourceMap =
+    src_heat: 'cop_heat'
+    src_cool: 'eer_cool'
+    src_hwat: 'cop_hws'
+
+  Form.updateCogenFields = (template) ->
+    # Cancel previous dependencies.
+    _.each template.cogenHandles, (handle) -> handle.stop()
+    # Selecting cogen as the source for sources should hide certain fields which are not used.
+    handles = template.cogenHandles = []
+    prefix = 'energy_demand.'
+    _.each CogenSourceMap, (toggleParamId, sourceParamId) ->
+      sourceParamId = ParamUtils.addPrefix(prefix + sourceParamId)
+      toggleParamId = ParamUtils.addPrefix(prefix + toggleParamId)
+      $source = Form.getFieldElement(sourceParamId)
+      $toggle = Form.getFieldElement(toggleParamId)
+      reactiveVar = new ReactiveVar($source.val())
+      Templates.bindVarToElement($source, reactiveVar)
+      handles.push template.autorun ->
+        value = reactiveVar.get()
+        isVisible = value != Typologies.EnergySources.COGEN
+        $toggle.parent().toggle(isVisible)
+
+  # WATER
+
+  WaterSourceMap =
+    rain_sys: ['i_share_rain']
+    grey_sys: ['share_i_wu_to_grey']
+  
+  Form.updateWaterFields = (template) ->
+    # Cancel previous dependencies.
+    _.each template.waterHandles, (handle) -> handle.stop()
+    # Only show water fields if their system is enabled.
+    handles = template.waterHandles = []
+    prefix = 'water_demand.'
+    _.each WaterSourceMap, (toggleParamIds, sourceParamId) ->
+      sourceParamId = ParamUtils.addPrefix(prefix + sourceParamId)
+      $source = Form.getFieldElement(sourceParamId)
+      _.each toggleParamIds, (toggleParamId) ->
+        toggleParamId = ParamUtils.addPrefix(prefix + toggleParamId)
+        $toggle = Form.getFieldElement(toggleParamId)
+        reactiveVar = new ReactiveVar($source.is(':checked'))
+        Templates.bindVarToCheckbox($source, reactiveVar)
+        handles.push template.autorun ->
+          value = reactiveVar.get()
+          $toggle.parent().toggle(!!value)
 
   # ELEMENTS
 

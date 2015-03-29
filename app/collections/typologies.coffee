@@ -2,6 +2,8 @@
 # SCHEMA OPTIONS
 ####################################################################################################
 
+COLLECTIONS_DEBUG = false
+
 SimpleSchema.debug = true
 SimpleSchema.extendOptions
 # Optional extra fields.
@@ -32,16 +34,22 @@ Units =
   $kWh: '$/kWh'
   $MJ: '$/MJ'
   $kL: '$/kL'
+  daysWeek: 'days/week'
   deg: 'degrees'
+  dwellings: 'dwellings'
+  floors: 'floors'
   GJyear: 'GJ/year'
   GJyearOccupant: 'GJ/year/occupant'
   ha: 'ha'
+  hrsDay: 'hours/day'
+  hrsYear: 'hours/year'
   jobs: 'jobs'
   kgco2: 'kg CO_2-e'
   kgco2day: 'kg CO_2-e/day'
   kgco2kWh: 'kg CO_2-e/kWh'
   kgco2km: 'kg CO_2-e/km'
   kgco2m2: 'kg CO_2-e/m^2'
+  kgco2MJ: 'kg CO_2-e/MJ'
   kgco2space: 'kg CO_2-e/space'
   kgco2year: 'kg CO_2-e/year'
   kW: 'kW'
@@ -70,8 +78,10 @@ Units =
   spaces: 'spaces'
   spacesm: 'spaces/m'
   tripsday: 'trips/day'
+  tripsdwelling: 'trips/day'
   tripsyear: 'trips/year'
   vehicles: 'vehicles'
+  weeksYear: 'weeks/year'
   years: 'years'
 
 extendSchema = (orig, changes) -> _.extend({}, orig, changes)
@@ -98,6 +108,8 @@ autoLabel = (field, id) ->
 createCategorySchemaObj = (cat, catId, args) ->
   catSchemaFields = {}
   hasRequiredField = false
+  # Category-wide classes definition.
+  catClasses = cat.classes
   _.each cat.items, (item, itemId) ->
     if item.items?
       result = createCategorySchemaObj(item, itemId, args)
@@ -110,6 +122,8 @@ createCategorySchemaObj = (cat, catId, args) ->
       if fieldSchema.optional == false
         hasRequiredField = true
       autoLabel(fieldSchema, itemId)
+      if catClasses
+        fieldSchema.classes ?= catClasses
       # If defaultValue is used, put it into "classes" to prevent SimpleSchema from storing this
       # value in the doc. We want to inherit this value at runtime for all classes, but not
       # persist it in multiple documents in case we want to change it later in the schema.
@@ -128,10 +142,12 @@ createCategorySchemaObj = (cat, catId, args) ->
           # console.log('BuildingClasses', BuildingClasses)
           # console.log('extend', extendBuildingClasses())
           throw new Error('Default value specified on field ' + itemId + ' and in classOptions - only use one.')
-        # console.log('setting defualt value', allClassOptions)
+        # console.log('setting default value', allClassOptions)
         allClassOptions.defaultValue = defaultValue
         delete fieldSchema.defaultValue
     catSchemaFields[itemId] = fieldSchema
+  if COLLECTIONS_DEBUG
+    console.log('catSchemaFields', catSchemaFields)
   catSchema = new SimpleSchema(catSchemaFields)
   catSchemaArgs = _.extend({
     # If a single field is required, the entire category is marked required. If no fields are
@@ -154,6 +170,8 @@ createCategoriesSchema = (args) ->
   for catId, cat of cats
     result = createCategorySchemaObj(cat, catId, args)
     catsFields[catId] = result.schema
+  if COLLECTIONS_DEBUG
+    console.log('catsFields', catsFields)
   new SimpleSchema(catsFields)
 
 forEachCategoryField = (category, callback) ->
@@ -270,6 +288,20 @@ projectCategories =
         decimal: true
         units: Units.kgco2kWh
         defaultValue: 0.229
+      elec_mj:
+        label: 'Carbon per MJ - Electricity'
+        type: Number
+        decimal: true
+        units: Units.kgco2MJ
+        # We must divide by 3.6 since MJ is in the denominator.
+        calc: 'MJ_TO_KWH($operating_carbon.elec)'
+      gas_mj:
+        label: 'Carbon per MJ - Gas'
+        type: Number
+        decimal: true
+        units: Units.kgco2MJ
+        # We must divide by 3.6 since MJ is in the denominator.
+        calc: 'MJ_TO_KWH($operating_carbon.gas)'
       vkt:
         label: 'Carbon per vehicle km travelled'
         type: Number
@@ -309,7 +341,19 @@ projectCategories =
         label: 'Gas Usage Price'
         type: Number
         decimal: true
-        units: '$/MJ'
+        units: Units.$MJ
+        defaultValue: 0.024
+      price_supply_cogen:
+        label: 'Cogen/Trigen Supply Charge'
+        type: Number
+        decimal: true
+        units: Units.$day
+        defaultValue: 0
+      price_usage_cogen:
+        label: 'Cogen/Trigen Usage Charge'
+        type: Number
+        decimal: true
+        units: Units.$MJ
         defaultValue: 0.024
       price_supply_water:
         label: 'Water Supply Charge'
@@ -814,6 +858,187 @@ projectCategories =
             type: Number
             units: Units.MJ
             defaultValue: 10951
+      cogen:
+        label: 'Cogen/Trigen'
+        items:
+          spec:
+            label: 'Plant Specifications'
+            items:
+              plant_size:
+                desc: 'Power plant size.'
+                label: 'Power Plant Size'
+                type: Number
+                decimal: true
+                units: Units.kW
+                defaultValue: 50
+              plant_eff:
+                desc: 'Power plant efficiency.'
+                label: 'Power Plant Efficiency'
+                type: Number
+                decimal: true
+                defaultValue: 0.35
+              cop_heat:
+                desc: 'Coefficient of performance of the heat exchanger.'
+                label: 'COP (Heat exchanger)'
+                type: Number
+                decimal: true
+                defaultValue: 0.8
+              cop_cool:
+                desc: 'Coefficient of performance of the absorbtion chiller.'
+                label: 'COP (Absorbtion chiller)'
+                type: Number
+                decimal: true
+                defaultValue: 0.7
+          operation:
+            label: 'Plant Operation'
+            items:
+              op_hrs_day:
+                desc: 'Power plant operating hours per day.'
+                label: 'Operating Hours per Day'
+                type: Number
+                units: Units.hrsDay
+                defaultValue: 12
+              op_days_wk:
+                desc: 'Power plant operating days per week.'
+                label: 'Operating Days per Week'
+                type: Number
+                units: Units.daysWeek
+                defaultValue: 7
+              op_wks_year:
+                desc: 'Power plant operating weeks per year.'
+                label: 'Operating Weeks per Year'
+                type: Number
+                units: Units.weeksYear
+                defaultValue: 52
+              op_hrs_year:
+                desc: 'Power plant operating hours per year.'
+                label: 'Operating Hours per Year'
+                type: Number
+                units: Units.hrsYear
+                calc: '$energy.cogen.operation.op_hrs_day * $energy.cogen.operation.op_days_wk * $energy.cogen.operation.op_wks_year'
+          output:
+            label: 'Plant Output'
+            items:
+              elec_output:
+                desc: 'Power plant electricity generated.'
+                label: 'Electricity Output'
+                type: Number
+                units: Units.MJyear
+                calc: 'KWH_TO_MJ($energy.cogen.spec.plant_size) * $energy.cogen.spec.plant_eff * $energy.cogen.operation.op_hrs_year'
+              prim_th_en:
+                desc: 'Power plant primary thermal energy generated.'
+                label: 'Primary Thermal Energy Generated'
+                type: Number
+                units: Units.MJyear
+                calc: 'KWH_TO_MJ($energy.cogen.spec.plant_size) * (1 - $energy.cogen.spec.plant_eff) * $energy.cogen.operation.op_hrs_year'
+              th_en_heat:
+                desc: 'Thermal energy available for space and water heating.'
+                label: 'Thermal Energy - Heating'
+                type: Number
+                units: Units.MJyear
+                calc: '$energy.cogen.thermal.th_en_cap * $energy.cogen.thermal.prpn_th_en_h * $energy.cogen.spec.cop_heat'
+              th_en_cool:
+                desc: 'Thermal energy available for space cooling.'
+                label: 'Thermal Energy - Cooling'
+                type: Number
+                units: Units.MJyear
+                calc: '$energy.cogen.thermal.th_en_cap * (1 - $energy.cogen.thermal.prpn_th_en_h) * $energy.cogen.spec.cop_cool'
+          input:
+            label: 'Plant Input'
+            items:
+              gas_en_input:
+                desc: 'Energy required for power plant operation.'
+                label: 'Energy Input Requirment (Gas)'
+                type: Number
+                units: Units.MJyear
+                calc: '$energy.cogen.output.elec_output / $energy.cogen.spec.plant_eff'
+          thermal:
+            label: 'Thermal Energy Use'
+            items:
+              prpn_heat_cap:
+                desc: 'Proportion of primary thermal energy capturable for precinct thermal energy requirements.'
+                label: 'Proportion of Thermal Energy Capturable'
+                type: Number
+                decimal: true
+                defaultValue: 0.75
+              th_en_cap:
+                desc: 'Proportion of primary thermal energy captured.'
+                label: 'Thermal Energy Captured'
+                type: Number
+                units: Units.MJyear
+                calc: '$energy.cogen.thermal.prpn_heat_cap * $energy.cogen.output.prim_th_en'
+              prpn_th_en_h:
+                desc: 'Proportion of recovered thermal energy used as hot thermal, versus cool thermal.'
+                label: 'Proportion of Thermal Energy for Heating'
+                type: Number
+                decimal: true
+                defaultValue: 0.5
+          operating_carbon:
+            label: 'Operating Carbon'
+            items:
+              co2_op_total:
+                desc: 'Power plant operating carbon.'
+                label: 'CO2 - Total Plant'
+                type: Number
+                units: Units.kgco2year
+                calc: '$energy.cogen.input.gas_en_input * $operating_carbon.gas_mj'
+              prpn_co2_e:
+                desc: 'Proportion of the power plant\'s CO2 attributable to electricity generation.'
+                label: 'Proportion CO2 - Electricity'
+                type: Number
+                decimal: true
+                calc: -> calcEnergyCogenC02.call(@, 'elec')
+              prpn_co2_h:
+                desc: 'Proportion of the power plant\'s CO2 attributable to hot thermal energy generation.'
+                label: 'Proportion CO2 - Hot Thermal'
+                type: Number
+                decimal: true
+                calc: -> calcEnergyCogenC02.call(@, 'heat')
+              prpn_co2_c:
+                desc: 'Proportion of the power plant\'s CO2 attributable to cold thermal energy generation.'
+                label: 'Proportion CO2 - Cold Thermal'
+                type: Number
+                decimal: true
+                calc: -> calcEnergyCogenC02.call(@, 'cool')
+              co2_op_e_cogen:
+                desc: 'CO2 from the power plant generating electricity.'
+                label: 'CO2 - Electricity'
+                type: Number
+                units: Units.kgco2year
+                calc: '$energy.cogen.operating_carbon.prpn_co2_e * $energy.cogen.operating_carbon.co2_op_total'
+              co2_op_h_cogen:
+                desc: 'CO2 from the power plant generating hot thermal energy.'
+                label: 'CO2 - Hot Thermal'
+                type: Number
+                units: Units.kgco2year
+                calc: '$energy.cogen.operating_carbon.prpn_co2_h * $energy.cogen.operating_carbon.co2_op_total'
+              co2_op_c_cogen:
+                desc: 'CO2 from the power plant generating cold thermal energy.'
+                label: 'CO2 - Cold Thermal'
+                type: Number
+                units: Units.kgco2year
+                calc: '$energy.cogen.operating_carbon.prpn_co2_c * $energy.cogen.operating_carbon.co2_op_total'
+              co2_int_elec:
+                desc: 'CO2 intensity of power plant\'s electricity.'
+                label: 'CO2 Intensity - Electricity'
+                type: Number
+                decimal: true
+                units: Units.kgco2MJ
+                calc: '$energy.cogen.operating_carbon.co2_op_e_cogen / $energy.cogen.output.elec_output'
+              co2_int_heat:
+                desc: 'CO2 intensity of power plant\'s hot thermal energy.'
+                label: 'CO2 Intensity - Hot Thermal'
+                type: Number
+                decimal: true
+                units: Units.kgco2MJ
+                calc: '$energy.cogen.operating_carbon.co2_op_h_cogen / $energy.cogen.output.th_en_heat'
+              co2_int_cool:
+                desc: 'CO2 intensity of power plant\'s cold thermal energy.'
+                label: 'CO2 Intensity - Cold Thermal'
+                type: Number
+                decimal: true
+                units: Units.kgco2MJ
+                calc: '$energy.cogen.operating_carbon.co2_op_c_cogen / $energy.cogen.output.th_en_cool'
   parking:
     label: 'Parking'
     items:
@@ -835,7 +1060,7 @@ projectCategories =
         desc: 'Mean daily trips per dwelling.'
         type: Number
         decimal: true
-        units: 'trips/dwelling'
+        units: Units.tripsdwelling
         defaultValue: 10.7
       age:
         label: 'Mean Age'
@@ -910,7 +1135,7 @@ projectCategories =
         decimal: true
         defaultValue: 0.22
 
-ProjectParametersSchema = createCategoriesSchema
+@ProjectParametersSchema = createCategoriesSchema
   categories: projectCategories
 
 ProjectSchema = new SimpleSchema
@@ -1076,7 +1301,13 @@ isNonResidentialBuildingClass = (typologyClass) ->
 
 ClassNames = Object.keys(TypologyClasses)
 TypologyTypes = ['Basic', 'Efficient', 'Advanced']
-EnergySources = ['Electricity', 'Gas']
+ENERGY_SOURCE_ELEC = 'Electricity'
+ENERGY_SOURCE_GAS = 'Gas'
+ENERGY_SOURCE_COGEN = 'Cogen/Trigen'
+EnergySources = [ENERGY_SOURCE_ELEC, ENERGY_SOURCE_GAS, ENERGY_SOURCE_COGEN]
+EnergySources.ELEC = ENERGY_SOURCE_ELEC
+EnergySources.GAS = ENERGY_SOURCE_GAS
+EnergySources.COGEN = ENERGY_SOURCE_COGEN
 
 ResidentialSubclasses = Object.keys(TypologyClasses.RESIDENTIAL.subclasses)
 CommercialSubclasses = Object.keys(TypologyClasses.COMMERCIAL.subclasses)
@@ -1271,19 +1502,44 @@ areaSchema =
   calc: -> calcArea(@model._id)
 
 # NOTE: energyParamId expected to be in MJ.
-calcEnergyC02 = (sourceParamId, energyParamId) ->
+calcEnergyC02 = (sourceParamId, energyParamId, cogenIntensityParamId) ->
   src = @param(sourceParamId)
   en = @param(energyParamId)
   return null unless src? and en?
-  if src == 'Electricity'
-    en * @KWH_TO_MJ(@param('operating_carbon.elec'))
-  else if src == 'Gas'
+  prpn_elec_scheme = @param('energy_demand.prpn_elec_scheme')
+  if src == ENERGY_SOURCE_ELEC
+    (en * @KWH_TO_MJ(@param('operating_carbon.elec')) * prpn_elec_scheme) +
+      (en * @param('energy.cogen.operating_carbon.co2_int_elec') * (1 - prpn_elec_scheme))
+  else if src == ENERGY_SOURCE_GAS
     en * @KWH_TO_MJ(@param('operating_carbon.gas'))
+  else if src == ENERGY_SOURCE_COGEN
+    en * @param('energy.cogen.operating_carbon.' + cogenIntensityParamId)
+
+calcEnergyCogenC02 = (type) ->
+  elec_output = @param('energy.cogen.output.elec_output')
+  elec_rate = @calc('$operating_carbon.elec_mj')
+  gas_rate = @calc('$operating_carbon.gas_mj')
+  th_en_heat = @param('energy.cogen.output.th_en_heat')
+  th_en_cool = @param('energy.cogen.output.th_en_cool')
+
+  elec_emissions = elec_output * elec_rate
+  heat_emissions = th_en_heat / 0.75 * gas_rate
+  cool_emissions = th_en_cool / 4 * elec_rate
+
+  emissionsMap = {elec: elec_emissions, heat: heat_emissions, cool: cool_emissions}
+  emissions = emissionsMap[type]
+  unless emissions?
+    throw new Error('No emissions for type: ' + type)
+
+  total = elec_emissions + heat_emissions + cool_emissions
+  if total == 0
+    return 0
+  emissions / total
 
 calcEnergyCost = (source, suffix) ->
   supply_price = @param('utilities.price_supply_' + suffix)
   usage_price = @param('utilities.price_usage_' + suffix)
-  if source == 'Gas'
+  if source == ENERGY_SOURCE_GAS
     usage_price = @KWH_TO_MJ(usage_price)
   src_heat = @param('energy_demand.src_heat')
   src_hwat = @param('energy_demand.src_hwat')
@@ -1302,11 +1558,18 @@ calcEnergyCost = (source, suffix) ->
     usage_cost += en_hwat * 1000 * usage_price
   if src_cook == source
     usage_cost += en_cook * usage_price
-  if source == 'Electricity'
+  if source == ENERGY_SOURCE_ELEC
     usage_cost += en_app * usage_price
     usage_cost += en_light * usage_price
     usage_cost -= 365 * pv_output * size_pv * usage_price
   365 * supply_price + usage_cost
+
+calcEnergyCost2 = (suffix, demand) ->
+  demand ?= 'en_' + suffix
+  if @param('energy_demand.en_' + suffix) == 0
+    0
+  else
+    365 * @param('utilities.price_supply_' + suffix) + @param('energy_demand.' + demand) * @KWH_TO_MJ(@param('utilities.price_usage_' + suffix))
 
 calcEnergyWithIntensityCost = (suffix, shortSuffix) ->
   supply_price = @param('utilities.price_supply_' + suffix)
@@ -1351,14 +1614,12 @@ typologyCategories =
         desc: 'BOM climate zone number.'
         label: 'Climate Zone'
         type: Number
-        classes:
-          RESIDENTIAL: {}
+        classes: RESIDENTIAL: {}
       type:
         type: String
         desc: 'Version of the subclass.'
         allowedValues: TypologyTypes
-        classes:
-          RESIDENTIAL: {}
+        classes: RESIDENTIAL: {}
   space:
     label: 'Space'
     items:
@@ -1367,10 +1628,10 @@ typologyCategories =
         type: String
         desc: '2D footprint geometry of the typology.'
         classes: extendBuildingClasses
-          RESIDENTIAL: {optional: false}
-          COMMERCIAL: {optional: false}
-          INSTITUTIONAL: {optional: false}
-          MIXED_USE: {optional: false}
+          # RESIDENTIAL: {optional: false}
+          # COMMERCIAL: {optional: false}
+          # INSTITUTIONAL: {optional: false}
+          # MIXED_USE: {optional: false}
           # Pathway typologies don't have geometry - it is defined in the entities - so this is
           # optional.
           PATHWAY: {}
@@ -1432,15 +1693,13 @@ typologyCategories =
         type: Number
         decimal: true
         units: Units.m2
-        classes:
-          MIXED_USE: {}
+        classes: MIXED_USE: {}
       gfa_c:
         label: 'Commercial Gross Floor Area'
         type: Number
         decimal: true
         units: Units.m2
-        classes:
-          MIXED_USE: {}
+        classes: MIXED_USE: {}
       gfa_t:
         label: 'Gross Floor Area'
         desc: 'Gross floor area of all the rooms in the typology.'
@@ -1459,13 +1718,12 @@ typologyCategories =
         type: Number
         decimal: true
         units: Units.m2
-        classes: extendBuildingClasses
-          COMMERCIAL: false
+        classes: RESIDENTIAL: {}
       storeys:
         label: 'Storeys'
         desc: 'Number of floors/storeys in the typology.'
         type: Number
-        units: 'Floors'
+        units: Units.floors
         classes: extendBuildingClasses()
       height: extendSchema(heightSchema, {
         classes: extendBuildingClasses()
@@ -1488,16 +1746,14 @@ typologyCategories =
           _.each ['rd', 'prk', 'fp', 'bp', 've'], (prefix) =>
             sum += @param('composition.' + prefix + '_lanes') * @param('composition.' + prefix + '_width')
           sum
-        classes:
-          PATHWAY: {}
+        classes: PATHWAY: {}
       area:
         label: 'Total Path Area'
         type: Number
         decimal: true
         units: Units.m2
         calc: '$space.width * $space.length'
-        classes:
-          PATHWAY: {}
+        classes: PATHWAY: {}
       plot_ratio:
         label: 'Plot Ratio'
         desc: 'The building footprint area divided by the lot size.'
@@ -1508,7 +1764,7 @@ typologyCategories =
         label: 'No. Occupants'
         desc: 'Number of occupants in the typology.'
         type: Number
-        units: 'Persons'
+        units: Units.people
         classes:
           RESIDENTIAL: {}
           MIXED_USE: {}
@@ -1536,7 +1792,7 @@ typologyCategories =
         label: 'Dwellings - Studio'
         desc: 'Number of studio units in the typology.'
         type: Number
-        units: 'Dwellings'
+        units: Units.dwellings
         classes:
           RESIDENTIAL: {}
           MIXED_USE: {}
@@ -1544,7 +1800,7 @@ typologyCategories =
         label: 'Dwellings - 1 Bedroom'
         desc: 'Number of 1 bedroom units in the typology.'
         type: Number
-        units: 'Dwellings'
+        units: Units.dwellings
         classes:
           RESIDENTIAL: {}
           MIXED_USE: {}
@@ -1552,7 +1808,7 @@ typologyCategories =
         label: 'Dwellings - 2 Bedroom'
         desc: 'Number of 2 bedroom units in the typology.'
         type: Number
-        units: 'Dwellings'
+        units: Units.dwellings
         classes:
           RESIDENTIAL: {}
           MIXED_USE: {}
@@ -1560,7 +1816,7 @@ typologyCategories =
         label: 'Dwellings - 3 Bedroom Plus'
         desc: 'Number of 3 bedroom units in the typology.'
         type: Number
-        units: 'Dwellings'
+        units: Units.dwellings
         classes:
           RESIDENTIAL: {}
           MIXED_USE: {}
@@ -1568,14 +1824,14 @@ typologyCategories =
         label: 'Dwellings - Total'
         desc: 'Number of total dwellings in the typology.'
         type: Number
-        units: 'Dwellings'
+        units: Units.dwellings
         calc: '$space.num_0br + $space.num_1br + $space.num_2br + $space.num_3plus'
       dwell_dens:
         label: 'Dwelling - Density'
         desc: 'Total number of dwellings divided by the lot size.'
         type: Number
         decimal: true
-        units: 'Dwellings/' + Units.ha
+        units: Units.dwellings + '/' + Units.ha
         calc: '$space.dwell_tot / $space.lotsize * 10000'
       prpn_lawn:
         label: 'Proportion Extra Land - Lawn'
@@ -1657,74 +1913,98 @@ typologyCategories =
         desc: 'Energy source in the typology used for heating.'
         type: String
         allowedValues: EnergySources
-        classes:
-          RESIDENTIAL: {defaultValue: 'Electricity'}
+        classes: RESIDENTIAL: {defaultValue: ENERGY_SOURCE_ELEC}
       en_heat:
         label: 'Heating'
         desc: 'Energy required for heating the typology.'
         type: Number
         decimal: true
         units: Units.MJyear
-        calc: '$energy_demand.thermal_heat / $energy_demand.cop_heat'
-        classes:
-          RESIDENTIAL: {}
+        calc: ->
+          therm_en_heat = @param('energy_demand.therm_en_heat')
+          if @param('energy_demand.src_heat') == ENERGY_SOURCE_COGEN
+            therm_en_heat
+          else
+            therm_en_heat / @param('energy_demand.cop_heat')
+        classes: RESIDENTIAL: {}
+      src_cool:
+        label: 'Cooling Source'
+        desc: 'Energy source in the typology used for cooling.'
+        type: String
+        allowedValues: _.without(EnergySources, ENERGY_SOURCE_GAS)
+        classes: RESIDENTIAL: {defaultValue: ENERGY_SOURCE_ELEC}
       en_cool:
         label: 'Cooling'
         desc: 'Energy required for cooling the typology.'
         type: Number
         decimal: true
         units: Units.MJyear
-        calc: '$energy_demand.thermal_cool / $energy_demand.eer_cool'
-        classes:
-          RESIDENTIAL: {}
+        calc: ->
+          therm_en_cool = @param('energy_demand.therm_en_cool')
+          if @param('energy_demand.src_cool') == ENERGY_SOURCE_COGEN
+            therm_en_cool
+          else
+            therm_en_cool / @param('energy_demand.eer_cool')
+        classes: RESIDENTIAL: {}
       cop_heat:
         label: 'Coefficient of Performance (COP)'
         type: Number
         decimal: true
-        classes:
-          RESIDENTIAL: {defaultValue: 4}
+        classes: RESIDENTIAL: {defaultValue: 4}
       eer_cool:
         label: 'Energy Efficiency Rating (EER)'
         type: Number
         decimal: true
-        classes:
-          RESIDENTIAL: {defaultValue: 4}
-      thermal_heat:
+        classes: RESIDENTIAL: {defaultValue: 4}
+      therm_en_heat:
         label: 'Thermal Heating Energy'
+        units: Units.MJyear
         type: Number
         decimal: true
-        classes:
-          RESIDENTIAL: {}
-      thermal_cool:
+        classes: RESIDENTIAL: {}
+      therm_en_cool:
         label: 'Thermal Cooling Energy'
+        units: Units.MJyear
         type: Number
         decimal: true
-        classes:
-          RESIDENTIAL: {}
+        classes: RESIDENTIAL: {}
       en_light:
         label: 'Lighting'
         desc: 'Energy required for lighting the typology.'
         type: Number
         decimal: true
         units: Units.kWhyear
-        classes:
-          RESIDENTIAL: {}
+        classes: RESIDENTIAL: {}
       src_hwat:
         label: 'Hot Water Source'
         desc: 'Energy source in the typology used for hot water heating. Used to calculated CO2-e.'
         type: String
         allowedValues: EnergySources
-        classes:
-          RESIDENTIAL:
-            defaultValue: 'Electricity'
+        classes: RESIDENTIAL: {defaultValue: ENERGY_SOURCE_ELEC}
       en_hwat:
         label: 'Hot Water'
         desc: 'Energy required for hot water heating in the typology.'
         type: Number
         decimal: true
         units: Units.GJyear
-        classes:
-          RESIDENTIAL: {}
+        calc: ->
+          therm_en_hwat = @param('energy_demand.therm_en_hwat')
+          if @param('energy_demand.src_hwat') == ENERGY_SOURCE_COGEN
+            therm_en_hwat
+          else
+            therm_en_hwat / @param('energy_demand.cop_hws')
+        classes: RESIDENTIAL: {}
+      therm_en_hwat:
+        label: 'Hot Water Thermal'
+        type: Number
+        decimal: true
+        units: Units.GJyear
+      cop_hws:
+        label: 'HWS COP'
+        desc: 'Coefficient of Performance of the hot water system.'
+        type: Number
+        decimal: true
+        defaultValue: 1
       en_cook:
         label: 'Cooktop and Oven'
         desc: 'Energy required for cooking in the typology.'
@@ -1732,24 +2012,90 @@ typologyCategories =
         decimal: true
         units: Units.MJyear
         calc: 'IF($energy_demand.src_cook=="Electricity", $energy.fitout.en_elec_oven, IF($energy_demand.src_cook=="Gas", $energy.fitout.en_gas_oven)) * ($space.num_0br + $space.num_1br + $space.num_2br + $space.num_3plus)'
-        classes:
-          RESIDENTIAL: {}
+        classes: RESIDENTIAL: {}
     # TODO(aramk) Default value should be based on src_cook.
       src_cook:
         label: 'Cooktop and Oven Source'
         desc: 'Energy source in the typology used for cooking. Used to calculate CO2-e.'
         type: String
-        allowedValues: EnergySources
-        classes:
-          RESIDENTIAL:
-            defaultValue: 'Electricity'
+        allowedValues: _.without(EnergySources, EnergySources.COGEN)
+        classes: RESIDENTIAL: {defaultValue: ENERGY_SOURCE_ELEC}
+      en_elec:
+        label: 'Operating Electricity'
+        desc: 'Operating electricity demand'
+        units: Units.MJyear
+        type: Number
+        decimal: true
+        calc: ->
+          value = 0
+          _.each {
+            'src_heat': 'en_heat'
+            'src_cool': 'en_cool'
+            'src_cook': 'en_cook'
+          }, (energyParamId, sourceParamId) =>
+            if @param('energy_demand.' + sourceParamId) == ENERGY_SOURCE_ELEC
+              value += @param('energy_demand.' + energyParamId)
+          if @param('energy_demand.src_hwat') == ENERGY_SOURCE_ELEC
+            value += @param('energy_demand.en_hwat') * 1000
+          value += @KWH_TO_MJ(@param('energy_demand.en_light'))
+          value += @param('energy_demand.en_app') - @KWH_TO_MJ(@param('energy_demand.en_pv'))
+          value
+      en_gas:
+        label: 'Operating Gas'
+        desc: 'Operating gas demand'
+        units: Units.MJyear
+        type: Number
+        decimal: true
+        calc: ->
+          value = 0
+          if @param('energy_demand.src_heat') == ENERGY_SOURCE_GAS
+            value += @param('energy_demand.en_heat')
+          if @param('energy_demand.src_hwat') == ENERGY_SOURCE_GAS
+            value += @param('energy_demand.en_hwat') * 1000
+          if @param('energy_demand.src_cook') == ENERGY_SOURCE_GAS
+            value += @param('energy_demand.en_cook')
+          value
+      prpn_elec_scheme:
+        label: 'Proportion Electricity - Scheme vs Cogen'
+        desc: 'Proportion of total electricity demand sourced from scheme power, versus scheme plus cogeneration.'
+        type: Number
+        decimal: true
+        defaultValue: 1
+      en_elec_scheme:
+        label: 'Scheme Electricity'
+        desc: 'Electricity demand supplied by scheme power.'
+        units: Units.MJyear
+        type: Number
+        decimal: true 
+        calc: '$energy_demand.prpn_elec_scheme * $energy_demand.en_elec'
+      en_elec_cogen:
+        label: 'Cogen Electricity'
+        desc: 'Electricity demand supplied by scheme power.'
+        units: Units.MJyear
+        type: Number
+        decimal: true 
+        calc: '(1 - $energy_demand.prpn_elec_scheme) * $energy_demand.en_elec'
+      en_cogen:
+        label: 'Cogen Total'
+        desc: 'Total cogen energy used by the typology.'
+        units: Units.MJyear
+        type: Number
+        decimal: true 
+        calc: ->
+          value = @param('energy_demand.en_elec_cogen') ? 0
+          if @param('energy_demand.src_heat') == ENERGY_SOURCE_COGEN
+            value += @param('energy_demand.en_heat')
+          if @param('energy_demand.src_cool') == ENERGY_SOURCE_COGEN
+            value += @param('energy_demand.en_cool')
+          if @param('energy_demand.src_hwat') == ENERGY_SOURCE_COGEN
+            value += @param('energy_demand.en_hwat')
+          value
       en_app:
         label: 'Appliances'
         desc: 'Energy required for powering appliances in the typology.'
         type: Number
         decimal: true
         units: Units.MJyear
-#        calc: 'IF($energy_demand.type_app=="Basic - Avg Performance", $energy.fitout.en_basic_avg_app, IF($energy_demand.type_app=="Basic - High Performance", $energy.fitout.en_basic_hp_app, IF($energy_demand.type_app=="Affluenza - Avg Performance", $energy.fitout.en_aff_avg_app, IF($energy_demand.type_app=="Affluenza - High Performance", $energy.fitout.en_aff_hp_app)))) * ($space.num_0br + $space.num_1br + $space.num_2br + $space.num_3plus)'
         calc: ->
           type_app = @param('energy_demand.type_app')
           type_en = @param('energy.fitout.' + ApplianceTypes[type_app])
@@ -1760,9 +2106,7 @@ typologyCategories =
         desc: 'Type of appliance fit out.'
         type: String
         allowedValues: Object.keys(ApplianceTypes),
-        classes:
-          RESIDENTIAL:
-            defaultValue: 'Basic - Avg Performance'
+        classes: RESIDENTIAL: {defaultValue: 'Basic - Avg Performance'}
       en_int_e:
         desc: 'Electricity energy use intensity of the typology.'
         label: 'Energy Use Intensity - Electricity'
@@ -1789,16 +2133,14 @@ typologyCategories =
         type: Number
         decimal: true
         units: Units.MJm2year
-        classes:
-          MIXED_USE: {defaultValue: 535}
+        classes: MIXED_USE: {defaultValue: 535}
       en_int_e_c:
         label: 'Commercial Energy Intensity - Electricity'
         desc: 'Commercial electricity energy use intensity of the typology.'
         type: Number
         decimal: true
         units: Units.MJm2year
-        classes:
-          MIXED_USE: {defaultValue: 1140}
+        classes: MIXED_USE: {defaultValue: 1140}
       en_use_e:
         desc: 'Electricity energy use of the typology.'
         label: 'Energy Use - Electricity'
@@ -1837,16 +2179,14 @@ typologyCategories =
         type: Number
         decimal: true
         units: Units.MJm2year
-        classes:
-          MIXED_USE: {defaultValue: 455}
+        classes: MIXED_USE: {defaultValue: 455}
       en_int_g_c:
         label: 'Commercial Energy Intensity - Gas'
         desc: 'Commercial gas energy use intensity of the typology.'
         type: Number
         decimal: true
         units: Units.MJm2year
-        classes:
-          MIXED_USE: {defaultValue: 465}
+        classes: MIXED_USE: {defaultValue: 465}
       # en_int_g_t:
       #   desc: 'Gas energy use intensity of the typology.'
       #   label: 'Energy Use Intensity - Gas'
@@ -2033,21 +2373,21 @@ typologyCategories =
         type: Number
         decimal: true
         units: Units.kgco2year
-        calc: -> calcEnergyC02.call(@, 'energy_demand.src_heat', 'energy_demand.en_heat')
+        calc: -> calcEnergyC02.call(@, 'energy_demand.src_heat', 'energy_demand.en_heat' , 'co2_int_heat')
       co2_cool:
         label: 'Cooling'
         desc: 'CO2 emissions due to cooling the typology.'
         type: Number
         decimal: true
         units: Units.kgco2year
-        calc: '$energy_demand.en_cool * KWH_TO_MJ($operating_carbon.elec)'
+        calc: -> calcEnergyC02.call(@, 'energy_demand.src_cool', 'energy_demand.en_cool', 'co2_int_cool')
       co2_light:
         label: 'Lighting'
         desc: 'CO2-e emissions due to lighting the typology.'
         type: Number
         decimal: true
         units: Units.kgco2year
-        calc: '$energy_demand.en_light * $operating_carbon.elec'
+        calc: '$energy_demand.en_light * ($operating_carbon.elec * $energy_demand.prpn_elec_scheme) + KWH_TO_MJ($energy_demand.en_light) * $energy.cogen.operating_carbon.co2_int_elec * (1 - $energy_demand.prpn_elec_scheme)'
       co2_hwat:
         label: 'Hot Water'
         desc: 'CO2-e emissions due to hot water heating in the typology.'
@@ -2055,7 +2395,7 @@ typologyCategories =
         decimal: true
         units: Units.kgco2year
         calc: ->
-          co2 = calcEnergyC02.call(@, 'energy_demand.src_hwat', 'energy_demand.en_hwat')
+          co2 = calcEnergyC02.call(@, 'energy_demand.src_hwat', 'energy_demand.en_hwat', 'co2_int_heat')
           if co2? then co2 * 1000 else null
       co2_cook:
         label: 'Cooktop and Oven'
@@ -2063,14 +2403,14 @@ typologyCategories =
         type: Number
         decimal: true
         units: Units.kgco2year
-        calc: -> calcEnergyC02.call(@, 'energy_demand.src_cook', 'energy_demand.en_cook')
+        calc: -> calcEnergyC02.call(@, 'energy_demand.src_cook', 'energy_demand.en_cook', 'co2_int_heat')
       co2_app:
         label: 'Appliances'
         desc: 'CO2-e emissions due to powering appliances in the typology.'
         type: Number
         decimal: true
         units: Units.kgco2year
-        calc: '$energy_demand.en_app * KWH_TO_MJ($operating_carbon.elec)'
+        calc: '$energy_demand.en_app * $operating_carbon.elec_mj * $energy_demand.prpn_elec_scheme + $energy_demand.en_app * $energy.cogen.operating_carbon.co2_int_elec * (1 - $energy_demand.prpn_elec_scheme)'
       co2_trans:
         label: 'Transport'
         desc: 'CO2-e emissions due to transport.'
@@ -2103,6 +2443,81 @@ typologyCategories =
         type: Number
         units: Units.kgco2year
         calc: 'MJ_TO_KWH($energy_demand.en_use_g) * $operating_carbon.elec'
+  cogen:
+    label: 'Cogen/Trigen'
+    classes: RESIDENTIAL: {}
+    items:
+      demand:
+        items:
+          elec:
+            label: 'Electricity'
+            desc: 'Electricity energy demand.'
+            type: Number
+            decimal: true
+            units: Units.MJyear
+            calc: '$energy_demand.en_elec_cogen'
+          heat:
+            label: 'Heating'
+            desc: 'Space heating energy demand.'
+            type: Number
+            decimal: true
+            units: Units.MJyear
+            calc: ->
+              if @param('energy_demand.src_heat') == ENERGY_SOURCE_COGEN
+                @param('energy_demand.therm_en_heat')
+          cool:
+            label: 'Cooling'
+            desc: 'Space cooling energy demand.'
+            type: Number
+            decimal: true
+            units: Units.MJyear
+            calc: ->
+              if @param('energy_demand.src_cool') == ENERGY_SOURCE_COGEN
+                @param('energy_demand.therm_en_cool')
+          hwat:
+            label: 'Hot Water'
+            desc: 'Hot water heating energy demand.'
+            type: Number
+            decimal: true
+            units: Units.MJyear
+            calc: ->
+              if @param('energy_demand.src_hwat') == ENERGY_SOURCE_COGEN
+                @param('energy_demand.therm_en_hwat') * 1000
+          therm:
+            label: 'Total Thermal'
+            desc: 'Total thermal energy demand.'
+            type: Number
+            decimal: true
+            units: Units.MJ
+            calc: '$cogen.demand.heat + $cogen.demand.cool + $cogen.demand.hwat'
+          total:
+            label: 'Total'
+            desc: 'Total demand for cogen/trigen energy.'
+            type: Number
+            decimal: true
+            units: Units.MJ
+            calc: '$cogen.demand.elec + $cogen.demand.therm'
+      balance:
+        label: 'Balance of Supply'
+        items:
+          excess_elec:
+            desc: 'Balance of electricity remaining after precinct object use.'
+            label: 'Excess Electricity Generated'
+            type: Number
+            units: Units.MJyear
+            calc: '$energy.cogen.output.elec_output - $cogen.demand.elec'
+          excess_heat:
+            desc: 'Balance of heating energy remaining after precinct object use.'
+            label: 'Excess Heating Energy Generated'
+            type: Number
+            units: Units.MJyear
+            calc: '$energy.cogen.output.th_en_heat - $cogen.demand.heat - $cogen.demand.hwat'
+          excess_cool:
+            desc: 'Balance of cooling energy remaining after precinct object use.'
+            label: 'Excess Cooling Energy Generated'
+            type: Number
+            units: Units.MJyear
+            calc: '$energy.cogen.output.th_en_cool - $cogen.demand.cool'
   water_demand:
     label: 'Water Demand'
     items:
@@ -2114,29 +2529,25 @@ typologyCategories =
         type: Number
         decimal: true
         units: Units.kLyearOccupant
-        classes:
-          RESIDENTIAL: {}
+        classes: RESIDENTIAL: {}
       i_wu_intensity_rain:
         label: 'Internal Water Use Intensity - Rain'
         type: Number
         decimal: true
         units: Units.kLyearOccupant
-        classes:
-          RESIDENTIAL: {}
+        classes: RESIDENTIAL: {}
       i_wu_intensity_treat:
         label: 'Internal Water Use Intensity - Treated'
         type: Number
         decimal: true
         units: Units.kLyearOccupant
-        classes:
-          RESIDENTIAL: {}
+        classes: RESIDENTIAL: {}
       i_wu_intensity_grey:
         label: 'Internal Water Use Intensity - Grey'
         type: Number
         decimal: true
         units: Units.kLyearOccupant
-        classes:
-          RESIDENTIAL: {}
+        classes: RESIDENTIAL: {}
       i_wu_pot:
         label: 'Internal Water Use - Potable'
         desc: 'Internal potable water use of the typology.'
@@ -2144,8 +2555,7 @@ typologyCategories =
         decimal: true
         units: Units.kLyear
         calc: -> Math.max(@calc('$water_demand.i_wu_total - $water_demand.i_wu_rain'), 0)
-        classes:
-          RESIDENTIAL: {}
+        classes: RESIDENTIAL: {}
       i_wu_rain:
         label: 'Internal Water Use - Rainwater'
         desc: 'Internal rainwater use of the typology.'
@@ -2153,8 +2563,7 @@ typologyCategories =
         decimal: true
         units: Units.kLyear
         calc: '$water_demand.rain_supply * $water_demand.i_share_rain'
-        classes:
-          RESIDENTIAL: {}
+        classes: RESIDENTIAL: {}
       i_wu_intensity_m2:
         label: 'Internal Water Use Intensity'
         desc: 'Internal potable water use intensity of the typology.'
@@ -2181,16 +2590,14 @@ typologyCategories =
         type: Number
         decimal: true
         units: Units.kLm2year
-        classes:
-          MIXED_USE: {defaultValue: 2.70}
+        classes: MIXED_USE: {defaultValue: 2.70}
       i_wu_intensity_c:
         label: 'Internal Water Use Intensity - Commercial'
         desc: 'Commercial internal potable water use intensity of the typology.'
         type: Number
         decimal: true
         units: Units.kLm2year
-        classes:
-          MIXED_USE: {defaultValue: 1.70}
+        classes: MIXED_USE: {defaultValue: 1.70}
       rain_sys:
         label: 'Rainwater System'
         desc: 'Whether the typology includes a rainwater capture system.'
@@ -2422,7 +2829,7 @@ typologyCategories =
           if isNonResidentialBuildingClass(Entities.getTypologyClass(@model))
             calcEnergyWithIntensityCost.call(@, 'elec', 'e')
           else
-            calcEnergyCost.call(@, 'Electricity', 'elec')
+            calcEnergyCost2.call(@, 'elec', 'en_elec_scheme')
       cost_op_g:
         label: 'Cost - Gas Usage'
         desc: 'Operating costs due to gas usage.'
@@ -2433,7 +2840,21 @@ typologyCategories =
           if isNonResidentialBuildingClass(Entities.getTypologyClass(@model))
             calcEnergyWithIntensityCost.call(@, 'gas', 'g')
           else
-            calcEnergyCost.call(@, 'Gas', 'gas')
+            calcEnergyCost2.call(@, 'gas')
+      cost_op_w:
+        label: 'Cost - Water Usage'
+        desc: 'Operating costs due to water usage.'
+        type: Number
+        units: Units.$
+        calc: '$utilities.price_supply_water + $water_demand.wu_pot_tot * $utilities.price_usage_water'
+      cost_op_cogen:
+        label: 'Cost – Cogen Usage'
+        desc: 'Operating costs due to cogen usage.'
+        type: Number
+        units: Units.$
+        classes: RESIDENTIAL: {}
+        calc: ->
+          calcEnergyCost2.call(@, 'cogen')
       cost_op_w:
         label: 'Cost - Water Usage'
         desc: 'Operating costs due to water usage.'
@@ -2524,22 +2945,18 @@ typologyCategories =
         desc: 'Orientation of the typology with north as 0 degrees.'
         type: Number
         decimal: true
-        units: 'Degrees'
+        units: Units.deg
         classes: extendClassesWithDefault(extendLandClasses(), 0)
       eq_azmth_h:
         label: 'Azimuth Heating Energy Array'
         desc: 'Equation to predict heating energy use as a function of degrees azimuth.'
         type: String
-        classes: extendBuildingClasses
-          COMMERCIAL: false
-          MIXED_USE: false
+        classes: RESIDENTIAL: {}
       eq_azmth_c:
         label: 'Azimuth Cooling Energy Array'
         desc: 'Equation to predict cooling energy use as a function of degrees azimuth.'
         type: String
-        classes: extendBuildingClasses
-          COMMERCIAL: false
-          MIXED_USE: false
+        classes: RESIDENTIAL: {}
   parking:
     label: 'Parking'
     items:
@@ -2548,8 +2965,7 @@ typologyCategories =
         desc: 'Number of garage parking spaces.'
         type: Number
         units: Units.spaces
-        classes:
-          RESIDENTIAL: {}
+        classes: RESIDENTIAL: {}
       parking_ug:
         label: 'Parking Spaces - Underground'
         desc: 'Number of underground parking spaces.'
@@ -2608,18 +3024,14 @@ typologyCategories =
         label: 'No. Road Lanes'
         type: Number
         units: Units.lanes
-        classes:
-          PATHWAY:
-            defaultValue: 0
+        classes: PATHWAY: {defaultValue: 0}
       rd_width:
         desc: 'Width of the road for vehicular movement.'
         label: 'Road Width'
         type: Number
         decimal: true
         units: Units.m
-        classes:
-          PATHWAY:
-            defaultValue: 3.5
+        classes: PATHWAY: {defaultValue: 3.5}
       rd_area:
         desc: 'Area of the drawn road for vehicular movement.'
         label: 'Road Area'
@@ -2632,26 +3044,20 @@ typologyCategories =
         label: 'Road Profile'
         type: String
         allowedValues: Object.keys(RoadMaterialTypes)
-        classes:
-          PATHWAY:
-            defaultValue: 'Full Depth Asphalt'
+        classes: PATHWAY: {defaultValue: 'Full Depth Asphalt'}
       prk_lanes:
         desc: 'Number of lanes for vehicle parking.'
         label: 'No. Parking Lanes'
         type: Number
         units: Units.lanes
-        classes:
-          PATHWAY:
-            defaultValue: 0
+        classes: PATHWAY: {defaultValue: 0}
       prk_width:
         desc: 'Width of the drawn pathway for vehicle parking.'
         label: 'Parking Width'
         type: Number
         decimal: true
         units: Units.m
-        classes:
-          PATHWAY:
-            defaultValue: 3
+        classes: PATHWAY: {defaultValue: 3}
       prk_area:
         desc: 'Area of a drawn pathway for vehicle parking.'
         label: 'Parking Area'
@@ -2664,26 +3070,20 @@ typologyCategories =
         label: 'Parking Profile'
         type: String
         allowedValues: Object.keys(RoadMaterialTypes)
-        classes:
-          PATHWAY:
-            defaultValue: 'Full Depth Asphalt'
+        classes: PATHWAY: {defaultValue: 'Full Depth Asphalt'}
       fp_lanes:
         desc: 'Number of footpath lanes for pedestrian movement.'
         label: 'No. Footpath Lanes'
         type: Number
         units: Units.lanes
-        classes:
-          PATHWAY:
-            defaultValue: 0
+        classes: PATHWAY: {defaultValue: 0}
       fp_width:
         desc: 'Width of a footpath for pedestrian movement.'
         label: 'Footpath Width'
         type: Number
         decimal: true
         units: Units.m
-        classes:
-          PATHWAY:
-            defaultValue: 2
+        classes: PATHWAY: {defaultValue: 2}
       fp_area:
         desc: 'Area of the drawn pedestrian footpath.'
         label: 'Footpath Area'
@@ -2696,26 +3096,20 @@ typologyCategories =
         label: 'Footpath Profile'
         type: String
         allowedValues: Object.keys(FootpathMaterialTypes)
-        classes:
-          PATHWAY:
-            defaultValue: 'Concrete'
+        classes: PATHWAY: {defaultValue: 'Concrete'}
       bp_lanes:
         desc: 'Number of bicycle path lanes for cyclist movement.'
         label: 'No. Bicycle Path Lanes'
         type: Number
         units: Units.lanes
-        classes:
-          PATHWAY:
-            defaultValue: 0
+        classes: PATHWAY: {defaultValue: 0}
       bp_width:
         desc: 'Width of a bicycle path lane for cyclist movement.'
         label: 'Bicycle Path Width'
         type: Number
         decimal: true
         units: Units.m
-        classes:
-          PATHWAY:
-            defaultValue: 2
+        classes: PATHWAY: {defaultValue: 2}
       bp_area:
         desc: 'Area of the drawn bicycle path.'
         label: 'Bicycle Path Area'
@@ -2728,26 +3122,20 @@ typologyCategories =
         label: 'Bicycle Path Profile'
         type: String
         allowedValues: Object.keys(BicyclePathMaterialTypes)
-        classes:
-          PATHWAY:
-            defaultValue: 'Asphalt'
+        classes: PATHWAY: {defaultValue: 'Asphalt'}
       ve_lanes:
         desc: 'Number of verge strips as a buffer for the pathway.'
         label: 'No. Verge Strips'
         type: Number
-        units: 'Lanes'
-        classes:
-          PATHWAY:
-            defaultValue: 2
+        units: Units.lanes
+        classes: PATHWAY: {defaultValue: 2}
       ve_width:
         desc: 'Width of verge as a buffer for the pathway.'
         label: 'Verge Width'
         type: Number
         decimal: true
-        units: 'm'
-        classes:
-          PATHWAY:
-            defaultValue: 2
+        units: Units.m
+        classes: PATHWAY: {defaultValue: 2}
       ve_area:
         desc: 'Area of the drawn verge.'
         label: 'Verge Area'
@@ -2979,8 +3367,8 @@ TypologySchema = new SimpleSchema
 
 @Typologies = new Meteor.Collection 'typologies'
 Typologies.attachSchema(TypologySchema)
-Typologies.classes = TypologyClasses
-Typologies.units = Units
+Typologies.Classes = TypologyClasses
+Typologies.EnergySources = EnergySources
 Typologies.allow(Collections.allowAll())
 
 Typologies.getClassByName = _.memoize (name) ->
@@ -2998,7 +3386,7 @@ Typologies.getClassByName = _.memoize (name) ->
 #       matchedId = id
 
 Typologies.getClassItems = ->
-  _.map Typologies.classes, (cls, id) -> Setter.merge(Setter.clone(cls), {_id: id})
+  _.map Typologies.Classes, (cls, id) -> Setter.merge(Setter.clone(cls), {_id: id})
 
 Typologies.getSubclassItems = _.memoize (typologyClass) ->
   field = SchemaUtils.getField('parameters.general.subclass', Typologies)
@@ -3008,7 +3396,7 @@ Typologies.getSubclassItems = _.memoize (typologyClass) ->
 
 Typologies.getAllocatableClassItems = ->
   items = []
-  _.each Typologies.classes, (cls, id) ->
+  _.each Typologies.Classes, (cls, id) ->
     unless cls.canAllocateToLot == false
       items.push(Setter.merge(Setter.clone(cls), {_id: id}))
   items
@@ -3098,7 +3486,8 @@ Typologies.getExcludedDefaultParameters = _.memoize (typologyClass) ->
   excluded = {}
   SchemaUtils.forEachFieldSchema ParametersSchema, (fieldSchema, paramId) ->
     classes = fieldSchema.classes
-    if classes and !classes[typologyClass]
+    # Exclude the field unless it's permitted explicitly or if all classes are permitted.
+    if Typologies.excludesClassOptions(fieldSchema, typologyClass)
       excluded[paramId] = true
   Typologies.unflattenParameters(excluded, false)
 
@@ -3166,6 +3555,10 @@ Typologies.validate = (typology) ->
       typologyClass) unless SchemaUtils.getParameterValue(typology, fieldId)?
 
 Collections.addValidation(Typologies, Typologies.validate)
+
+Typologies.excludesClassOptions = (schema, typologyClass) ->
+  classOptions = schema.classes
+  typologyClass? && classOptions? && !classOptions[typologyClass] && !classOptions.ALL
 
 ####################################################################################################
 # LOT SCHEMA DEFINITION
@@ -3358,7 +3751,7 @@ Lots.validateTypology = (lot, typologyId) ->
   typologyClass = SchemaUtils.getParameterValue(typology, classParamId)
   isForDevelopment = SchemaUtils.getParameterValue(lot, developParamId)
   canAllocate = false
-  classArgs = Typologies.classes[typologyClass]
+  classArgs = Typologies.Classes[typologyClass]
   if classArgs.canAllocateToLot == false
     df.resolve('Typology with class ' + typologyClass + ' cannot be allocated to a Lot.')
   else if typologyId && !isForDevelopment
@@ -3462,6 +3855,7 @@ Entities.allow(Collections.allowAll())
 Entities.getFlattened = (id) ->
   entity = Entities.findOne(id)
   Entities.mergeTypology(entity)
+  Typologies.mergeDefaults(entity)
   entity
 
 Entities.getAllFlattenedInProject = (filter) ->
@@ -3601,8 +3995,8 @@ updateAzimuthEnergyDemand = (userId, doc, fieldNames, modifier) ->
   return unless cfa? && azimuth?
   $set = {}
   items = [
-    {array: eq_azmth_h, energyParamId: 'parameters.energy_demand.thermal_heat'}
-    {array: eq_azmth_c, energyParamId: 'parameters.energy_demand.thermal_cool'}
+    {array: eq_azmth_h, energyParamId: 'parameters.energy_demand.therm_en_heat'}
+    {array: eq_azmth_c, energyParamId: 'parameters.energy_demand.therm_en_cool'}
   ]
   _.each items, (item) ->
     array = item.array

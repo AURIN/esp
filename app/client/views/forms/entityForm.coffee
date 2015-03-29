@@ -22,7 +22,7 @@ Meteor.startup ->
     defaultParams = Typologies.getDefaultParameterValues(typologyClass, subclass)
     #    defaultParams = Typologies.mergeDefaults(typology ? {})
     console.debug 'updateFields', @, arguments, typologyId, typology, typologyClass
-    for key, input of Forms.getSchemaInputs(@, collection)
+    for key, input of Form.getSchemaInputs(@)
       fieldSchema = input.field
       isParamField = ParamUtils.hasPrefix(key)
       paramName = ParamUtils.removePrefix(key) if isParamField

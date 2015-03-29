@@ -8,9 +8,6 @@ Meteor.methods
     Entities.remove(selector)
     Typologies.remove(selector)
     Lots.remove(selector)
-    files = Files.find(selector).fetch()
-    console.log('Removing files', files)
-    Files.remove(selector)
 
   'projects/duplicate': (id) ->
     AuthUtils.authorize Projects.findOne(id), @userId, (doc, user) ->

@@ -14,7 +14,7 @@ Meteor.startup ->
   updateFields = ->
     doc = @data.doc
     # TODO(aramk) Refactor with Typology form. No select fields are used at the moment.
-    for key, input of @schemaInputs
+    _.each Form.getSchemaInputs(@), (input, key) ->
       $input = $(input.node)
       fieldSchema = input.field
       isParamField = ParamUtils.hasPrefix(key)
