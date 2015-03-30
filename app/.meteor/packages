@@ -32,7 +32,7 @@ raix:handlebar-helpers
 # These are forked repos and added as private packages.
 aldeed:autoform
 aldeed:collection2
-cfs:tempstore
+#cfs:tempstore
 #aldeed:simple-schema
 #joshowens:accounts-entry
 aramk:pubsub
