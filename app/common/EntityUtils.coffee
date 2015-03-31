@@ -101,12 +101,17 @@ if Meteor.isClient
 
     _render: (id) ->
       df = Q.defer()
+      resolve = (geoEntity) ->
+        if geoEntity
+          geoEntity.ready().then -> df.resolve(geoEntity)
+        else
+          df.resolve(geoEntity)
       geoEntity = AtlasManager.getEntity(id)
       # All the geometry added during rendering. If rendering fails, these are all discarded.
       addedGeometry = []
       if geoEntity
         AtlasManager.showEntity(id)
-        df.resolve(geoEntity)
+        resolve(geoEntity)
       else
         entity = Entities.getFlattened(id)
         geom_2d = SchemaUtils.getParameterValue(entity, 'space.geom_2d')
@@ -128,7 +133,7 @@ if Meteor.isClient
                 geoEntity = geometries[0]
                 # A pathway doesn't have any 3d geometry or a lot.
                 @_setUpEntity(geoEntity)
-                df.resolve(geoEntity)
+                resolve(geoEntity)
                 return
               @_renderLot(id).then(
                 bindMeteor (lotEntity) =>
@@ -144,7 +149,7 @@ if Meteor.isClient
                     entity2d = geometries[0]
                     entity3d = geometries[1]
                     unless entity2d || entity3d
-                      df.resolve(null)
+                      resolve(null)
                       return
 
                     # This feature will be used for rendering the 2d geometry as the
@@ -170,13 +175,25 @@ if Meteor.isClient
                       bindMeteor (geoEntity) =>
                         if entity3d
                           geoEntity.setForm(Feature.DisplayMode.MESH, entity3d)
+                        formDfs = []
                         _.each geoEntity.getForms(), (form) ->
-                          form.setCentroid(lotCentroid)
-                          # Apply rotation based on the azimuth.
-                          form.setRotation(new Vertex(0, 0, azimuth)) if azimuth?
-                        geoEntity.setDisplayMode(Session.get('entityDisplayMode'))
-                        @_setUpEntity(geoEntity)
-                        df.resolve(geoEntity)
+                          # Show the entity to ensure we can transform the rendered models.
+                          form.show()
+                          formDfs.push form.ready().then ->
+                            form.setCentroid(lotCentroid)
+                            # Apply rotation based on the azimuth. Use the lot centroid since the
+                            # centroid may not be updated yet for certain models (e.g. GLTF meshes).
+                            currentCentroid = form.getCentroid()
+                            newCentroid = lotCentroid.clone()
+                            # Set the elevation to the same as the current elevation to avoid any
+                            # movement in the elevation axis.
+                            newCentroid.elevation = currentCentroid.elevation
+                            form.setRotation(new Vertex(0, 0, azimuth), newCentroid) if azimuth?
+                            form.hide()
+                        Q.all(formDfs).then =>
+                          geoEntity.setDisplayMode(Session.get('entityDisplayMode'))
+                          @_setUpEntity(geoEntity)
+                          resolve(geoEntity)
                       df.reject
                     )
                 df.reject
