@@ -114,7 +114,7 @@ onEditFormPanel = (args) ->
     if Types.isString(formArgs.multiple)
       formName = formArgs.multiple
       docs = _.map ids, (id) -> collection.findOne(id)
-      data = {docs: docs}
+      data = {lots: docs}
     else
       # Multiple are selected, but we only support single.
       isSingle = true

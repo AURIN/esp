@@ -13,11 +13,11 @@ Meteor.startup ->
     schema: schema
 
     onCreate: ->
-      unless @data.docs
+      unless @data.lots
         throw new Error('No docs provided')
 
     onRender: ->
-      docs = @data.docs
+      docs = @data.lots
       # Populate all form fields with any common values across docs if possible.
       _.each Form.getSchemaInputs(@), (input, key) ->
         isParamField = ParamUtils.hasPrefix(key)
@@ -34,7 +34,7 @@ Meteor.startup ->
       console.log(arguments)
       # Perform the changes to the bulk form on each doc.
       template = getTemplate(@template)
-      docs = template.data.docs
+      docs = template.data.lots
       dfs = []
       _.each docs, (doc) ->
         df = Q.defer()

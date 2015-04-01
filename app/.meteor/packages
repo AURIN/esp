@@ -30,7 +30,7 @@ raix:handlebar-helpers
 
 # PUBLIC-FORKS
 # These are forked repos and added as private packages.
-aldeed:autoform
+aldeed:autoform@=4.0.7
 aldeed:collection2
 #cfs:tempstore
 #aldeed:simple-schema
