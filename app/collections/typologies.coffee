@@ -1999,12 +1999,14 @@ typologyCategories =
         type: Number
         decimal: true
         units: Units.GJyear
+        classes: RESIDENTIAL: {}
       cop_hws:
         label: 'HWS COP'
         desc: 'Coefficient of Performance of the hot water system.'
         type: Number
         decimal: true
         defaultValue: 1
+        classes: RESIDENTIAL: {}
       en_cook:
         label: 'Cooktop and Oven'
         desc: 'Energy required for cooking in the typology.'
@@ -2061,6 +2063,7 @@ typologyCategories =
         type: Number
         decimal: true
         defaultValue: 1
+        classes: RESIDENTIAL: {}
       en_elec_scheme:
         label: 'Scheme Electricity'
         desc: 'Electricity demand supplied by scheme power.'
@@ -2502,19 +2505,19 @@ typologyCategories =
         items:
           excess_elec:
             desc: 'Balance of electricity remaining after precinct object use.'
-            label: 'Excess Electricity Generated'
+            label: 'Excess Electricity'
             type: Number
             units: Units.MJyear
             calc: '$energy.cogen.output.elec_output - $cogen.demand.elec'
           excess_heat:
             desc: 'Balance of heating energy remaining after precinct object use.'
-            label: 'Excess Heating Energy Generated'
+            label: 'Excess Heating Energy'
             type: Number
             units: Units.MJyear
             calc: '$energy.cogen.output.th_en_heat - $cogen.demand.heat - $cogen.demand.hwat'
           excess_cool:
             desc: 'Balance of cooling energy remaining after precinct object use.'
-            label: 'Excess Cooling Energy Generated'
+            label: 'Excess Cooling Energy'
             type: Number
             units: Units.MJyear
             calc: '$energy.cogen.output.th_en_cool - $cogen.demand.cool'

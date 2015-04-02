@@ -8,12 +8,12 @@ aldeed:simple-schema@1.3.0
 anti:i18n@0.4.3
 aramk:collection-table@0.3.3
 aramk:dropdown@0.4.2
-aramk:file-upload@0.2.5
+aramk:file-upload@0.2.6
 aramk:pubsub@1.5.0
 aramk:q@1.0.1_1
 aramk:requirejs@2.1.15_1
 aramk:tinycolor@1.1.0_1
-aramk:utility@0.8.1
+aramk:utility@0.8.2
 aslagle:reactive-table@0.4.2
 autoupdate@1.2.0
 awatson1978:dropzone@1.0.2
@@ -38,7 +38,7 @@ cfs:reactive-property@0.0.4
 cfs:s3@0.1.3
 cfs:standard-packages@0.5.7
 cfs:storage-adapter@0.2.1
-cfs:tempstore@0.1.4
+cfs:tempstore@0.1.5
 cfs:upload-http@0.0.20
 cfs:worker@0.1.4
 check@1.0.5
