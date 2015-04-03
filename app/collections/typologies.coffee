@@ -2005,8 +2005,7 @@ typologyCategories =
         desc: 'Coefficient of Performance of the hot water system.'
         type: Number
         decimal: true
-        defaultValue: 1
-        classes: RESIDENTIAL: {}
+        classes: RESIDENTIAL: {defaultValue: 1}
       en_cook:
         label: 'Cooktop and Oven'
         desc: 'Energy required for cooking in the typology.'
@@ -2062,8 +2061,7 @@ typologyCategories =
         desc: 'Proportion of total electricity demand sourced from scheme power, versus scheme plus cogeneration.'
         type: Number
         decimal: true
-        defaultValue: 1
-        classes: RESIDENTIAL: {}
+        classes: RESIDENTIAL: {defaultValue: 1}
       en_elec_scheme:
         label: 'Scheme Electricity'
         desc: 'Electricity demand supplied by scheme power.'
