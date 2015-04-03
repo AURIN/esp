@@ -180,10 +180,12 @@ if Meteor.isClient
                           # Show the entity to ensure we can transform the rendered models.
                           form.show()
                           formDfs.push form.ready().then ->
-                            form.setCentroid(lotCentroid)
                             # Apply rotation based on the azimuth. Use the lot centroid since the
                             # centroid may not be updated yet for certain models (e.g. GLTF meshes).
                             currentCentroid = form.getCentroid()
+                            # Perform this after getting the centroid to avoid rebuiding the
+                            # primitive for GLTF meshes, which would require another ready() call.
+                            form.setCentroid(lotCentroid)
                             newCentroid = lotCentroid.clone()
                             # Set the elevation to the same as the current elevation to avoid any
                             # movement in the elevation axis.
