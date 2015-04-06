@@ -254,7 +254,7 @@ module.exports = function(grunt) {
     process.chdir(APP_DIR);
     var proc;
     var env = {
-      AURIN_SERVER_URL: 'http://115.146.86.33:8080/envisionauth',
+      AURIN_SERVER_URL: 'https://envision.aurin.org.au/envisionauth',
       AURIN_APP_NAME: 'ESP',
       METEOR_ADMIN_PASSWORD: 'password',
       METEOR_ADMIN_EMAIL: 'admin@test.com'
