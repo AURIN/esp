@@ -32,24 +32,23 @@ raix:handlebar-helpers
 # These are forked repos and added as private packages.
 aldeed:autoform@=4.0.7
 aldeed:collection2
-#cfs:tempstore
-#aldeed:simple-schema
-#joshowens:accounts-entry
 aramk:pubsub
 aramk:q
 
 # PRIVATE
-aramk:utility
-aramk:collection-table
-aramk:dropdown
+aramk:collection-table@=0.3.4
+aramk:dropdown@=0.4.3
+# Version is locked since changing the name of collections can remove data.
+aramk:file-upload@=0.3.1
+aramk:utility@=0.8.3
+
 # These come last so RequireJS doesn't cause issues.
 aramk:requirejs
-aramk:file-upload
 
-urbanetic:aurin-acs
-urbanetic:accounts-aurin
-urbanetic:accounts-local
-urbanetic:atlas
-urbanetic:atlas-cesium
-urbanetic:atlas-util
-urbanetic:subdiv
+urbanetic:accounts-aurin@=0.2.0
+urbanetic:accounts-local@=0.1.1
+urbanetic:atlas@=0.8.1
+urbanetic:atlas-cesium@=0.8.1
+urbanetic:atlas-util@=0.2.6
+urbanetic:aurin-acs@=0.1.1
+urbanetic:subdiv@=0.5.4
