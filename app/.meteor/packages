@@ -45,7 +45,7 @@ aramk:utility@=0.8.3
 # These come last so RequireJS doesn't cause issues.
 aramk:requirejs
 
-urbanetic:accounts-aurin@=0.2.0
+urbanetic:accounts-aurin@=0.2.2
 urbanetic:accounts-local@=0.1.1
 urbanetic:atlas@=0.8.1
 urbanetic:atlas-cesium@=0.8.1

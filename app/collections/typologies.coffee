@@ -1160,7 +1160,7 @@ ProjectSchema = new SimpleSchema
 @Projects = new Meteor.Collection 'projects', schema: ProjectSchema
 Projects.attachSchema(ProjectSchema)
 Projects.allow(Collections.allowAll())
-AccountsAurin.addCollectionAuthorization Projects,
+AccountsUtil.addCollectionAuthorization Projects,
   # A user has access to their own projects as well as any templates.
   userSelector: (args) -> {$or: [{author: args.username}, {isTemplate: true}]}
 
@@ -1207,7 +1207,7 @@ Projects.mergeDefaults = (model) ->
 # Template Projects
 
 Projects.before.insert = (userId, doc) ->
-  if doc.isTemplate && !AuthUtils.isAdmin(userId)
+  if doc.isTemplate && !AccountsUtil.isAdmin(userId)
     throw new Error('Only admin user can create template project.')
 
 ####################################################################################################

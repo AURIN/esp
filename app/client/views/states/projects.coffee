@@ -68,30 +68,41 @@ TemplateClass.rendered = ->
     # is an admin.
     ids = Template.collectionTable.getSelectedIds($table)
     someTemplates = _.some ids, (id) -> Projects.findOne(id).isTemplate
-    showButtons = !someTemplates || AuthUtils.isAdmin()
+    showButtons = !someTemplates || AccountsUtil.isAdmin()
     $('>', $buttons).not($btnDuplicate).toggle(showButtons)
 
 TemplateClass.helpers
   projects: -> getTemplate().projects
   tableSettings: ->
-    fields: [
-      key: 'name'
-      label: 'Name'
-    ]
-    onEdit: (args) ->
-      id = args.ids[0]
-      return unless id
-      model = args.collection.findOne(id)
-      if model.isTemplate && !AuthUtils.isAdmin()
-        alert('Only admin users can edit template projects. Click duplicate to create an ' +
-          'editable copy.')
-        return
-      if args.event?.type == 'dblclick'
-        goToPrecinctDesign(id)
-      else
-        args.defaultHandler()
-    onDelete: (args) ->
-      _.each args.ids, (id) ->
-        Meteor.call('projects/remove', id)
+    settings =
+      fields: [
+        key: 'name'
+        label: 'Name'
+      ]
+      onEdit: (args) ->
+        id = args.ids[0]
+        return unless id
+        model = args.collection.findOne(id)
+        if model.isTemplate && !AccountsUtil.isAdmin()
+          alert('Only admin users can edit template projects. Click duplicate to create an ' +
+            'editable copy.')
+          return
+        if args.event?.type == 'dblclick'
+          goToPrecinctDesign(id)
+        else
+          args.defaultHandler()
+      onDelete: (args) ->
+        _.each args.ids, (id) ->
+          Meteor.call('projects/remove', id)
+    if AccountsUtil.isAdmin()
+      settings.fields.push
+        key: 'author'
+        label: 'Author'
+        fn: (value, object) ->
+          user = Meteor.users.findOne({username: value})
+          return unless user
+          user.profile?.name + ' (' + value + ')'
+    console.log('settings', settings)
+    settings
 
 getTemplate = -> Template.instance()

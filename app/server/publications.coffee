@@ -8,7 +8,7 @@ Meteor.startup ->
       unless project
         throw new Error('Cannot find project with ID ' + projectId)
       # Only publish models for non-template projects or if the user is an admin.
-      if !project.isTemplate || AuthUtils.isAdmin(@userId)
+      if !project.isTemplate || AccountsUtil.isAdmin(@userId)
         collection.findByProject(projectId)
 
 Meteor.publish 'userData', ->

@@ -1,7 +1,7 @@
 Meteor.methods
 
   'projects/remove': (id) ->
-    AuthUtils.authorize(Projects.findOne(id), @userId)
+    AccountsUtil.authorize(Projects.findOne(id), @userId)
     Projects.remove(id);
     # Collections can only be removed by ID on the client, hence we need this method.
     selector = {project: id}
@@ -10,11 +10,15 @@ Meteor.methods
     Lots.remove(selector)
 
   'projects/duplicate': (id) ->
-    AuthUtils.authorize Projects.findOne(id), @userId, (doc, user) ->
-      AuthUtils.isOwner(doc, user) || doc.isTemplate
+    userId = @userId
+    user = Meteor.users.findOne(userId)
+    username = user.username
+    AccountsUtil.authorize Projects.findOne(id), userId, (doc, user) ->
+      AccountsUtil.isOwner(doc, user) || doc.isTemplate
     Promises.runSync (done) ->
       ProjectUtils.duplicate(id).then Meteor.bindEnvironment (idMaps) ->
         newProjectId = idMaps[Collections.getName(Projects)][id]
-        # Set the isTemplate field to false when duplicating a template.
-        Projects.update(newProjectId, {$set: {isTemplate: false}})
+        # Set the isTemplate field to false when duplicating a template and set the user as the one
+        # who duplicated it.
+        Projects.update(newProjectId, {$set: {isTemplate: false, author: username}})
         done(null, newProjectId)
