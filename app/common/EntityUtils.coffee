@@ -164,10 +164,11 @@ if Meteor.isClient
                       @toGeoEntityArgs(id, {vertices: null}).then(
                         bindMeteor (args) ->
                           geoEntity = AtlasManager.renderEntity(args)
-                          geoEntity.setForm(Feature.DisplayMode.FOOTPRINT, entity2d)
                           addedGeometry.push(geoEntity)
-                          args.height? && entity2d.setHeight(args.height)
-                          args.elevation? && entity2d.setElevation(args.elevation)
+                          if entity2d
+                            geoEntity.setForm(Feature.DisplayMode.FOOTPRINT, entity2d)
+                            args.height? && entity2d.setHeight(args.height)
+                            args.elevation? && entity2d.setElevation(args.elevation)
                           geoEntityDf.resolve(geoEntity)
                         geoEntityDf.reject
                       )
