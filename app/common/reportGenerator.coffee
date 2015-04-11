@@ -3,7 +3,7 @@ Aggregator =
   total: (values) ->
     total = 0
     for value in values
-      if value? && !isNaN(value)
+      if Numbers.isDefined(value)
         total += value
     total
 
@@ -29,8 +29,7 @@ class @ReportGenerator
     for model in models
       # Evaluation result is stored in the model.
       typologyClass = Entities.getTypologyClass(model)
-      evalResults = @evalEngine.evaluate(model: model, paramIds: paramIds,
-          typologyClass: typologyClass)
+      @evalEngine.evaluate(model: model, paramIds: paramIds, typologyClass: typologyClass)
     reportResults = {}
     for field in fields
       # Aggregate values for evaluated parameters across all models.
@@ -41,8 +40,7 @@ class @ReportGenerator
       fieldAggregate = field.aggregate ? aggregate
       if fieldAggregate? && fieldAggregate != false
         # Aggregate over all entities.
-        paramResults = _.map models, (model) ->
-          evalResults[paramId] ? SchemaUtils.getParameterValue(model, paramId)
+        paramResults = _.map models, (model) -> SchemaUtils.getParameterValue(model, paramId)
         result = Aggregator[fieldAggregate](paramResults)
       else if field.calc
         # Evaluate the field expression directly.
