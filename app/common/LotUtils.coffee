@@ -219,8 +219,8 @@ Meteor.startup ->
       Lots.after.update bindMeteor (userId, newDoc) ->
         oldDoc = @previous
         entityId = newDoc.entity
-        # TODO(aramk) For some reason, updating lots asynchronously can cause them to have no previous
-        # document defined, so in this case we also run the auto-alignment.
+        # TODO(aramk) Using Meteor.bindEnvironment means the context is not correctly bound to this
+        # callback.
         if entityId && (!oldDoc || oldDoc.entity != entityId)
           autoAlignEntity(Entities.findOne(entityId))
 
@@ -262,8 +262,8 @@ Meteor.startup ->
         return
       return unless lotTypologies.length > 0
 
-      entityDf = Q.defer()
-      dfs.push(entityDf.promise)
+      lotDf = Q.defer()
+      dfs.push(lotDf.promise)
 
       # Find the area of all possible typologies to prevent placing a typology which does not fit.
       validateDfs = []
@@ -286,9 +286,17 @@ Meteor.startup ->
           Lots.createEntity({
             lotId: lot._id, typologyId: typology._id, allowReplace: args.replace,
             allowNonDevelopment: args.allowNonDevelopment
-          }).then(entityDf.resolve, entityDf.reject)
-        entityDf.resolve()
-    Q.all(dfs).then -> console.debug 'Successfully allocated', dfs.length, 'lots'
+          }).then(lotDf.resolve, lotDf.reject)
+        else
+          lotDf.reject('No suitable typologies could be found for lot ' + lot._id)
+    df = Q.defer()
+    Q.all(dfs).then(
+      (entityIds) ->
+        console.debug 'Successfully allocated', dfs.length, 'lots'
+        LotUtils.autoAlign(args.lotIds).fin -> df.resolve(args.lotIds)
+      df.reject
+    )
+    df.promise
 
   amalgamate: (ids) ->
     df = Q.defer()

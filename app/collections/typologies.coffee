@@ -3659,22 +3659,20 @@ Lots.createEntity = (args) ->
   lotId = args.lotId
   typologyId = args.typologyId
   allowReplace = args.allowReplace
-  df = Q.defer()
   lot = Lots.findOne(lotId)
   typology = Typologies.findOne(typologyId)
   if !lot
-    throw new Error('No Lot with ID ' + id)
+    return Q.reject('No Lot with ID ' + id)
   else if !typology
-    throw new Error('No Typology with ID ' + typologyId)
+    return Q.reject('No Typology with ID ' + typologyId)
   oldEntityId = lot.entity
   oldTypologyId = oldEntityId && Entities.findOne(oldEntityId).typology
   newTypologyId = typology._id
   if oldEntityId && !allowReplace
-    throw new Error('Cannot replace entity on existing Lot with ID ' + lotId)
+    return Q.reject('Cannot replace entity on existing Lot with ID ' + lotId)
   else if newTypologyId && oldTypologyId && oldTypologyId == newTypologyId
     # Prevent creating a new entity if the same typology as the existing is specified.
-    df.resolve(oldEntityId)
-    return df.promise
+    return Q.resolve(oldEntityId)
   classParamId = 'parameters.general.class'
   developParamId = 'parameters.general.develop'
   lotClass = SchemaUtils.getParameterValue(lot, classParamId)
@@ -3686,6 +3684,7 @@ Lots.createEntity = (args) ->
     # Ensures the lot will be updated as developable and validation will pass.
     isForDevelopment = true
     SchemaUtils.setParameterValue(lot, developParamId, true)
+  df = Q.defer()
   Lots.validateTypology(lot, typologyId).then (result) ->
     if result
       console.error('Cannot create Entity on Lot:', result)
