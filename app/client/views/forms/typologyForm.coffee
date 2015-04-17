@@ -17,8 +17,8 @@ Meteor.startup ->
     unless @origInputs
       origInputs = @origInputs = {}
     # TODO(aramk) Refactor with entityForm.
-    typologyClass = args.typologyClass ? getClassValue(@)
-    subclass = args.subclass ? getSubclassValue(@)
+    typologyClass = args.typologyClass ? @reactiveClass.get()
+    subclass = args.subclass ? @reactiveSubClass.get()
     # Only show fields when a class is selected.
     $fields = @$('.fields')
     $fields.toggle(!!typologyClass)
@@ -138,6 +138,10 @@ Meteor.startup ->
     onCreate: ->
       @reactiveClass = new ReactiveVar()
       @reactiveSubClass = new ReactiveVar()
+      doc = @data?.doc
+      if doc
+        @reactiveClass.set(SchemaUtils.getParameterValue(doc, 'general.class'))
+        @reactiveSubClass.set(SchemaUtils.getParameterValue(doc, 'general.subclass'))
     onRender: ->
       bindEvents.call(@)
       $class = getClassInput(@)
@@ -148,13 +152,6 @@ Meteor.startup ->
         typologyClass = @reactiveClass.get()
         subclass = @reactiveSubClass.get()
         updateFields.call(@)
-      doc = @data.doc
-      updateFieldsArgs = {}
-      # Since subclass is used to determine values, pass in the doc value initially since the input
-      # won't be popuated yet.
-      if doc
-        updateFieldsArgs.subclass = SchemaUtils.getParameterValue(doc, 'general.subclass')
-      updateFields.call(@, updateFieldsArgs)
     hooks:
       formToDoc: (doc) ->
         doc.project = Projects.getCurrentId()
@@ -294,7 +291,6 @@ Meteor.startup ->
   # ELEMENTS
 
   getClassInput = (template) -> template.$('[name="parameters.general.class"]').closest('.dropdown')
-  getClassValue = (template) -> Template.dropdown.getValue(getClassInput(template))
   getSelectOption = (value, $select) -> $('option[value="' + value + '"]', $select)
   getSubclassSelect = (template) ->
     template.$('[name="parameters.general.subclass"]').closest('.dropdown')
