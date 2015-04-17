@@ -3457,6 +3457,7 @@ Typologies.getDefaultParameterValues = ->
     [typologyClass, subclass] = arguments
   else
     typology = arguments[0]
+    return {} unless typology
     typologyClass = SchemaUtils.getParameterValue(typology, 'general.class')
     subclass = SchemaUtils.getParameterValue(typology, 'general.subclass')
   Typologies._getDefaultParameterValues(typologyClass: typologyClass, subclass: subclass)
