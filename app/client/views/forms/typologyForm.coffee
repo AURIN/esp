@@ -124,13 +124,24 @@ Meteor.startup ->
 
   bindEvents = ->
     # Bind change events to azimuth fields.
-    onAzimuthChange = => Form.updateAzimuthArray(@)
-    $azimuthFields = @$('.azimuth-array input').add(getAzimuthInput(@)).add(getCfaInput(@))
-    $azimuthFields.on('change', onAzimuthChange)
-    $azimuthFields.on('keyup', _.debounce(onAzimuthChange, 300))
+    @onAzimuthChange = => Form.updateAzimuthArray(@)
+    @debouncedOnAzimuthChange = _.debounce(@onAzimuthChange, 300)
+    @updateBuildType = => Form.updateBuildType(@)
+    @$azimuthFields = getAzimuthFields()
+    @$azimuthFields.on('change', @onAzimuthChange)
+    @$azimuthFields.on('keyup', @debouncedOnAzimuthChange)
     # Bind event to build type dropdown
-    getBuildTypeSelect(@).on 'change', => Form.updateBuildType(@)
+    @$buildingTypeSelect = getBuildTypeSelect(@)
+    @$buildingTypeSelect.on('change', @updateBuildType)
     Form.updateWaterFields(@)
+
+  getAzimuthFields = -> @$('.azimuth-array input').add(getAzimuthInput(@)).add(getCfaInput(@))
+
+  unbindEvents = ->
+    # Unbind change events.
+    @$azimuthFields.off('change', @onAzimuthChange)
+    @$azimuthFields.off('keyup', @debouncedOnAzimuthChange)
+    @$buildingTypeSelect.off('change', @updateBuildType)
 
   Form = Forms.defineModelForm
     name: 'typologyForm'
@@ -152,6 +163,8 @@ Meteor.startup ->
         typologyClass = @reactiveClass.get()
         subclass = @reactiveSubClass.get()
         updateFields.call(@)
+    onDestroy: ->
+      unbindEvents.call(@)
     hooks:
       formToDoc: (doc) ->
         doc.project = Projects.getCurrentId()
@@ -171,12 +184,6 @@ Meteor.startup ->
                 alert('These Lots are using this Typology: ' + lotNames + '. Remove this Typology' +
                   ' from the Lot first before changing its class.')
                 @result(false)
-          # TODO(aramk) Due to a bug this is disabled for now.
-          #                result = confirm(lotCount + ' ' + Strings.pluralize('Lot', lotCount) + ' will' +
-          #                  ' have their classes changed from ' + oldClass + ' to ' + newClass +
-          #                  ' to support this Typology. Do you wish to proceed?')
-          #                # Updating the actual Lot is handled by the collection.
-          #                @result(if result then modifier else false)
           modifier
 
   Form.helpers
