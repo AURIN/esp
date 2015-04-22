@@ -14,9 +14,9 @@
             <div class="fields">
               {{> afQuickField name="parameters.general.subclass" type="dropdown" items=subclasses}}
               {{> afQuickField name="parameters.general.state"}}
-              {{> afQuickField name="parameters.general.code"}}
-              {{> afQuickField name="parameters.general.type" options="allowed"}}
               {{> afQuickField name="parameters.general.climate_zn"}}
+              {{> afQuickField name="parameters.general.type" options="allowed"}}
+              {{> afQuickField name="parameters.general.code"}}
 
               <div class="subtitle">Space</div>
               <div class="geom">
@@ -76,15 +76,15 @@
               {{> afQuickField name="parameters.orientation.eq_azmth_h" type="azimuthArray"}}
               {{> afQuickField name="parameters.energy_demand.cop_heat"}}
               {{> afQuickField name="parameters.energy_demand.src_heat" options="allowed"}}
+              {{> afQuickField name="parameters.energy_demand.therm_en_heat"}}
               {{> afQuickField name="parameters.orientation.eq_azmth_c" type="azimuthArray"}}
               {{> afQuickField name="parameters.energy_demand.eer_cool"}}
               {{> afQuickField name="parameters.energy_demand.src_cool" options="allowed"}}
-              {{> afQuickField name="parameters.energy_demand.therm_en_heat"}}
               {{> afQuickField name="parameters.energy_demand.therm_en_cool"}}
               {{> afQuickField name="parameters.energy_demand.en_light"}}
-              {{> afQuickField name="parameters.energy_demand.src_hwat" options="allowed"}}
               {{> afQuickField name="parameters.energy_demand.therm_en_hwat"}}
               {{> afQuickField name="parameters.energy_demand.cop_hws"}}
+              {{> afQuickField name="parameters.energy_demand.src_hwat" options="allowed"}}
               {{> afQuickField name="parameters.energy_demand.prpn_elec_scheme"}}
 
               <!-- NOTE: Fields from entity form. -->

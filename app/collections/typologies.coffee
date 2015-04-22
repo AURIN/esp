@@ -123,25 +123,32 @@ createCategorySchemaObj = (cat, catId, args) ->
         hasRequiredField = true
       autoLabel(fieldSchema, itemId)
       if catClasses
-        fieldSchema.classes ?= catClasses
+        fieldSchema.classes ?= Setter.clone(catClasses)
+        # console.log('catClasses', catClasses, fieldSchema.classes)
       # If defaultValue is used, put it into "classes" to prevent SimpleSchema from storing this
       # value in the doc. We want to inherit this value at runtime for all classes, but not
       # persist it in multiple documents in case we want to change it later in the schema.
       defaultValue = fieldSchema.defaultValue
       if defaultValue?
         classes = fieldSchema.classes ?= {}
+        
         # console.log('itemId', itemId)
         # console.log('allClassOptions', allClassOptions)
         # console.log('classes', classes)
         allClassOptions = classes.ALL ?= {}
+        # if allClassOptions.defaultValue?
+        #   Logger.info('allClassOptions', allClassOptions, classes)
+
         # TODO(aramk) This block causes a strange issue where ALL.classes is defined with
         # defaultValue already set, though it wasn't a step earlier...
-        if allClassOptions.defaultValue?
+
+        if allClassOptions.defaultValue? && allClassOptions.defaultValue != defaultValue
           # console.log('fieldSchema', fieldSchema)
           # console.log('classes', classes)
           # console.log('BuildingClasses', BuildingClasses)
           # console.log('extend', extendBuildingClasses())
-          throw new Error('Default value specified on field ' + itemId + ' and in classOptions - only use one.')
+          Logger.error('Default value specified on field ' + itemId + ' and in classOptions - only use one.')
+          # throw new Error('Default value specified on field ' + itemId + ' and in classOptions - only use one.')
         # console.log('setting default value', allClassOptions)
         allClassOptions.defaultValue = defaultValue
         delete fieldSchema.defaultValue
@@ -2966,12 +2973,13 @@ typologyCategories =
         desc: 'Number of garage parking spaces.'
         type: Number
         units: Units.spaces
-        classes: RESIDENTIAL: {}
+        classes: RESIDENTIAL: {defaultValue: 0}
       parking_ug:
         label: 'Parking Spaces - Underground'
         desc: 'Number of underground parking spaces.'
         type: Number
         units: Units.spaces
+        defaultValue: 0
         classes: extendBuildingClasses()
       parking_sl:
         label: 'Parking Spaces - Street Level'
