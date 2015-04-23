@@ -2091,11 +2091,11 @@ typologyCategories =
         type: Number
         decimal: true 
         calc: ->
-          en_elec = @param('$energy_demand.en_elec')
+          en_elec = @param('energy_demand.en_elec')
           if en_elec < 0
             en_elec
           else
-            @param('$energy_demand.prpn_elec_scheme') * en_elec
+            @param('energy_demand.prpn_elec_scheme') * en_elec
       en_elec_cogen:
         label: 'Cogen Electricity'
         desc: 'Electricity demand supplied by scheme power.'
