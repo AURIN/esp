@@ -11,6 +11,7 @@ Meteor.startup ->
       {param: 'space.plot_ratio', label: 'Total Plot Ratio', aggregate: 'average'}
       {param: 'space.occupants', label: 'Total Residents'}
       {param: 'space.jobs', label: 'Total Jobs'}
+      {template: 'landUseChart'}
 
       {title: 'Energy Demand'}
       {param: 'energy_demand.en_total', label: 'Total Operating'}
@@ -43,8 +44,4 @@ Meteor.startup ->
       {param: 'parking.parking_ga', label: 'Total Parking - Garage'}
       {param: 'parking.parking_ug', label: 'Total Parking - Underground'}
       {param: 'parking.parking_t', label: 'Total Parking - All Parking'}
-
-      {title: 'Transport'}
-      {param: 'transport.vkt_dwellings_year', label: 'Total VKT'}
-      {param: 'transport.ghg_dwellings_year', label: 'Total GHG'}
     ]

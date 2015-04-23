@@ -312,6 +312,7 @@ projectCategories =
       vkt:
         label: 'Carbon per vehicle km travelled'
         type: Number
+        decimal: true
         units: Units.kgco2km
         defaultValue: 0.419
   renewable_energy:
@@ -1589,7 +1590,7 @@ calcElecCost = ->
   en_elec_scheme = @param('energy_demand.en_elec_scheme')
   if en_elec_scheme == 0
     return 0
-  usageParamId = if en_elec < 0 then 'price_usage_elec_tariff' else 'price_usage_elec'
+  usageParamId = if en_elec_scheme < 0 then 'price_usage_elec_tariff' else 'price_usage_elec'
   365 * @param('utilities.price_supply_elec') + en_elec_scheme *
       @KWH_TO_MJ(@param('utilities.' + usageParamId))
 
@@ -2091,11 +2092,11 @@ typologyCategories =
         type: Number
         decimal: true 
         calc: ->
-          en_elec = @param('$energy_demand.en_elec')
+          en_elec = @param('energy_demand.en_elec')
           if en_elec < 0
             en_elec
           else
-            @param('$energy_demand.prpn_elec_scheme') * en_elec
+            @param('energy_demand.prpn_elec_scheme') * en_elec
       en_elec_cogen:
         label: 'Cogen Electricity'
         desc: 'Electricity demand supplied by scheme power.'
@@ -3397,6 +3398,7 @@ TypologySchema = new SimpleSchema
 @Typologies = new Meteor.Collection 'typologies'
 Typologies.attachSchema(TypologySchema)
 Typologies.Classes = TypologyClasses
+Typologies.LandClasses = LandClasses
 Typologies.EnergySources = EnergySources
 Typologies.allow(Collections.allowAll())
 
@@ -3881,8 +3883,8 @@ EntitySchema = new SimpleSchema
 Entities.attachSchema(EntitySchema)
 Entities.allow(Collections.allowAll())
 
-Entities.getFlattened = (id) ->
-  entity = Entities.findOne(id)
+Entities.getFlattened = (idOrEntity) ->
+  entity = if Types.isString(idOrEntity) then Entities.findOne(idOrEntity) else idOrEntity
   Entities.mergeTypology(entity)
   Typologies.mergeDefaults(entity)
   entity
@@ -4016,7 +4018,7 @@ updateAzimuthEnergyDemand = (userId, doc, fieldNames, modifier) ->
   fullDoc = depResult.fullDoc
   isEntity = doc.typology?
   return unless depResult.hasDependencyUpdates || isEntity
-  Entities.mergeTypology(fullDoc) if isEntity
+  Entities.getFlattened(fullDoc) if isEntity
   eq_azmth_h = SchemaUtils.getParameterValue(fullDoc, 'parameters.orientation.eq_azmth_h')
   eq_azmth_c = SchemaUtils.getParameterValue(fullDoc, 'parameters.orientation.eq_azmth_c')
   azimuth = SchemaUtils.getParameterValue(fullDoc, 'parameters.orientation.azimuth') ? 0

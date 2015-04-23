@@ -3,12 +3,12 @@ reports = null
 ReportTemplates = [
   'residentialReport'
   'commercialReport'
+  'institutionalReport'
+  'mixedUseReport'
   'openSpaceReport'
   'pathwayReport'
-  'mixedUseReport'
-  'institutionalReport'
-  'transportReport'
   'precinctReport',
+  'transportReport'
   'cogenReport'
 ]
 
