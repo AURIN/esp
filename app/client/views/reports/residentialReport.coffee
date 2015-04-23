@@ -18,7 +18,7 @@ Meteor.startup ->
       {param: 'space.dwell_dens', aggregate: 'average'}
       {param: 'space.dwell_tot'}
       {param: 'space.occupants'}
-      {template: 'spaceChart'}
+      {template: 'dwellingChart'}
 
       {title: 'Energy Demand'}
       {param: 'energy_demand.en_heat'}

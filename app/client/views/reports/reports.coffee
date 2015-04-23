@@ -40,10 +40,10 @@
           try
             args =
               field: field
-              results: results
               formatter: formatter
               data: data
               entities: entities
+              results: results
             renderedField = Reports.renderField(args)
             renderedFields.push(renderedField)
             $fields.append(renderedField.element)
@@ -72,7 +72,8 @@
 
   fieldToRenderData: (args) ->
     field = args.field
-    data = args.data
+    results = args.results
+
     param = field.param
     unless param?
       return Setter.clone(field)
@@ -81,7 +82,7 @@
       throw new Error('Could not find schema for param: ' + param)
     label = field.label ? paramSchema.label ? Strings.toTitleCase(param)
     units = paramSchema.units
-    value = data[field.id]
+    value = results[field.id]
     if Number.isNaN(value)
       value = null
     Setter.merge(field, {label: label, value: value, units: units})
