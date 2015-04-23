@@ -192,13 +192,48 @@ forEachCategoriesField = (categories, callback) ->
   for catId, category of categories
     forEachCategoryField(category, callback)
 
-####################################################################################################
-# PROJECT SCHEMA DEFINITION
-####################################################################################################
+latitudeSchema =
+  label: 'Latitude'
+  type: Number
+  decimal: true
+  units: Units.deg
+
+longitudeSchema =
+  label: 'Longitude'
+  type: Number
+  decimal: true
+  units: Units.deg
+
+elevationSchema =
+  type: Number
+  decimal: true
+  desc: 'Elevation from ground-level to the base of this entity.'
+  units: Units.m
+  optional: true
+
+PositionSchema = new SimpleSchema
+  latitude: latitudeSchema
+  longitude: longitudeSchema
+  elevation: elevationSchema
+
+VertexSchema = new SimpleSchema
+  x:
+    type: Number
+    decimal: true
+  y:
+    type: Number
+    decimal: true
+  z:
+    type: Number
+    decimal: true
 
 descSchema =
   label: 'Description'
   type: String
+
+####################################################################################################
+# PROJECT SCHEMA DEFINITION
+####################################################################################################
 
 VktRailTypes =
   rail0_400:
@@ -1258,6 +1293,19 @@ TypologyClasses = Object.freeze({
         color: '#eb3232'
       'Restaurant':
         color: '#e53b3b'
+  INSTITUTIONAL:
+    name: 'Institutional'
+    color: '#ffae00' # Orange
+    abbr: 'i'
+    subclasses:
+      'School':
+        color: '#ffae00'
+      'Tertiary':
+        color: '#ffd200'
+      'Hospital':
+        color: '#ffc63d'
+      'Public':
+        color: '#e4ff00'
   MIXED_USE:
     name: 'Mixed Use'
     color: '#756bb1' # Purple
@@ -1274,19 +1322,9 @@ TypologyClasses = Object.freeze({
     displayMode: 'line'
     canAllocateToLot: false
     subclasses: ['Freeway', 'Highway', 'Street', 'Footpath', 'Bicycle Path']
-  INSTITUTIONAL:
-    name: 'Institutional'
-    color: '#ffae00' # Orange
-    abbr: 'i'
-    subclasses:
-      'School':
-        color: '#ffae00'
-      'Tertiary':
-        color: '#ffd200'
-      'Hospital':
-        color: '#ffc63d'
-      'Public':
-        color: '#e4ff00'
+  ASSET:
+    name: 'Asset'
+    color: '#999' # Grey
 })
 
 BuildingClasses = Object.freeze({
@@ -1655,6 +1693,7 @@ typologyCategories =
           # COMMERCIAL: {optional: false}
           # INSTITUTIONAL: {optional: false}
           # MIXED_USE: {optional: false}
+          ASSET: {}
           # Pathway typologies don't have geometry - it is defined in the entities - so this is
           # optional.
           PATHWAY: {}
@@ -1662,7 +1701,8 @@ typologyCategories =
         label: '3D Geometry'
         type: String
         desc: '3D mesh representing the typology.'
-        classes: extendBuildingClasses()
+        classes: extendBuildingClasses
+          ASSET: {optional: false}
       geom_2d_filename:
         label: '2D Geometry Filename'
         type: String
@@ -1671,6 +1711,22 @@ typologyCategories =
         label: '3D Geometry Filename'
         type: String
         desc: 'The name of the file representing the 3D geometry.'
+      
+      position:
+        items:
+          latitude: _.extend(latitudeSchema, classes: {ASSET: {}})
+          longitude: _.extend(longitudeSchema, classes: {ASSET: {}})
+          elevation: _.extend(elevationSchema, classes: {ASSET: {}})
+
+        # type: PositionSchema
+        # classes: ASSET: {}
+      # scale:
+      #   type: VertexSchema
+      #   classes: ASSET: {}
+      # rotation:
+      #   type: VertexSchema
+      #   classes: ASSET: {}
+
       lotsize: extendSchema(areaSchema, {
         label: 'Lot Size'
         calc: ->
@@ -3840,6 +3896,11 @@ Collections.addValidation(Lots, Lots.validate)
 ####################################################################################################
 
 entityCategories = Setter.clone(typologyCategories)
+# extraEntityCategories =
+#   space:
+#     items:
+# Setter.merge(entityCategories, extraEntityCategories)
+
 # Entities have the same parameters as typologies, so any required fields are expected to exist on
 # the typology and are no longer required for the entities, so we remove them here.
 removeRequiredPropertyFromCategories = (categories) ->
@@ -4188,6 +4249,61 @@ Layers.attachSchema(LayerSchema)
 Layers.allow(Collections.allowAll())
 Layers.findByProject = (projectId) -> SchemaUtils.findByProject(Layers, projectId)
 Layers.getDisplayModeItems = -> _.map LayerDisplayModes, (value, key) -> {label: value, value: key}
+
+####################################################################################################
+# USER ASSETS SCHEMA DEFINITION
+####################################################################################################
+
+# UserAssetTypes =
+#   tree:
+#     name: 'Tree'
+#     filename: 'tree_simple.dae'
+
+# userAssetCategories =
+#   general:
+#     items:
+#       type:
+#         type: String
+#         allowedValues: _.keys(UserAssetTypes)
+#   space:
+#     items:
+#       position:
+#         type: PositionSchema
+#         optional: false
+#       scale:
+#         type: VertexSchema
+#         optional: true
+#       rotation:
+#         type: VertexSchema
+#         optional: true
+#       # TODO(aramk) For some reason, latitude and longitude are required even though offset is
+#       # optional. Using this as a workaround.
+#       offset:
+#         type: PositionSchema
+#         optional: true
+
+# UsersAssetParametersSchema = createCategoriesSchema
+#   categories: userAssetCategories
+
+# UserAssetsSchema = new SimpleSchema
+#   name:
+#     type: String
+#     index: true
+#     unique: false
+#   desc: extendSchema descSchema,
+#     optional: true
+#   parameters:
+#     label: 'Parameters'
+#     type: UsersAssetParametersSchema
+#     # Necessary to allow required fields within.
+#     optional: false
+#     defaultValue: {}
+#   project: projectSchema
+
+# @UserAssets = new Meteor.Collection 'userAssets'
+# UserAssets.attachSchema(UserAssets)
+# UserAssets.allow(Collections.allowAll())
+# UserAssets.findByProject = (projectId) -> SchemaUtils.findByProject(UserAssets, projectId)
 
 ####################################################################################################
 # COLLECTIONS

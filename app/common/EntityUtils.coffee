@@ -88,6 +88,21 @@ if Meteor.isClient
 
     _render3dGeometry: (id) -> @_buildGeometryFromFile(id, 'geom_3d')
 
+    _getRenderCentroid: (id) ->
+      df = Q.defer()
+      entity = Entities.findOne(id)
+      position = SchemaUtils.getParameterValue(entity, 'space.position')
+      if position
+        requirejs [
+          'atlas/model/GeoPoint'
+        ], bindMeteor (GeoPoint) ->
+          df.resolve(new GeoPoint(position))
+      else
+        @_renderLot(id).then bindMeteor (lotEntity) ->
+          # If the geoEntity was rendered using the Typology geometry, centre it based on the Lot.
+          df.resolve(lotEntity.getCentroid())
+      df.promise
+
     _renderLot: (id) ->
       entity = Entities.findOne(id)
       lotId = entity.lot
@@ -135,10 +150,8 @@ if Meteor.isClient
                 @_setUpEntity(geoEntity)
                 resolve(geoEntity)
                 return
-              @_renderLot(id).then(
-                bindMeteor (lotEntity) =>
-                  # If the geoEntity was rendered using the Typology geometry, centre it based on the Lot.
-                  lotCentroid = lotEntity.getCentroid()
+              @_getRenderCentroid(id).then(
+                bindMeteor (centroid) =>
 
                   requirejs [
                     'atlas/model/Feature',
@@ -186,8 +199,8 @@ if Meteor.isClient
                             currentCentroid = form.getCentroid()
                             # Perform this after getting the centroid to avoid rebuiding the
                             # primitive for GLTF meshes, which would require another ready() call.
-                            form.setCentroid(lotCentroid)
-                            newCentroid = lotCentroid.clone()
+                            form.setCentroid(centroid)
+                            newCentroid = centroid.clone()
                             # Set the elevation to the same as the current elevation to avoid any
                             # movement in the elevation axis.
                             newCentroid.elevation = currentCentroid.elevation
