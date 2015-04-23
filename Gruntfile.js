@@ -122,7 +122,7 @@ module.exports = function(grunt) {
             return value === arg;
           });
         };
-      addTasks('install-meteor-packages', 'setup-atlas-resources');
+      addTasks('setup-atlas-resources');
     console.log('Running tasks', tasks);
     tasks.forEach(function(task) {
       grunt.task.run(task);
@@ -132,19 +132,6 @@ module.exports = function(grunt) {
   grunt.registerTask('install-mrt', 'Installs Meteorite dependencies.', function() {
     // TODO(aramk) Run this as a child process since it causes huge CPU lag otherwise.
     shell.exec('cd ' + APP_DIR + ' && mrt install');
-  });
-
-  grunt.registerTask('install-meteor-packages', 'Installs Meteor dependencies manually to avoid \
-      Meteorite installing all transient dependencies for packages when we only need to provide a \
-      few custom forks.', function() {
-    var done = this.async();
-    shell.cd(path.join(APP_DIR, 'packages'));
-    execAll([
-      'git clone https://github.com/aramk/Meteor-cfs-s3.git cfs:s3 --branch develop --single-branch',
-      'git clone https://github.com/aramk/meteor-collection-hooks.git collection-hooks --branch feature/exceptions --single-branch'
-    ], function() {
-      done();
-    });
   });
 
   grunt.registerTask('build-atlas', 'Builds Atlas.', function(arg1) {
