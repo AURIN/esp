@@ -122,7 +122,6 @@ module.exports = function(grunt) {
             return value === arg;
           });
         };
-      addTasks('setup-atlas-resources');
     console.log('Running tasks', tasks);
     tasks.forEach(function(task) {
       grunt.task.run(task);
@@ -149,28 +148,6 @@ module.exports = function(grunt) {
       shell.exec('grunt build');
       shell.cd(dirname);
     }
-  });
-
-  grunt.registerTask('setup-atlas-resources', 'Sets up the static resources for Atlas.',
-    function() {
-      var done = this.async();
-      if (fs.existsSync(PUBLIC_PARENT_PATH)) {
-        // Update the git repo for Atlas resources.
-        shell.cd(PUBLIC_PARENT_PATH);
-        runProcess('git pull', {
-          exit: function() {
-            done();
-          }
-        });
-      } else {
-        // Clone the git repo for Atlas resources.
-        shell.cd(PUBLIC_DIR);
-        runProcess('git clone ' + ATLAS_RESOURCES_REPO + ' ' + PUBLIC_PARENT_DIR, {
-          exit: function() {
-            done();
-          }
-        });
-      }
   });
 
   grunt.registerTask('build', 'Builds the app.', function(arg1) {

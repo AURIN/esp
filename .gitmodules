@@ -4,3 +4,6 @@
 [submodule "app/packages/meteor-collection-hooks"]
 	path = app/packages/meteor-collection-hooks
 	url = https://github.com/aramk/meteor-collection-hooks.git
+[submodule "app/public/design"]
+	path = app/public/design
+	url = https://bitbucket.org/urbanetic/atlas-resources.git
