@@ -129,5 +129,7 @@ sanitizeValue = (value) -> value ? 0
 # schema expression.
 CalcContext =
   IF: (condition, thenResult, elseResult) -> if condition then sanitizeValue(thenResult) else sanitizeValue(elseResult)
+  MIN: -> Math.min.apply(Math, arguments)
+  MAX: -> Math.max.apply(Math, arguments)
   KWH_TO_MJ: (kWh) -> kWh * 3.6
   MJ_TO_KWH: (MJ) -> MJ / 3.6

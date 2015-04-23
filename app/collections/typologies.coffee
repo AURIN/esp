@@ -338,6 +338,12 @@ projectCategories =
         decimal: true
         units: Units.$kWh
         defaultValue: 0.27
+      price_usage_elec_tariff:
+        label: 'Electricity Feed-In Price per kWh'
+        type: Number
+        decimal: true
+        units: Units.$kWh
+        defaultValue: 0.4
       price_supply_gas:
         label: 'Gas Supply Charge'
         type: Number
@@ -1576,7 +1582,16 @@ calcEnergyCost2 = (suffix, demand) ->
   if @param('energy_demand.en_' + suffix) == 0
     0
   else
-    365 * @param('utilities.price_supply_' + suffix) + @param('energy_demand.' + demand) * @KWH_TO_MJ(@param('utilities.price_usage_' + suffix))
+    365 * @param('utilities.price_supply_' + suffix) + @param('energy_demand.' + demand) *
+        @KWH_TO_MJ(@param('utilities.price_usage_' + suffix))
+
+calcElecCost = ->
+  en_elec_scheme = @param('energy_demand.en_elec_scheme')
+  if en_elec_scheme == 0
+    return 0
+  usageParamId = if en_elec < 0 then 'price_usage_elec_tariff' else 'price_usage_elec'
+  365 * @param('utilities.price_supply_elec') + en_elec_scheme *
+      @KWH_TO_MJ(@param('utilities.' + usageParamId))
 
 calcEnergyWithIntensityCost = (suffix, shortSuffix) ->
   supply_price = @param('utilities.price_supply_' + suffix)
@@ -2075,14 +2090,19 @@ typologyCategories =
         units: Units.MJyear
         type: Number
         decimal: true 
-        calc: '$energy_demand.prpn_elec_scheme * $energy_demand.en_elec'
+        calc: ->
+          en_elec = @param('$energy_demand.en_elec')
+          if en_elec < 0
+            en_elec
+          else
+            @param('$energy_demand.prpn_elec_scheme') * en_elec
       en_elec_cogen:
         label: 'Cogen Electricity'
         desc: 'Electricity demand supplied by scheme power.'
         units: Units.MJyear
         type: Number
         decimal: true 
-        calc: '(1 - $energy_demand.prpn_elec_scheme) * $energy_demand.en_elec'
+        calc: 'MAX(((1 - $energy_demand.prpn_elec_scheme) * $energy_demand.en_elec), 0)'
       en_cogen:
         label: 'Cogen Total'
         desc: 'Total cogen energy used by the typology.'
@@ -2837,7 +2857,7 @@ typologyCategories =
           if isNonResidentialBuildingClass(Entities.getTypologyClass(@model))
             calcEnergyWithIntensityCost.call(@, 'elec', 'e')
           else
-            calcEnergyCost2.call(@, 'elec', 'en_elec_scheme')
+            calcElecCost.call(@)
       cost_op_g:
         label: 'Cost - Gas Usage'
         desc: 'Operating costs due to gas usage.'
