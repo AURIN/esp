@@ -1,15 +1,7 @@
 TemplateClass = Template.dwellingChart
 
-TemplateClass.rendered = ->
-  console.log('rendered')
-  
 TemplateClass.helpers
   items: ->
-    # entities = _.filter @entities, (entity) ->
-    #   typology = Typologies.findOne(entity.typology)
-    #   typologyClass = SchemaUtils.getParameterValue(typology, 'general.class')
-    #   typologyClass == 'RESIDENTIAL'
-
     items = []
     entities = @entities
     console.log('entities', entities)
@@ -32,7 +24,7 @@ TemplateClass.helpers
 
   settings: ->
     {
-      title: 'Dwelling Mix'
+      title: 'Dwelling Mix by Subclass'
       labels: false
       height: 200
       resize: {width: true}

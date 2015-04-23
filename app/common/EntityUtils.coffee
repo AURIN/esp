@@ -11,7 +11,7 @@ _.extend EntityUtils,
   evaluate: (entity, paramIds) ->
     paramIds = if Types.isArray(paramIds) then paramIds else [paramIds]
     typologyClass = Entities.getTypologyClass(entity)
-    Entities.mergeTypology(entity)
+    Entities.getFlattened(entity)
     getEvalEngine().evaluate(model: entity, paramIds: paramIds, typologyClass: typologyClass)
 
 if Meteor.isClient
