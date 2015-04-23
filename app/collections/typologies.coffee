@@ -39,7 +39,7 @@ Units =
   dwellings: 'dwellings'
   floors: 'floors'
   GJyear: 'GJ/year'
-  GJyearOccupant: 'GJ/year/occupant'
+  GJOccupantYear: 'GJ/occupant/year'
   ha: 'ha'
   hrsDay: 'hours/day'
   hrsYear: 'hours/year'
@@ -57,7 +57,7 @@ Units =
   kWhday: 'kWh/day'
   kWhyear: 'kWh/year'
   kLyear: 'kL/year'
-  kLyearOccupant: 'kL/year/occupant'
+  kLOccupantYear: 'kL/occupant/year'
   kLm2year: 'kL/m^2/year'
   km: 'km'
   kmday: 'km/day'
@@ -2536,25 +2536,25 @@ typologyCategories =
         desc: 'Internal water use per occupant of the typology.'
         type: Number
         decimal: true
-        units: Units.kLyearOccupant
+        units: Units.kLOccupantYear
         classes: RESIDENTIAL: {}
       i_wu_intensity_rain:
         label: 'Internal Water Use Intensity - Rain'
         type: Number
         decimal: true
-        units: Units.kLyearOccupant
+        units: Units.kLOccupantYear
         classes: RESIDENTIAL: {}
       i_wu_intensity_treat:
         label: 'Internal Water Use Intensity - Treated'
         type: Number
         decimal: true
-        units: Units.kLyearOccupant
+        units: Units.kLOccupantYear
         classes: RESIDENTIAL: {}
       i_wu_intensity_grey:
         label: 'Internal Water Use Intensity - Grey'
         type: Number
         decimal: true
-        units: Units.kLyearOccupant
+        units: Units.kLOccupantYear
         classes: RESIDENTIAL: {}
       i_wu_pot:
         label: 'Internal Water Use - Potable'
@@ -2628,7 +2628,7 @@ typologyCategories =
           else
             0
       i_share_rain:
-        label: 'Share of Rainwater Used Internally'
+        label: 'Share of Rainwater Use - Internal vs External'
         desc: 'Share of the total rainwater supply used internally in the typology.'
         type: Number
         decimal: true

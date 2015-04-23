@@ -85,19 +85,20 @@ TemplateClass.rendered = ->
   # Remove create button for layers.
   $(@find('.layers .collection-table .create.item')).remove()
 
-  # Add popups to fields
-  @$('.has-popup').popup()
-  # Add toggle state for buttons.
-  @$('.toggle').state()
-
   # Use icons for display mode dropdowns
   selectors = ['.lotDisplayMode.dropdown', '.entityDisplayMode.dropdown',
       '.layerDisplayMode.dropdown']
   _.each selectors, (cls) ->
     $dropdown = @$(cls)
     $dropdown.addClass('item')
+    $dropdown.attr('title', 'Toggle View Mode')
     $('.dropdown.icon', $dropdown).attr('class', 'photo icon')
     $('.text', $dropdown).hide()
+
+  # Add popups to fields
+  @$('[title]').popup()
+  # Add toggle state for buttons.
+  @$('.toggle').state()
 
 getSingleFormName = (formArgs) ->
   if Types.isString(formArgs.single) then formArgs.single else formArgs

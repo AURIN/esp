@@ -9,7 +9,7 @@
           {{> collectionTable collection="Entities" items=entities settings=tableSettings}}
           <div class="extra menu">
             {{> dropdown name="entityDisplayMode" items=displayModes value=defaultEntityDisplayMode labelAttr="label" valueAttr="value"}}
-            <a class="zoom item has-popup" title="Zoom to Entity">
+            <a class="zoom item" title="Zoom to Entity">
               <i class="crosshairs icon"></i>
             </a>
           </div>
@@ -20,7 +20,7 @@
         <div class="items typologies">
           {{> collectionTable collection="Typologies" items=typologies settings=tableSettings}}
           <div class="extra menu">
-            <div class="ui button toggle pathway draw item has-popup" title="Draw a pathway with the selected typology."><i class="road icon"></i></div>
+            <div class="ui button toggle pathway draw item" title="Draw a pathway with the selected typology."><i class="road icon"></i></div>
           </div>
         </div>
 
@@ -31,19 +31,19 @@
           <div class="extra menu">
             {{> dropdown name="lotDisplayMode" items=lotDisplayModes value=defaultLotDisplayMode
             labelAttr="label" valueAttr="value"}}
-            <div class="ui button filter item has-popup" title="Filter Lot Selection">
+            <div class="ui button filter item" title="Filter Lot Selection">
               <i class="filter icon"></i>
             </div>
-            <a class="allocate item has-popup" title="Auto-allocate Typologies to selected Lots.">
+            <a class="allocate item" title="Auto-allocate Typologies to selected Lots.">
               <i class="magic icon"></i>
             </a>
-            <a class="amalgamate item has-popup" title="Amalgamate all contiguous, selected Lots.">
+            <a class="amalgamate item" title="Amalgamate all contiguous, selected Lots.">
               <i class="compress icon"></i>
             </a>
-            <div class="ui button toggle subdivide item has-popup" title="Subdivide selected Lots.">
+            <div class="ui button toggle subdivide item" title="Subdivide selected Lots.">
               <i class="expand icon"></i>
             </div>
-            <div class="ui button alignment item has-popup" title="Align typologies on the selected Lots to face the street.">
+            <div class="ui button alignment item" title="Align typologies on the selected Lots to face the street.">
               <i class="refresh icon"></i>
             </div>
           </div>
@@ -54,11 +54,11 @@
         <div class="content items layers">
           {{> collectionTable collection="Layers" items=layers settings=layerTableSettings}}
           <div class="extra menu">
-            <a class="import item has-popup" title="Import Footprints">
+            <a class="import item" title="Import Footprints">
               <i class="upload disk icon"></i>
             </a>
             {{> dropdown name="layerDisplayMode" items=layerDisplayModes labelAttr="label" valueAttr="value"}}
-            <a class="zoom item has-popup" title="Zoom to Footprint">
+            <a class="zoom item" title="Zoom to Footprint">
               <i class="crosshairs icon"></i>
             </a>
           </div>
