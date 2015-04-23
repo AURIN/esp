@@ -14,6 +14,8 @@ aramk:q@1.0.1_1
 aramk:requirejs@2.1.15_1
 aramk:tinycolor@1.1.0_1
 aramk:utility@0.8.3
+aramk:vega@1.4.2_1
+aramk:vega-charts@0.3.1
 aslagle:reactive-table@0.4.2
 autoupdate@1.2.1
 awatson1978:dropzone@1.0.2
@@ -43,6 +45,7 @@ cfs:upload-http@0.0.20
 cfs:worker@0.1.4
 check@1.0.5
 coffeescript@1.0.6
+d3js:d3@3.4.13
 ddp@1.1.0
 deps@1.0.7
 digilord:roles@1.2.12
