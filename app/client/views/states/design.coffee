@@ -52,6 +52,8 @@ TemplateClass.destroyed = ->
   LotUtils.beforeAtlasUnload()
   LayerUtils.destroyDisplayMode()
   AtlasManager.removeAtlas()
+  # Remove any remaining popups.
+  $('.ui.popup').remove()
 
 TemplateClass.rendered = ->
   template = @
