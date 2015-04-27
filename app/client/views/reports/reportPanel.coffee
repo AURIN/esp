@@ -10,6 +10,7 @@ ReportTemplates = [
   'precinctReport',
   'transportReport'
   'cogenReport'
+  'assetReport'
 ]
 
 TemplateClass = Template.reportPanel

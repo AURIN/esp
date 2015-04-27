@@ -2369,6 +2369,13 @@ typologyCategories =
         decimal: true
         units: Units.kgco2
         calc: '$embodied_carbon.e_co2_emb + $embodied_carbon.i_co2_emb_intensity_value + $parking.co2_ug_tot'
+      t_co2_emb_asset:
+        label: 'Total Embodied'
+        desc: 'Total CO2 embodied in the asset.'
+        type: Number
+        decimal: true
+        units: Units.kgco2year
+        classes: ASSET: {}
       pathways:
         label: 'Pathways'
         items:
@@ -2939,6 +2946,12 @@ typologyCategories =
         type: Number
         units: Units.$
         calc: '$financial.cost_op_e + $financial.cost_op_g + $financial.cost_op_w'
+      cost_asset:
+        label: 'Cost - Total'
+        desc: 'Total cost of the asset.'
+        type: Number
+        units: Units.$
+        classes: ASSET: {}
       pathways:
         items:
           cost_land:
