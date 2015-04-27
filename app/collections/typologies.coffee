@@ -124,33 +124,17 @@ createCategorySchemaObj = (cat, catId, args) ->
       autoLabel(fieldSchema, itemId)
       if catClasses
         fieldSchema.classes ?= Setter.clone(catClasses)
-        # console.log('catClasses', catClasses, fieldSchema.classes)
       # If defaultValue is used, put it into "classes" to prevent SimpleSchema from storing this
       # value in the doc. We want to inherit this value at runtime for all classes, but not
       # persist it in multiple documents in case we want to change it later in the schema.
       defaultValue = fieldSchema.defaultValue
       if defaultValue?
-        classes = fieldSchema.classes ?= {}
-        
-        # console.log('itemId', itemId)
-        # console.log('allClassOptions', allClassOptions)
-        # console.log('classes', classes)
-        allClassOptions = classes.ALL ?= {}
-        # if allClassOptions.defaultValue?
-        #   Logger.info('allClassOptions', allClassOptions, classes)
-
-        # TODO(aramk) This block causes a strange issue where ALL.classes is defined with
-        # defaultValue already set, though it wasn't a step earlier...
-
-        if allClassOptions.defaultValue? && allClassOptions.defaultValue != defaultValue
-          # console.log('fieldSchema', fieldSchema)
-          # console.log('classes', classes)
-          # console.log('BuildingClasses', BuildingClasses)
-          # console.log('extend', extendBuildingClasses())
-          Logger.error('Default value specified on field ' + itemId + ' and in classOptions - only use one.')
-          # throw new Error('Default value specified on field ' + itemId + ' and in classOptions - only use one.')
-        # console.log('setting default value', allClassOptions)
-        allClassOptions.defaultValue = defaultValue
+        classes = fieldSchema.classes
+        if classes
+          _.each classes, (classOptions, name) ->
+            classOptions.defaultValue = defaultValue
+        else
+          fieldSchema.classes = {ALL: {defaultValue: defaultValue}}
         delete fieldSchema.defaultValue
     catSchemaFields[itemId] = fieldSchema
   if COLLECTIONS_DEBUG
@@ -1641,6 +1625,7 @@ calcEnergyWithIntensityCost = (suffix, shortSuffix) ->
 calcLandPrice = ->
   typologyClass = Entities.getTypologyClass(@model)
   abbr = TypologyClasses[typologyClass].abbr
+  return unless abbr?
   @param('financial.land.price_land_' + abbr)
 
 calcTransportLinearRegression = (params) ->
@@ -1718,23 +1703,17 @@ typologyCategories =
           longitude: _.extend(longitudeSchema, classes: {ASSET: {}})
           elevation: _.extend(elevationSchema, classes: {ASSET: {}})
 
-        # type: PositionSchema
-        # classes: ASSET: {}
-      # scale:
-      #   type: VertexSchema
-      #   classes: ASSET: {}
-      # rotation:
-      #   type: VertexSchema
-      #   classes: ASSET: {}
-
       lotsize: extendSchema(areaSchema, {
         label: 'Lot Size'
         calc: ->
           # If the model is a typology, it doesn't have a lot yet, so no lotsize.
           id = @model._id
-          unless Entities.findOne(id)
-            return null
+          entity = Entities.findOne(id)
+          unless entity then return null
           lot = Lots.findByEntity(id)
+          typologyClass = Entities.getTypologyClass(entity)
+          # Assets don't have lots.
+          if typologyClass == 'ASSET' then return 0
           unless lot
             throw new Error('Lot not found for entity.')
           calcArea(lot._id)
@@ -1742,7 +1721,14 @@ typologyCategories =
       extland: extendSchema(areaSchema, {
         label: 'Extra Land'
         desc: 'Area of the land parcel not covered by the structural improvement.'
-        calc: '$space.lotsize - $space.fpa'
+        calc: ->
+          id = @model._id
+          entity = Entities.findOne(id)
+          unless entity then return null
+          typologyClass = Entities.getTypologyClass(entity)
+          # Assets don't have lots.
+          if typologyClass == 'ASSET' then return 0
+          @calc('$space.lotsize - $space.fpa')
       })
       fpa: extendSchema(areaSchema, {
         label: 'Footprint Area'
@@ -2183,6 +2169,7 @@ typologyCategories =
         units: Units.MJyear
         calc: ->
           type_app = @param('energy_demand.type_app')
+          unless type_app then return
           type_en = @param('energy.fitout.' + ApplianceTypes[type_app])
           rooms = @calc('$space.num_0br + $space.num_1br + $space.num_2br + $space.num_3plus')
           type_en * rooms
@@ -3063,7 +3050,10 @@ typologyCategories =
         desc: 'Number of street level parking spaces.'
         type: Number
         units: Units.spaces
-        calc: '$space.ext_land_i * $parking.parking_land / $parking.prk_area_veh'
+        calc: ->
+          prk_area_veh = @param('parking.prk_area_veh')
+          if prk_area_veh == 0 then return 0
+          @calc('$space.ext_land_i * $parking.parking_land') / prk_area_veh
         classes: extendBuildingClasses
           PATHWAY: {}
       parking_t:
