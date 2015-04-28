@@ -172,9 +172,18 @@ TemplateClass.events
     $body.addClass('dragging')
     $viewer = $('.viewer')
     typologyId = @_id
+
     mouseMoveHandler = (moveEvent) ->
       margin = {left: -16, top: -38}
       $pin.offset(left: moveEvent.clientX + margin.left, top: moveEvent.clientY + margin.top)
+    
+    isPositionInElememnt = ($em, position) ->
+      emSize = $em.position()
+      emSize.right = emSize.left + $em.width()
+      emSize.bottom = emSize.top + $em.height()
+      emSize.left <= position.left <= emSize.right &&
+          emSize.top <= position.top <= emSize.bottom
+
     mouseUpHandler = (upEvent) ->
       $pin.remove()
       $body.off('mousemove', mouseMoveHandler)
@@ -183,6 +192,8 @@ TemplateClass.events
 
       # TODO(aramk) Fix this.
       # return unless $.contains($viewer[0], upEvent.target)
+
+      return unless isPositionInElememnt($viewer, {left: upEvent.clientX, top: upEvent.clientY})
 
       viewerPos = $viewer.position()
       mousePos =
