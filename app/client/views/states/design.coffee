@@ -181,6 +181,9 @@ TemplateClass.events
       $body.off('mouseup', mouseUpHandler)
       $body.removeClass('dragging')
 
+      # TODO(aramk) Fix this.
+      # return unless $.contains($viewer[0], upEvent.target)
+
       viewerPos = $viewer.position()
       mousePos =
         x: upEvent.clientX - viewerPos.left,

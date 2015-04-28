@@ -1790,9 +1790,8 @@ typologyCategories =
         type: Number
         units: Units.floors
         classes: extendBuildingClasses()
-      height: extendSchema(heightSchema, {
-        classes: extendBuildingClasses()
-        })
+      height: extendSchema heightSchema,
+        classes: extendBuildingClasses(ASSET: {})
       length:
         label: 'Total Path Length'
         desc: 'Total length of drawn pathway'

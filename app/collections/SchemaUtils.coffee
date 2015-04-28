@@ -125,7 +125,8 @@ global = @
   getParamSchemas: (arg, paramIds) ->
     schemas = {}
     _.each paramIds, (paramId) =>
-      field = @getField(ParamUtils.addPrefix(paramId), arg)
+      paramId = ParamUtils.addPrefix(paramId)
+      field = @getField(paramId, arg)
       if field?
         schemas[paramId] = field
     schemas
