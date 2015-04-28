@@ -52,6 +52,8 @@ TemplateClass.destroyed = ->
   LotUtils.beforeAtlasUnload()
   LayerUtils.destroyDisplayMode()
   AtlasManager.removeAtlas()
+  # Remove any remaining popups.
+  $('.ui.popup').remove()
 
 TemplateClass.rendered = ->
   template = @
@@ -130,6 +132,7 @@ TemplateClass.helpers
   lots: -> Lots.findByProject()
   typologies: -> Typologies.findByProject()
   layers: -> Layers.findByProject()
+  # userAssets: -> UserAssets.findByProject()
   tableSettings: -> getTableSettings()
   layerTableSettings: ->
     settings = getTableSettings()
@@ -169,33 +172,62 @@ TemplateClass.events
     $body.addClass('dragging')
     $viewer = $('.viewer')
     typologyId = @_id
+
     mouseMoveHandler = (moveEvent) ->
       margin = {left: -16, top: -38}
       $pin.offset(left: moveEvent.clientX + margin.left, top: moveEvent.clientY + margin.top)
+    
+    isPositionInElememnt = ($em, position) ->
+      emSize = $em.position()
+      emSize.right = emSize.left + $em.width()
+      emSize.bottom = emSize.top + $em.height()
+      emSize.left <= position.left <= emSize.right &&
+          emSize.top <= position.top <= emSize.bottom
+
     mouseUpHandler = (upEvent) ->
-      viewerPos = $viewer.position()
-      entities = AtlasManager.getEntitiesAt({
-        x: upEvent.clientX - viewerPos.left,
-        y: upEvent.clientY - viewerPos.top
-      })
-      if entities.length > 0
-        lot = null
-        _.some entities, (entity) ->
-          feature = entity.getParent()
-          lot = Lots.findOne(AtlasIdMap.getAppId(feature.getId()))
-          lot
-        if lot
-          # TODO(aramk) Refactor with the logic in the lot form.
-          if lot.entity
-            console.error('Remove the existing entity before allocating a typology onto this lot.')
-          else
-            Lots.createEntity(lotId: lot._id, typologyId: typologyId)
-          # TODO(aramk) Add to lot
-      # If the typology was dragged on the globe, allocate it to any available lots.
       $pin.remove()
       $body.off('mousemove', mouseMoveHandler)
       $body.off('mouseup', mouseUpHandler)
       $body.removeClass('dragging')
+
+      # TODO(aramk) Fix this.
+      # return unless $.contains($viewer[0], upEvent.target)
+
+      return unless isPositionInElememnt($viewer, {left: upEvent.clientX, top: upEvent.clientY})
+
+      viewerPos = $viewer.position()
+      mousePos =
+        x: upEvent.clientX - viewerPos.left,
+        y: upEvent.clientY - viewerPos.top
+      
+      typology = Typologies.findOne(typologyId)
+      typologyClass = SchemaUtils.getParameterValue(typology, 'general.class')
+      if typologyClass == 'ASSET'
+        AtlasManager.getAtlas().then (atlas) ->
+          point = atlas.getManager('render').geoPointFromScreenCoords(mousePos)
+          Entities.insert
+            name: typology.name
+            typology: typologyId
+            project: Projects.getCurrentId()
+            parameters:
+              space:
+                position:
+                  latitude: point.latitude
+                  longitude: point.longitude
+      else
+        entities = AtlasManager.getEntitiesAt(mousePos)
+        if entities.length > 0
+          lot = null
+          _.some entities, (entity) ->
+            feature = entity.getParent()
+            lot = Lots.findOne(AtlasIdMap.getAppId(feature.getId()))
+            lot
+          if lot
+            # TODO(aramk) Refactor with the logic in the lot form.
+            if lot.entity
+              console.error('Remove the existing entity before allocating a typology onto this lot.')
+            else
+              Lots.createEntity(lotId: lot._id, typologyId: typologyId)
     $body.mousemove(mouseMoveHandler)
     $body.mouseup(mouseUpHandler)
   'click .layers .import.item': ->
@@ -355,7 +387,6 @@ TemplateClass.onAtlasLoad = (template, atlas) ->
       if collection.allowsMultipleDisplayModes?
         ids = _.filter ids, (id) -> collection.allowsMultipleDisplayModes(id)
       _.each AtlasManager.getEntitiesByIds(ids), (entity) ->
-        console.log('entity', entity)
         entity.setDisplayMode(getDisplayMode(AtlasIdMap.getAppId(entity.getId())))
 
   reactiveToDisplayMode(Lots, Lots.findByProject(), 'lotDisplayMode', LotUtils.getDisplayMode)

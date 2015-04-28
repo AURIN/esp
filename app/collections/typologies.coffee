@@ -124,33 +124,17 @@ createCategorySchemaObj = (cat, catId, args) ->
       autoLabel(fieldSchema, itemId)
       if catClasses
         fieldSchema.classes ?= Setter.clone(catClasses)
-        # console.log('catClasses', catClasses, fieldSchema.classes)
       # If defaultValue is used, put it into "classes" to prevent SimpleSchema from storing this
       # value in the doc. We want to inherit this value at runtime for all classes, but not
       # persist it in multiple documents in case we want to change it later in the schema.
       defaultValue = fieldSchema.defaultValue
       if defaultValue?
-        classes = fieldSchema.classes ?= {}
-        
-        # console.log('itemId', itemId)
-        # console.log('allClassOptions', allClassOptions)
-        # console.log('classes', classes)
-        allClassOptions = classes.ALL ?= {}
-        # if allClassOptions.defaultValue?
-        #   Logger.info('allClassOptions', allClassOptions, classes)
-
-        # TODO(aramk) This block causes a strange issue where ALL.classes is defined with
-        # defaultValue already set, though it wasn't a step earlier...
-
-        if allClassOptions.defaultValue? && allClassOptions.defaultValue != defaultValue
-          # console.log('fieldSchema', fieldSchema)
-          # console.log('classes', classes)
-          # console.log('BuildingClasses', BuildingClasses)
-          # console.log('extend', extendBuildingClasses())
-          Logger.error('Default value specified on field ' + itemId + ' and in classOptions - only use one.')
-          # throw new Error('Default value specified on field ' + itemId + ' and in classOptions - only use one.')
-        # console.log('setting default value', allClassOptions)
-        allClassOptions.defaultValue = defaultValue
+        classes = fieldSchema.classes
+        if classes
+          _.each classes, (classOptions, name) ->
+            classOptions.defaultValue = defaultValue
+        else
+          fieldSchema.classes = {ALL: {defaultValue: defaultValue}}
         delete fieldSchema.defaultValue
     catSchemaFields[itemId] = fieldSchema
   if COLLECTIONS_DEBUG
@@ -192,13 +176,48 @@ forEachCategoriesField = (categories, callback) ->
   for catId, category of categories
     forEachCategoryField(category, callback)
 
-####################################################################################################
-# PROJECT SCHEMA DEFINITION
-####################################################################################################
+latitudeSchema =
+  label: 'Latitude'
+  type: Number
+  decimal: true
+  units: Units.deg
+
+longitudeSchema =
+  label: 'Longitude'
+  type: Number
+  decimal: true
+  units: Units.deg
+
+elevationSchema =
+  type: Number
+  decimal: true
+  desc: 'Elevation from ground-level to the base of this entity.'
+  units: Units.m
+  optional: true
+
+PositionSchema = new SimpleSchema
+  latitude: latitudeSchema
+  longitude: longitudeSchema
+  elevation: elevationSchema
+
+VertexSchema = new SimpleSchema
+  x:
+    type: Number
+    decimal: true
+  y:
+    type: Number
+    decimal: true
+  z:
+    type: Number
+    decimal: true
 
 descSchema =
   label: 'Description'
   type: String
+
+####################################################################################################
+# PROJECT SCHEMA DEFINITION
+####################################################################################################
 
 VktRailTypes =
   rail0_400:
@@ -1258,6 +1277,19 @@ TypologyClasses = Object.freeze({
         color: '#eb3232'
       'Restaurant':
         color: '#e53b3b'
+  INSTITUTIONAL:
+    name: 'Institutional'
+    color: '#ffae00' # Orange
+    abbr: 'i'
+    subclasses:
+      'School':
+        color: '#ffae00'
+      'Tertiary':
+        color: '#ffd200'
+      'Hospital':
+        color: '#ffc63d'
+      'Public':
+        color: '#e4ff00'
   MIXED_USE:
     name: 'Mixed Use'
     color: '#756bb1' # Purple
@@ -1274,19 +1306,9 @@ TypologyClasses = Object.freeze({
     displayMode: 'line'
     canAllocateToLot: false
     subclasses: ['Freeway', 'Highway', 'Street', 'Footpath', 'Bicycle Path']
-  INSTITUTIONAL:
-    name: 'Institutional'
-    color: '#ffae00' # Orange
-    abbr: 'i'
-    subclasses:
-      'School':
-        color: '#ffae00'
-      'Tertiary':
-        color: '#ffd200'
-      'Hospital':
-        color: '#ffc63d'
-      'Public':
-        color: '#e4ff00'
+  ASSET:
+    name: 'Asset'
+    color: '#999' # Grey
 })
 
 BuildingClasses = Object.freeze({
@@ -1603,6 +1625,7 @@ calcEnergyWithIntensityCost = (suffix, shortSuffix) ->
 calcLandPrice = ->
   typologyClass = Entities.getTypologyClass(@model)
   abbr = TypologyClasses[typologyClass].abbr
+  return unless abbr?
   @param('financial.land.price_land_' + abbr)
 
 calcTransportLinearRegression = (params) ->
@@ -1655,6 +1678,7 @@ typologyCategories =
           # COMMERCIAL: {optional: false}
           # INSTITUTIONAL: {optional: false}
           # MIXED_USE: {optional: false}
+          ASSET: {}
           # Pathway typologies don't have geometry - it is defined in the entities - so this is
           # optional.
           PATHWAY: {}
@@ -1662,7 +1686,8 @@ typologyCategories =
         label: '3D Geometry'
         type: String
         desc: '3D mesh representing the typology.'
-        classes: extendBuildingClasses()
+        classes: extendBuildingClasses
+          ASSET: {optional: false}
       geom_2d_filename:
         label: '2D Geometry Filename'
         type: String
@@ -1671,14 +1696,24 @@ typologyCategories =
         label: '3D Geometry Filename'
         type: String
         desc: 'The name of the file representing the 3D geometry.'
+      
+      position:
+        items:
+          latitude: _.extend(latitudeSchema, classes: {ASSET: {}})
+          longitude: _.extend(longitudeSchema, classes: {ASSET: {}})
+          elevation: _.extend(elevationSchema, classes: {ASSET: {}})
+
       lotsize: extendSchema(areaSchema, {
         label: 'Lot Size'
         calc: ->
           # If the model is a typology, it doesn't have a lot yet, so no lotsize.
           id = @model._id
-          unless Entities.findOne(id)
-            return null
+          entity = Entities.findOne(id)
+          unless entity then return null
           lot = Lots.findByEntity(id)
+          typologyClass = Entities.getTypologyClass(entity)
+          # Assets don't have lots.
+          if typologyClass == 'ASSET' then return 0
           unless lot
             throw new Error('Lot not found for entity.')
           calcArea(lot._id)
@@ -1686,7 +1721,14 @@ typologyCategories =
       extland: extendSchema(areaSchema, {
         label: 'Extra Land'
         desc: 'Area of the land parcel not covered by the structural improvement.'
-        calc: '$space.lotsize - $space.fpa'
+        calc: ->
+          id = @model._id
+          entity = Entities.findOne(id)
+          unless entity then return null
+          typologyClass = Entities.getTypologyClass(entity)
+          # Assets don't have lots.
+          if typologyClass == 'ASSET' then return 0
+          @calc('$space.lotsize - $space.fpa')
       })
       fpa: extendSchema(areaSchema, {
         label: 'Footprint Area'
@@ -1748,9 +1790,8 @@ typologyCategories =
         type: Number
         units: Units.floors
         classes: extendBuildingClasses()
-      height: extendSchema(heightSchema, {
-        classes: extendBuildingClasses()
-        })
+      height: extendSchema heightSchema,
+        classes: extendBuildingClasses(ASSET: {})
       length:
         label: 'Total Path Length'
         desc: 'Total length of drawn pathway'
@@ -2127,6 +2168,7 @@ typologyCategories =
         units: Units.MJyear
         calc: ->
           type_app = @param('energy_demand.type_app')
+          unless type_app then return
           type_en = @param('energy.fitout.' + ApplianceTypes[type_app])
           rooms = @calc('$space.num_0br + $space.num_1br + $space.num_2br + $space.num_3plus')
           type_en * rooms
@@ -2326,6 +2368,13 @@ typologyCategories =
         decimal: true
         units: Units.kgco2
         calc: '$embodied_carbon.e_co2_emb + $embodied_carbon.i_co2_emb_intensity_value + $parking.co2_ug_tot'
+      t_co2_emb_asset:
+        label: 'Total Embodied'
+        desc: 'Total CO2 embodied in the asset.'
+        type: Number
+        decimal: true
+        units: Units.kgco2year
+        classes: ASSET: {}
       pathways:
         label: 'Pathways'
         items:
@@ -2896,6 +2945,12 @@ typologyCategories =
         type: Number
         units: Units.$
         calc: '$financial.cost_op_e + $financial.cost_op_g + $financial.cost_op_w'
+      cost_asset:
+        label: 'Cost - Total'
+        desc: 'Total cost of the asset.'
+        type: Number
+        units: Units.$
+        classes: ASSET: {}
       pathways:
         items:
           cost_land:
@@ -3007,7 +3062,10 @@ typologyCategories =
         desc: 'Number of street level parking spaces.'
         type: Number
         units: Units.spaces
-        calc: '$space.ext_land_i * $parking.parking_land / $parking.prk_area_veh'
+        calc: ->
+          prk_area_veh = @param('parking.prk_area_veh')
+          if prk_area_veh == 0 then return 0
+          @calc('$space.ext_land_i * $parking.parking_land') / prk_area_veh
         classes: extendBuildingClasses
           PATHWAY: {}
       parking_t:
@@ -3840,6 +3898,11 @@ Collections.addValidation(Lots, Lots.validate)
 ####################################################################################################
 
 entityCategories = Setter.clone(typologyCategories)
+# extraEntityCategories =
+#   space:
+#     items:
+# Setter.merge(entityCategories, extraEntityCategories)
+
 # Entities have the same parameters as typologies, so any required fields are expected to exist on
 # the typology and are no longer required for the entities, so we remove them here.
 removeRequiredPropertyFromCategories = (categories) ->
@@ -4188,6 +4251,61 @@ Layers.attachSchema(LayerSchema)
 Layers.allow(Collections.allowAll())
 Layers.findByProject = (projectId) -> SchemaUtils.findByProject(Layers, projectId)
 Layers.getDisplayModeItems = -> _.map LayerDisplayModes, (value, key) -> {label: value, value: key}
+
+####################################################################################################
+# USER ASSETS SCHEMA DEFINITION
+####################################################################################################
+
+# UserAssetTypes =
+#   tree:
+#     name: 'Tree'
+#     filename: 'tree_simple.dae'
+
+# userAssetCategories =
+#   general:
+#     items:
+#       type:
+#         type: String
+#         allowedValues: _.keys(UserAssetTypes)
+#   space:
+#     items:
+#       position:
+#         type: PositionSchema
+#         optional: false
+#       scale:
+#         type: VertexSchema
+#         optional: true
+#       rotation:
+#         type: VertexSchema
+#         optional: true
+#       # TODO(aramk) For some reason, latitude and longitude are required even though offset is
+#       # optional. Using this as a workaround.
+#       offset:
+#         type: PositionSchema
+#         optional: true
+
+# UsersAssetParametersSchema = createCategoriesSchema
+#   categories: userAssetCategories
+
+# UserAssetsSchema = new SimpleSchema
+#   name:
+#     type: String
+#     index: true
+#     unique: false
+#   desc: extendSchema descSchema,
+#     optional: true
+#   parameters:
+#     label: 'Parameters'
+#     type: UsersAssetParametersSchema
+#     # Necessary to allow required fields within.
+#     optional: false
+#     defaultValue: {}
+#   project: projectSchema
+
+# @UserAssets = new Meteor.Collection 'userAssets'
+# UserAssets.attachSchema(UserAssets)
+# UserAssets.allow(Collections.allowAll())
+# UserAssets.findByProject = (projectId) -> SchemaUtils.findByProject(UserAssets, projectId)
 
 ####################################################################################################
 # COLLECTIONS

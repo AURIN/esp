@@ -6,11 +6,15 @@ TemplateClass.helpers
     entities = @entities
     console.log('entities', entities)
     subclasses = {}
+    paramIds = ['space.num_0br', 'space.num_1br', 'space.num_2br', 'space.num_3plus']
     _.each entities, (entity) ->
       typology = Typologies.findOne(entity.typology)
       subclass = SchemaUtils.getParameterValue(typology, 'general.subclass')
       subclasses[subclass] ?= 0
-      subclasses[subclass]++
+      _.each paramIds, (paramId) ->
+        count = SchemaUtils.getParameterValue(entity, paramId)
+        if Numbers.isDefined(count)
+          subclasses[subclass] += count
 
     _.each subclasses, (count, subclass) ->
       args = Typologies.Classes.RESIDENTIAL.subclasses[subclass]
