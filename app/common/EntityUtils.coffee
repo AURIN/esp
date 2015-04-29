@@ -68,7 +68,10 @@ if Meteor.isClient
       style =
         fillColor: FILL_COLOR
         borderColor: BORDER_COLOR
-      GeometryUtils.buildGeometryFromFile(fileId, {collectionId: collectionId, style: style})
+      GeometryUtils.buildGeometryFromFile fileId,
+        collectionId: collectionId
+        style: style
+        show: false
 
     _render2dGeometry: (id) ->
       entity = Entities.getFlattened(id)
@@ -191,8 +194,13 @@ if Meteor.isClient
                           geoEntity.setForm(Feature.DisplayMode.MESH, entity3d)
                         formDfs = []
                         _.each geoEntity.getForms(), (form) ->
-                          # Show the entity to ensure we can transform the rendered models.
+                          # if form.isGltf && form.isGltf()
+                          # Show the entity to ensure we can transform the rendered models. GLTF
+                          # meshes need to be rendered before we can determine their centroid.
+                          # TODO(aramk) Build the geometry without having to show it.
                           form.show()
+                          form.hide()
+                            # readyPromise = form.ready()
                           formDfs.push form.ready().then ->
                             # Apply rotation based on the azimuth. Use the lot centroid since the
                             # centroid may not be updated yet for certain models (e.g. GLTF meshes).
@@ -205,9 +213,10 @@ if Meteor.isClient
                             # movement in the elevation axis.
                             newCentroid.elevation = currentCentroid.elevation
                             form.setRotation(new Vertex(0, 0, azimuth), newCentroid) if azimuth?
-                            form.hide()
+                            # form.hide()
                         Q.all(formDfs).then =>
                           geoEntity.setDisplayMode(Session.get('entityDisplayMode'))
+                          geoEntity.show()
                           @_setUpEntity(geoEntity)
                           resolve(geoEntity)
                       df.reject
