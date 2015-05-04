@@ -233,7 +233,8 @@ if Meteor.isClient
 
     _setUpEntity: (geoEntity) ->
       geoEntity.show()
-      @_setUpPopup(geoEntity)
+      # Server doesn't need popups.
+      if Meteor.isClient then @_setUpPopup(geoEntity)
 
     _setUpPopup: (geoEntity) ->
       entity = Entities.getFlattened(AtlasIdMap.getAppId(geoEntity.getId()))

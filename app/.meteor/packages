@@ -21,7 +21,7 @@ digilord:roles
 iron:router
 kidovate:tinycolor
 meteorhacks:npm
-meteorhacks:kadira
+# meteorhacks:kadira
 matb33:collection-hooks
 npm-container
 semantic:ui-css
