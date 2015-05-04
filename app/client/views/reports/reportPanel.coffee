@@ -130,7 +130,10 @@ TemplateClass.created = ->
   @data.reports = reports
   # Listen for changes to the entity selection and refresh reports.
   AtlasManager.getAtlas().then (atlas) ->
-    atlas.subscribe 'entity/selection/change', -> refreshReport()
+    atlas.subscribe 'entity/selection/change', (args) ->
+      changed = _.union(args.selected, args.deselected)
+      entities = _.filter changed, (id) -> Entities.findOne(id)
+      if entities.length > 0 then refreshReport()
 
 TemplateClass.rendered = ->
   $reportPanelContent = @$('.content')
