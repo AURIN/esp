@@ -111,7 +111,11 @@ Meteor.startup ->
       # Select only the entity currently being edited (if any) so it's clear to the user.
       doc = @data.doc
       if doc
-        AtlasManager.setSelection([doc._id])
+        toSelect = [doc._id]
+        # If editing an Open Space Entity, select the Lot so it can be seen.
+        if doc.lot? && Entities.getTypologyClass(doc._id) == 'OPEN_SPACE'
+          toSelect.push(doc.lot)
+        AtlasManager.setSelection(toSelect)
     hooks:
       formToDoc: (doc) ->
         doc.project = Projects.getCurrentId()
@@ -130,9 +134,14 @@ Meteor.startup ->
   Form.helpers
     typologies: -> Typologies.findByProject()
     typologyName: -> Typologies.findOne(@doc?.typology)?.name ? 'None'
+    lotName: -> Lots.findOne(@doc?.lot)?.name
 
   Form.events
     'click .typology.button': (e, template) ->
       typologyId = template.data.doc?.typology
       return unless typologyId
       PubSub.publish('typology/edit/form', typologyId)
+    'click .lot.button': (e, template) ->
+      lotId = template.data.doc?.lot
+      return unless lotId
+      PubSub.publish('lot/edit/form', lotId)

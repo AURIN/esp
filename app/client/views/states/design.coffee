@@ -251,6 +251,9 @@ TemplateClass.events
 PubSub.subscribe 'typology/edit/form', (msg, typologyId) ->
   onEditFormPanel(ids: [typologyId], collection: Typologies)
 
+PubSub.subscribe 'lot/edit/form', (msg, lotId) ->
+  onEditFormPanel(ids: [lotId], collection: Lots)
+
 createDraggableTypology = ->
   $pin = $('<div class="draggable-typology"></div>') # <i class="building icon"></i>
   $('body').append($pin)
@@ -504,8 +507,13 @@ TemplateClass.onAtlasLoad = (template, atlas) ->
     collection = _.find collections, (collection) -> collection.findOne(id) && collection
     # Ignore this event when clicking on entities we don't manage in collections.
     return unless collection
-    entity = collection.findOne(id)
-    return unless entity
+    doc = collection.findOne(id)
+    return unless doc
+    # When clicking on an allocated Open Space lot, open the entity form instead.
+    if collection == Lots && doc.entity? &&
+        Entities.getTypologyClass(doc.entity) == 'OPEN_SPACE'
+      id = doc.entity
+      collection = Entities
     onEditFormPanel(ids: [id], collection: collection)
     # If double clicking a pathway, switch to edit mode.
     if collection == Entities && Entities.getTypologyClass(id) == 'PATHWAY'

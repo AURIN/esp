@@ -8,7 +8,7 @@
             {{> afQuickField name="name"}}
             {{> afQuickField name="desc" rows=3}}
 
-            <div class="form-group typology-input">
+            <div class="form-group right-button-input">
               <label class="control-label"><div class="value">Typology</div></label>
               <div>
                 <input type="text" class="form-control" value="{{typologyName}}" disabled>
@@ -17,6 +17,18 @@
                 </div>
               </div>
             </div>
+
+            {{#if lotName}}
+              <div class="form-group right-button-input">
+                <label class="control-label"><div class="value">Lot</div></label>
+                <div>
+                  <input type="text" class="form-control" value="{{lotName}}" disabled>
+                  <div class="ui icon mini button lot">
+                    <i class="icon pencil"></i>
+                  </div>
+                </div>
+              </div>
+            {{/if}}
 
             <div class="subtitle">Space</div>
 
