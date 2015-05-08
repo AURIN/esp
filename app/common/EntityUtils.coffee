@@ -22,6 +22,10 @@ if Meteor.isClient
     _renderQueue = new DeferredQueueMap()
   Meteor.startup -> resetRenderQueue()
 
+  renderCount = new ReactiveVar(0)
+  incrementRenderCount = -> renderCount.set(renderCount.get() + 1)
+  decrementRenderCount = -> renderCount.set(renderCount.get() - 1)
+
   _.extend EntityUtils,
 
     toGeoEntityArgs: (id, args) ->
@@ -119,6 +123,8 @@ if Meteor.isClient
 
     _render: (id) ->
       df = Q.defer()
+      incrementRenderCount()
+      df.promise.fin -> decrementRenderCount()
       resolve = (geoEntity) ->
         if geoEntity
           geoEntity.ready().then -> df.resolve(geoEntity)
@@ -276,4 +282,10 @@ if Meteor.isClient
       _.each models, (model) => renderDfs.push(@render(model._id))
       Q.all(renderDfs)
 
-    beforeAtlasUnload: -> resetRenderQueue()
+    beforeAtlasUnload: ->
+      resetRenderQueue()
+      @resetRenderCount()
+
+    getRenderCount: -> renderCount.get()
+
+    resetRenderCount: -> renderCount.set(0)

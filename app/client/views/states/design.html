@@ -2,9 +2,12 @@
   <div class="design container">
     <div class="sidebar">
       <div class="default panel">
-        <div class="entities title"><i class="building icon"></i>Objects</div>
         
         <!-- Entities -->
+        <div class="entities title">
+          <i class="building icon"></i>Objects
+          <div class="ui inline mini loader"></div>
+        </div>
         <div class="items entities">
           {{> collectionTable collection="Entities" items=entities settings=tableSettings}}
           <div class="extra menu">

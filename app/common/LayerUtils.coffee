@@ -308,6 +308,10 @@ BORDER_COLOR = '#333'
     # Filter GeoEntity objects which are not project entities.
     _.filter entityIds, (id) -> Layers.findOne(id)
 
+  beforeAtlasUnload: ->
+    @destroyDisplayMode()
+    @resetRenderCount()
+
   getRenderCount: -> renderCount.get()
 
   resetRenderCount: -> renderCount.set(0)

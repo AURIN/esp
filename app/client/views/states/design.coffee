@@ -50,7 +50,7 @@ TemplateClass.destroyed = ->
   _.each pubsubHandles, (handle) -> PubSub.unsubscribe(handle)
   EntityUtils.beforeAtlasUnload()
   LotUtils.beforeAtlasUnload()
-  LayerUtils.destroyDisplayMode()
+  LayerUtils.beforeAtlasUnload()
   AtlasManager.removeAtlas()
   # Remove any remaining popups.
   $('.ui.popup').remove()
@@ -101,6 +101,12 @@ TemplateClass.rendered = ->
   @$('[title]').popup()
   # Add toggle state for buttons.
   @$('.toggle').state()
+
+  # Show a loader when rendering entities.
+  @autorun ->
+    entityCount = EntityUtils.getRenderCount()
+    layerCount = LayerUtils.getRenderCount()
+    setIsLoadingEntities(entityCount > 0 || layerCount > 0)
 
 getSingleFormName = (formArgs) ->
   if Types.isString(formArgs.single) then formArgs.single else formArgs
@@ -319,6 +325,10 @@ getTableSettings = ->
   onEdit: onEditFormPanel
 
 getTemplate = (template) -> Templates.getNamedInstance('design', template)
+
+setIsLoadingEntities = (loading) ->
+  $loader = getTemplate().$('.entities .loader')
+  $loader.toggleClass('active', !!loading)
 
 TemplateClass.onAtlasLoad = (template, atlas) ->
   projectId = Projects.getCurrentId()
