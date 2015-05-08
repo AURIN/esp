@@ -122,7 +122,7 @@ Meteor.startup ->
         doc
       before:
         update: (docId, modifier, template) ->
-          # Prevent the the lack of space fields from causing them to be removed.
+          # Prevent the lack of space fields from causing them to be removed.
           delete modifier.$unset?['parameters.space']
           # Disable editing to ensure changes are saved before re-rendering removes them.
           AtlasManager.getAtlas().then (atlas) =>

@@ -2714,7 +2714,7 @@ typologyCategories =
         desc: 'Share of balance water demand to be supplied by bore water versus potable water.'
         type: Number
         decimal: true
-        classes: extendClassesWithDefault(extendBuildingClasses(), 0)
+        classes: extendClassesWithDefault(extendBuildingClasses(OPEN_SPACE: {}), 0)
       i_wu_total:
         label: 'Internal Water Use - Total'
         desc: 'Total internal water use of the typology.'

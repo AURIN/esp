@@ -110,6 +110,8 @@ Meteor.startup ->
             @result(doc)
           return undefined
         update: (docId, modifier, template) ->
+          # Prevent the lack of space fields from causing them to be removed.
+          delete modifier.$unset?['parameters.space']
           setTypologyValue(modifier, false, template).then =>
             console.log('setTypologyValue', arguments)
             @result(modifier)
