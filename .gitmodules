@@ -13,3 +13,6 @@
 [submodule "app/packages/meteor-file-upload"]
 	path = app/packages/meteor-file-upload
 	url = https://github.com/aramk/meteor-file-upload.git
+[submodule "app/packages/meteor-utility"]
+	path = app/packages/meteor-utility
+	url = https://github.com/aramk/meteor-utility.git

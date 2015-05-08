@@ -7,7 +7,7 @@
         "dist",
         "app/public/design/atlas",
         "app/public/design/atlas-cesium",
-        "app/packages",
+        // "app/packages",
         ".demeteorized"
       ]
     }

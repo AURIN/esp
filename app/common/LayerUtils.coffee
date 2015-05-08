@@ -23,11 +23,14 @@ BORDER_COLOR = '#333'
     args = Setter.merge({}, args)
     df = Q.defer()
     projectId = args.projectId ? Projects.getCurrentId()
+    inputC3mls = args.c3mls
+    if inputC3mls.length > 2000
+      return Q.reject('Cannot import assets containing more than 2000 objects.')
 
     # Add heights to c3ml based on height property. Only keep polygons which we can use as
     # footprints.
     c3mls = []
-    _.each args.c3mls, (c3ml) ->
+    _.each inputC3mls, (c3ml) ->
       return unless AtlasConverter.sanitizeType(c3ml.type) == 'polygon'
       layerParams = c3ml.properties ? {}
       height = layerParams.height

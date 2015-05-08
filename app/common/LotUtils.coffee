@@ -17,31 +17,37 @@ Meteor.startup ->
     if isLayer
       return LayerUtils.fromAsset(args)
 
-    existingDf = Q.defer()
-    # If lots already exist in the project, ask the user if they should be removed first. If on the
-    # server, remove the lots without asking.
+    # If lots already exist in the project, remove them after importing.
     existingLots = Lots.findByProject(projectId).fetch()
-    if existingLots.length > 0
-      removeDfs = _.map existingLots, (lot) ->
-        removeDf = Q.defer()
-        Lots.remove lot._id, (err, result) ->
-          if err then removeDf.reject(err) else removeDf.resolve(result)
-        removeDf.promise
-      Q.all(removeDfs).then(existingDf.resolve, existingDf.reject)
-    else
-      existingDf.resolve()
-
+    
     createDf = Q.defer()
-    existingDf.promise.then(
-      bindMeteor -> LotUtils._fromAsset(args).then(createDf.resolve, createDf.reject)
+    LotUtils._fromAsset(args).then(
+      ->
+        if existingLots.length == 0
+          createDf.resolve()
+          return
+        removeDfs = _.map existingLots, (lot) ->
+          removeDf = Q.defer()
+          Lots.remove lot._id, (err, result) ->
+            if err then removeDf.reject(err) else removeDf.resolve(result)
+          removeDf.promise
+        Q.all(removeDfs).then(
+          createDf.resolve
+          (err) ->
+            Logger.error('Could not remove all existing lots', err)
+            createDf.resolve()
+        )
       createDf.reject
     )
     createDf.promise
 
   _fromAsset: (args) ->
-    df = Q.defer()
     modelDfs = []
     c3mls = args.c3mls
+    if c3mls.length > 2000
+      return Q.reject('Cannot import assets containing more than 2000 objects.')
+
+    df = Q.defer()
     projectId = args.projectId ? Projects.getCurrentId()
     polygonC3mls = []
     _.each c3mls, (c3ml) ->

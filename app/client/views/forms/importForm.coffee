@@ -52,7 +52,8 @@ Meteor.startup ->
           LotUtils.renderAllAndZoom()
         onFinish = ->
           setLoadingState(false)
-        handleImport(assetArgs, USE_SERVER).then(onSuccess).fin(onFinish).done()
+        onError = (err) -> Logger.error(err)
+        handleImport(assetArgs, USE_SERVER).then(onSuccess, onError).fin(onFinish).done()
 
       dropzone.on 'error', (file, errorMessage) ->
         Logger.error('Error uploading file', arguments)
@@ -63,10 +64,6 @@ Meteor.startup ->
 handleImport = (assetArgs, useServer) ->
   if useServer then handleImportServer(assetArgs) else handleImportClient(assetArgs)
 
-handleImportServer = (assetArgs) ->
-  df = Q.defer()
-  Meteor.call 'lots/from/asset', assetArgs, (err, result) ->
-    if err then df.reject(err) else df.resolve()
-  df.promise
+handleImportServer = (assetArgs) -> Promises.serverMethodCall 'lots/from/asset', assetArgs
 
 handleImportClient = (assetArgs) -> LotUtils.fromAsset(assetArgs)
