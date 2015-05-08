@@ -78,7 +78,10 @@ Meteor.startup ->
       limit = doc.limit
       lotIds = []
       LotUtils.getAreas().then (results) ->
-        _.some results, (area, lotId) ->
+        # Shuffle to prevent selecting consecutive lots every time.
+        shuffledResults = {}
+        _.each _.shuffle(_.keys(results)), (lotId) -> shuffledResults[lotId] = results[lotId]
+        _.some shuffledResults, (area, lotId) ->
           return true if limit? && lotIds.length >= limit
           lot = Lots.findOne(lotId)
           height = SchemaUtils.getParameterValue(lot, 'space.height')

@@ -22,7 +22,7 @@ Meteor.startup ->
     
     createDf = Q.defer()
     LotUtils._fromAsset(args).then(
-      ->
+      bindMeteor ->
         if existingLots.length == 0
           createDf.resolve()
           return
@@ -33,7 +33,7 @@ Meteor.startup ->
           removeDf.promise
         Q.all(removeDfs).then(
           createDf.resolve
-          (err) ->
+          bindMeteor (err) ->
             Logger.error('Could not remove all existing lots', err)
             createDf.resolve()
         )
