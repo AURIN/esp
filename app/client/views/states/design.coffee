@@ -517,6 +517,16 @@ TemplateClass.onAtlasLoad = (template, atlas) ->
     $row = Template.collectionTable.getRow(id, tableTemplate)
     $('[type="checkbox"]', $row).prop('checked', true)
 
+  # Selecting Open Space lots should select the entity, if any.
+  atlas.subscribe 'entity/select', (args) ->
+    ids = _.map args.ids, (id) -> AtlasManager.resolveModelId(id)
+    _.each ids, (id) ->
+      lot = Lots.findOne(id)
+      return unless lot?.entity? && Entities.getTypologyClass(lot.entity) == 'OPEN_SPACE'
+      # $table = getTable(id)
+      # Template.collectionTable.addSelection($table, [id]) if $table
+      EntityUtils.render(lot.entity).then (geoEntity) -> geoEntity.setSelected(true)
+
   ##################################################################################################
   # DRAWING
   ##################################################################################################

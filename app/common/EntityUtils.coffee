@@ -158,14 +158,21 @@ if Meteor.isClient
 
                   requirejs [
                     'atlas/model/Feature',
+                    'atlas/model/GeoEntity',
                     'atlas/model/Vertex'
-                  ], bindMeteor (Feature, Vertex) =>
+                  ], bindMeteor (Feature, GeoEntity, Vertex) =>
 
                     # Precondition: 2d geometry is a required for entities.
                     entity2d = geometries[0]
                     entity3d = geometries[1]
                     unless entity2d || entity3d
-                      resolve(null)
+                      # If the entity belongs to an Open Space precinct, generate an empty GeoEntity
+                      # to remove special cases.
+                      if typologyClass == 'OPEN_SPACE'
+                        @_getBlankFeatureArgs(id).then bindMeteor (entityArgs) =>
+                          resolve(AtlasManager.renderEntity(entityArgs))
+                      else
+                        resolve(null)
                       return
 
                     # This feature will be used for rendering the 2d geometry as the
@@ -177,7 +184,7 @@ if Meteor.isClient
                       # If we construct the 2d geometry from a collection of entities rather than
                       # WKT, the geometry is a collection rather than a feature. Create a new
                       # feature to store both 2d and 3d geometries.
-                      @toGeoEntityArgs(id, {vertices: null}).then(
+                      @_getBlankFeatureArgs(id).then(
                         bindMeteor (args) ->
                           geoEntity = AtlasManager.renderEntity(args)
                           addedGeometry.push(geoEntity)
@@ -230,6 +237,8 @@ if Meteor.isClient
         Logger.error('Failed to render entity ' + id)
         _.each addedGeometry, (geometry) -> geometry.remove()
       df.promise
+
+    _getBlankFeatureArgs: (id) -> @toGeoEntityArgs(id, {vertices: null})
 
     _setUpEntity: (geoEntity) ->
       geoEntity.show()
