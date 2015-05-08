@@ -141,7 +141,7 @@ Meteor.startup ->
     stopEditing()
     stopCreating()
     unless currentGeoEntity?
-      console.error('No geometry provided for lot.')
+      Logger.error('No geometry provided for lot.')
       return
     isChanged = getEditState(EditState.CHANGED)
     if isChanged

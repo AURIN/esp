@@ -56,7 +56,7 @@ bindMeteor = Meteor.bindEnvironment.bind(Meteor)
         try
           c3mlEntities = AtlasManager.renderEntities(c3mls)
         catch e
-          console.error('Error when rendering entities', e)
+          Logger.error('Error when rendering entities', e)
         ids = _.map c3mlEntities, (c3mlEntity) -> c3mlEntity.getId()
         AtlasManager.createCollection(collectionId, {children: ids}).then(df.resolve, df.reject)
     df.promise

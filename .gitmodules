@@ -7,3 +7,6 @@
 [submodule "app/public/design"]
 	path = app/public/design
 	url = https://bitbucket.org/urbanetic/atlas-resources.git
+[submodule "app/packages/meteor-notifications"]
+	path = app/packages/meteor-notifications
+	url = https://github.com/aramk/meteor-notifications.git

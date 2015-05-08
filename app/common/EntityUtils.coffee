@@ -227,7 +227,7 @@ if Meteor.isClient
           )
       df.promise.fail ->
         # Remove any entities which failed to render to avoid leaving them within Atlas.
-        console.error('Failed to render entity ' + id)
+        Logger.error('Failed to render entity ' + id)
         _.each addedGeometry, (geometry) -> geometry.remove()
       df.promise
 

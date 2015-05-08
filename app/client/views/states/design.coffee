@@ -32,7 +32,7 @@ TemplateClass.created = ->
   projectId = Projects.getCurrentId()
   project = Projects.getCurrent()
   unless project
-    console.error('No project found', projectId)
+    Logger.error('No project found', projectId)
     Router.go('projects')
   else
     @autorun ->
@@ -225,7 +225,7 @@ TemplateClass.events
           if lot
             # TODO(aramk) Refactor with the logic in the lot form.
             if lot.entity
-              console.error('Remove the existing entity before allocating a typology onto this lot.')
+              Logger.error('Remove the existing entity before allocating a typology onto this lot.')
             else
               Lots.createEntity(lotId: lot._id, typologyId: typologyId)
     $body.mousemove(mouseMoveHandler)

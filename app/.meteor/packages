@@ -41,7 +41,8 @@ aramk:collection-table@=0.3.4
 aramk:dropdown@=0.4.3
 # Version is locked since changing the name of collections can remove data.
 aramk:file-upload@=0.4.0
-aramk:utility@=0.8.5
+aramk:notifications@=0.2.0
+aramk:utility@=0.8.6
 aramk:vega-charts@=0.3.2
 
 # These come last so RequireJS doesn't cause issues.

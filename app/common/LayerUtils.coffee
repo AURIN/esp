@@ -52,7 +52,7 @@ BORDER_COLOR = '#333'
             geom_3d: fileObj._id
       Layers.insert model, (err, insertId) ->
         if err
-          console.error('Failed to insert layer', err)
+          Logger.error('Failed to insert layer', err)
           df.reject(err)
         else
           console.log('Inserted layer comprised of ' + c3mls.length + ' c3mls')

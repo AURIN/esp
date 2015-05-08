@@ -76,5 +76,5 @@ Meteor.startup ->
           if position.latitude? && position.longitude? && position.elevation?
             camera.setPosition(position)
           else
-            console.error('Cannot change camera position - must provide longitude, latitude and elevation',
+            Logger.error('Cannot change camera position - must provide longitude, latitude and elevation',
               position)

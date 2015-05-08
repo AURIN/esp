@@ -3776,7 +3776,7 @@ Lots.createEntity = (args) ->
   df = Q.defer()
   Lots.validateTypology(lot, typologyId).then (result) ->
     if result
-      console.error('Cannot create Entity on Lot:', result)
+      Logger.error('Cannot create Entity on Lot:', result)
       df.reject(result)
       return
     # Create a new entity for this lot-typology combination and remove the existing one
@@ -3807,7 +3807,7 @@ Lots.createEntity = (args) ->
           if allowReplace && oldEntityId
             Entities.remove oldEntityId, (err, result) ->
               if err
-                console.error('Could not remove old entity with id', oldEntityId, err)
+                Logger.error('Could not remove old entity with id', oldEntityId, err)
               else
                 df.resolve(newEntityId)
           else
@@ -3825,7 +3825,7 @@ Lots.validate = (lot) ->
     if validateTypology
       return validateTypology
   catch e
-    console.error('Lot could not be validated', lot, e, e.stack)
+    Logger.error('Lot could not be validated', lot, e, e.stack)
 
 Lots.validateTypology = (lot, typologyId) ->
   df = Q.defer()

@@ -49,7 +49,7 @@ class @ReportGenerator
         # TODO(aramk) May not have a need for this.
         throw new Error('Calc expression in report field not yet supported')
       else
-        console.error('Field ignored - must aggregate or provide calc expression.', field)
+        Logger.error('Field ignored - must aggregate or provide calc expression.', field)
         continue
       reportResults[field.id] = result
     reportResults

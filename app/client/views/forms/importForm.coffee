@@ -33,7 +33,7 @@ Meteor.startup ->
         setLoadingState(true)
         formData.append('merge', isLayer)
       dropzone.on 'error', (file, err) ->
-        console.error 'Uploading assets failed', err
+        Logger.error 'Uploading assets failed', err
         setLoadingState(false)
       dropzone.on 'success', (file, result) ->
         unless result
@@ -55,7 +55,7 @@ Meteor.startup ->
         handleImport(assetArgs, USE_SERVER).then(onSuccess).fin(onFinish).done()
 
       dropzone.on 'error', (file, errorMessage) ->
-        console.error('Error uploading file', arguments)
+        Logger.error('Error uploading file', arguments)
   
   Form.helpers
     collectionName: -> if @isLayer then 'Footprints' else 'Lots'
