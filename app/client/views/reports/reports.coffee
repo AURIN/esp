@@ -48,7 +48,7 @@
             renderedFields.push(renderedField)
             $fields.append(renderedField.element)
           catch e
-            Logger.error('Failed report field render', e)
+            console.error('Failed report field render', e)
         $header = $(@find('.header'))
         $info = $('<div class="info"></div>')
         $header.append($info)

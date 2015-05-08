@@ -141,8 +141,7 @@ Meteor.startup ->
     stopEditing()
     stopCreating()
     unless currentGeoEntity?
-      Logger.error('No geometry provided for lot.')
-      return
+      return Q.reject('No geometry provided for lot.')
     isChanged = getEditState(EditState.CHANGED)
     if isChanged
       WKT.polygonFromVertices currentGeoEntity.getVertices(), (wkt) ->

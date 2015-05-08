@@ -1687,7 +1687,7 @@ typologyCategories =
         type: String
         desc: '3D mesh representing the typology.'
         classes: extendBuildingClasses
-          ASSET: {optional: false}
+          ASSET: {}
       geom_2d_filename:
         label: '2D Geometry Filename'
         type: String
