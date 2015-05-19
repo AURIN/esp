@@ -178,10 +178,19 @@ TemplateClass.events
     $body.addClass('dragging')
     $viewer = $('.viewer')
     typologyId = @_id
+    margin = {left: -16, top: -38}
+    sensitivity = 5
+
+    getPinPos = (event) ->
+      {left: event.clientX + margin.left, top: event.clientY + margin.top}
+    origPinPos = getPinPos(e)
 
     mouseMoveHandler = (moveEvent) ->
-      margin = {left: -16, top: -38}
-      $pin.offset(left: moveEvent.clientX + margin.left, top: moveEvent.clientY + margin.top)
+      pos = getPinPos(event)
+      hasMoved = Math.abs(pos.left - origPinPos.left) >= sensitivity ||
+          Math.abs(pos.top - origPinPos.top) >= sensitivity
+      $pin.toggle(hasMoved)
+      $pin.offset(pos)
     
     isPositionInElememnt = ($em, position) ->
       emSize = $em.position()
@@ -263,7 +272,7 @@ PubSub.subscribe 'lot/edit/form', (msg, lotId) ->
 createDraggableTypology = ->
   $pin = $('<div class="draggable-typology"></div>') # <i class="building icon"></i>
   $('body').append($pin)
-  $pin
+  $pin.hide()
 
 getSidebar = (template) ->
   $(template.find('.design.container > .sidebar'))
