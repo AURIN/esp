@@ -428,6 +428,7 @@ Meteor.startup ->
     df.promise
 
   autoAlign: (ids) ->
+    Logger.info('Auto-aligning lots...')
     df = Q.defer()
     alignLots = []
     _.each ids, (id) ->
@@ -439,38 +440,55 @@ Meteor.startup ->
       return df.promise
     WKT.getWKT bindMeteor (wkt) ->
       requirejs [
-        'subdiv/AlignmentCalculator',
-        'subdiv/Polygon',
+        'atlas/model/Vertex'
+        'subdiv/AlignmentCalculator'
+        'subdiv/Polygon'
         'subdiv/util/GeographicUtil'
-      ], bindMeteor (AlignmentCalculator, Polygon, GeographicUtil) ->
+      ], bindMeteor (Vertex, AlignmentCalculator, Polygon, GeographicUtil) ->
         polyMap = {}
-        polygons = Lots.findByProject(projectId).map (lot) ->
+        polygonPromises = []
+        Lots.findByProject(projectId).forEach (lot) ->
           geom_2d = SchemaUtils.getParameterValue(lot, 'space.geom_2d')
-          vertices = wkt.verticesFromWKT(geom_2d)
-          polygon = new Polygon(vertices).smoothPoints()
-          GeographicUtil.localizePointGeometry(polygon)
-          polyMap[lot._id] = polygon
-        
-        alignCalc = new AlignmentCalculator(polygons)
-        entityDfs = []
-        _.each alignLots, (alignLot) ->
-          polygon = polyMap[alignLot._id]
-          angle = alignCalc.getStreetInfo(polygon)?.angle
-          return unless angle?
-          # 0 degrees is north-facing according to typologies. SubDiv assumes 0 degrees to be east.
-          # We must subtract 90 degrees to convert from SubDiv to the typology's 0 degree. The front
-          # of the typology is assumed to be south, so we must add 180 degrees. Hence, we have a net
-          # change of 90 degrees.
-          angle += 90
-          entityDf = Q.defer()
-          entityDfs.push(entityDf.promise)
-          # Convert the angle from counter-clockwise to clockwise.
-          angle = 360 - angle
-          Entities.update alignLot.entity,
-            {$set: 'parameters.orientation.azimuth': angle}, (err, result) ->
-              if err then entityDf.reject(err) else entityDf.resolve(result)
-        
-        Q.all(entityDfs).then(df.resolve, df.reject)
+          polygonPromises.push GeometryUtils.getWktOrC3mls(geom_2d).then (wktOrC3mls) ->
+            try
+              if Types.isString(wktOrC3mls)
+                vertices = wkt.verticesFromWKT(geom_2d)
+              else
+                vertices = _.find wktOrC3mls, (c3ml) ->
+                  coords = c3ml.coordinates
+                  if coords then _.map coords, (coord) -> new Vertex(coord)
+                unless vertices
+                  Logger.warn('Ignoring c3mls - could not find any vertices')
+                  return null
+              polygon = new Polygon(vertices).smoothPoints()
+              GeographicUtil.localizePointGeometry(polygon)
+              polyMap[lot._id] = polygon
+              polygons.push(polygon)
+            catch e
+              Logger.error('Failed to localise polygon during auto align', e, e.stack)
+              return null
+
+          Q.all(polygonPromises).then bindMeteor (polygons) ->
+            polygons = _.filter polygons, (polygon) -> polygon?
+            alignCalc = new AlignmentCalculator(polygons)
+            entityDfs = []
+            _.each alignLots, (alignLot) ->
+              polygon = polyMap[alignLot._id]
+              angle = alignCalc.getStreetInfo(polygon)?.angle
+              return unless angle?
+              # 0 degrees is north-facing according to typologies. SubDiv assumes 0 degrees to be
+              # east. We must subtract 90 degrees to convert from SubDiv to the typology's 0 degree.
+              # The front of the typology is assumed to be south, so we must add 180 degrees. Hence,
+              # we have a net change of 90 degrees.
+              angle += 90
+              entityDf = Q.defer()
+              entityDfs.push(entityDf.promise)
+              # Convert the angle from counter-clockwise to clockwise.
+              angle = 360 - angle
+              Entities.update alignLot.entity,
+                {$set: 'parameters.orientation.azimuth': angle}, (err, result) ->
+                  if err then entityDf.reject(err) else entityDf.resolve(result)
+            Q.all(entityDfs).then(df.resolve, df.reject)
     df.promise
       
   getAreas: (args) ->
