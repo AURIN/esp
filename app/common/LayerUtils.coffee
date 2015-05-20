@@ -117,18 +117,18 @@ BORDER_COLOR = '#333'
       if c3mls.length == 1
         # Ensure the ID of the layer is assigned if only a single entity rendered.
         c3mls[0].id = id
-      c3mlEntities = AtlasManager.renderEntities(c3mls)
-      if c3mlEntities.length > 1
-        entityIds = _.map c3mlEntities, (entity) -> entity.getId()
-        # Create a collection of all the added features.
-        requirejs ['atlas/model/Collection'], (Collection) =>
-          # TODO(aramk) Use dependency injection to prevent the need for passing manually.
-          deps = c3mlEntities[0]._bindDependencies({})
-          data = {entities: entityIds, color: FILL_COLOR, borderColor: BORDER_COLOR}
-          collection = new Collection(id, data, deps)
-          df.resolve(collection)
-      else
-        df.resolve(c3mlEntities[0])
+      AtlasManager.renderEntities(c3mls).then (c3mlEntities) =>
+        if c3mlEntities.length > 1
+          entityIds = _.map c3mlEntities, (entity) -> entity.getId()
+          # Create a collection of all the added features.
+          requirejs ['atlas/model/Collection'], (Collection) =>
+            # TODO(aramk) Use dependency injection to prevent the need for passing manually.
+            deps = c3mlEntities[0]._bindDependencies({})
+            data = {entities: entityIds, color: FILL_COLOR, borderColor: BORDER_COLOR}
+            collection = new Collection(id, data, deps)
+            df.resolve(collection)
+        else
+          df.resolve(c3mlEntities[0])
     df.promise
 
   # Hides footprint polygons in the layer which don't intersect with a non-development lot. If Lot
