@@ -3774,7 +3774,9 @@ Lots.createEntity = (args) ->
     isForDevelopment = true
     SchemaUtils.setParameterValue(lot, developParamId, true)
   df = Q.defer()
-  Lots.validateTypology(lot, typologyId).then (result) ->
+  promise = Lots.validateTypology(lot, typologyId)
+  promise.fail(df.reject)
+  promise.then (result) ->
     if result
       Logger.error('Cannot create Entity on Lot:', result)
       df.reject(result)
@@ -3852,13 +3854,16 @@ Lots.validateTypology = (lot, typologyId) ->
   else
     # Ensure the geometry of the typology will fit in the lot.
     areaDfs = [GeometryUtils.getModelArea(typology), GeometryUtils.getModelArea(lot)]
-    Q.all(areaDfs).then (results) ->
-      lotArea = results.pop()
-      typologyArea = results.pop()
-      if lotArea? && typologyArea? && lotArea <= typologyArea
-        df.resolve('Typology must have area less than or equal to the Lot.')
-      else
-        df.resolve()
+    Q.all(areaDfs).then(
+      (results) ->
+        lotArea = results.pop()
+        typologyArea = results.pop()
+        if lotArea? && typologyArea? && lotArea <= typologyArea
+          df.resolve('Typology must have area less than or equal to the Lot.')
+        else
+          df.resolve()
+      df.reject
+    )
   df.promise
 
 Collections.addValidation(Lots, Lots.validate)
@@ -4069,7 +4074,7 @@ entityUpdateQueue = []
 updateQueuedEntities = ->
   while entityUpdateQueue.length > 0
     entityId = entityUpdateQueue.pop()
-    Entities.update(entityId, {$set: {}})
+    Entities.update(entityId, {$set: {}}, {validate: false})
 
 # Update the energy demand based on the azimuth array.
 updateAzimuthEnergyDemand = (userId, doc, fieldNames, modifier) ->

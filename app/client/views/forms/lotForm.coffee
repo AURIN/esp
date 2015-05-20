@@ -167,7 +167,7 @@ Meteor.startup ->
       setEditState(EditState.CHANGED, true)
       if shouldCreate
         isCreating = setEditState(EditState.CREATING, true)
-        AtlasManager.draw
+        AtlasManager.startDraw
           create: (args) ->
             currentGeoEntity = args.feature
             setEditState(EditState.CREATED, true)
