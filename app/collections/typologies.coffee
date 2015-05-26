@@ -195,6 +195,11 @@ elevationSchema =
   units: Units.m
   optional: true
 
+localCoordSchema =
+  type: Number
+  decimal: true
+  units: Units.m
+
 PositionSchema = new SimpleSchema
   latitude: latitudeSchema
   longitude: longitudeSchema
@@ -1696,14 +1701,20 @@ typologyCategories =
         label: '3D Geometry Filename'
         type: String
         desc: 'The name of the file representing the 3D geometry.'
-      
       position:
         items:
-          latitude: _.extend(latitudeSchema, classes: {ASSET: {}})
-          longitude: _.extend(longitudeSchema, classes: {ASSET: {}})
-          elevation: _.extend(elevationSchema, classes: {ASSET: {}})
-
-      lotsize: extendSchema(areaSchema, {
+          latitude: extendSchema latitudeSchema, {classes: {ASSET: {}}}
+          longitude: extendSchema longitudeSchema, {classes: {ASSET: {}}}
+          elevation: extendSchema elevationSchema, {classes: {ASSET: {}}}
+      offset:
+        items:
+          northern: extendSchema localCoordSchema,
+            label: 'Northern Offset'
+            desc: 'The offset distance in the northern direction from the centroid of the Lot.'
+          eastern: extendSchema localCoordSchema,
+            label: 'Eastern Offset'
+            desc: 'The offset distance in the eastern direction from the centroid of the Lot.'
+      lotsize: extendSchema areaSchema,
         label: 'Lot Size'
         calc: ->
           # If the model is a typology, it doesn't have a lot yet, so no lotsize.
@@ -1717,8 +1728,7 @@ typologyCategories =
           unless lot
             throw new Error('Lot not found for entity.')
           calcArea(lot._id)
-      })
-      extland: extendSchema(areaSchema, {
+      extland: extendSchema areaSchema,
         label: 'Extra Land'
         desc: 'Area of the land parcel not covered by the structural improvement.'
         calc: ->
@@ -1729,8 +1739,7 @@ typologyCategories =
           # Assets don't have lots.
           if typologyClass == 'ASSET' then return 0
           @calc('$space.lotsize - $space.fpa')
-      })
-      fpa: extendSchema(areaSchema, {
+      fpa: extendSchema areaSchema,
         label: 'Footprint Area'
         desc: 'Area of the building footprint.'
         calc: ->
@@ -1744,7 +1753,6 @@ typologyCategories =
               # they don't have any FPA.
               return 0
           calcArea(id)
-      })
       gfa:
         label: 'Gross Floor Area'
         desc: 'Gross floor area of all the rooms in the typology.'
@@ -3658,7 +3666,7 @@ lotCategories =
   general:
     items:
     # If provided, this restricts the class of the entity.
-      class: extendSchema(classSchema, {optional: true})
+      class: extendSchema classSchema, {optional: true}
       develop:
         label: 'For Development'
         type: Boolean
@@ -3671,8 +3679,9 @@ lotCategories =
         type: String,
         desc: '3D Geometry of the lot envelope.'
         optional: false
-      height: extendSchema(heightSchema,
-        {label: 'Allowable Height', desc: 'The maximum allowable height for structures in this lot.'})
+      height: extendSchema heightSchema,
+        label: 'Allowable Height'
+        desc: 'The maximum allowable height for structures in this lot.'
       area: areaSchema
 
 @LotParametersSchema = createCategoriesSchema

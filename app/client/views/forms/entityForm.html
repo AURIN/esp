@@ -31,17 +31,20 @@
             {{/if}}
 
             <div class="subtitle">Space</div>
-
-            {{> afQuickField name="parameters.space.position.latitude"}}
-            {{> afQuickField name="parameters.space.position.longitude"}}
-            {{> afQuickField name="parameters.space.position.elevation"}}
-
+            
             {{> afQuickField name="parameters.space.prpn_lawn"}}
             {{> afQuickField name="parameters.space.prpn_annu"}}
             {{> afQuickField name="parameters.space.prpn_hardy"}}
             {{> afQuickField name="parameters.space.prpn_imper"}}
 
             {{> afQuickField name="parameters.space.occupants"}}
+
+            {{> afQuickField name="parameters.space.position.latitude"}}
+            {{> afQuickField name="parameters.space.position.longitude"}}
+            {{> afQuickField name="parameters.space.position.elevation"}}
+
+            {{> afQuickField name="parameters.space.offset.northern"}}
+            {{> afQuickField name="parameters.space.offset.eastern"}}
 
             <div class="subtitle">Energy Demand</div>
             {{> afQuickField name="parameters.energy_demand.src_heat" options="allowed"}}

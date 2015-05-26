@@ -140,104 +140,112 @@ if Meteor.isClient
         entity = Entities.getFlattened(id)
         geom_2d = SchemaUtils.getParameterValue(entity, 'space.geom_2d')
         azimuth = SchemaUtils.getParameterValue(entity, 'orientation.azimuth')
+        offset = SchemaUtils.getParameterValue(entity, 'space.offset')
 
         typologyClass = Entities.getTypologyClass(id)
         isPathway = typologyClass == 'PATHWAY'
 
         WKT.getWKT bindMeteor (wkt) =>
           isWKT = wkt.isWKT(geom_2d)
-        
           geometryDfs = [@_render2dGeometry(id)]
           unless isPathway
             geometryDfs.push(@_render3dGeometry(id))
-          Q.all(geometryDfs).then(
-            bindMeteor (geometries) =>
-              _.each geometries, (geometry) -> addedGeometry.push(geometry) if geometry
-              if isPathway
-                geoEntity = geometries[0]
-                # A pathway doesn't have any 3d geometry or a lot.
-                @_setUpEntity(geoEntity)
-                resolve(geoEntity)
-                return
-              @_getRenderCentroid(id).then(
-                bindMeteor (centroid) =>
+          geometryPromises = Q.all(geometryDfs)
+          geometryPromises.fail(df.reject)
+          geometryPromises.then bindMeteor (geometries) =>
+            _.each geometries, (geometry) -> addedGeometry.push(geometry) if geometry
+            if isPathway
+              geoEntity = geometries[0]
+              # A pathway doesn't have any 3d geometry or a lot.
+              @_setUpEntity(geoEntity)
+              resolve(geoEntity)
+              return
+            centroidPromise = @_getRenderCentroid(id)
+            centroidPromise.fail(df.reject)
+            centroidPromise.then bindMeteor (centroid) =>
+              requirejs [
+                'atlas/model/Feature',
+                'atlas/model/GeoEntity',
+                'atlas/model/Vertex'
+              ], bindMeteor (Feature, GeoEntity, Vertex) =>
 
-                  requirejs [
-                    'atlas/model/Feature',
-                    'atlas/model/GeoEntity',
-                    'atlas/model/Vertex'
-                  ], bindMeteor (Feature, GeoEntity, Vertex) =>
+                # Precondition: 2d geometry is a required for entities.
+                entity2d = geometries[0]
+                entity3d = geometries[1]
+                unless entity2d || entity3d
+                  # If the entity belongs to an Open Space precinct, generate an empty GeoEntity
+                  # to remove special cases.
+                  if typologyClass == 'OPEN_SPACE'
+                    @_getBlankFeatureArgs(id).then bindMeteor (entityArgs) =>
+                      resolve(AtlasManager.renderEntity(entityArgs))
+                  else
+                    resolve(null)
+                  return
 
-                    # Precondition: 2d geometry is a required for entities.
-                    entity2d = geometries[0]
-                    entity3d = geometries[1]
-                    unless entity2d || entity3d
-                      # If the entity belongs to an Open Space precinct, generate an empty GeoEntity
-                      # to remove special cases.
-                      if typologyClass == 'OPEN_SPACE'
-                        @_getBlankFeatureArgs(id).then bindMeteor (entityArgs) =>
-                          resolve(AtlasManager.renderEntity(entityArgs))
-                      else
-                        resolve(null)
-                      return
-
-                    # This feature will be used for rendering the 2d geometry as the
-                    # footprint/extrusion and the 3d geometry as the mesh.
-                    geoEntityDf = Q.defer()
-                    if isWKT
-                      geoEntityDf.resolve(entity2d)
+                # This feature will be used for rendering the 2d geometry as the
+                # footprint/extrusion and the 3d geometry as the mesh.
+                geoEntityDf = Q.defer()
+                if isWKT
+                  geoEntityDf.resolve(entity2d)
+                else
+                  # If we construct the 2d geometry from a collection of entities rather than
+                  # WKT, the geometry is a collection rather than a feature. Create a new
+                  # feature to store both 2d and 3d geometries.
+                  blankFeaturePromise = @_getBlankFeatureArgs(id)
+                  blankFeaturePromise.fail(geoEntityDf.reject)
+                  blankFeaturePromise.then bindMeteor (args) ->
+                    geoEntity = AtlasManager.renderEntity(args)
+                    addedGeometry.push(geoEntity)
+                    if entity2d
+                      geoEntity.setForm(Feature.DisplayMode.FOOTPRINT, entity2d)
+                      args.height? && entity2d.setHeight(args.height)
+                      args.elevation? && entity2d.setElevation(args.elevation)
+                    geoEntityDf.resolve(geoEntity)
+                geoEntityDf.promise.fail(df.reject)
+                geoEntityDf.promise.then bindMeteor (geoEntity) =>
+                  if entity3d
+                    geoEntity.setForm(Feature.DisplayMode.MESH, entity3d)
+                  formPromises = []
+                  _.each geoEntity.getForms(), (form) ->
+                    # Show the entity to ensure we can transform the rendered models. GLTF
+                    # meshes need to be rendered before we can determine their centroid.
+                    # TODO(aramk) Build the geometry without having to show it.
+                    form.show()
+                    form.hide()
+                    form.ready().then ->
+                      # Apply rotation based on the azimuth. Use the lot centroid since the
+                      # centroid may not be updated yet for certain models (e.g. GLTF meshes).
+                      currentCentroid = form.getCentroid()
+                      # Perform this after getting the centroid to avoid rebuiding the
+                      # primitive for GLTF meshes, which would require another ready() call.
+                      form.setCentroid(centroid)
+                      newCentroid = centroid.clone()
+                      # Set the elevation to the same as the current elevation to avoid any
+                      # movement in the elevation axis.
+                      newCentroid.elevation = currentCentroid.elevation
+                      form.setRotation(new Vertex(0, 0, azimuth), newCentroid) if azimuth?
+                  allFormPromises = Q.all(formPromises)
+                  allFormPromises.fail(df.reject)
+                  allFormPromises.then =>
+                    onEntityReady = =>
+                      geoEntity.setDisplayMode(Session.get('entityDisplayMode'))
+                      geoEntity.show()
+                      @_setUpEntity(geoEntity)
+                      resolve(geoEntity)
+                    if offset?
+                      # Translate the local offset to a global geographic coordinate.
+                      offsetVertex = {x: offset.eastern, y: offset.northern}
+                      utmOffsetPromise = GeometryUtils.getUtmOffsetGeoPoint(centroid, offsetVertex)
+                      utmOffsetPromise.fail (err) ->
+                        Logger.error('Failed to offset entity', id, err)
+                        onEntityReady()
+                      utmOffsetPromise.then (result) ->
+                        # We must display the GeoEntity before setting the centroid will take
+                        # effect.
+                        onEntityReady()
+                        geoEntity.translate(result.geoDiff)
                     else
-                      # If we construct the 2d geometry from a collection of entities rather than
-                      # WKT, the geometry is a collection rather than a feature. Create a new
-                      # feature to store both 2d and 3d geometries.
-                      @_getBlankFeatureArgs(id).then(
-                        bindMeteor (args) ->
-                          geoEntity = AtlasManager.renderEntity(args)
-                          addedGeometry.push(geoEntity)
-                          if entity2d
-                            geoEntity.setForm(Feature.DisplayMode.FOOTPRINT, entity2d)
-                            args.height? && entity2d.setHeight(args.height)
-                            args.elevation? && entity2d.setElevation(args.elevation)
-                          geoEntityDf.resolve(geoEntity)
-                        geoEntityDf.reject
-                      )
-                    geoEntityDf.promise.then(
-                      bindMeteor (geoEntity) =>
-                        if entity3d
-                          geoEntity.setForm(Feature.DisplayMode.MESH, entity3d)
-                        formDfs = []
-                        _.each geoEntity.getForms(), (form) ->
-                          # if form.isGltf && form.isGltf()
-                          # Show the entity to ensure we can transform the rendered models. GLTF
-                          # meshes need to be rendered before we can determine their centroid.
-                          # TODO(aramk) Build the geometry without having to show it.
-                          form.show()
-                          form.hide()
-                            # readyPromise = form.ready()
-                          formDfs.push form.ready().then ->
-                            # Apply rotation based on the azimuth. Use the lot centroid since the
-                            # centroid may not be updated yet for certain models (e.g. GLTF meshes).
-                            currentCentroid = form.getCentroid()
-                            # Perform this after getting the centroid to avoid rebuiding the
-                            # primitive for GLTF meshes, which would require another ready() call.
-                            form.setCentroid(centroid)
-                            newCentroid = centroid.clone()
-                            # Set the elevation to the same as the current elevation to avoid any
-                            # movement in the elevation axis.
-                            newCentroid.elevation = currentCentroid.elevation
-                            form.setRotation(new Vertex(0, 0, azimuth), newCentroid) if azimuth?
-                            # form.hide()
-                        Q.all(formDfs).then =>
-                          geoEntity.setDisplayMode(Session.get('entityDisplayMode'))
-                          geoEntity.show()
-                          @_setUpEntity(geoEntity)
-                          resolve(geoEntity)
-                      df.reject
-                    )
-                df.reject
-              )
-            df.reject
-          )
+                      onEntityReady()
       df.promise.fail ->
         # Remove any entities which failed to render to avoid leaving them within Atlas.
         Logger.error('Failed to render entity ' + id)
