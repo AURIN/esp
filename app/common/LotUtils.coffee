@@ -428,7 +428,7 @@ Meteor.startup ->
     df.promise
 
   autoAlign: (ids) ->
-    Logger.info('Auto-aligning lots...')
+    Logger.info('Auto-aligning lots...', ids)
     df = Q.defer()
     alignLots = []
     _.each ids, (id) ->
@@ -447,6 +447,8 @@ Meteor.startup ->
       ], bindMeteor (Vertex, AlignmentCalculator, Polygon, GeographicUtil) ->
         polyMap = {}
         polygonPromises = []
+        # Construct polygons for all lots and use them to determine the orientation of the street
+        # for the given lots.
         Lots.findByProject(projectId).forEach (lot) ->
           geom_2d = SchemaUtils.getParameterValue(lot, 'space.geom_2d')
           polygonPromises.push GeometryUtils.getWktOrC3mls(geom_2d).then (wktOrC3mls) ->
@@ -463,32 +465,35 @@ Meteor.startup ->
               polygon = new Polygon(vertices).smoothPoints()
               GeographicUtil.localizePointGeometry(polygon)
               polyMap[lot._id] = polygon
-              polygons.push(polygon)
+              return polygon
             catch e
               Logger.error('Failed to localise polygon during auto align', e, e.stack)
               return null
 
-          Q.all(polygonPromises).then bindMeteor (polygons) ->
-            polygons = _.filter polygons, (polygon) -> polygon?
-            alignCalc = new AlignmentCalculator(polygons)
-            entityDfs = []
-            _.each alignLots, (alignLot) ->
-              polygon = polyMap[alignLot._id]
-              angle = alignCalc.getStreetInfo(polygon)?.angle
-              return unless angle?
-              # 0 degrees is north-facing according to typologies. SubDiv assumes 0 degrees to be
-              # east. We must subtract 90 degrees to convert from SubDiv to the typology's 0 degree.
-              # The front of the typology is assumed to be south, so we must add 180 degrees. Hence,
-              # we have a net change of 90 degrees.
-              angle += 90
-              entityDf = Q.defer()
-              entityDfs.push(entityDf.promise)
-              # Convert the angle from counter-clockwise to clockwise.
-              angle = 360 - angle
-              Entities.update alignLot.entity,
-                {$set: 'parameters.orientation.azimuth': angle}, (err, result) ->
-                  if err then entityDf.reject(err) else entityDf.resolve(result)
-            Q.all(entityDfs).then(df.resolve, df.reject)
+        Q.all(polygonPromises).then bindMeteor (polygons) ->
+          polygons = _.filter polygons, (polygon) -> polygon?
+          alignCalc = new AlignmentCalculator(polygons)
+          entityDfs = []
+          _.each alignLots, (alignLot) ->
+            lotId = alignLot._id
+            polygon = polyMap[lotId]
+            angle = alignCalc.getStreetInfo(polygon)?.angle
+            return unless angle?
+            # 0 degrees is north-facing according to typologies. SubDiv assumes 0 degrees to be
+            # east. We must subtract 90 degrees to convert from SubDiv to the typology's 0 degree.
+            # The front of the typology is assumed to be south, so we must add 180 degrees. Hence,
+            # we have a net change of 90 degrees.
+            angle += 90
+            entityDf = Q.defer()
+            entityDfs.push(entityDf.promise)
+            # Convert the angle from counter-clockwise to clockwise.
+            angle = 360 - angle
+            Entities.update alignLot.entity,
+              {$set: 'parameters.orientation.azimuth': angle}, (err, result) ->
+                if err then entityDf.reject(err) else entityDf.resolve(lotId)
+          df.resolve Q.all(entityDfs).then (lotIds) ->
+            Logger.info('Auto-aligned lots', lotIds)
+
     df.promise
       
   getAreas: (args) ->

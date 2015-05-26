@@ -45,7 +45,6 @@ module.exports = function(grunt) {
   var ATLAS_CESIUM_RESOURCES_PATH = path.join(ATLAS_CESIUM_PATH, 'dist', 'cesium');
   var ATLAS_CESIUM_STYLE_FILE = path.join(ATLAS_CESIUM_BUILD_PATH, 'resources',
       'atlas-cesium.min.css');
-  var ATLAS_RESOURCES_REPO = 'https://bitbucket.org/mutopia/atlas-resources.git';
   var PUBLIC_PARENT_DIR = 'design';
   var PUBLIC_PARENT_PATH = publicPath(PUBLIC_PARENT_DIR);
 
