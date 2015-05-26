@@ -4,3 +4,6 @@
 /aramk:*
 /matb33:*
 /cfs:*
+
+# https://github.com/meteorhacks/npm/issues/49
+/npm-container/.npm
