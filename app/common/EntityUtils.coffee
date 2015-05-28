@@ -1,5 +1,4 @@
 @EntityUtils = {}
-bindMeteor = Meteor.bindEnvironment.bind(Meteor)
 
 evalEngine = null
 getEvalEngine = -> evalEngine ?= new EvaluationEngine(schema: Entities.simpleSchema())
@@ -29,7 +28,7 @@ if Meteor.isClient
   _.extend EntityUtils,
 
     toGeoEntityArgs: (id, args) ->
-      AtlasConverter.getInstance().then bindMeteor (converter) ->
+      AtlasConverter.getInstance().then Meteor.bindEnvironment (converter) ->
         entity = Entities.getFlattened(id)
         typology = Typologies.findOne(entity.typology)
         typologyClass = Entities.getTypologyClass(id)
@@ -83,10 +82,10 @@ if Meteor.isClient
       unless geom_2d
         return Q.when(null)
       df = Q.defer()
-      WKT.getWKT bindMeteor (wkt) =>
+      WKT.getWKT Meteor.bindEnvironment (wkt) =>
         isWKT = wkt.isWKT(geom_2d)
         if isWKT
-          @toGeoEntityArgs(id, {show: false}).then bindMeteor (entityArgs) =>
+          @toGeoEntityArgs(id, {show: false}).then Meteor.bindEnvironment (entityArgs) =>
             geoEntity = AtlasManager.renderEntity(entityArgs)
             df.resolve(geoEntity)
         else
@@ -102,10 +101,10 @@ if Meteor.isClient
       if position
         requirejs [
           'atlas/model/GeoPoint'
-        ], bindMeteor (GeoPoint) ->
+        ], Meteor.bindEnvironment (GeoPoint) ->
           df.resolve(new GeoPoint(position))
       else
-        @_renderLot(id).then bindMeteor (lotEntity) ->
+        @_renderLot(id).then Meteor.bindEnvironment (lotEntity) ->
           # If the geoEntity was rendered using the Typology geometry, centre it based on the Lot.
           df.resolve(lotEntity.getCentroid())
       df.promise
@@ -145,14 +144,14 @@ if Meteor.isClient
         typologyClass = Entities.getTypologyClass(id)
         isPathway = typologyClass == 'PATHWAY'
 
-        WKT.getWKT bindMeteor (wkt) =>
+        WKT.getWKT Meteor.bindEnvironment (wkt) =>
           isWKT = wkt.isWKT(geom_2d)
           geometryDfs = [@_render2dGeometry(id)]
           unless isPathway
             geometryDfs.push(@_render3dGeometry(id))
           geometryPromises = Q.all(geometryDfs)
           geometryPromises.fail(df.reject)
-          geometryPromises.then bindMeteor (geometries) =>
+          geometryPromises.then Meteor.bindEnvironment (geometries) =>
             _.each geometries, (geometry) -> addedGeometry.push(geometry) if geometry
             if isPathway
               geoEntity = geometries[0]
@@ -162,12 +161,12 @@ if Meteor.isClient
               return
             centroidPromise = @_getRenderCentroid(id)
             centroidPromise.fail(df.reject)
-            centroidPromise.then bindMeteor (centroid) =>
+            centroidPromise.then Meteor.bindEnvironment (centroid) =>
               requirejs [
                 'atlas/model/Feature',
                 'atlas/model/GeoEntity',
                 'atlas/model/Vertex'
-              ], bindMeteor (Feature, GeoEntity, Vertex) =>
+              ], Meteor.bindEnvironment (Feature, GeoEntity, Vertex) =>
 
                 # Precondition: 2d geometry is a required for entities.
                 entity2d = geometries[0]
@@ -176,7 +175,7 @@ if Meteor.isClient
                   # If the entity belongs to an Open Space precinct, generate an empty GeoEntity
                   # to remove special cases.
                   if typologyClass == 'OPEN_SPACE'
-                    @_getBlankFeatureArgs(id).then bindMeteor (entityArgs) =>
+                    @_getBlankFeatureArgs(id).then Meteor.bindEnvironment (entityArgs) =>
                       resolve(AtlasManager.renderEntity(entityArgs))
                   else
                     resolve(null)
@@ -193,7 +192,7 @@ if Meteor.isClient
                   # feature to store both 2d and 3d geometries.
                   blankFeaturePromise = @_getBlankFeatureArgs(id)
                   blankFeaturePromise.fail(geoEntityDf.reject)
-                  blankFeaturePromise.then bindMeteor (args) ->
+                  blankFeaturePromise.then Meteor.bindEnvironment (args) ->
                     geoEntity = AtlasManager.renderEntity(args)
                     addedGeometry.push(geoEntity)
                     if entity2d
@@ -202,7 +201,7 @@ if Meteor.isClient
                       args.elevation? && entity2d.setElevation(args.elevation)
                     geoEntityDf.resolve(geoEntity)
                 geoEntityDf.promise.fail(df.reject)
-                geoEntityDf.promise.then bindMeteor (geoEntity) =>
+                geoEntityDf.promise.then Meteor.bindEnvironment (geoEntity) =>
                   if entity3d
                     geoEntity.setForm(Feature.DisplayMode.MESH, entity3d)
                   formPromises = []

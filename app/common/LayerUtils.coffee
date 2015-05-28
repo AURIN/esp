@@ -1,5 +1,3 @@
-bindMeteor = Meteor.bindEnvironment.bind(Meteor)
-
 renderCount = new ReactiveVar(0)
 incrementRenderCount = -> renderCount.set(renderCount.get() + 1)
 decrementRenderCount = -> renderCount.set(renderCount.get() - 1)
@@ -43,7 +41,7 @@ BORDER_COLOR = '#333'
     docString = JSON.stringify(doc)
     file = new FS.File()
     file.attachData(Arrays.arrayBufferFromString(docString), type: 'application/json')
-    Files.upload(file).then bindMeteor (fileObj) ->
+    Files.upload(file).then Meteor.bindEnvironment (fileObj) ->
       # TODO(aramk) For now, using any random ID.
       name = args.name
       model =

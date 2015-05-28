@@ -28,3 +28,6 @@
 [submodule "app/packages/subdiv"]
 	path = app/packages/subdiv
 	url = https://github.com/urbanetic/subdiv.git
+[submodule "app/packages/vega-charts"]
+	path = app/packages/vega-charts
+	url = https://github.com/aramk/vega-charts.git

@@ -104,15 +104,15 @@ Meteor.startup ->
 
     hooks:
       before:
-        insert: (doc, template) ->
-          setTypologyValue(doc, true, template).then =>
+        insert: (doc) ->
+          setTypologyValue(doc, true, @template).then =>
             console.log('setTypologyValue', arguments)
             @result(doc)
           return undefined
-        update: (docId, modifier, template) ->
+        update: (modifier) ->
           # Prevent the lack of space fields from causing them to be removed.
           delete modifier.$unset?['parameters.space']
-          setTypologyValue(modifier, false, template).then =>
+          setTypologyValue(modifier, false, @template).then =>
             console.log('setTypologyValue', arguments)
             @result(modifier)
           return undefined

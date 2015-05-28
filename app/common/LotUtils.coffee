@@ -1,5 +1,3 @@
-bindMeteor = Meteor.bindEnvironment.bind(Meteor)
-
 _renderQueue = null
 resetRenderQueue = -> _renderQueue = new DeferredQueueMap()
 evalEngine = null
@@ -22,7 +20,7 @@ Meteor.startup ->
     
     createDf = Q.defer()
     LotUtils._fromAsset(args).then(
-      bindMeteor ->
+      Meteor.bindEnvironment ->
         if existingLots.length == 0
           createDf.resolve()
           return
@@ -33,7 +31,7 @@ Meteor.startup ->
           removeDf.promise
         Q.all(removeDfs).then(
           createDf.resolve
-          bindMeteor (err) ->
+          Meteor.bindEnvironment (err) ->
             Logger.error('Could not remove all existing lots', err)
             createDf.resolve()
         )
@@ -66,7 +64,7 @@ Meteor.startup ->
         return
       lotDf = Q.defer()
       modelDfs.push(lotDf.promise)
-      WKT.fromC3ml(c3ml).then bindMeteor (wkt) ->
+      WKT.fromC3ml(c3ml).then Meteor.bindEnvironment (wkt) ->
         name = lotId ? 'Lot #' + (i + 1)
         classId = Typologies.getClassByName(entityParams.landuse)
         develop = Booleans.parse(entityParams.develop ? entityParams.redev ? true)
@@ -89,8 +87,8 @@ Meteor.startup ->
           else
             lotDf.resolve(insertId)
     Q.all(modelDfs).then(
-      bindMeteor ->
-        requirejs ['atlas/model/GeoPoint'], bindMeteor (GeoPoint) ->
+      Meteor.bindEnvironment ->
+        requirejs ['atlas/model/GeoPoint'], Meteor.bindEnvironment (GeoPoint) ->
           importCount = modelDfs.length
           resolve = -> df.resolve(importCount)
           console.log 'Imported ' + importCount + ' entities'
@@ -114,7 +112,7 @@ Meteor.startup ->
     df.promise
 
   toGeoEntityArgs: (id) ->
-    AtlasConverter.getInstance().then bindMeteor (converter) =>
+    AtlasConverter.getInstance().then Meteor.bindEnvironment (converter) =>
       lot = Lots.findOne(id)
       typologyClass = SchemaUtils.getParameterValue(lot, 'general.class')
       isForDevelopment = SchemaUtils.getParameterValue(lot, 'general.develop')
@@ -181,7 +179,7 @@ Meteor.startup ->
       AtlasManager.showEntity(id)
       df.resolve(entity)
     else
-      @toGeoEntityArgs(id).then bindMeteor (entityArgs) ->
+      @toGeoEntityArgs(id).then Meteor.bindEnvironment (entityArgs) ->
         entity = AtlasManager.renderEntity(entityArgs)
         df.resolve(entity)
     df.promise
@@ -211,18 +209,18 @@ Meteor.startup ->
     # Auto-align when adding new lots or adding/replacing entities on lots.
     return if @isSetUp
 
-    autoAlignEntity = bindMeteor (entity) ->
+    autoAlignEntity = Meteor.bindEnvironment (entity) ->
       azimuth = SchemaUtils.getParameterValue(entity, 'orientation.azimuth')
       LotUtils.autoAlign([entity.lot]) unless azimuth?
 
     if Meteor.isServer
 
-      Lots.after.insert bindMeteor (userId, doc) ->
+      Lots.after.insert Meteor.bindEnvironment (userId, doc) ->
         entityId = doc.entity
         if entityId
           autoAlignEntity(Entities.findOne(entityId))
 
-      Lots.after.update bindMeteor (userId, newDoc) ->
+      Lots.after.update Meteor.bindEnvironment (userId, newDoc) ->
         oldDoc = @previous
         entityId = newDoc.entity
         # TODO(aramk) Using Meteor.bindEnvironment means the context is not correctly bound to this
@@ -284,7 +282,7 @@ Meteor.startup ->
         )
         validateDfs.push(validateDf.promise)
 
-      Q.all(validateDfs).then bindMeteor (results) ->
+      Q.all(validateDfs).then Meteor.bindEnvironment (results) ->
         typologies = _.filter results, (result) -> result?
         if typologies.length > 0
           typology = Arrays.getRandomItem(typologies)
@@ -313,7 +311,7 @@ Meteor.startup ->
     if someHaveEntities
       return Q.reject('Cannot amalgamate Lots which have Entities.')
     requirejs ['subdiv/Polygon'], (Polygon) =>
-      WKT.getWKT bindMeteor (wkt) =>
+      WKT.getWKT Meteor.bindEnvironment (wkt) =>
         polygons = []
         # Used for globalising and localising points.
         referencePoint = null
@@ -367,7 +365,7 @@ Meteor.startup ->
       return Q.reject('Cannot subdivide Lots which have Entities.')
     df = Q.defer()
     requirejs ['subdiv/Polygon', 'subdiv/Line'], (Polygon, Line) =>
-      WKT.getWKT bindMeteor (wkt) =>
+      WKT.getWKT Meteor.bindEnvironment (wkt) =>
         polygons = []
         # Used for globalising and localising points.
         referencePoint = null
@@ -438,13 +436,13 @@ Meteor.startup ->
     unless alignLots.length > 0
       df.reject('No lots with entities found for auto-alignment.')
       return df.promise
-    WKT.getWKT bindMeteor (wkt) ->
+    WKT.getWKT Meteor.bindEnvironment (wkt) ->
       requirejs [
         'atlas/model/Vertex'
         'subdiv/AlignmentCalculator'
         'subdiv/Polygon'
         'subdiv/util/GeographicUtil'
-      ], bindMeteor (Vertex, AlignmentCalculator, Polygon, GeographicUtil) ->
+      ], Meteor.bindEnvironment (Vertex, AlignmentCalculator, Polygon, GeographicUtil) ->
         polyMap = {}
         polygonPromises = []
         # Construct polygons for all lots and use them to determine the orientation of the street
@@ -470,7 +468,7 @@ Meteor.startup ->
               Logger.error('Failed to localise polygon during auto align', e, e.stack)
               return null
 
-        Q.all(polygonPromises).then bindMeteor (polygons) ->
+        Q.all(polygonPromises).then Meteor.bindEnvironment (polygons) ->
           polygons = _.filter polygons, (polygon) -> polygon?
           alignCalc = new AlignmentCalculator(polygons)
           entityDfs = []

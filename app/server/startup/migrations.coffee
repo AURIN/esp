@@ -1,5 +1,3 @@
-bindMeteor = Meteor.bindEnvironment.bind(Meteor)
-
 Meteor.startup ->
 
   # NOTE: When migrating collections, ensure to use {validate: false} if the scheme has changed,

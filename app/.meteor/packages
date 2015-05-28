@@ -31,18 +31,18 @@ raix:handlebar-helpers
 
 # PUBLIC-FORKS
 # These are forked repos and added as private packages.
-aldeed:autoform@=4.0.7
+aldeed:autoform@=5.1.2
 aldeed:collection2
 aramk:pubsub
 aramk:q
 
 # PRIVATE
 aramk:collection-table@=0.3.4
-aramk:dropdown@=0.4.3
+aramk:dropdown@=0.5.0
 # Version is locked since changing the name of collections can remove data.
 aramk:file-upload@=0.4.0
 aramk:notifications@=0.2.0
-aramk:utility@=0.8.6
+aramk:utility@=0.9.0
 aramk:vega-charts@=0.3.2
 
 # These come last so RequireJS doesn't cause issues.

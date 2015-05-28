@@ -44,7 +44,7 @@
             {{> afQuickField name="parameters.space.position.elevation"}}
 
             {{> afQuickField name="parameters.space.offset.northern"}}
-            {{> afQuickField name="parameters.space.offset.eastern"}}
+            <!-- {{> afQuickField name="parameters.space.offset.eastern"}} -->
 
             <div class="subtitle">Energy Demand</div>
             {{> afQuickField name="parameters.energy_demand.src_heat" options="allowed"}}
@@ -75,6 +75,7 @@
 
             <div class="subtitle">Orientation</div>
             {{> afQuickField name="parameters.orientation.azimuth"}}
+            {{> afQuickField name="parameters.space.offset.eastern"}}
 
             <div class="crud buttons">
               <button type="button" class="ui red cancel button">Cancel</button>

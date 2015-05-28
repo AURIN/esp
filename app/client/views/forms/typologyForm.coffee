@@ -170,14 +170,14 @@ Meteor.startup ->
         doc.project = Projects.getCurrentId()
         doc
       before:
-        update: (docId, modifier, template) ->
+        update: (modifier) ->
           classParamId = 'parameters.general.class'
           newClass = modifier.$set[classParamId]
           if newClass
-            oldTypology = Typologies.findOne(docId)
+            oldTypology = Typologies.findOne(@docId)
             oldClass = SchemaUtils.getParameterValue(oldTypology, classParamId)
             if newClass != oldClass
-              lots = Lots.findByTypology(docId)
+              lots = Lots.findByTypology(@docId)
               lotCount = lots.length
               if lotCount > 0
                 lotNames = (_.map lots, (lot) -> lot.name).join(', ')
