@@ -3800,7 +3800,7 @@ Lots.createEntity = (args) ->
     # Create a new entity for this lot-typology combination and remove the existing one
     # (if any). Name of the entity matches that of the lot.
     newEntity =
-      name: lot.name
+      name: typology.name
       typology: typologyId
       project: Projects.getCurrentId()
       lot: lotId

@@ -219,7 +219,7 @@ TemplateClass.events
       typologyClass = SchemaUtils.getParameterValue(typology, 'general.class')
       if typologyClass == 'ASSET'
         AtlasManager.getAtlas().then (atlas) ->
-          point = atlas.getManager('render').geoPointFromScreenCoords(mousePos)
+          point = atlas.getManager('render').geoPointFromScreenCoord(mousePos)
           Entities.insert
             name: typology.name
             typology: typologyId
@@ -553,6 +553,15 @@ TemplateClass.onAtlasLoad = (template, atlas) ->
       # $table = getTable(id)
       # Template.collectionTable.addSelection($table, [id]) if $table
       EntityUtils.render(lot.entity).then (geoEntity) -> geoEntity.setSelected(true)
+
+  # Selecting Open Space entities in the talbe should select the lot on the globe.
+  $entityTable.on 'select', (e, args) ->
+    toSelectIds = []
+    _.each args.added, (selectedId) ->
+      entity = Entities.findOne(selectedId)
+      lotId = entity.lot
+      if lotId? then toSelectIds.push(lotId)
+    AtlasManager.selectEntities(toSelectIds)
 
   ##################################################################################################
   # DRAWING
