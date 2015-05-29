@@ -3751,13 +3751,13 @@ Lots.findNotForDevelopment = (projectId) ->
     !SchemaUtils.getParameterValue(lot, 'general.develop')
 Lots.findAvailable = (projectId) ->
   _.filter Lots.findForDevelopment(projectId), (lot) -> !lot.entity
-Lots.findWithMissingEntities = (selector) ->
-  selector = Setter.merge({}, selector)
-  withMissing = []
-  Lots.find(selector).forEach (lot) ->
-    entityId = lot.entity
-    if entityId? && !Entities.findOne(entityId)? then withMissing.push(lot)
-  withMissing
+Lots.findWithMissingEntities = ->
+  selector = {entity: {$exists: true, $ne: null}}
+  options = {fields: {_id: true, entity: true}}
+  lots = Lots.find(selector, options).fetch()
+  withMissingIds = []
+  _.each lots, (lot) -> unless Entities.findOne(lot.entity) then withMissingIds.push(lot._id)
+  withMissingIds
 
 Lots.createEntity = (args) ->
   args = _.extend({allowReplace: false, allowNonDevelopment: false}, args)

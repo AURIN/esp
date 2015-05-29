@@ -205,12 +205,12 @@ Meteor.startup ->
     version: 13
     up: ->
       migratedModelCount = 0
-      _.each Lots.findWithMissingEntities(), (lot) ->
-        Lots.update lot._id,
+      _.each Lots.findWithMissingEntities(), (lotId) ->
+        Lots.update lotId,
           $unset:
             entity: null
         migratedModelCount++
-      console.log('Migrated', migratedModelCount, 'models by removing missing entity refernces in lots.')
+      console.log('Migrated', migratedModelCount, 'models by removing missing entity references in lots.')
 
   maybeUpdate = (collection, id, $set, $unset) ->
     # Prevent updating if the $set or $unset are empty to prevent MongoDB errors.
