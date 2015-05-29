@@ -66,16 +66,16 @@ Meteor.startup ->
 
     onRender: -> $(@findAll('.ui.toggle.button')).state()
 
-    onSuccess: (operation, result, template) ->
+    onSuccess: (operation, result) ->
       # Create the entity from the typology if none exists, or replace it if the typology class was
       # changed.
-      data = template.data
+      data = @template.data
       id = if operation == 'insert' then result else data.doc._id
       doc = Lots.findOne(id)
       entityDf = Q.defer()
       
       # If not for development, there is no dropdown.
-      $typologyDropdown = getTypologyDropdown(template)
+      $typologyDropdown = getTypologyDropdown(@template)
       newTypologyId = Template.dropdown.getValue($typologyDropdown)
       if newTypologyId
         Lots.createEntity(lotId: id, typologyId: newTypologyId, allowReplace: true)

@@ -201,6 +201,17 @@ Meteor.startup ->
             })
       console.log('Migrated', migratedModelCount, 'models by renaming internal water use intensity fields.')
 
+  Migrations.add
+    version: 13
+    up: ->
+      migratedModelCount = 0
+      _.each Lots.findWithMissingEntities(), (lot) ->
+        Lots.update lot._id,
+          $unset:
+            entity: null
+        migratedModelCount++
+      console.log('Migrated', migratedModelCount, 'models by removing missing entity refernces in lots.')
+
   maybeUpdate = (collection, id, $set, $unset) ->
     # Prevent updating if the $set or $unset are empty to prevent MongoDB errors.
     modifier = {}

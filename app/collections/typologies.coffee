@@ -3751,6 +3751,13 @@ Lots.findNotForDevelopment = (projectId) ->
     !SchemaUtils.getParameterValue(lot, 'general.develop')
 Lots.findAvailable = (projectId) ->
   _.filter Lots.findForDevelopment(projectId), (lot) -> !lot.entity
+Lots.findWithMissingEntities = (selector) ->
+  selector = Setter.merge({}, selector)
+  withMissing = []
+  Lots.find(selector).forEach (lot) ->
+    entityId = lot.entity
+    if entityId? && !Entities.findOne(entityId)? then withMissing.push(lot)
+  withMissing
 
 Lots.createEntity = (args) ->
   args = _.extend({allowReplace: false, allowNonDevelopment: false}, args)
@@ -4002,6 +4009,7 @@ Entities.findByTypologyClass = (typologyClass, projectId) ->
 
 Entities.getTypologyClass = (idOrModel) ->
   entity = if Types.isObject(idOrModel) then idOrModel else Entities.findOne(idOrModel)
+  return unless entity?
   typologyId = entity.typology
   Typologies.getTypologyClass(typologyId) if typologyId?
 
