@@ -554,7 +554,7 @@ TemplateClass.onAtlasLoad = (template, atlas) ->
       # Template.collectionTable.addSelection($table, [id]) if $table
       EntityUtils.render(lot.entity).then (geoEntity) -> geoEntity.setSelected(true)
 
-  # Selecting Open Space entities in the talbe should select the lot on the globe.
+  # Selecting entities in the talbe should select the lot on the globe.
   $entityTable.on 'select', (e, args) ->
     toSelectIds = []
     _.each args.added, (selectedId) ->

@@ -31,7 +31,7 @@ raix:handlebar-helpers
 
 # PUBLIC-FORKS
 # These are forked repos and added as private packages.
-aldeed:autoform@=5.1.2
+aldeed:autoform@=5.3.0
 aldeed:collection2
 aramk:pubsub
 aramk:q

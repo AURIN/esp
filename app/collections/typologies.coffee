@@ -4091,7 +4091,10 @@ entityUpdateQueue = []
 updateQueuedEntities = ->
   while entityUpdateQueue.length > 0
     entityId = entityUpdateQueue.pop()
-    Entities.update(entityId, {$set: {}}, {validate: false})
+    entity = Entities.findOne(entityId)
+    # NOTE: We must update a valid field, otherwise an empty $set will throw an error and remove the
+    # fields in the entity doc.
+    Entities.update(entityId, {$set: {name: entity.name}}, {validate: false})
 
 # Update the energy demand based on the azimuth array.
 updateAzimuthEnergyDemand = (userId, doc, fieldNames, modifier) ->
