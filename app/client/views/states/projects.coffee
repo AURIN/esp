@@ -76,8 +76,14 @@ TemplateClass.helpers
   tableSettings: ->
     settings =
       fields: [
-        key: 'name'
-        label: 'Name'
+        {key: 'name', label: 'Name'}
+        {
+          key: 'dateModified'
+          label: 'Date Modified'
+          sort: 'descending'
+          sortByValue: true
+          fn: (value, object) -> moment(value).format('MMM Do YYYY, h:mm:ss A')
+        }
       ]
       onEdit: (args) ->
         id = args.ids[0]
