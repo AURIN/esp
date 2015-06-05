@@ -112,6 +112,7 @@ Meteor.startup ->
     df.promise
 
   toGeoEntityArgs: (id) ->
+    df = Q.defer()
     AtlasConverter.getInstance().then Meteor.bindEnvironment (converter) =>
       lot = Lots.findOne(id)
       typologyClass = SchemaUtils.getParameterValue(lot, 'general.class')
@@ -131,9 +132,9 @@ Meteor.startup ->
           if nonDevColor
             color = nonDevColor
           else
-            color = tinycolor.lighten(color, 25)
+            color = tinycolor(color).lighten(25)
       color = tinycolor(color)
-      borderColor = tinycolor.darken(color, 40)
+      borderColor = tinycolor(color.toHexString()).darken(40)
       space = lot.parameters.space
       displayMode = @getDisplayMode(id)
       args =
@@ -149,18 +150,20 @@ Meteor.startup ->
         args.style =
           fillMaterial:
             type: 'CheckPattern',
-            color1: color.toHexString(),
-            color2: tinycolor.darken(color, 5).toHexString()
+            color1: color.toHexString()
+            color2: color.darken(5).toHexString()
           borderColor: borderColor.toHexString()
       else
         args.style =
           fillColor: color.toHexString()
           borderColor: borderColor.toHexString()
-      converter.toGeoEntityArgs(args)
+      df.resolve converter.toGeoEntityArgs(args)
+    df.promise
 
   getDisplayMode: (id) ->
     lot = Lots.findOne(id)
-    displayMode = Session.get('lotDisplayMode')
+    # If Session is not available (on the server), use the default value.
+    displayMode = Session?.get('lotDisplayMode') ? 'footprint'
     if displayMode == '_nonDevExtrusion'
       isForDevelopment = SchemaUtils.getParameterValue(lot, 'general.develop')
       if isForDevelopment then 'footprint' else 'extrusion'
@@ -180,6 +183,7 @@ Meteor.startup ->
       df.resolve(entity)
     else
       @toGeoEntityArgs(id).then Meteor.bindEnvironment (entityArgs) ->
+        console.log('Render lot', entityArgs)
         entity = AtlasManager.renderEntity(entityArgs)
         df.resolve(entity)
     df.promise

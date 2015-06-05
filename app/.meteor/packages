@@ -19,7 +19,6 @@ awatson1978:dropzone
 cfs:http-methods
 digilord:roles
 iron:router
-kidovate:tinycolor
 meteorhacks:npm
 # meteorhacks:kadira
 matb33:collection-hooks
@@ -35,6 +34,7 @@ aldeed:autoform@=5.3.0
 aldeed:collection2
 aramk:pubsub
 aramk:q
+aramk:tinycolor
 
 # PRIVATE
 aramk:collection-table@=0.3.4

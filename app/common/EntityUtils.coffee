@@ -15,12 +15,14 @@ _.extend EntityUtils,
     getEvalEngine().evaluate(model: entity, paramIds: paramIds, typologyClass: typologyClass)
 
   toGeoEntityArgs: (id, args) ->
-    AtlasConverter.getInstance().then Meteor.bindEnvironment (converter) ->
+    df = Q.defer()
+    AtlasConverter.getInstance().then Meteor.bindEnvironment (converter) =>
       entity = Entities.getFlattened(id)
       typology = Typologies.findOne(entity.typology)
       typologyClass = Entities.getTypologyClass(id)
       space = entity.parameters.space
       typologySpace = typology.parameters.space
+      displayMode = args?.displayMode ? @getDisplayMode(id)
       args = _.extend({
         id: id
         vertices: space?.geom_2d ? typologySpace?.geom_2d
@@ -37,10 +39,8 @@ _.extend EntityUtils,
             .evaluate(model: entity, paramIds: [widthParamId], typologyClass: typologyClass)
         args.width = SchemaUtils.getParameterValue(entity, widthParamId)
         args.style.fillColor = '#000'
-        displayMode = 'line'
-      else
-        displayMode = Session.get('entityDisplayMode')
-      converter.toGeoEntityArgs(args)
+      df.resolve converter.toGeoEntityArgs(args)
+    df.promise
 
   _getModel: (id) -> Entities.getFlattened(id)
 
@@ -65,12 +65,11 @@ _.extend EntityUtils,
     if position
       requirejs [
         'atlas/model/GeoPoint'
-      ], Meteor.bindEnvironment (GeoPoint) ->
-        df.resolve(new GeoPoint(position))
+      ], Meteor.bindEnvironment (GeoPoint) -> df.resolve new GeoPoint(position)
     else
       @_renderLot(id).then Meteor.bindEnvironment (lotEntity) ->
         # If the geoEntity was rendered using the Typology geometry, centre it based on the Lot.
-        df.resolve(lotEntity.getCentroid())
+        df.resolve lotEntity.getCentroid()
     df.promise
 
   _renderLot: (id) ->
@@ -168,15 +167,18 @@ _.extend EntityUtils,
                   geoEntity.setForm(Feature.DisplayMode.MESH, entity3d)
                 formPromises = []
                 _.each geoEntity.getForms(), (form) ->
-                  # Show the entity to ensure we can transform the rendered models. GLTF
-                  # meshes need to be rendered before we can determine their centroid.
-                  # TODO(aramk) Build the geometry without having to show it.
-                  form.show()
-                  form.hide()
-                  form.ready().then ->
+                  unless Meteor.isServer
+                    # Show the entity to ensure we can transform the rendered models. GLTF
+                    # meshes need to be rendered before we can determine their centroid.
+                    # TODO(aramk) Build the geometry without having to show it.
+                    form.show()
+                    form.hide()
+                  form.ready().then Meteor.bindEnvironment ->
                     # Apply rotation based on the azimuth. Use the lot centroid since the
                     # centroid may not be updated yet for certain models (e.g. GLTF meshes).
                     currentCentroid = form.getCentroid()
+                    unless currentCentroid
+                      console.log('form has no centroid', form.getId(), geoEntity.toJson())
                     # Perform this after getting the centroid to avoid rebuiding the
                     # primitive for GLTF meshes, which would require another ready() call.
                     form.setCentroid(centroid)
@@ -187,27 +189,27 @@ _.extend EntityUtils,
                     form.setRotation(new Vertex(0, 0, azimuth), newCentroid) if azimuth?
                 allFormPromises = Q.all(formPromises)
                 allFormPromises.fail(df.reject)
-                allFormPromises.then =>
+                allFormPromises.then Meteor.bindEnvironment =>
                   onEntityReady = =>
-                    geoEntity.setDisplayMode(Session.get('entityDisplayMode'))
-                    geoEntity.show()
+                    geoEntity.setDisplayMode @getDisplayMode(id)
+                    unless Meteor.isServer then geoEntity.show()
                     @_setUpEntity(geoEntity)
                     resolve(geoEntity)
                   if offset?
                     # Translate the local offset to a global geographic coordinate.
                     offsetVertex = {x: offset.eastern, y: offset.northern}
                     utmOffsetPromise = GeometryUtils.getUtmOffsetGeoPoint(centroid, offsetVertex)
-                    utmOffsetPromise.fail (err) ->
+                    utmOffsetPromise.fail (err) Meteor.bindEnvironment ->
                       Logger.error('Failed to offset entity', id, err)
                       onEntityReady()
-                    utmOffsetPromise.then (result) ->
+                    utmOffsetPromise.then Meteor.bindEnvironment (result) ->
                       # We must display the GeoEntity before setting the centroid will take
                       # effect.
                       onEntityReady()
                       geoEntity.translate(result.geoDiff)
                   else
                     onEntityReady()
-    df.promise.fail ->
+    df.promise.fail Meteor.bindEnvironment ->
       # Remove any entities which failed to render to avoid leaving them within Atlas.
       Logger.error('Failed to render entity ' + id)
       _.each addedGeometry, (geometry) -> geometry.remove()
@@ -216,9 +218,10 @@ _.extend EntityUtils,
   _getBlankFeatureArgs: (id) -> @toGeoEntityArgs(id, {vertices: null})
 
   _setUpEntity: (geoEntity) ->
-    geoEntity.show()
-    # Server doesn't need popups.
-    if Meteor.isClient then @_setUpPopup(geoEntity)
+    unless Meteor.isServer
+      # Server doesn't need popups.
+      geoEntity.show()
+      @_setUpPopup(geoEntity)
 
   _setUpPopup: (geoEntity) ->
     entity = Entities.getFlattened(AtlasIdMap.getAppId(geoEntity.getId()))
@@ -227,7 +230,7 @@ _.extend EntityUtils,
     typologyClass = Typologies.Classes[typologyClassId]
     subclass = SchemaUtils.getParameterValue(entity, 'general.subclass')
     AtlasManager.getAtlas().then (atlas) ->
-      atlas.publish('popup/onSelection', {
+      atlas.publish 'popup/onSelection',
         entity: geoEntity
         content: ->
           '<div class="typology-name">' + typology.name + '</div>'
@@ -241,18 +244,46 @@ _.extend EntityUtils,
         onCreate: (popup) ->
           $popup = $(popup.getDom())
           $('.title', $popup).css('color', typologyClass.color)
-      })
 
-  unrender: (id) -> @renderQueue.add id, -> AtlasManager.unrenderEntity(id)
-
-  renderAll: ->
+  renderAll: (args) ->
+    args ?= {}
     renderDfs = []
-    models = Entities.findByProject().fetch()
-    _.each models, (model) => renderDfs.push(@render(model._id))
+    projectId = args.projectId ? Projects.getCurrentId()
+    models = Entities.findByProject(projectId).fetch()
+    _.each models, (model) => renderDfs.push @render(model._id)
     Q.all(renderDfs)
+
+  # Bulk rendering is not yet supported, so we simply render everything individually.
+  _renderBulk: (args) -> @renderAll(args)
 
   _getZoomableEntities: ->
     ids = []
     _.each [Entities.findByProject(), Lots.findByProject()], (cursor) ->
       cursor.forEach (doc) -> ids.push doc._id
     ids
+
+  _getEntitiesForJson: (args) ->
+    # TODO(aramk) Testing.
+    # return []
+    # projectId = args.projectId
+    # # Include Lots in the entities for JSON export.
+    # lots = Lots.findByProject(projectId).fetch()
+    # console.log('_getEntitiesForJson', lots)
+    # return lots
+
+    projectId = args.projectId
+    # Include Lots in the entities for JSON export.
+    entities = Entities.findByProject(projectId).fetch()
+    lots = Lots.findByProject(projectId).fetch()
+    _.union(entities, lots)
+
+  # _renderEntitiesBeforeJson: (args) ->
+  #   # TODO(aramk) Testing.
+  #   console.log('_renderEntitiesBeforeJson', args)
+  #   Q.all _.map args.ids, (id) -> LotUtils.render(id)
+
+  _unrenderEntitiesBeforeJson: (args) ->
+    unrenderPromises = []
+    if Meteor.isServer
+      _.each args.ids, (id) -> unrenderPromises.push AtlasManager.unrenderEntity(id)
+    unrenderPromises
