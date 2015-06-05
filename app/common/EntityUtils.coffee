@@ -108,7 +108,8 @@ _.extend EntityUtils,
       WKT.getWKT Meteor.bindEnvironment (wkt) =>
         isWKT = wkt.isWKT(geom_2d)
         geometryDfs = [@_render2dGeometry(id)]
-        unless isPathway
+        # TODO(aramk) We cannot render 3D meshes on the server for exporting yet.
+        unless isPathway || Meteor.isServer
           geometryDfs.push(@_render3dGeometry(id))
         geometryPromises = Q.all(geometryDfs)
         geometryPromises.fail(df.reject)
@@ -173,12 +174,10 @@ _.extend EntityUtils,
                     # TODO(aramk) Build the geometry without having to show it.
                     form.show()
                     form.hide()
-                  form.ready().then Meteor.bindEnvironment ->
+                  formPromises.push form.ready().then Meteor.bindEnvironment ->
                     # Apply rotation based on the azimuth. Use the lot centroid since the
                     # centroid may not be updated yet for certain models (e.g. GLTF meshes).
                     currentCentroid = form.getCentroid()
-                    unless currentCentroid
-                      console.log('form has no centroid', form.getId(), geoEntity.toJson())
                     # Perform this after getting the centroid to avoid rebuiding the
                     # primitive for GLTF meshes, which would require another ready() call.
                     form.setCentroid(centroid)
@@ -263,24 +262,34 @@ _.extend EntityUtils,
     ids
 
   _getEntitiesForJson: (args) ->
-    # TODO(aramk) Testing.
-    # return []
-    # projectId = args.projectId
-    # # Include Lots in the entities for JSON export.
-    # lots = Lots.findByProject(projectId).fetch()
-    # console.log('_getEntitiesForJson', lots)
-    # return lots
-
+    # Include Lots in the entities for JSON export.
     projectId = args.projectId
     # Include Lots in the entities for JSON export.
     entities = Entities.findByProject(projectId).fetch()
     lots = Lots.findByProject(projectId).fetch()
     _.union(entities, lots)
 
-  # _renderEntitiesBeforeJson: (args) ->
-  #   # TODO(aramk) Testing.
-  #   console.log('_renderEntitiesBeforeJson', args)
-  #   Q.all _.map args.ids, (id) -> LotUtils.render(id)
+  _renderEntitiesBeforeJson: (args) ->
+    df = Q.defer()
+    @renderAll(args).then (geoEntities) ->
+      requirejs [
+        'atlas/model/Collection'
+        'atlas/model/Feature'
+      ], (Collection, Feature) ->
+        _.each geoEntities, (geoEntity) ->
+          if geoEntity instanceof Feature
+            form = geoEntity.getForm(Feature.DisplayMode.FOOTPRINT)
+            if form instanceof Collection
+              console.log('found a collection as a footprint', form.getId(), geoEntity.getId())
+              featureId = geoEntity.getId()
+              # Remove the form so it's not deleted with the feature.
+              geoEntity.removeForm(Feature.DisplayMode.FOOTPRINT)
+              geoEntity.remove()
+              collection = AtlasManager.createCollection featureId,
+                  {entities: [form.getId()]}
+              console.log('collection', collection.toJson())
+        df.resolve()
+    df.promise
 
   _unrenderEntitiesBeforeJson: (args) ->
     unrenderPromises = []

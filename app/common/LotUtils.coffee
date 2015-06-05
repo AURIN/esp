@@ -183,7 +183,6 @@ Meteor.startup ->
       df.resolve(entity)
     else
       @toGeoEntityArgs(id).then Meteor.bindEnvironment (entityArgs) ->
-        console.log('Render lot', entityArgs)
         entity = AtlasManager.renderEntity(entityArgs)
         df.resolve(entity)
     df.promise
