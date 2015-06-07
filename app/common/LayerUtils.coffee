@@ -1,21 +1,7 @@
-renderCount = new ReactiveVar(0)
-incrementRenderCount = -> renderCount.set(renderCount.get() + 1)
-decrementRenderCount = -> renderCount.set(renderCount.get() - 1)
 FILL_COLOR = '#888'
 BORDER_COLOR = '#333'
 
 @LayerUtils =
-
-  displayModeRenderEnabled: true
-  displayModeRenderHandle: null
-  displayModeDfs: null
-  # A map of layer ID to a map of layer c3ml IDs to lot IDs - only for those intersecting.
-  # intersectionCache: null
-  # lotToLayerMap: null
-  # lotPolyCache: null
-  # layerPolyCache: null
-  displayModeDirty: null
-  displayModeHandles: null
 
   fromAsset: (args) ->
     args = Setter.merge({}, args)
@@ -62,42 +48,35 @@ BORDER_COLOR = '#333'
 
   render: (id, args) ->
     args = _.extend({
-      renderDisplayMode: true
       showOnRender: true
     }, args)
-    df = Q.defer()
-    incrementRenderCount()
-    df.promise.fin -> decrementRenderCount()
+    df = @renderMap[id]
+    if df && Q.isPending(df.promise) then return df.promise
+    df = @renderMap[id] = Q.defer()
+    @incrementRenderCount()
+    df.promise.fin => @decrementRenderCount()
+    
     model = Layers.findOne(id)
     space = model.parameters.space
     geom_2d = space.geom_2d
     geom_3d = space.geom_3d
     unless geom_2d || geom_3d
       df.resolve(null)
-      decrementRenderCount()
+      @decrementRenderCount()
       return df.promise
     geoEntity = AtlasManager.getEntity(id)
     if geoEntity
       if args.showOnRender
-        @show(id).then(
-          -> df.resolve(geoEntity)
-          df.reject
-        )
+        df.resolve @show(id).then -> geoEntity
       else
         df.resolve(geoEntity)
     else
-      @_renderLayer(id).then(
-        (geoEntity) =>
+      LotUtils.whenRenderingComplete().then =>
+        renderPromise = @_renderLayer(id)
+        renderPromise.fail(df.reject)
+        renderPromise.then (geoEntity) =>
           PubSub.publish('layer/show', id)
-          if args.renderDisplayMode
-            @renderDisplayMode(id).then(
-              -> df.resolve(geoEntity)
-              df.reject
-            )
-          else
-            df.resolve(geoEntity)
-        df.reject
-      )
+          df.resolve(geoEntity)
     df.promise
 
   _renderLayer: (id) ->
@@ -115,18 +94,15 @@ BORDER_COLOR = '#333'
       if c3mls.length == 1
         # Ensure the ID of the layer is assigned if only a single entity rendered.
         c3mls[0].id = id
-      AtlasManager.renderEntities(c3mls).then (c3mlEntities) =>
-        if c3mlEntities.length > 1
-          entityIds = _.map c3mlEntities, (entity) -> entity.getId()
-          # Create a collection of all the added features.
-          requirejs ['atlas/model/Collection'], (Collection) =>
-            # TODO(aramk) Use dependency injection to prevent the need for passing manually.
-            deps = c3mlEntities[0]._bindDependencies({})
-            data = {entities: entityIds, color: FILL_COLOR, borderColor: BORDER_COLOR}
-            collection = new Collection(id, data, deps)
-            df.resolve(collection)
-        else
-          df.resolve(c3mlEntities[0])
+      renderPromise = AtlasManager.renderEntities(c3mls)
+      renderPromise.fail(df.reject)
+      renderPromise.then (c3mlEntities) =>
+        entityIds = _.map c3mlEntities, (entity) -> entity.getId()
+        # Create a collection of all the added features.
+        df.resolve AtlasManager.createCollection id,
+          entities: entityIds
+          color: FILL_COLOR
+          borderColor: BORDER_COLOR
     df.promise
 
   # Hides footprint polygons in the layer which don't intersect with a non-development lot. If Lot
@@ -150,61 +126,48 @@ BORDER_COLOR = '#333'
     subsetLots = lotIds?
     unless lotIds
       lotIds = _.map Lots.findNotForDevelopment(), (lot) -> lot._id
-    clearTimeout(@displayModeRenderHandle)
-    @displayModeRenderHandle = setTimeout(
-      =>
-        requirejs ['subdiv/Polygon'], (Polygon) =>
-          lotPromises = _.map lotIds, (lotId) -> LotUtils.render(lotId)
-          Q.all(lotPromises).then (geoEntities) =>
-            lotPolygons = _.map geoEntities, (geoEntity) ->
-              polygon = new Polygon(GeometryUtils.toUtmVertices(geoEntity))
-              polygon.id = geoEntity.getId()
-              polygon
-            footprintPolygons = {}
-            # Prevent a deadlock by not waiting on display mode rendering when waiting for the
-            # layer to render. Prevent showing the footprints on render if we are given a subset of
-            # lots, since we don't want hidden non-intersecting footprints to be shown.
-            @render(id, {
-              renderDisplayMode: false
-              showOnRender: !subsetLots
-            }).then (collection) ->
-              unless collection
-                df.reject('Cannot render display mode - no layer entity')
-                return
-              collection.getEntities().forEach (footprintGeoEntity) ->
-                return unless footprintGeoEntity.getVertices?
-                footprintId = footprintGeoEntity.getId()
-                footprintPolygons[footprintId] =
-                    new Polygon(GeometryUtils.toUtmVertices(footprintGeoEntity))
-              _.each footprintPolygons, (footprintPolygon, footprintId) ->
-                intersectsLot = null
-                _.some lotPolygons, (lotPolygon) ->
-                  lotId = lotPolygon.id
-                  lotIsNonDev =
-                      !SchemaUtils.getParameterValue(Lots.findOne(lotId), 'general.develop')
-                  intersects = footprintPolygon.intersects(lotPolygon)
-                  # If a subset of the lots are provided, don't modify the visibility of
-                  # non-intersecting footprints, since they are not affected.
-                  if subsetLots && !intersects
-                    return
-                  else
-                    intersectsLot = intersects && lotIsNonDev
-                footprintGeoEntity = AtlasManager.getEntity(AtlasIdMap.getAppId(footprintId))
-                # Ignore null value which indicates no changes should be made.
-                if intersectsLot?
-                  footprintGeoEntity.setVisibility(intersectsLot)
-              delete dirty[id]
-              df.resolve()
-      1000
-    )
-    df.promise.fin =>
-      delete @displayModeDfs[id]
+    requirejs ['subdiv/Polygon'], (Polygon) =>
+      geoEntities =_.map lotIds, (lotId) -> AtlasManager.getEntity(lotId)
+      lotPolygons = _.map geoEntities, (geoEntity) ->
+        polygon = new Polygon(GeometryUtils.toUtmVertices(geoEntity))
+        polygon.id = geoEntity.getId()
+        polygon
+      footprintPolygons = {}
+      renderPromise = @render(id, {showOnRender: !subsetLots})
+      renderPromise.fail(df.reject)
+      renderPromise.then (collection) ->
+        unless collection
+          df.reject('Cannot render display mode - no layer entity')
+          return
+        collection.getEntities().forEach (footprintGeoEntity) ->
+          return unless footprintGeoEntity.getVertices?
+          footprintId = footprintGeoEntity.getId()
+          footprintPolygons[footprintId] =
+              new Polygon(GeometryUtils.toUtmVertices(footprintGeoEntity))
+        _.each footprintPolygons, (footprintPolygon, footprintId) ->
+          intersectsLot = null
+          _.some lotPolygons, (lotPolygon) ->
+            lotId = lotPolygon.id
+            lotIsNonDev =
+                !SchemaUtils.getParameterValue(Lots.findOne(lotId), 'general.develop')
+            intersects = footprintPolygon.intersects(lotPolygon)
+            # If a subset of the lots are provided, don't modify the visibility of
+            # non-intersecting footprints, since they are not affected.
+            if subsetLots && !intersects
+              return
+            else
+              intersectsLot = intersects && lotIsNonDev
+          footprintGeoEntity = AtlasManager.getEntity(AtlasIdMap.getAppId(footprintId))
+          # Ignore null value which indicates no changes should be made.
+          if intersectsLot? then footprintGeoEntity.setVisibility(intersectsLot)
+        delete dirty[id]
+        df.resolve()
+    df.promise.fin => delete @displayModeDfs[id]
     df.promise
 
   setUpDisplayMode: ->
     handles = @displayModeHandles = []
     dirty = @displayModeDirty
-    @displayModeDfs = {}
     if dirty?
       return dirty
     dirty = @displayModeDirty = {}
@@ -237,9 +200,8 @@ BORDER_COLOR = '#333'
     _.each @displayModeHandles, (handle) -> handle.stop()
     @displayModeHandles = null
     @displayModeDirty = null
-    dfs = @displayModeDfs
-    _.each dfs, (df) -> df.reject()
-    @displayModeDfs = null
+    _.each @displayModeDfs, (df, id) -> df.reject()
+    @displayModeDfs = {}
 
   # _setUpInterectionCache: ->
   #   cache = @intersectionCache
@@ -282,9 +244,7 @@ BORDER_COLOR = '#333'
       df.resolve()
     df.promise
 
-  hide: (id) ->
-    if AtlasManager.hideEntity(id)
-      PubSub.publish('layer/hide', id)
+  hide: (id) -> if AtlasManager.hideEntity(id) then PubSub.publish('layer/hide', id)
 
   _getGeometry: (id) ->
     entity = Layers.findOne(id)
@@ -306,13 +266,10 @@ BORDER_COLOR = '#333'
     # Filter GeoEntity objects which are not project entities.
     _.filter entityIds, (id) -> Layers.findOne(id)
 
-  beforeAtlasUnload: ->
-    @destroyDisplayMode()
-    @resetRenderCount()
 
-  getRenderCount: -> renderCount.get()
+  getRenderCount: -> @renderCount.get()
 
-  resetRenderCount: -> renderCount.set(0)
+  resetRenderCount: -> @renderCount.set(0)
 
   setDisplayMode: (id, displayMode) ->
     existingDisplayMode = @getDisplayMode(id)
@@ -321,3 +278,27 @@ BORDER_COLOR = '#333'
 
   getDisplayMode: (id) ->
     SchemaUtils.getParameterValue(Layers.findOne(id), 'general.displayMode') ? 'nonDevExtrusion'
+
+  incrementRenderCount: -> @renderCount.set(@renderCount.get() + 1)
+
+  decrementRenderCount: -> @renderCount.set(@renderCount.get() - 1)
+
+  beforeAtlasUnload: -> @reset()
+
+  reset: ->
+    @displayModeRenderEnabled = true
+    # A map of layer ID to a map of layer c3ml IDs to lot IDs - only for those intersecting.
+    # intersectionCache = null
+    # lotToLayerMap = null
+    # lotPolyCache = null
+    # layerPolyCache = null
+    @displayModeDirty = null
+    @displayModeHandles = null
+    @renderCount = new ReactiveVar(0)
+    _.each @renderMap, (df, id) -> df.reject()
+    @renderMap = {}
+
+    @destroyDisplayMode()
+    @resetRenderCount()
+
+Meteor.startup -> LayerUtils.reset()
