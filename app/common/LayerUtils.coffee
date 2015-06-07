@@ -124,42 +124,39 @@ BORDER_COLOR = '#333'
     df = @displayModeDfs[id] = Q.defer()
 
     subsetLots = lotIds?
-    unless lotIds
-      lotIds = _.map Lots.findNotForDevelopment(), (lot) -> lot._id
-    requirejs ['subdiv/Polygon'], (Polygon) =>
-      geoEntities =_.map lotIds, (lotId) -> AtlasManager.getEntity(lotId)
-      lotPolygons = _.map geoEntities, (geoEntity) ->
-        polygon = new Polygon(GeometryUtils.toUtmVertices(geoEntity))
-        polygon.id = geoEntity.getId()
-        polygon
-      footprintPolygons = {}
+    unless lotIds then lotIds = _.map Lots.findNotForDevelopment(), (lot) -> lot._id
+    requirejs ['subdiv/Polygon', 'subdiv/Point'], (Polygon, Point) =>
       renderPromise = @render(id, {showOnRender: !subsetLots})
       renderPromise.fail(df.reject)
       renderPromise.then (collection) ->
         unless collection
           df.reject('Cannot render display mode - no layer entity')
           return
-        collection.getEntities().forEach (footprintGeoEntity) ->
-          return unless footprintGeoEntity.getVertices?
-          footprintId = footprintGeoEntity.getId()
-          footprintPolygons[footprintId] =
-              new Polygon(GeometryUtils.toUtmVertices(footprintGeoEntity))
-        _.each footprintPolygons, (footprintPolygon, footprintId) ->
+        footprintCentroids = {}
+        _.each collection.getChildren(), (footprintGeoEntity) ->
+          id = footprintGeoEntity.getId()
+          coord = footprintGeoEntity.getCentroid()?.toUtm()?.coord
+          footprintCentroids[id] = new Point(coord.x, coord.y) if coord
+        lotPolygons = {}
+        _.each lotIds, (lotId) ->
+          lotGeoEntity = AtlasManager.getEntity(lotId)
+          polygon = new Polygon(GeometryUtils.toUtmVertices(lotGeoEntity))
+          polygon.id = lotId
+          lotPolygons[lotId] = polygon
+        _.each footprintCentroids, (centroid, footprintId) ->
           intersectsLot = null
-          _.some lotPolygons, (lotPolygon) ->
-            lotId = lotPolygon.id
+          _.some lotPolygons, (lotPolygon, lotId) ->
             lotIsNonDev =
                 !SchemaUtils.getParameterValue(Lots.findOne(lotId), 'general.develop')
-            intersects = footprintPolygon.intersects(lotPolygon)
+            intersects = lotPolygon.contains(centroid)
             # If a subset of the lots are provided, don't modify the visibility of
             # non-intersecting footprints, since they are not affected.
             if subsetLots && !intersects
-              return
+              return undefined
             else
               intersectsLot = intersects && lotIsNonDev
-          footprintGeoEntity = AtlasManager.getEntity(AtlasIdMap.getAppId(footprintId))
           # Ignore null value which indicates no changes should be made.
-          if intersectsLot? then footprintGeoEntity.setVisibility(intersectsLot)
+          if intersectsLot? then AtlasManager.getEntity(footprintId).setVisibility(intersectsLot)
         delete dirty[id]
         df.resolve()
     df.promise.fin => delete @displayModeDfs[id]
@@ -202,21 +199,6 @@ BORDER_COLOR = '#333'
     @displayModeDirty = null
     _.each @displayModeDfs, (df, id) -> df.reject()
     @displayModeDfs = {}
-
-  # _setUpInterectionCache: ->
-  #   cache = @intersectionCache
-  #   if cache?
-  #     return cache
-  #   cache = @intersectionCache ?= {}
-  #   Collection.observe Layers, (doc) ->
-  #     cache[doc._id] = {
-  #       intersections: {}
-  #       # A map of Lot IDs used to invalidate the cache when 
-  #       lots: {}
-  #     }
-  #   Collection.observe Layers, (doc) ->
-  #     cache[doc._id] = {}
-  #   cache
 
   renderAllDisplayModes: (lotIds) ->
     dfs = []
@@ -287,11 +269,6 @@ BORDER_COLOR = '#333'
 
   reset: ->
     @displayModeRenderEnabled = true
-    # A map of layer ID to a map of layer c3ml IDs to lot IDs - only for those intersecting.
-    # intersectionCache = null
-    # lotToLayerMap = null
-    # lotPolyCache = null
-    # layerPolyCache = null
     @displayModeDirty = null
     @displayModeHandles = null
     @renderCount = new ReactiveVar(0)
