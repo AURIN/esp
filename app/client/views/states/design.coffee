@@ -472,7 +472,7 @@ unregisterCollectionRenderHandles = (template) ->
 TemplateClass.onAtlasLoad = (template, atlas) ->
   df = Q.defer()
   unregisterCollectionRenderHandles(template, atlas)
-  EntityUtils.renderAllAndZoom().fin ->
+  Q.all([LotUtils.renderAllAndZoom(), EntityUtils.renderAll()]).fin ->
     bindEntityEvents(template, atlas)
     df.resolve()
   df.promise

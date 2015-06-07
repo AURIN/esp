@@ -1,11 +1,8 @@
-_renderQueue = null
-resetRenderQueue = -> _renderQueue = new DeferredQueueMap()
-evalEngine = null
-Meteor.startup ->
-  resetRenderQueue()
-  evalEngine = new EvaluationEngine(schema: Lots.simpleSchema())
-
 @LotUtils =
+
+  ##################################################################################################
+  # IMPORTING
+  ##################################################################################################
 
   # Handles a assets/synthesize response to create lots.
   fromAsset: (args) ->
@@ -111,54 +108,57 @@ Meteor.startup ->
     )
     df.promise
 
-  toGeoEntityArgs: (id) ->
-    df = Q.defer()
-    AtlasConverter.getInstance().then Meteor.bindEnvironment (converter) =>
-      lot = Lots.findOne(id)
-      typologyClass = SchemaUtils.getParameterValue(lot, 'general.class')
-      isForDevelopment = SchemaUtils.getParameterValue(lot, 'general.develop')
-      typologyClassArgs = Typologies.Classes[typologyClass]
-      # Reduce saturation of non-develop lots. Ensure full saturation for develop lots.
-      color = '#ccc'
-      if typologyClassArgs
-        typology = Typologies.findOne(Entities.findOne(lot.entity)?.typology)
-        subclasses = typologyClassArgs.subclasses
-        subclass = typology && SchemaUtils.getParameterValue(typology, 'general.subclass')
-        color = typologyClassArgs.color ? color
-        if subclass &&  Types.isObject(subclasses)
-          color = subclasses[subclass]?.color ? color
-        unless isForDevelopment
-          nonDevColor = typologyClassArgs.nonDevColor
-          if nonDevColor
-            color = nonDevColor
-          else
-            color = tinycolor(color).lighten(25)
-      color = tinycolor(color)
-      borderColor = tinycolor(color.toHexString()).darken(40)
-      space = lot.parameters.space
-      displayMode = @getDisplayMode(id)
-      args =
-        id: id
-        vertices: space.geom_2d
-        displayMode: displayMode
-      height = space.height
-      if height?
-        args.height = height
-      if typologyClass == 'OPEN_SPACE' && lot.entity?
-        # If the lot is an Open Space with an entity, render it with a check pattern to show it
-        # has an entity allocated.
-        args.style =
-          fillMaterial:
-            type: 'CheckPattern',
-            color1: color.toHexString()
-            color2: color.darken(5).toHexString()
-          borderColor: borderColor.toHexString()
-      else
-        args.style =
-          fillColor: color.toHexString()
-          borderColor: borderColor.toHexString()
-      df.resolve converter.toGeoEntityArgs(args)
-    df.promise
+  ##################################################################################################
+  # RENDERING
+  ##################################################################################################
+
+  toGeoEntityArgs: (id) -> @converterPromise.then (converter) => @_toGeoEntityArgs(id, converter)
+
+  _toGeoEntityArgs: (id, converter) ->
+    lot = Lots.findOne(id)
+    typologyClass = SchemaUtils.getParameterValue(lot, 'general.class')
+    isForDevelopment = SchemaUtils.getParameterValue(lot, 'general.develop')
+    typologyClassArgs = Typologies.Classes[typologyClass]
+    # Reduce saturation of non-develop lots. Ensure full saturation for develop lots.
+    color = '#ccc'
+    if typologyClassArgs
+      typology = Typologies.findOne(Entities.findOne(lot.entity)?.typology)
+      subclasses = typologyClassArgs.subclasses
+      subclass = typology && SchemaUtils.getParameterValue(typology, 'general.subclass')
+      color = typologyClassArgs.color ? color
+      if subclass &&  Types.isObject(subclasses)
+        color = subclasses[subclass]?.color ? color
+      unless isForDevelopment
+        nonDevColor = typologyClassArgs.nonDevColor
+        if nonDevColor
+          color = nonDevColor
+        else
+          color = tinycolor(color).lighten(25)
+    color = tinycolor(color)
+    borderColor = tinycolor(color.toHexString()).darken(40)
+    space = lot.parameters.space
+    displayMode = @getDisplayMode(id)
+    args =
+      id: id
+      vertices: space.geom_2d
+      displayMode: displayMode
+    height = space.height
+    if height?
+      args.height = height
+    if typologyClass == 'OPEN_SPACE' && lot.entity?
+      # If the lot is an Open Space with an entity, render it with a check pattern to show it
+      # has an entity allocated.
+      args.style =
+        fillMaterial:
+          type: 'CheckPattern',
+          color1: color.toHexString()
+          color2: color.darken(5).toHexString()
+        borderColor: borderColor.toHexString()
+    else
+      args.style =
+        fillColor: color.toHexString()
+        borderColor: borderColor.toHexString()
+    converter.toGeoEntityArgs(args)
 
   getDisplayMode: (id) ->
     lot = Lots.findOne(id)
@@ -170,10 +170,10 @@ Meteor.startup ->
     else
       displayMode
 
-# TODO(aramk) Abstract this rendering for Entities as well.
-# TODO(aramk) This class has grown too generic - refactor.
-  
-  render: (id) -> _renderQueue.add(id, => @_render(id))
+  # TODO(aramk) Abstract this rendering for Entities as well.
+  # TODO(aramk) This class has grown too generic - refactor.
+    
+  render: (id) -> @renderQueue.add id, => @_render(id)
 
   _render: (id) ->
     df = Q.defer()
@@ -187,26 +187,44 @@ Meteor.startup ->
         df.resolve(entity)
     df.promise
 
-  unrender: (id) -> _renderQueue.add id, ->
+  unrender: (id) -> @renderQueue.add id, ->
     df = Q.defer()
     AtlasManager.unrenderEntity(id)
     df.resolve()
     df.promise
 
-  renderAll: ->
-    lotRenderDfs = []
-    lots = Lots.findByProject()
-    _.each lots.fetch(), (lot) => lotRenderDfs.push(@render(lot._id))
-    Q.all(lotRenderDfs)
+  renderAll: (args) -> @renderQueue.add 'bulk', => @_renderBulk(args)
 
-  renderAllAndZoom: ->
-    @renderAll().then => @_zoomToEntities()
+  _renderBulk: (args)  ->
+    args ?= {}
+    df = Q.defer()
+    ids = args.ids
+    if ids
+      lots = _.map ids, (id) -> Lots.findOne(id)
+    else
+      projectId = args.projectId ? Projects.getCurrentId()
+      lots = Lots.findByProject(projectId).fetch()
+    @converterPromise.then (converter) => 
+      _.each lots, (lot) =>
+        id = lot._id
+        geoEntityArgs = @_toGeoEntityArgs(id, converter)
+        AtlasManager.renderEntity(geoEntityArgs)
+      df.resolve()
+    df.promise
+
+  renderAllAndZoom: -> @renderAll().then => @_zoomToEntities()
+
+  whenRenderingComplete: -> @renderQueue.waitForAll()
 
   _zoomToEntities: ->
     ids = _.map Lots.findByProject().fetch(), (entity) -> entity._id
     AtlasManager.zoomToEntities(ids)
 
   getSelectedLots: -> _.filter AtlasManager.getSelectedFeatureIds(), (id) -> Lots.findOne(id)
+
+  ##################################################################################################
+  # SERVICES
+  ##################################################################################################
 
   setUp: ->
     # Auto-align when adding new lots or adding/replacing entities on lots.
@@ -231,6 +249,12 @@ Meteor.startup ->
         if entityId && (!oldDoc || oldDoc.entity != entityId)
           autoAlignEntity(Entities.findOne(entityId))
 
+    converterDf = Q.defer()
+    @converterPromise = converterDf.promise
+    AtlasConverter.getInstance().then Meteor.bindEnvironment (converter) ->
+      converterDf.resolve(converter)
+
+    @reset()
     @isSetUp = true
 
   # Allocate a set of typologies to a set of lots.
@@ -523,9 +547,12 @@ Meteor.startup ->
         if err then df.reject(err) else df.resolve(result)
     Q.all(dfs)
 
-  beforeAtlasUnload: -> resetRenderQueue()
+  beforeAtlasUnload: -> @reset()
 
-LotUtils.setUp()
+  reset: ->
+    @renderQueue = new DeferredQueueMap()
+
+Meteor.startup -> LotUtils.setUp()
 
 if Meteor.isServer
   Meteor.methods
