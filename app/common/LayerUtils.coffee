@@ -120,8 +120,9 @@ BORDER_COLOR = '#333'
     return emptyPromise unless dirty[id]
 
     df = @displayModeDfs[id]
-    return df.promise if df
+    return df.promise if df && Q.isPending(df.promise)
     df = @displayModeDfs[id] = Q.defer()
+    df.promise.fin => delete @displayModeDfs[id]
 
     subsetLots = lotIds?
     unless lotIds then lotIds = _.map Lots.findNotForDevelopment(), (lot) -> lot._id
@@ -159,7 +160,6 @@ BORDER_COLOR = '#333'
           if intersectsLot? then AtlasManager.getEntity(footprintId).setVisibility(intersectsLot)
         delete dirty[id]
         df.resolve()
-    df.promise.fin => delete @displayModeDfs[id]
     df.promise
 
   setUpDisplayMode: ->
