@@ -1190,6 +1190,9 @@ ProjectSchema = new SimpleSchema
     label: 'Parameters'
     type: ProjectParametersSchema
     defaultValue: {}
+  dateModified:
+    label: 'Date Modified'
+    type: Date
   isTemplate:
     label: 'Template?'
     type: Boolean
@@ -1244,9 +1247,26 @@ Projects.mergeDefaults = (model) ->
 
 # Template Projects
 
-Projects.before.insert = (userId, doc) ->
+Projects.before.insert (userId, doc) ->
   if doc.isTemplate && !AccountsUtil.isAdmin(userId)
     throw new Error('Only admin user can create template project.')
+
+##################################################################################################
+# PROJECT DATE
+##################################################################################################
+
+# Updating project or models in the project will update the modified date of a project.
+
+getCurrentDate = -> moment().toDate()
+
+Projects.before.insert (userId, doc) ->
+  unless doc.dateModified
+    doc.dateModified = getCurrentDate()
+
+Projects.before.update (userId, doc, fieldNames, modifier) ->
+  modifier.$set ?= {}
+  delete modifier.$unset?.dateModified
+  modifier.$set.dateModified = getCurrentDate()
 
 ####################################################################################################
 # TYPOLOGY SCHEMA DECLARATION

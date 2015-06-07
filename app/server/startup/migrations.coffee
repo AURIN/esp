@@ -212,6 +212,19 @@ Meteor.startup ->
         migratedModelCount++
       console.log('Migrated', migratedModelCount, 'models by removing missing entity references in lots.')
 
+  Migrations.add
+    version: 14
+    up: ->
+      migratedModelCount = 0
+      # Adds a dateModified value set to the current date for every project without one.
+      _.each Projects.find().fetch(), (project) ->
+        return if project.dateModified?
+        migratedModelCount += Projects.update(project._id, {
+          $set:
+            dateModified: moment().toDate()
+        }, {validate: false})
+      console.log('Migrated', migratedModelCount, 'projects to use dateModified field.')
+
   maybeUpdate = (collection, id, $set, $unset) ->
     # Prevent updating if the $set or $unset are empty to prevent MongoDB errors.
     modifier = {}

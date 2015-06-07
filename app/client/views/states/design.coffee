@@ -22,6 +22,8 @@ collectionToForm =
 
 # Various handles which should be removed when the design template is removed
 handles = null
+# Handles for rendering due to collection changes.
+renderHandles = null
 # Handles for PubSub subscriptions.
 pubsubHandles = null
 
@@ -42,12 +44,14 @@ TemplateClass.created = ->
   displayModesCollection = Collections.createTemporary()
   _.each DisplayModes, (name, id) ->
     displayModesCollection.insert({value: id, label: name})
-  pubsubHandles = []
   handles = []
+  renderHandles = []
+  pubsubHandles = []
 
 TemplateClass.destroyed = ->
   _.each handles, (handle) -> handle.stop()
   _.each pubsubHandles, (handle) -> PubSub.unsubscribe(handle)
+  unregisterCollectionRenderHandles()
   EntityUtils.beforeAtlasUnload()
   LotUtils.beforeAtlasUnload()
   LayerUtils.beforeAtlasUnload()
@@ -339,13 +343,10 @@ setIsLoadingEntities = (loading) ->
   $loader = getTemplate().$('.entities .loader')
   $loader.toggleClass('active', !!loading)
 
-TemplateClass.onAtlasLoad = (template, atlas) ->
-  projectId = Projects.getCurrentId()
-
-  $entityTable = getEntityTable(template)
-  $typologyTable = getTypologyTable(template)
-  $lotTable = getLotTable(template)
-  $layerTable = getLayerTable(template)
+registerCollectionRenderHandles = (template) ->
+  # Avoid registering handlers twice.
+  return unless renderHandles.length == 0
+  # Rendering Entities.
 
   ##################################################################################################
   # VISUALISATION MAINTENANCE
@@ -373,8 +374,6 @@ TemplateClass.onAtlasLoad = (template, atlas) ->
           renderEntity(newEntityId)
     removed: (lot) ->
       unrenderLot(lot._id)
-
-  ProjectUtils.zoomToEntities()
 
   # Rendering Entities.
   renderEntity = (id) -> EntityUtils.render(id)
@@ -465,6 +464,44 @@ TemplateClass.onAtlasLoad = (template, atlas) ->
       if hasChanged
         refreshLayer(newLayer._id)
   }
+
+unregisterCollectionRenderHandles = (template) ->
+  _.each renderHandles, (handle) -> handle.stop()
+  renderHandles = []
+
+TemplateClass.onAtlasLoad = (template, atlas) ->
+  df = Q.defer()
+  unregisterCollectionRenderHandles(template, atlas)
+  EntityUtils.renderAllAndZoom().fin ->
+    bindEntityEvents(template, atlas)
+    df.resolve()
+  df.promise
+
+bindEntityEvents = (template, atlas) ->
+  registerCollectionRenderHandles(template)
+  return if template.entitiesEventsBound
+  template.entitiesEventsBound = true
+
+  $entityTable = getEntityTable(template)
+  $typologyTable = getTypologyTable(template)
+  $lotTable = getLotTable(template)
+  $layerTable = getLayerTable(template)
+
+  # Topics for disabling reactive rendering.
+  pubsubHandles.push PubSub.subscribe 'entities/reactive-render', (msg, enabled) ->
+    if enabled
+      registerCollectionRenderHandles(template, atlas)
+    else
+      unregisterCollectionRenderHandles(template, atlas)
+
+  # Topic for reloading design contents.
+  pubsubHandles.push PubSub.subscribe 'project/reload', (msg, callback) ->
+    currentProjectId = Projects.getCurrentId()
+    Router.go('projects')
+    _.delay(
+      -> Router.go('design', {_id: currentProjectId})
+      1000
+    )
 
   ##################################################################################################
   # SELECTION

@@ -15,4 +15,5 @@ TemplateClass.events
   'click .header .edit.button': ->
     Template.design.addFormPanel null, Template.projectForm, {doc: Projects.getCurrent()}
   'click .header .import.button': -> Template.design.addFormPanel null, Template.importForm
-  'click .header .zoom.button': -> ProjectUtils.zoomToEntities()
+  'click .header .export.button': -> EntityUtils.downloadInBrowser()
+  'click .header .zoom.button': -> EntityUtils.zoomToEntities()

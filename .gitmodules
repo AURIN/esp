@@ -31,3 +31,6 @@
 [submodule "app/packages/vega-charts"]
 	path = app/packages/vega-charts
 	url = https://github.com/aramk/vega-charts.git
+[submodule "app/packages/bismuth-utility"]
+	path = app/packages/bismuth-utility
+	url = https://github.com/urbanetic/bismuth-utility.git
