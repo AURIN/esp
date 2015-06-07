@@ -591,14 +591,20 @@ bindEntityEvents = (template, atlas) ->
       # Template.collectionTable.addSelection($table, [id]) if $table
       EntityUtils.render(lot.entity).then (geoEntity) -> geoEntity.setSelected(true)
 
-  # Selecting entities in the talbe should select the lot on the globe.
+  # Selecting/deselecting entities in the table should select the lot on the globe.
   $entityTable.on 'select', (e, args) ->
     toSelectIds = []
-    _.each args.added, (selectedId) ->
-      entity = Entities.findOne(selectedId)
+    _.each args.added, (id) ->
+      entity = Entities.findOne(id)
       lotId = entity.lot
       if lotId? then toSelectIds.push(lotId)
     AtlasManager.selectEntities(toSelectIds)
+    toDeselectIds = []
+    _.each args.removed, (id) ->
+      entity = Entities.findOne(id)
+      lotId = entity.lot
+      if lotId? then toDeselectIds.push(lotId)
+    AtlasManager.deselectEntities(toDeselectIds)
 
   ##################################################################################################
   # DRAWING
