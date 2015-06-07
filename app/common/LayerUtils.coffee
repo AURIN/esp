@@ -179,16 +179,14 @@ BORDER_COLOR = '#333'
     removeDirty = (doc) -> delete dirty[doc._id]
 
     # Any changes to layers and lots will make the layer re-render for the changed lots.
-    handles.push Collections.observe(Layers.findByProject(), {
+    handles.push Collections.observe Layers.findByProject(),
       added: setDirty
       changed: setDirty
       removed: removeDirty
-    })
-    handles.push Collections.observe(Lots.findByProject(), {
+    handles.push Collections.observe Lots.findByProject(),
       added: setAllDirty
       changed: setAllDirty
       removed: setAllDirty
-    })
     # Initially, all layers are dirty.
     setAllDirty()
     dirty
@@ -248,7 +246,6 @@ BORDER_COLOR = '#333'
     # Filter GeoEntity objects which are not project entities.
     _.filter entityIds, (id) -> Layers.findOne(id)
 
-
   getRenderCount: -> @renderCount.get()
 
   resetRenderCount: -> @renderCount.set(0)
@@ -270,11 +267,9 @@ BORDER_COLOR = '#333'
   reset: ->
     @displayModeRenderEnabled = true
     @displayModeDirty = null
-    @displayModeHandles = null
     @renderCount = new ReactiveVar(0)
     _.each @renderMap, (df, id) -> df.reject()
     @renderMap = {}
-
     @destroyDisplayMode()
     @resetRenderCount()
 
