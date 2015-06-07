@@ -352,6 +352,21 @@ registerCollectionRenderHandles = (template) ->
   # VISUALISATION MAINTENANCE
   ##################################################################################################
 
+  hasParamChanged = (paramName, newDoc, oldDoc) ->
+    newValue = SchemaUtils.getParameterValue(newDoc, paramName)
+    oldValue = SchemaUtils.getParameterValue(oldDoc, paramName)
+    newValue != oldValue
+
+  hasRenderParamChanged = (newDoc, oldDoc) ->
+    _.some [
+      'general.class', 'space.geom_2d', 'space.geom_3d', 'space.height', 'orientation.azimuth',
+      'composition.rd_lanes', 'composition.rd_width', 'composition.rd_mat',
+      'composition.prk_lanes', 'composition.prk_width', 'composition.prk_mat',
+      'composition.fp_lanes', 'composition.fp_width', 'composition.fp_mat',
+      'composition.bp_lanes', 'composition.bp_width', 'composition.bp_mat',
+      'composition.ve_lanes', 'composition.ve_width'
+    ], (paramName) -> hasParamChanged(paramName, newDoc, oldDoc)
+
   # Rendering Lots.
   renderLot = (id) -> LotUtils.render(id)
   unrenderLot = (id) -> LotUtils.unrender(id)
@@ -367,11 +382,12 @@ registerCollectionRenderHandles = (template) ->
       id = newLot._id
       oldEntityId = oldLot.entity
       newEntityId = newLot.entity
-      unrenderLot(id)
-      renderLot(id).then ->
-        unrenderEntity(oldEntityId)
-        if newEntityId?
-          renderEntity(newEntityId)
+      lotChanged = _.some [
+        'general.class', 'general.develop', 'space.geom_2d', 'space.height'
+      ], (paramName) -> hasParamChanged(paramName, newLot, oldLot)
+      if lotChanged
+        unrenderLot(id)
+        renderLot(id)
     removed: (lot) ->
       unrenderLot(lot._id)
 
@@ -387,7 +403,7 @@ registerCollectionRenderHandles = (template) ->
       renderEntity(entity._id)
     changed: (newEntity, oldEntity) ->
       id = newEntity._id
-      refreshEntity(id)
+      if hasRenderParamChanged(newEntity, oldEntity) then refreshEntity(id)
     removed: (entity) ->
       unrenderEntity(entity._id)
   # Render existing Entities.
@@ -413,25 +429,10 @@ registerCollectionRenderHandles = (template) ->
   reactiveToDisplayMode(Lots, Lots.findByProject(), 'lotDisplayMode', LotUtils.getDisplayMode)
   reactiveToDisplayMode(Entities, Entities.findByProject(), 'entityDisplayMode')
 
-  hasParamChanged = (paramName, newDoc, oldDoc) ->
-    newValue = SchemaUtils.getParameterValue(newDoc, paramName)
-    oldValue = SchemaUtils.getParameterValue(oldDoc, paramName)
-    newValue != oldValue
-
   # Re-render entities of a typology when fields affecting visualisation are changed.
   handles.push Collections.observe typologies, {
     changed: (newTypology, oldTypology) ->
-      hasChanged = _.some([
-          'general.class', 'space.geom_2d', 'space.geom_3d', 'space.height', 'orientation.azimuth',
-          'composition.rd_lanes', 'composition.rd_width', 'composition.rd_mat',
-          'composition.prk_lanes', 'composition.prk_width', 'composition.prk_mat',
-          'composition.fp_lanes', 'composition.fp_width', 'composition.fp_mat',
-          'composition.bp_lanes', 'composition.bp_width', 'composition.bp_mat',
-          'composition.ve_lanes', 'composition.ve_width'
-        ]
-        (paramName) -> hasParamChanged(paramName, newTypology, oldTypology)
-      )
-      if hasChanged
+      if hasRenderParamChanged(newTypology, oldTypology)
         _.each Entities.findByTypology(newTypology._id).fetch(), (entity) ->
           refreshEntity(entity._id)
   }
@@ -596,12 +597,14 @@ bindEntityEvents = (template, atlas) ->
     toSelectIds = []
     _.each args.added, (id) ->
       entity = Entities.findOne(id)
+      return unless entity
       lotId = entity.lot
       if lotId? then toSelectIds.push(lotId)
     AtlasManager.selectEntities(toSelectIds)
     toDeselectIds = []
     _.each args.removed, (id) ->
       entity = Entities.findOne(id)
+      return unless entity
       lotId = entity.lot
       if lotId? then toDeselectIds.push(lotId)
     AtlasManager.deselectEntities(toDeselectIds)

@@ -72,15 +72,6 @@ _.extend EntityUtils,
         df.resolve lotEntity.getCentroid()
     df.promise
 
-  _renderLot: (id) ->
-    entity = Entities.findOne(id)
-    lotId = entity.lot
-    lot = Lots.findOne(lotId)
-    unless lot
-      EntityUtils.unrender(id)
-      return Q.reject('Rendered geoEntity ' + id + ' does not have an accompanying lot ' + lotId)
-    LotUtils.render(lotId)
-
   _render: (id) ->
     df = Q.defer()
     @incrementRenderCount()
@@ -213,6 +204,15 @@ _.extend EntityUtils,
       Logger.error('Failed to render entity ' + id)
       _.each addedGeometry, (geometry) -> geometry.remove()
     df.promise
+
+  _renderLot: (id) ->
+    entity = Entities.findOne(id)
+    lotId = entity.lot
+    lot = Lots.findOne(lotId)
+    unless lot
+      EntityUtils.unrender(id)
+      return Q.reject('Rendered geoEntity ' + id + ' does not have an accompanying lot ' + lotId)
+    LotUtils.render(lotId)
 
   _getBlankFeatureArgs: (id) -> @toGeoEntityArgs(id, {vertices: null})
 
