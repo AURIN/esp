@@ -83,36 +83,39 @@
             lotDf.reject(err)
           else
             lotDf.resolve(insertId)
-    Q.all(modelDfs).then(
-      Meteor.bindEnvironment ->
-        requirejs ['atlas/model/GeoPoint'], Meteor.bindEnvironment (GeoPoint) ->
-          importCount = modelDfs.length
-          resolve = -> df.resolve(importCount)
-          console.log 'Imported ' + importCount + ' entities'
-          # If the project doesn't have lat, lng location, set it as that found in this file.
-          location = Projects.getLocationCoords(projectId)
-          if location.latitude? && location.longitude?
-            resolve()
+    modelPromises = Q.all(modelDfs)
+    modelPromises.fail(df.reject)
+    modelPromises.then Meteor.bindEnvironment ->
+      requirejs ['atlas/model/GeoPoint'], Meteor.bindEnvironment (GeoPoint) ->
+        importCount = modelDfs.length
+        resolve = -> df.resolve(importCount)
+        console.log 'Imported ' + importCount + ' entities'
+        # If the project doesn't have lat, lng location, set it as that found in this file.
+        location = Projects.getLocationCoords(projectId)
+        if location.latitude? && location.longitude?
+          resolve()
+        else
+          assetPosition = null
+          _.some c3mls, (c3ml) ->
+            position = c3ml.coordinates[0] ? c3ml.geoLocation
+            if position
+              assetPosition = new GeoPoint(position)
+          if assetPosition?
+            console.log 'Setting project location', assetPosition
+            Projects.setLocationCoords(projectId, assetPosition).then(resolve, df.reject)
           else
-            assetPosition = null
-            _.some c3mls, (c3ml) ->
-              position = c3ml.coordinates[0] ? c3ml.geoLocation
-              if position
-                assetPosition = new GeoPoint(position)
-            if assetPosition?
-              console.log 'Setting project location', assetPosition
-              Projects.setLocationCoords(projectId, assetPosition).then(resolve, df.reject)
-            else
-              resolve()
-      df.reject
-    )
+            resolve()
     df.promise
 
   ##################################################################################################
   # RENDERING
   ##################################################################################################
 
-  toGeoEntityArgs: (id) -> @converterPromise.then (converter) => @_toGeoEntityArgs(id, converter)
+  toGeoEntityArgs: (id) ->
+    df = Q.defer()
+    @converterPromise.then Meteor.bindEnvironment (converter) =>
+      df.resolve @_toGeoEntityArgs(id, converter)
+    df.promise
 
   _toGeoEntityArgs: (id, converter) ->
     lot = Lots.findOne(id)
