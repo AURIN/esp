@@ -31,7 +31,6 @@ Meteor.startup ->
           Forms.setInputValue($input, commonValue)
 
     onSubmit: (doc, modifier) ->
-      console.log(arguments)
       # Perform the changes to the bulk form on each doc.
       template = getTemplate(@template)
       docs = template.data.lots

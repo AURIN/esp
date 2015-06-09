@@ -20,7 +20,6 @@ Meteor.startup ->
     schema: schema
 
     onSubmit: (doc) ->
-      console.log('onSubmit', arguments)
       $table = getTypologyTable()
       typologyIds = Template.collectionTable.getSelectedIds($table)
       lotIds = LotUtils.getSelectedLots()

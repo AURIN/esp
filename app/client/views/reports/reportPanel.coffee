@@ -56,7 +56,7 @@ _renderReport = (id) ->
   getTools().show()
   templateName = report.templateName
   ReportTemplate = Template[templateName]
-  console.log 'Rendering report', templateName
+  Logger.info 'Rendering report', templateName
 
   evalEngine = new EvaluationEngine(schema: Entities.simpleSchema())
   reportGenerator = new ReportGenerator(evalEngine: evalEngine)

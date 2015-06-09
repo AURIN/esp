@@ -4,7 +4,6 @@ TemplateClass.helpers
   items: ->
     items = []
     entities = @entities
-    console.log('entities', entities)
     subclasses = {}
     paramIds = ['space.num_0br', 'space.num_1br', 'space.num_2br', 'space.num_3plus']
     _.each entities, (entity) ->

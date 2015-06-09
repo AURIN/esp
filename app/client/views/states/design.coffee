@@ -71,11 +71,11 @@ TemplateClass.rendered = ->
       'atlas/lib/utility/Log'
     ], (CesiumAtlas, Log) ->
       Log.setLevel('error')
-      console.debug('Creating Atlas...')
+      Logger.debug('Creating Atlas...')
       cesiumAtlas = new CesiumAtlas()
       AtlasManager.setAtlas(cesiumAtlas)
-      console.debug('Created Atlas', cesiumAtlas)
-      console.debug('Attaching Atlas')
+      Logger.debug('Created Atlas', cesiumAtlas)
+      Logger.debug('Attaching Atlas')
       cesiumAtlas.attachTo(atlasNode)
       cesiumAtlas.publish('debugMode', false)
       TemplateClass.onAtlasLoad(template, cesiumAtlas)
@@ -134,7 +134,7 @@ onEditFormPanel = (args) ->
   if isSingle
     id = ids[0]
     data = {doc: collection.findOne(id)}
-  console.debug 'onEdit', arguments, collectionName, formName
+  Logger.debug 'onEdit', arguments, collectionName, formName
   TemplateClass.addFormPanel templateInstance, Template[formName], data
 
 TemplateClass.helpers
@@ -307,7 +307,7 @@ TemplateClass.addPanel = (template, panelTemplate, data) ->
     currentPanelView = Blaze.render panelTemplate, parentNode
 
 TemplateClass.removePanel = (template) ->
-  console.debug 'Removing panel', @, template
+  Logger.debug 'Removing panel', @, template
   # Parent node is kept so we need to remove it manually.
   $panel = $(Templates.getElement(currentPanelView))
   Blaze.remove(currentPanelView)
@@ -333,7 +333,7 @@ getTableSettings = ->
     collectionName = Collections.getName(collection)
     formArgs = collectionToForm[collectionName]
     formName = getSingleFormName(formArgs)
-    console.debug 'onCreate', arguments, collectionName, formName
+    Logger.debug 'onCreate', arguments, collectionName, formName
     TemplateClass.addFormPanel templateInstance, Template[formName]
   onEdit: onEditFormPanel
 
@@ -657,7 +657,7 @@ bindEntityEvents = (template, atlas) ->
           startDrawing() if isActive
         update: (args) -> args.feature.getHandles().forEach (handle) -> handle.setElevation(4)
         cancel: (args) ->
-          console.debug('Drawing cancelled', arguments)
+          Logger.debug('Drawing cancelled', arguments)
           args.feature.remove()
           $pathwayDrawButton.removeClass('active')
       }
@@ -707,7 +707,7 @@ bindEntityEvents = (template, atlas) ->
           LotUtils.subdivide(ids, vertices).fin(cancelSubdivision)
         update: (args) -> args.feature.getHandles().forEach (handle) -> handle.setElevation(4)
         cancel: (args) ->
-          console.debug('Drawing cancelled', arguments)
+          Logger.debug('Drawing cancelled', arguments)
           args.feature.remove()
           cancelSubdivision()
           $subdivideButton.removeClass('active')

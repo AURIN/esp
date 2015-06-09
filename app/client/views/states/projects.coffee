@@ -108,7 +108,6 @@ TemplateClass.helpers
           user = Meteor.users.findOne({username: value})
           return unless user
           user.profile?.name + ' (' + value + ')'
-    console.log('settings', settings)
     settings
 
 getTemplate = -> Template.instance()

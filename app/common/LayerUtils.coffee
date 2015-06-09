@@ -42,7 +42,7 @@ BORDER_COLOR = '#333'
           Logger.error('Failed to insert layer', err)
           df.reject(err)
         else
-          console.log('Inserted layer comprised of ' + c3mls.length + ' c3mls')
+          Logger.info('Inserted layer comprised of ' + c3mls.length + ' c3mls')
           df.resolve(insertId)
     df.promise
 

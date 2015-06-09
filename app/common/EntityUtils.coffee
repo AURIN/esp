@@ -271,11 +271,19 @@ _.extend EntityUtils,
 
   _renderEntitiesBeforeJson: (args) ->
     df = Q.defer()
-    @renderAll(args).then (geoEntities) ->
+    renderPromise = Q.all [LotUtils.renderAll(projectId: args.projectId), @renderAll(args)]
+    renderPromise.fail(df.reject)
+    renderPromise.then (results) ->
       requirejs [
         'atlas/model/Collection'
         'atlas/model/Feature'
       ], (Collection, Feature) ->
+        lotEntities = results[0]
+        _.each lotEntities, (lotEntity) ->
+          # Remove heights which will cause ACS to render the lots as extrusions.
+          lotEntity.setHeight(0)
+        geoEntities = results[1]
+        Logger.debug('_renderEntitiesBeforeJson', geoEntities.length)
         _.each geoEntities, (geoEntity) ->
           if geoEntity instanceof Feature
             form = geoEntity.getForm(Feature.DisplayMode.FOOTPRINT)

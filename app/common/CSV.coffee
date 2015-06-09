@@ -13,9 +13,7 @@ class @Csv
     @rows.push(row)
 
   toString: ->
-    rowsStr = _.map @rows, (row) ->
-      console.log('row', row)
-      row.toString()
+    rowsStr = _.map @rows, (row) -> row.toString()
     rowsStr.join('\n')
 
 class @CsvRow
@@ -28,7 +26,6 @@ class @CsvRow
 
   toString: ->
     # Add two double quotes in place of one to escape.
-    console.log('cells', @cells)
     cells = _.map @cells, (cell) ->
       unless cell?
         return ''

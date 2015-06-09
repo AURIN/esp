@@ -20,7 +20,7 @@ Meteor.startup ->
       _.each Typologies.find().fetch(), (model) -> migrateGeom(model, Typologies)
       _.each Entities.find().fetch(), (model) -> migrateGeom(model, Entities)
       _.each Lots.find().fetch(), (model) -> migrateGeom(model, Lots)
-      console.log('Migrated', migratedModelCount, 'models')
+      Logger.info('Migrated', migratedModelCount, 'models')
 
   Migrations.add
     version: 2
@@ -32,7 +32,7 @@ Meteor.startup ->
         migratedModelCount++
       OldProjects = new Meteor.Collection 'project'
       _.each OldProjects.find().fetch(), (model) -> migrateProject(model)
-      console.log('Migrated', migratedModelCount, 'models')
+      Logger.info('Migrated', migratedModelCount, 'models')
 
   Migrations.add
     version: 3
@@ -47,7 +47,7 @@ Meteor.startup ->
           $unset:
             'general.creator': null
         }, {validate: false})
-      console.log('Migrated', migratedModelCount, 'projects to use author field.')
+      Logger.info('Migrated', migratedModelCount, 'projects to use author field.')
 
   Migrations.add
     version: 4
@@ -61,7 +61,7 @@ Meteor.startup ->
             $set:
               desc: '...'
           }, {validate: false})
-      console.log('Migrated', migratedModelCount, 'models by adding description field.')
+      Logger.info('Migrated', migratedModelCount, 'models by adding description field.')
 
   Migrations.add
     version: 5
@@ -74,7 +74,7 @@ Meteor.startup ->
           $set:
             isTemplate: false
         }, {validate: false})
-      console.log('Migrated', migratedModelCount, 'projects by adding isTemplate field.')
+      Logger.info('Migrated', migratedModelCount, 'projects by adding isTemplate field.')
 
   Migrations.add
     version: 6
@@ -87,7 +87,7 @@ Meteor.startup ->
               'parameters.energy_demand.en_heat': 'parameters.energy_demand.therm_en_heat'
               'parameters.energy_demand.en_cool': 'parameters.energy_demand.therm_en_cool'
             })
-      console.log('Migrated', migratedModelCount, 'models to COP and EER fields.')
+      Logger.info('Migrated', migratedModelCount, 'models to COP and EER fields.')
 
   Migrations.add
     version: 7
@@ -115,7 +115,7 @@ Meteor.startup ->
                 $set[intensityField] = if occupants != 0 then value / occupants else 0
                 $unset[valueField] = null
             migratedModelCount += maybeUpdate(collection, model._id, $set, $unset)
-      console.log('Migrated', migratedModelCount, 'models to water use intensity fields.')
+      Logger.info('Migrated', migratedModelCount, 'models to water use intensity fields.')
 
   Migrations.add
     version: 8
@@ -140,7 +140,7 @@ Meteor.startup ->
                 $set[intensityField] = if gfa != 0 then value / gfa else 0
                 $unset[valueField] = null
             migratedModelCount += maybeUpdate(collection, model._id, $set, $unset)
-      console.log('Migrated', migratedModelCount, 'models to internal embodied co2 intensity.')
+      Logger.info('Migrated', migratedModelCount, 'models to internal embodied co2 intensity.')
 
   Migrations.add
     version: 9
@@ -163,7 +163,7 @@ Meteor.startup ->
                 $set[valueField] = intensity * occupants
                 $unset[intensityField] = null
             migratedModelCount += maybeUpdate(collection, model._id, $set, $unset)
-      console.log('Migrated', migratedModelCount, 'models to hot water energy demand.')
+      Logger.info('Migrated', migratedModelCount, 'models to hot water energy demand.')
 
   Migrations.add
     version: 10
@@ -176,7 +176,7 @@ Meteor.startup ->
               'parameters.water_demand.i_wu_intensity_pot': 'parameters.water_demand.i_wu_intensity_occ'
               'parameters.water_demand.i_wu_intensity': 'parameters.water_demand.i_wu_intensity_m2'
             })
-      console.log('Migrated', migratedModelCount, 'models by renaming internal water use intensity fields.')
+      Logger.info('Migrated', migratedModelCount, 'models by renaming internal water use intensity fields.')
 
   Migrations.add
     version: 11
@@ -186,7 +186,7 @@ Meteor.startup ->
         _.each [Typologies, Entities], (collection) ->
           SchemaUtils.removeCalcFields(collection)
           migratedModelCount += collection.find().count()
-      console.log('Migrated', migratedModelCount, 'models by removing calculated fields.')
+      Logger.info('Migrated', migratedModelCount, 'models by removing calculated fields.')
 
   Migrations.add
     version: 12
@@ -199,7 +199,7 @@ Meteor.startup ->
               'parameters.energy_demand.thermal_heat': 'parameters.energy_demand.therm_en_heat'
               'parameters.energy_demand.thermal_cool': 'parameters.energy_demand.therm_en_cool'
             })
-      console.log('Migrated', migratedModelCount, 'models by renaming internal water use intensity fields.')
+      Logger.info('Migrated', migratedModelCount, 'models by renaming internal water use intensity fields.')
 
   Migrations.add
     version: 13
@@ -210,7 +210,7 @@ Meteor.startup ->
           $unset:
             entity: null
         migratedModelCount++
-      console.log('Migrated', migratedModelCount, 'models by removing missing entity references in lots.')
+      Logger.info('Migrated', migratedModelCount, 'models by removing missing entity references in lots.')
 
   Migrations.add
     version: 14
@@ -223,7 +223,7 @@ Meteor.startup ->
           $set:
             dateModified: moment().toDate()
         }, {validate: false})
-      console.log('Migrated', migratedModelCount, 'projects to use dateModified field.')
+      Logger.info('Migrated', migratedModelCount, 'projects to use dateModified field.')
 
   maybeUpdate = (collection, id, $set, $unset) ->
     # Prevent updating if the $set or $unset are empty to prevent MongoDB errors.
@@ -247,5 +247,5 @@ Meteor.startup ->
     return 0 if Object.keys($rename).length == 0
     collection.direct.update({_id: id}, {$rename: $rename}, {validate: false})
 
-  console.log('Migrating to latest version...')
+  Logger.info('Migrating to latest version...')
   Migrations.migrateTo('latest')

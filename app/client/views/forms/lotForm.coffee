@@ -105,16 +105,12 @@ Meteor.startup ->
     hooks:
       before:
         insert: (doc) ->
-          setTypologyValue(doc, true, @template).then =>
-            console.log('setTypologyValue', arguments)
-            @result(doc)
+          setTypologyValue(doc, true, @template).then => @result(doc)
           return undefined
         update: (modifier) ->
           # Prevent the lack of space fields from causing them to be removed.
           delete modifier.$unset?['parameters.space']
-          setTypologyValue(modifier, false, @template).then =>
-            console.log('setTypologyValue', arguments)
-            @result(modifier)
+          setTypologyValue(modifier, false, @template).then => @result(modifier)
           return undefined
       formToDoc: (doc) ->
         doc.project = Projects.getCurrentId()

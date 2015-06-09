@@ -39,7 +39,7 @@ Meteor.startup ->
         unless result
           onError(file)
           return
-        console.log('Successful dropdown upload', arguments)
+        Logger.info('Successful dropdown upload', arguments)
         filename = file.name
         assetArgs = {
           c3mls: result.c3mls

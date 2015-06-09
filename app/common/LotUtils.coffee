@@ -89,7 +89,7 @@
       requirejs ['atlas/model/GeoPoint'], Meteor.bindEnvironment (GeoPoint) ->
         importCount = modelDfs.length
         resolve = -> df.resolve(importCount)
-        console.log 'Imported ' + importCount + ' entities'
+        Logger.info 'Imported ' + importCount + ' entities'
         # If the project doesn't have lat, lng location, set it as that found in this file.
         location = Projects.getLocationCoords(projectId)
         if location.latitude? && location.longitude?
@@ -101,7 +101,7 @@
             if position
               assetPosition = new GeoPoint(position)
           if assetPosition?
-            console.log 'Setting project location', assetPosition
+            Logger.info 'Setting project location', assetPosition
             Projects.setLocationCoords(projectId, assetPosition).then(resolve, df.reject)
           else
             resolve()
@@ -203,16 +203,18 @@
     df = Q.defer()
     ids = args.ids
     if ids
-      lots = _.map ids, (id) -> Lots.findOne(id)
+      lots = []
+      _.each ids, (id) -> lots.push Lots.findOne(id)
     else
       projectId = args.projectId ? Projects.getCurrentId()
       lots = Lots.findByProject(projectId).fetch()
-    @converterPromise.then (converter) => 
+    @converterPromise.then Meteor.bindEnvironment (converter) => 
+      geoEntities = []
       _.each lots, (lot) =>
         id = lot._id
         geoEntityArgs = @_toGeoEntityArgs(id, converter)
-        AtlasManager.renderEntity(geoEntityArgs)
-      df.resolve()
+        geoEntities.push AtlasManager.renderEntity(geoEntityArgs)
+      df.resolve(geoEntities)
     df.promise
 
   renderAllAndZoom: -> @renderAll().then => @_zoomToEntities()
@@ -376,9 +378,9 @@
         combinedVertices = combinedPolygon.getPoints()
         combinedWkt = wkt.wktFromVertices(combinedVertices)
         combinedLot.parameters.space.geom_2d = combinedWkt
-        console.log 'Inserting combined lot...', combinedLot
+        Logger.info 'Inserting combined lot...', combinedLot
         Lots.insert combinedLot, (err, result) =>
-          console.log 'Inserted combined lot', err, result
+          Logger.info 'Inserted combined lot', err, result
           if err
             df.reject(err)
           else
@@ -410,14 +412,11 @@
         lineVertices = _.map linePoints, (point) -> point.toVertex()
         line = new Line(lineVertices)
         line.localizePoints(referencePoint)
-        console.log('polygons', polygons)
-        console.log('line', line)
         subdividedMap = {}
         allSubdividedPolygons = []
         _.each polygons, (polygon) ->
           subdividedPolygons = subdividedMap[polygon.id] = []
           diffPolygons = polygon.difference(line)
-          console.log('diffPolygons', diffPolygons)
           _.each diffPolygons, (diffPolygon) ->
             # Ensure the subdivided polygons are contained in the original Lot polygon. If we draw a
             # line outside the Lot polygon, it can form a polygon on the outside which we should
