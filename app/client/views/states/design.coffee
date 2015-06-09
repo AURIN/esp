@@ -375,7 +375,7 @@ registerCollectionRenderHandles = (template) ->
   typologies = Typologies.findByProject()
   layers = Layers.findByProject()
   # Listen to changes to Lots and (un)render them as needed.
-  handles.push Collections.observe lots,
+  renderHandles.push Collections.observe lots,
     added: (lot) ->
       renderLot(lot._id)
     changed: (newLot, oldLot) ->
@@ -398,7 +398,7 @@ registerCollectionRenderHandles = (template) ->
     unrenderEntity(id)
     renderEntity(id)
   # Listen to changes to Entities and Typologies and (un)render them as needed.
-  handles.push Collections.observe entities,
+  renderHandles.push Collections.observe entities,
     added: (entity) ->
       renderEntity(entity._id)
     changed: (newEntity, oldEntity) ->
@@ -430,7 +430,7 @@ registerCollectionRenderHandles = (template) ->
   reactiveToDisplayMode(Entities, Entities.findByProject(), 'entityDisplayMode')
 
   # Re-render entities of a typology when fields affecting visualisation are changed.
-  handles.push Collections.observe typologies, {
+  renderHandles.push Collections.observe typologies, {
     changed: (newTypology, oldTypology) ->
       if hasRenderParamChanged(newTypology, oldTypology)
         _.each Entities.findByTypology(newTypology._id).fetch(), (entity) ->
@@ -443,28 +443,18 @@ registerCollectionRenderHandles = (template) ->
   refreshLayer = (id) ->
     unrenderLayer(id)
     renderLayer(id)
-  handles.push Collections.observe layers,
+  renderHandles.push Collections.observe layers,
     added: (layer) ->
       renderLayer(layer._id)
     changed: (newLayer, oldLayer) ->
-      id = newLayer._id
-      refreshLayer(id)
+      hasChanged = _.some [
+        'general.displayMode', 'space.geom_2d', 'space.geom_3d', 'space.height'
+      ], (paramName) -> hasParamChanged(paramName, newLayer, oldLayer)
+      if hasChanged then refreshLayer(newLayer._id)
     removed: (layer) ->
       unrenderLayer(layer._id)
   # Render existing Entities.
   _.each layers.fetch(), (layer) -> renderLayer(layer._id)
-
-  # Re-render entities of a typology when fields affecting visualisation are changed.
-  handles.push Collections.observe layers, {
-    changed: (newLayer, oldLayer) ->
-      hasChanged = _.some([
-          'general.displayMode', 'space.geom_2d', 'space.geom_3d', 'space.height'
-        ]
-        (paramName) -> hasParamChanged(paramName, newLayer, oldLayer)
-      )
-      if hasChanged
-        refreshLayer(newLayer._id)
-  }
 
 unregisterCollectionRenderHandles = (template) ->
   _.each renderHandles, (handle) -> handle.stop()

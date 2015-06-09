@@ -280,14 +280,13 @@ _.extend EntityUtils,
           if geoEntity instanceof Feature
             form = geoEntity.getForm(Feature.DisplayMode.FOOTPRINT)
             if form instanceof Collection
-              console.log('found a collection as a footprint', form.getId(), geoEntity.getId())
+              Logger.debug('Found a collection as a footprint', form.getId(), geoEntity.getId())
               featureId = geoEntity.getId()
               # Remove the form so it's not deleted with the feature.
               geoEntity.removeForm(Feature.DisplayMode.FOOTPRINT)
               geoEntity.remove()
               collection = AtlasManager.createCollection featureId,
                   {entities: [form.getId()]}
-              console.log('collection', collection.toJson())
         df.resolve()
     df.promise
 

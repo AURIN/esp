@@ -49,10 +49,14 @@ Meteor.startup ->
         }
         onSuccess = ->
           data.settings?.onSuccess()
-          LotUtils.renderAllAndZoom()
+          PubSub.publish('project/reload')
         onFinish = ->
           setLoadingState(false)
-        onError = (err) -> Logger.error(err)
+        onError = (err) ->
+          Logger.error(err)
+          PubSub.publish('entities/reactive-render', true)
+        # Disable reactive rendering to avoid excessive rendering while importing.
+        PubSub.publish('entities/reactive-render', false)
         handleImport(assetArgs, USE_SERVER).then(onSuccess, onError).fin(onFinish).done()
 
       dropzone.on 'error', (file, errorMessage) ->
