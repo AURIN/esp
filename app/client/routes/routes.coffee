@@ -38,7 +38,7 @@ ProjectsController = BaseController.extend
     # and doesn't cause reactive changes.
     Projects.setCurrentId(null)
 
-Router.route '/', -> @render('projects')
+Router.route '/', -> Router.go('projects')
 
 crudRoute('Projects', ProjectsController)
 

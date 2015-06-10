@@ -1249,7 +1249,7 @@ Projects.mergeDefaults = (model) ->
 
 Projects.before.insert (userId, doc) ->
   if doc.isTemplate && !AccountsUtil.isAdmin(userId)
-    throw new Error('Only admin user can create template project.')
+    throw new Error('Only admin user can create template projects.')
 
 ##################################################################################################
 # PROJECT DATE
