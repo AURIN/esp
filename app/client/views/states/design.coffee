@@ -385,6 +385,7 @@ registerCollectionRenderHandles = (template) ->
       lotChanged = _.some [
         'general.class', 'general.develop', 'space.geom_2d', 'space.height'
       ], (paramName) -> hasParamChanged(paramName, newLot, oldLot)
+      lotChanged = lotChanged || newLot.entity != oldLot.entity
       if lotChanged
         unrenderLot(id)
         renderLot(id)
@@ -493,6 +494,9 @@ bindEntityEvents = (template, atlas) ->
       -> Router.go('design', {_id: currentProjectId})
       1000
     )
+
+  pubsubHandles.push PubSub.subscribe 'entities/reload', (msg, callback) ->
+    TemplateClass.onAtlasLoad(template, atlas).fin(callback)
 
   ##################################################################################################
   # SELECTION

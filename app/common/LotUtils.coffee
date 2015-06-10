@@ -212,8 +212,11 @@
       geoEntities = []
       _.each lots, (lot) =>
         id = lot._id
-        geoEntityArgs = @_toGeoEntityArgs(id, converter)
-        geoEntities.push AtlasManager.renderEntity(geoEntityArgs)
+        geoEntity = AtlasManager.getEntity(id)
+        unless geoEntity
+          geoEntityArgs = @_toGeoEntityArgs(id, converter)
+          geoEntity = AtlasManager.renderEntity(geoEntityArgs)
+        geoEntities.push geoEntity
       df.resolve(geoEntities)
     df.promise
 

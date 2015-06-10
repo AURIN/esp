@@ -49,7 +49,7 @@ Meteor.startup ->
         }
         onSuccess = ->
           data.settings?.onSuccess()
-          PubSub.publish('project/reload')
+          PubSub.publish 'entities/reload', -> PubSub.publish('entities/reactive-render', true)
         onFinish = ->
           setLoadingState(false)
         onError = (err) ->

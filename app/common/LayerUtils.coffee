@@ -125,7 +125,7 @@ BORDER_COLOR = '#333'
     df.promise.fin => delete @displayModeDfs[id]
 
     subsetLots = lotIds?
-    unless lotIds then lotIds = _.map Lots.findNotForDevelopment(), (lot) -> lot._id
+    unless lotIds then lotIds = Lots.findByProject().map (lot) -> lot._id
     requirejs ['subdiv/Polygon', 'subdiv/Point'], (Polygon, Point) =>
       renderPromise = @render(id, {showOnRender: !subsetLots})
       renderPromise.fail(df.reject)
