@@ -21,7 +21,6 @@ Meteor.methods
       duplicatePromise = ProjectUtils.duplicate id,
         callback: (json) ->
           _.each json[Collections.getName(Projects)], (project) ->
-            console.log('project', project)
             # Set the isTemplate field to false when duplicating a template and set the user as the
             # one who duplicated it to ensure the inserting passes validation.
             project.author = username
