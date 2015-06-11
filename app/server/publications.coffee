@@ -12,6 +12,8 @@ Meteor.startup ->
       if !project.isTemplate || AccountsUtil.isAdmin(@userId)
         collection.findByProject(projectId)
 
+Meteor.publish 'publicProjects', -> ProjectUtils.getPublic()
+
 Meteor.publish 'userData', ->
   return [] unless @userId
   Meteor.users.find({}, {fields: {profile: 1, emails: 1, roles: 1, username: 1}})

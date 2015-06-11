@@ -32,7 +32,9 @@ DesignController = BaseController.extend
 
 ProjectsController = BaseController.extend
   template: 'projects'
-  waitOn: -> Meteor.subscribe('projects') if Meteor.user()
+  waitOn: ->
+    return unless Meteor.user()
+    [Meteor.subscribe('projects'), Meteor.subscribe('publicProjects')]
   onAfterAction: ->
     # Using onAfterAction so the project ID is still defined while the template is being destroyed
     # and doesn't cause reactive changes.
@@ -47,9 +49,9 @@ Router.route 'design',
   waitOn: ->
     return unless Meteor.user()
     projectId = @params._id
-    [Meteor.subscribe('projects'), Meteor.subscribe('entities', projectId),
-      Meteor.subscribe('typologies', projectId), Meteor.subscribe('lots', projectId),
-      Meteor.subscribe('layers', projectId)]
+    [Meteor.subscribe('projects'), Meteor.subscribe('publicProjects'),
+      Meteor.subscribe('entities', projectId), Meteor.subscribe('typologies', projectId),
+      Meteor.subscribe('lots', projectId), Meteor.subscribe('layers', projectId)]
   controller: DesignController
 
 Router.onBeforeAction ->

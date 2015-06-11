@@ -1196,6 +1196,12 @@ ProjectSchema = new SimpleSchema
   isTemplate:
     label: 'Template?'
     type: Boolean
+    desc: 'Template Projects can be duplicated by all users.'
+    defaultValue: false
+  isPublic:
+    label: 'Public?'
+    desc: 'Public Projects can be viewed by anyone without logging in. Only the author can modify them.'
+    type: Boolean
     defaultValue: false
 
 @Projects = new Meteor.Collection 'projects', schema: ProjectSchema
@@ -1245,11 +1251,14 @@ Projects.mergeDefaults = (model) ->
   defaults = Projects.getDefaultParameterValues()
   mergeDefaultParameters(model, defaults)
 
-# Template Projects
+# Template and Public Projects
 
-Projects.before.insert (userId, doc) ->
-  if doc.isTemplate && !AccountsUtil.isAdmin(userId)
+Collections.addValidation Projects, (doc) ->
+  isAdmin = AccountsUtil.isAdmin(@userId)
+  if doc.isTemplate && !isAdmin
     throw new Error('Only admin user can create template projects.')
+  else if doc.isPublic && !isAdmin
+    throw new Error('Only admin user can create public projects.')
 
 ##################################################################################################
 # PROJECT DATE
