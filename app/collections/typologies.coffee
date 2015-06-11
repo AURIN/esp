@@ -1260,8 +1260,7 @@ Projects.before.insert (userId, doc) ->
 getCurrentDate = -> moment().toDate()
 
 Projects.before.insert (userId, doc) ->
-  unless doc.dateModified
-    doc.dateModified = getCurrentDate()
+  doc.dateModified = getCurrentDate()
 
 Projects.before.update (userId, doc, fieldNames, modifier) ->
   modifier.$set ?= {}
