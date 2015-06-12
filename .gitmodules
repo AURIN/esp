@@ -34,3 +34,6 @@
 [submodule "app/packages/bismuth-utility"]
 	path = app/packages/bismuth-utility
 	url = https://github.com/urbanetic/bismuth-utility.git
+[submodule "app/packages/meteor-dropdown"]
+	path = app/packages/meteor-dropdown
+	url = https://github.com/aramk/meteor-dropdown.git
