@@ -1206,10 +1206,10 @@ ProjectSchema = new SimpleSchema
 
 @Projects = new Meteor.Collection 'projects', schema: ProjectSchema
 Projects.attachSchema(ProjectSchema)
-Projects.allow(Collections.allowAll())
 AccountsUtil.addCollectionAuthorization Projects,
   # A user has access to their own projects as well as any templates.
   userSelector: (args) -> {$or: [{author: args.username}, {isTemplate: true}]}
+AccountsUtil.setUpCollectionAllow(Projects)
 
 hasSession = typeof Session != 'undefined'
 Projects.setCurrentId = (id) -> Session.set('projectId', id) if hasSession
@@ -1245,11 +1245,11 @@ Projects.getDefaultParameterValues = _.memoize ->
     defaultValue = fieldSchema.classes?.ALL?.defaultValue
     if defaultValue?
       values[paramId] = defaultValue
-  Typologies.unflattenParameters(values, false)
+  SchemaUtils.unflattenParameters(values, false)
 
 Projects.mergeDefaults = (model) ->
   defaults = Projects.getDefaultParameterValues()
-  mergeDefaultParameters(model, defaults)
+  SchemaUtils.mergeDefaultParameterValues(model, defaults)
 
 # Template and Public Projects
 
@@ -3494,7 +3494,7 @@ Typologies.attachSchema(TypologySchema)
 Typologies.Classes = TypologyClasses
 Typologies.LandClasses = LandClasses
 Typologies.EnergySources = EnergySources
-Typologies.allow(Collections.allowAll())
+AccountsUtil.setUpProjectAllow(Typologies)
 
 Typologies.getClassByName = _.memoize (name) ->
   matchedId = null
@@ -3514,7 +3514,7 @@ Typologies.getClassItems = ->
   _.map Typologies.Classes, (cls, id) -> Setter.merge(Setter.clone(cls), {_id: id})
 
 Typologies.getSubclassItems = _.memoize (typologyClass) ->
-  field = SchemaUtils.getField('parameters.general.subclass', Typologies)
+  field = Collections.getField(Typologies, 'parameters.general.subclass')
   options = field?.classes[typologyClass]
   allowedValues = options?.allowedValues ? []
   _.map allowedValues, (value) -> {_id: value, name: value}
@@ -3536,7 +3536,7 @@ Typologies.getAllocatableClassItems = ->
 #   colorMap
 
 Typologies.getBuildTypeItems = (typologyClass, subclass) ->
-  field = SchemaUtils.getField('parameters.financial.build_type', Typologies)
+  field = Collections.getField(Typologies, 'parameters.financial.build_type')
   options = field?.classes[typologyClass]
   allowedValues = options?.allowedValues ? []
   if Types.isFunction(allowedValues)
@@ -3544,37 +3544,6 @@ Typologies.getBuildTypeItems = (typologyClass, subclass) ->
   _.map allowedValues, (value) -> {_id: value, name: value}
 
 Typologies.getRailTypeItems = -> _.map VktRailTypes, (item, id) -> {_id: id, name: item.label}
-
-# TODO(aramk) Move to objects util.
-Typologies.getModifierProperty = (obj, property) ->
-  target = obj
-  segments = property.split('.')
-  unless segments.length > 0
-    return undefined
-  for key in segments
-    target = target[key]
-    unless target?
-      break
-  target
-
-# TODO(aramk) Move to objects util.
-Typologies.setModifierProperty = (obj, property, value) ->
-  segments = property.split('.')
-  unless segments.length > 0
-    return false
-  lastSegment = segments.pop()
-  for key in segments
-    target = obj[key] ?= {}
-  target[lastSegment] = value
-  true
-
-Typologies.unflattenParameters = (doc, hasParametersPrefix) ->
-  Objects.unflattenProperties doc, (key) ->
-    if !hasParametersPrefix or /^parameters\./.test(key)
-      key.split('.')
-    else
-      null
-  doc
 
 Typologies.getDefaultParameterValues = ->
   if Types.isString(arguments[0])
@@ -3602,7 +3571,7 @@ Typologies._getDefaultParameterValues = _.memoize(
       defaultValue = subclassDefaultValue ? classDefaultValue ? allClassDefaultValue
       if defaultValue?
         values[paramId] = defaultValue
-    Typologies.unflattenParameters(values, false)
+    SchemaUtils.unflattenParameters(values, false)
   (args) -> JSON.stringify(args)
 )
 
@@ -3615,16 +3584,11 @@ Typologies.getExcludedDefaultParameters = _.memoize (typologyClass) ->
     # Exclude the field unless it's permitted explicitly or if all classes are permitted.
     if Typologies.excludesClassOptions(fieldSchema, typologyClass)
       excluded[paramId] = true
-  Typologies.unflattenParameters(excluded, false)
-
-mergeDefaultParameters = (model, defaults) ->
-  model.parameters ?= {}
-  Setter.defaults(model.parameters, defaults)
-  model
+  SchemaUtils.unflattenParameters(excluded, false)
 
 Typologies.mergeDefaults = (model) ->
   defaults = Typologies.getDefaultParameterValues(model)
-  mergeDefaultParameters(model, defaults)
+  SchemaUtils.mergeDefaultParameterValues(model, defaults)
 
 # Filters parameters which don't belong to the class assigned to the given model. This does not
 # affect reports since only fields matching the class should be included, but is a fail-safe for
@@ -3761,7 +3725,7 @@ LotSchema = new SimpleSchema
 
 @Lots = new Meteor.Collection 'lots'
 Lots.attachSchema(LotSchema)
-Lots.allow(Collections.allowAll())
+AccountsUtil.setUpProjectAllow(Lots)
 
 Lots.findByProject = (projectId) -> SchemaUtils.findByProject(Lots, projectId)
 Lots.findByEntity = (entityId) -> Lots.findOne({entity: entityId})
@@ -3993,7 +3957,7 @@ EntitySchema = new SimpleSchema
 
 @Entities = new Meteor.Collection 'entities'
 Entities.attachSchema(EntitySchema)
-Entities.allow(Collections.allowAll())
+AccountsUtil.setUpProjectAllow(Entities)
 
 Entities.getFlattened = (idOrEntity) ->
   entity = if Types.isString(idOrEntity) then Entities.findOne(idOrEntity) else idOrEntity
@@ -4190,7 +4154,7 @@ updateBuildType = (userId, doc, fileNames, modifier) ->
   gfa = SchemaUtils.getParameterValue(fullDoc, gfaParamId)
   $set = {}
   return unless build_type? && build_type != 'Custom' && gfa?
-  field = SchemaUtils.getField('parameters.financial.build_type', Typologies)
+  field = Collections.getField(Typologies, 'parameters.financial.build_type')
   options = field?.classes[typologyClass]
   costParamId =
     options.getCostParamId(typologyClass: typologyClass, subclass: subclass, value: build_type)
@@ -4298,7 +4262,7 @@ LayerSchema = new SimpleSchema
 
 @Layers = new Meteor.Collection 'layers'
 Layers.attachSchema(LayerSchema)
-Layers.allow(Collections.allowAll())
+AccountsUtil.setUpProjectAllow(Layers)
 Layers.findByProject = (projectId) -> SchemaUtils.findByProject(Layers, projectId)
 Layers.getDisplayModeItems = -> _.map LayerDisplayModes, (value, key) -> {label: value, value: key}
 
@@ -4354,7 +4318,7 @@ Layers.getDisplayModeItems = -> _.map LayerDisplayModes, (value, key) -> {label:
 
 # @UserAssets = new Meteor.Collection 'userAssets'
 # UserAssets.attachSchema(UserAssets)
-# UserAssets.allow(Collections.allowAll())
+# AccountsUtil.setUpProjectAllow(UserAssets)
 # UserAssets.findByProject = (projectId) -> SchemaUtils.findByProject(UserAssets, projectId)
 
 ####################################################################################################
