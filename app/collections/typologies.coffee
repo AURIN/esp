@@ -1249,7 +1249,7 @@ Projects.getDefaultParameterValues = _.memoize ->
 
 Projects.mergeDefaults = (model) ->
   defaults = Projects.getDefaultParameterValues()
-  SchemaUtils.mergeDefaultParameterValues(model, defaults)
+  mergeDefaultParameters(model, defaults)
 
 # Template and Public Projects
 
@@ -3588,7 +3588,12 @@ Typologies.getExcludedDefaultParameters = _.memoize (typologyClass) ->
 
 Typologies.mergeDefaults = (model) ->
   defaults = Typologies.getDefaultParameterValues(model)
-  SchemaUtils.mergeDefaultParameterValues(model, defaults)
+  mergeDefaultParameters(model, defaults)
+
+mergeDefaultParameters = (model, defaults) ->
+  model.parameters ?= {}
+  Setter.defaults(model.parameters, defaults)
+  model
 
 # Filters parameters which don't belong to the class assigned to the given model. This does not
 # affect reports since only fields matching the class should be included, but is a fail-safe for

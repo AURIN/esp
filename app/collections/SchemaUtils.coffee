@@ -24,7 +24,7 @@ _.extend SchemaUtils,
       paramIds = schema._schemaKeys
     schemas = {}
     for key in paramIds
-      fieldSchema = @getField(key, arg)
+      fieldSchema = Collections.getField(arg, key)
       if fieldSchema?.calc?
         schemas[key] = schema
     schemas
@@ -33,7 +33,7 @@ _.extend SchemaUtils,
     schemas = {}
     _.each paramIds, (paramId) =>
       paramId = ParamUtils.addPrefix(paramId)
-      field = @getField(paramId, arg)
+      field = Collections.getField(arg, paramId)
       if field?
         schemas[paramId] = field
     schemas
