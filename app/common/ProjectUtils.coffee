@@ -35,6 +35,16 @@ if Meteor.isServer
         sb = sbuff(result.buffer)
         sb.pipe(res)
 
+    '/api/projects/:id/to/c3ml':
+      get: ->
+        id = @params.id
+        project = authorize(id)
+        @unblock()
+        result = EntityUtils.convertToC3ml {projectId: id}
+        @addHeader('Content-Disposition', 'attachment; filename="' + result.filename + '"')
+        @addHeader('Content-Type', result.type)
+        JSON.stringify(result.data)
+
 authorize = (projectId) ->
   check(projectId, String)
   project = Projects.findOne(projectId)
