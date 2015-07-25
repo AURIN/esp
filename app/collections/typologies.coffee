@@ -1257,8 +1257,6 @@ Collections.addValidation Projects, (doc) ->
   isAdmin = AccountsUtil.isAdmin(@userId)
   if doc.isTemplate && !isAdmin
     throw new Error('Only admin user can create template projects.')
-  else if doc.isPublic && !isAdmin
-    throw new Error('Only admin user can create public projects.')
 
 ##################################################################################################
 # PROJECT DATE
