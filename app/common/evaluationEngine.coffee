@@ -118,7 +118,7 @@ class @EvaluationEngine
         value = Math.round(value)
     value
 
-  getGlobalParamSchema: (paramId) -> SchemaUtils.getField(ParamUtils.addPrefix(paramId), Projects)
+  getGlobalParamSchema: (paramId) -> Collections.getField(Projects, ParamUtils.addPrefix(paramId))
 
   isGlobalParam: (paramId) -> @getGlobalParamSchema(paramId)?
 

@@ -190,11 +190,7 @@
         df.resolve(entity)
     df.promise
 
-  unrender: (id) -> @renderQueue.add id, ->
-    df = Q.defer()
-    AtlasManager.unrenderEntity(id)
-    df.resolve()
-    df.promise
+  unrender: (id) -> @renderQueue.add id, -> AtlasManager.unrenderEntity(id)
 
   renderAll: (args) -> @renderQueue.add 'bulk', => @_renderBulk(args)
 

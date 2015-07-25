@@ -196,7 +196,7 @@ TemplateClass.events
       $pin.toggle(hasMoved)
       $pin.offset(pos)
     
-    isPositionInElememnt = ($em, position) ->
+    isPositionInElement = ($em, position) ->
       emSize = $em.position()
       emSize.right = emSize.left + $em.width()
       emSize.bottom = emSize.top + $em.height()
@@ -209,10 +209,7 @@ TemplateClass.events
       $body.off('mouseup', mouseUpHandler)
       $body.removeClass('dragging')
 
-      # TODO(aramk) Fix this.
-      # return unless $.contains($viewer[0], upEvent.target)
-
-      return unless isPositionInElememnt($viewer, {left: upEvent.clientX, top: upEvent.clientY})
+      return unless isPositionInElement($viewer, {left: upEvent.clientX, top: upEvent.clientY})
 
       viewerPos = $viewer.position()
       mousePos =

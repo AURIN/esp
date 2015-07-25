@@ -37,3 +37,15 @@
 [submodule "app/packages/meteor-dropdown"]
 	path = app/packages/meteor-dropdown
 	url = https://github.com/aramk/meteor-dropdown.git
+[submodule "app/packages/bismuth-schema-utility"]
+	path = app/packages/bismuth-schema-utility
+	url = https://github.com/urbanetic/bismuth-schema-utility
+[submodule "app/packages/meteor-accounts-ui"]
+	path = app/packages/meteor-accounts-ui
+	url = https://github.com/urbanetic/meteor-accounts-ui.git
+[submodule "app/packages/meteor-accounts-aurin"]
+	path = app/packages/meteor-accounts-aurin
+	url = https://github.com/urbanetic/meteor-accounts-aurin.git
+[submodule "app/packages/meteor-routes"]
+	path = app/packages/meteor-routes
+	url = https://github.com/aramk/meteor-routes.git

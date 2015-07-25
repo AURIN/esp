@@ -271,7 +271,10 @@ _.extend EntityUtils,
 
   _renderEntitiesBeforeJson: (args) ->
     df = Q.defer()
-    renderPromise = Q.all [LotUtils.renderAll(projectId: args.projectId), @renderAll(args)]
+    jsonRenderQueue = new DeferredQueue()
+    jsonRenderQueue.add -> LotUtils.renderAll(projectId: args.projectId)
+    jsonRenderQueue.add => @renderAll(args)
+    renderPromise = jsonRenderQueue.waitForAll()
     renderPromise.fail(df.reject)
     renderPromise.then (results) ->
       requirejs [

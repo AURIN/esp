@@ -106,11 +106,11 @@ Meteor.startup ->
     unless buildTypes.findOne(buildType)
       Template.dropdown.setValue(getBuildTypeSelect(@), 'Custom')
     # Toggle visibility of geometry inputs.
-    geom2dClasses = SchemaUtils.getField('parameters.space.geom_2d', Typologies).classes
+    geom2dClasses = Collections.getField(Typologies, 'parameters.space.geom_2d').classes
     canModifyGeometry = !!geom2dClasses[typologyClass] && typologyClass != 'PATHWAY'
     @$('.geom').toggle(canModifyGeometry)
     # Toggle visibility of azimuth array inputs.
-    azimuthClasses = SchemaUtils.getField('parameters.orientation.azimuth', Typologies).classes
+    azimuthClasses = Collections.getField(Typologies, 'parameters.orientation.azimuth').classes
     @$('.azimuth-array').toggle(!!azimuthClasses[typologyClass])
     # This needs to be called each time we update fields since it binds to select fields, which
     # are re-created each time.

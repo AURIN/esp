@@ -43,6 +43,7 @@ aramk:dropdown@=0.5.0
 aramk:file-upload@=0.4.0
 aramk:notifications@=0.2.0
 aramk:utility@=0.9.0
+aramk:routes@=0.2.1
 aramk:vega-charts@=0.3.2
 
 # These come last so RequireJS doesn't cause issues.
@@ -55,4 +56,5 @@ urbanetic:atlas-cesium@=0.8.2
 urbanetic:atlas-util@=0.3.0
 urbanetic:aurin-acs@=0.1.3
 urbanetic:bismuth-utility@=0.1.0
+urbanetic:bismuth-schema-utility@=0.1.0
 urbanetic:subdiv@=0.5.6
