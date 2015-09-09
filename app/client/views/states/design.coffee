@@ -70,7 +70,7 @@ TemplateClass.rendered = ->
       'atlas-cesium/core/CesiumAtlas',
       'atlas/lib/utility/Log'
     ], (CesiumAtlas, Log) ->
-      Log.setLevel('error')
+      Logger.setLevel('error')
       Logger.debug('Creating Atlas...')
       cesiumAtlas = new CesiumAtlas()
       AtlasManager.setAtlas(cesiumAtlas)
