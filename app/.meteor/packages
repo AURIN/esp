@@ -37,7 +37,7 @@ aramk:q
 aramk:tinycolor
 
 # PRIVATE
-aramk:collection-table@=0.3.4
+aramk:collection-table@=0.4.0
 aramk:dropdown@=0.5.0
 # Version is locked since changing the name of collections can remove data.
 aramk:file-upload@=0.4.0
