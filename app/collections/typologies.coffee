@@ -1206,6 +1206,7 @@ ProjectSchema = new SimpleSchema
 
 @Projects = new Meteor.Collection 'projects', schema: ProjectSchema
 Projects.attachSchema(ProjectSchema)
+Projects.ParametersSchema = ProjectParametersSchema
 AccountsUtil.addCollectionAuthorization Projects,
   # A user has access to their own projects as well as any templates.
   userSelector: (args) -> {$or: [{author: args.username}, {isTemplate: true}]}
@@ -3489,6 +3490,7 @@ TypologySchema = new SimpleSchema
 
 @Typologies = new Meteor.Collection 'typologies'
 Typologies.attachSchema(TypologySchema)
+Typologies.ParametersSchema = ParametersSchema
 Typologies.Classes = TypologyClasses
 Typologies.LandClasses = LandClasses
 Typologies.EnergySources = EnergySources
@@ -3959,6 +3961,7 @@ EntitySchema = new SimpleSchema
   project: projectSchema
 
 @Entities = new Meteor.Collection 'entities'
+Entities.ParametersSchema = EntityParametersSchema
 Entities.attachSchema(EntitySchema)
 AccountsUtil.setUpProjectAllow(Entities)
 
