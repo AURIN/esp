@@ -4,6 +4,7 @@ app/public/design/atlas-cesium
 app/.meteor/local
 app/tests/mongo
 .demeteorized/
+deploy/*.env.sh
 
 node_modules
 bower_components

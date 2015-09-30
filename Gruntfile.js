@@ -238,6 +238,11 @@ module.exports = function(grunt) {
         ACS_ENV: 'local'
       });
     }
+    if (hasArg('debug-log')) {
+      _.extend(env, {
+        LOG_LEVEL: 'debug'
+      });
+    }
     _.extend(env, process.env);
     proc = runProcess('meteor', processArgs);
     proc.on('exit', function() {

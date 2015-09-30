@@ -21,7 +21,7 @@ digilord:roles
 iron:router
 meteorhacks:npm
 # meteorhacks:kadira
-matb33:collection-hooks
+matb33:collection-hooks@=0.8.0
 npm-container
 semantic:ui-css
 semantic:ui-icon
@@ -42,7 +42,7 @@ aramk:dropdown@=0.5.0
 # Version is locked since changing the name of collections can remove data.
 aramk:file-upload@=0.4.0
 aramk:notifications@=0.2.0
-aramk:utility@=0.9.0
+aramk:utility@=0.10.0
 aramk:routes@=0.2.1
 aramk:vega-charts@=0.3.2
 
