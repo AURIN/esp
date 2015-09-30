@@ -239,7 +239,7 @@ Meteor.startup ->
     # Prevent renaming non-existent fields of a doc to prevent MondoDB errors.
     $rename = Setter.clone($rename)
     doc = collection.findOne(id)
-    Objects.flattenProperties(doc)
+    doc = Objects.flattenProperties(doc)
     return 0 unless doc?
     _.each $rename, (repl, fieldId) ->
       unless doc[fieldId]?
