@@ -90,6 +90,8 @@ npm-bcrypt@0.7.8_2
 npm-container@1.0.0
 observe-sequence@1.0.6
 ordered-dict@1.0.3
+peerlibrary:aws-sdk@2.2.6_1
+peerlibrary:blocking@0.5.2
 percolatestudio:percolatestudio-migrations@0.7.2
 raix:eventemitter@0.1.2
 raix:handlebar-helpers@0.2.4

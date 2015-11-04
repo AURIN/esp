@@ -23,10 +23,11 @@ meteorhacks:npm
 # meteorhacks:kadira
 matb33:collection-hooks@=0.8.0
 npm-container
-semantic:ui-css
-semantic:ui-icon
+peerlibrary:aws-sdk
 percolatestudio:percolatestudio-migrations
 raix:handlebar-helpers
+semantic:ui-css
+semantic:ui-icon
 
 # PUBLIC-FORKS
 # These are forked repos and added as private packages.
