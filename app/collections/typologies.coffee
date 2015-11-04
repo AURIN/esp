@@ -1193,6 +1193,11 @@ ProjectSchema = new SimpleSchema
   dateModified:
     label: 'Date Modified'
     type: Date
+  userModified:
+    label: 'User Modified'
+    type: String
+    # Necessary to allow the collection hook to run and provide the value at runtime.
+    optional: true
   isTemplate:
     label: 'Template?'
     type: Boolean
