@@ -431,7 +431,7 @@ registerCollectionRenderHandles = (template) ->
   renderHandles.push Collections.observe typologies, {
     changed: (newTypology, oldTypology) ->
       if hasRenderParamChanged(newTypology, oldTypology)
-        _.each Entities.findByTypology(newTypology._id).fetch(), (entity) ->
+        Entities.findByTypology(newTypology._id).forEach (entity) ->
           refreshEntity(entity._id)
   }
 
@@ -521,7 +521,7 @@ bindEntityEvents = (template, atlas) ->
   
   # Clicking on a typology selects all entities of that typology.
   getEntityIdsByTypologyId = (typologyId) ->
-    _.map Entities.findByTypology(typologyId).fetch(), (entity) -> entity._id
+    _.pluck Entities.findByTypology(typologyId).fetch(), '_id'
   $typologyTable.on 'select', (e, args) ->
     tableSelectionEnabled = false
     selectedId = args.added[0]

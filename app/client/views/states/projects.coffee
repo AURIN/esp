@@ -26,7 +26,7 @@ TemplateClass.rendered = ->
     id = getSelectedId()
     loaderNode = @find('.loader')
     Template.loader.setActive(loaderNode, true)
-    Meteor.call 'projects/duplicate', id, (err, result) =>
+    Meteor.call 'projects/duplicate2', id, (err, result) =>
       Template.loader.setActive(loaderNode, false)
       # Switch back to showing the projects if we duplicated a template.
       showTemplates = @showTemplates.get()
@@ -105,9 +105,15 @@ TemplateClass.helpers
         key: 'author'
         label: 'Author'
         fn: (value, object) ->
-          user = Meteor.users.findOne({username: value})
+          user = AccountsUtil.resolveUser(value)
           return unless user
-          user.profile?.name + ' (' + value + ')'
+          label = user.profile?.name
+          email = user.emails?[0].address
+          if !email? and user.username.indexOf('@')
+            email = user.username
+          if email
+            label = "#{label} (#{email})"
+          label
     settings
 
 getTemplate = -> Template.instance()

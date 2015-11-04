@@ -8,8 +8,7 @@ TemplateClass.helpers
   project: -> Projects.getCurrent()
   helpUrl: -> AppConfig.helpUrl
   routeName: -> Router.getCurrentName()
-  notificationSettings: ->
-    closeAll: true
+  notificationSettings: -> closeAll: true
 
 TemplateClass.events
   'click .header .close.button': ->

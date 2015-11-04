@@ -46,3 +46,6 @@
 [submodule "app/packages/meteor-routes"]
 	path = app/packages/meteor-routes
 	url = https://github.com/aramk/meteor-routes.git
+[submodule "app/packages/meteor-aurin-acs"]
+	path = app/packages/meteor-aurin-acs
+	url = https://github.com/urbanetic/meteor-aurin-acs.git

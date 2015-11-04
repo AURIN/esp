@@ -9,7 +9,8 @@ Meteor.methods
     Typologies.remove(selector)
     Lots.remove(selector)
 
-  'projects/duplicate': (id) ->
+  # A custom version of projects/duplicate to handle template logic.
+  'projects/duplicate2': (id) ->
     userId = @userId
     user = Meteor.users.findOne(userId)
     username = user.username

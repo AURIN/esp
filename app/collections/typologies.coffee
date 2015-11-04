@@ -3998,11 +3998,10 @@ Entities.findByProject = (projectId) -> SchemaUtils.findByProject(Entities, proj
 Entities.findByTypology = (typologyId) -> Entities.find({typology: typologyId})
 
 Entities.findByTypologyClass = (typologyClass, projectId) ->
-  typologies = Typologies.findByClass(typologyClass, projectId)
+  typologies = Typologies.findByClass(typologyClass, projectId).fetch()
   entities = []
   _.each typologies, (typology) ->
-    _.each Entities.findByTypology(typology._id), (entity) ->
-      entities.push(entity)
+    Entities.findByTypology(typology._id).forEach (entity) -> entities.push(entity)
   entities
 
 Entities.getTypologyClass = (idOrModel) ->
@@ -4233,7 +4232,7 @@ Lots.after.remove (userId, lot) ->
 
 Typologies.after.remove (userId, typology) ->
   # Remove entities when the typology is removed.
-  _.each Entities.findByTypology(typology._id).fetch(), (entity) -> Entities.remove(entity._id)
+  Entities.findByTypology(typology._id).forEach (entity) -> Entities.remove(entity._id)
 
 ####################################################################################################
 # LAYERS
