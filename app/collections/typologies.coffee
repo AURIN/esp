@@ -1217,7 +1217,6 @@ AccountsUtil.addCollectionAuthorization Projects,
   userSelector: (args) ->
     selector = AccountsUtil._createAuthorSelector(args.userId, args.username)
     selector.$or.push {isTemplate: true}
-    console.log('selector', selector)
     selector
 AccountsUtil.setUpCollectionAllow(Projects)
 
