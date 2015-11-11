@@ -15,32 +15,29 @@ _.extend EntityUtils,
     getEvalEngine().evaluate(model: entity, paramIds: paramIds, typologyClass: typologyClass)
 
   toGeoEntityArgs: (id, args) ->
-    df = Q.defer()
-    AtlasConverter.getInstance().then Meteor.bindEnvironment (converter) =>
-      entity = Entities.getFlattened(id)
-      typology = Typologies.findOne(entity.typology)
-      typologyClass = Entities.getTypologyClass(id)
-      space = entity.parameters.space
-      typologySpace = typology.parameters.space
-      displayMode = args?.displayMode ? @getDisplayMode(id)
-      args = _.extend({
-        id: id
-        vertices: space?.geom_2d ? typologySpace?.geom_2d
-        height: space?.height ? 5
-        zIndex: 1
-        displayMode: displayMode
-        style:
-          fillColor: FILL_COLOR
-          borderColor: BORDER_COLOR
-      }, args)
-      if typologyClass == 'PATHWAY'
-        widthParamId = 'space.width'
-        getEvalEngine()
-            .evaluate(model: entity, paramIds: [widthParamId], typologyClass: typologyClass)
-        args.width = SchemaUtils.getParameterValue(entity, widthParamId)
-        args.style.fillColor = '#000'
-      df.resolve converter.toGeoEntityArgs(args)
-    df.promise
+    entity = Entities.getFlattened(id)
+    typology = Typologies.findOne(entity.typology)
+    typologyClass = Entities.getTypologyClass(id)
+    space = entity.parameters.space
+    typologySpace = typology.parameters.space
+    displayMode = args?.displayMode ? @getDisplayMode(id)
+    args = _.extend({
+      id: id
+      vertices: space?.geom_2d ? typologySpace?.geom_2d
+      height: space?.height ? 5
+      zIndex: 1
+      displayMode: displayMode
+      style:
+        fillColor: FILL_COLOR
+        borderColor: BORDER_COLOR
+    }, args)
+    if typologyClass == 'PATHWAY'
+      widthParamId = 'space.width'
+      getEvalEngine()
+          .evaluate(model: entity, paramIds: [widthParamId], typologyClass: typologyClass)
+      args.width = SchemaUtils.getParameterValue(entity, widthParamId)
+      args.style.fillColor = '#000'
+    converter.toGeoEntityArgs(args)
 
   _getModel: (id) -> Entities.getFlattened(id)
 
@@ -128,8 +125,7 @@ _.extend EntityUtils,
                 # If the entity belongs to an Open Space precinct, generate an empty GeoEntity
                 # to remove special cases.
                 if typologyClass == 'OPEN_SPACE'
-                  @_getBlankFeatureArgs(id).then Meteor.bindEnvironment (entityArgs) =>
-                    resolve(AtlasManager.renderEntity(entityArgs))
+                  resolve AtlasManager.renderEntity @_getBlankFeatureArgs(id)
                 else
                   resolve(null)
                 return
@@ -143,16 +139,14 @@ _.extend EntityUtils,
                 # If we construct the 2d geometry from a collection of entities rather than
                 # WKT, the geometry is a collection rather than a feature. Create a new
                 # feature to store both 2d and 3d geometries.
-                blankFeaturePromise = @_getBlankFeatureArgs(id)
-                blankFeaturePromise.fail(geoEntityDf.reject)
-                blankFeaturePromise.then Meteor.bindEnvironment (args) ->
-                  geoEntity = AtlasManager.renderEntity(args)
-                  addedGeometry.push(geoEntity)
-                  if entity2d
-                    geoEntity.setForm(Feature.DisplayMode.FOOTPRINT, entity2d)
-                    args.height? && entity2d.setHeight(args.height)
-                    args.elevation? && entity2d.setElevation(args.elevation)
-                  geoEntityDf.resolve(geoEntity)
+                args = @_getBlankFeatureArgs(id)
+                geoEntity = AtlasManager.renderEntity(args)
+                addedGeometry.push(geoEntity)
+                if entity2d
+                  geoEntity.setForm(Feature.DisplayMode.FOOTPRINT, entity2d)
+                  args.height? && entity2d.setHeight(args.height)
+                  args.elevation? && entity2d.setElevation(args.elevation)
+                geoEntityDf.resolve(geoEntity)
               geoEntityDf.promise.fail(df.reject)
               geoEntityDf.promise.then Meteor.bindEnvironment (geoEntity) =>
                 if entity3d
@@ -306,3 +300,6 @@ _.extend EntityUtils,
     if Meteor.isServer
       _.each args.ids, (id) -> unrenderPromises.push AtlasManager.unrenderEntity(id)
     unrenderPromises
+
+converter = null
+AtlasConverter.getInstance().then Meteor.bindEnvironment (_converter) => converter = _converter

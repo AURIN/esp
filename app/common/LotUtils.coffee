@@ -112,12 +112,6 @@
   ##################################################################################################
 
   toGeoEntityArgs: (id) ->
-    df = Q.defer()
-    @converterPromise.then Meteor.bindEnvironment (converter) =>
-      df.resolve @_toGeoEntityArgs(id, converter)
-    df.promise
-
-  _toGeoEntityArgs: (id, converter) ->
     lot = Lots.findOne(id)
     typologyClass = SchemaUtils.getParameterValue(lot, 'general.class')
     isForDevelopment = SchemaUtils.getParameterValue(lot, 'general.develop')
@@ -185,9 +179,8 @@
       AtlasManager.showEntity(id)
       df.resolve(entity)
     else
-      @toGeoEntityArgs(id).then Meteor.bindEnvironment (entityArgs) ->
-        entity = AtlasManager.renderEntity(entityArgs)
-        df.resolve(entity)
+      entity = AtlasManager.renderEntity @toGeoEntityArgs(id)
+      df.resolve(entity)
     df.promise
 
   unrender: (id) -> @renderQueue.add id, -> AtlasManager.unrenderEntity(id)
@@ -204,16 +197,13 @@
     else
       projectId = args.projectId ? Projects.getCurrentId()
       lots = Lots.findByProject(projectId).fetch()
-    @converterPromise.then Meteor.bindEnvironment (converter) => 
-      geoEntities = []
-      _.each lots, (lot) =>
-        id = lot._id
-        geoEntity = AtlasManager.getEntity(id)
-        unless geoEntity
-          geoEntityArgs = @_toGeoEntityArgs(id, converter)
-          geoEntity = AtlasManager.renderEntity(geoEntityArgs)
-        geoEntities.push geoEntity
-      df.resolve(geoEntities)
+    geoEntities = []
+    _.each lots, (lot) =>
+      id = lot._id
+      geoEntity = AtlasManager.getEntity(id)
+      geoEntity ?= AtlasManager.renderEntity @toGeoEntityArgs(id)
+      geoEntities.push geoEntity
+    df.resolve(geoEntities)
     df.promise
 
   renderAllAndZoom: -> @renderAll().then => @_zoomToEntities()
@@ -252,11 +242,6 @@
         # callback.
         if entityId && (!oldDoc || oldDoc.entity != entityId)
           autoAlignEntity(Entities.findOne(entityId))
-
-    converterDf = Q.defer()
-    @converterPromise = converterDf.promise
-    AtlasConverter.getInstance().then Meteor.bindEnvironment (converter) ->
-      converterDf.resolve(converter)
 
     @reset()
     @isSetUp = true
@@ -558,3 +543,6 @@ Meteor.startup -> LotUtils.setUp()
 if Meteor.isServer
   Meteor.methods
     'lots/from/asset': (args) -> Promises.runSync -> LotUtils.fromAsset(args)
+
+converter = null
+AtlasConverter.getInstance().then Meteor.bindEnvironment (_converter) -> converter = _converter
