@@ -13,7 +13,6 @@ Meteor.methods
   'projects/duplicate2': (id) ->
     userId = @userId
     user = Meteor.users.findOne(userId)
-    username = user.username
     AccountsUtil.authorize Projects.findOne(id), userId, (doc, user) ->
       AccountsUtil.isOwner(doc, user) || doc.isTemplate
     Logger.info('Duplicating project', id, '...')
@@ -24,7 +23,7 @@ Meteor.methods
           _.each json[Collections.getName(Projects)], (project) ->
             # Set the isTemplate field to false when duplicating a template and set the user as the
             # one who duplicated it to ensure the inserting passes validation.
-            project.author = username
+            project.author = userId
             project.isTemplate = false
           json
       duplicatePromise.fail(df.reject)

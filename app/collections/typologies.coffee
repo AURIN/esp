@@ -1214,7 +1214,11 @@ Projects.attachSchema(ProjectSchema)
 Projects.ParametersSchema = ProjectParametersSchema
 AccountsUtil.addCollectionAuthorization Projects,
   # A user has access to their own projects as well as any templates.
-  userSelector: (args) -> {$or: [{author: args.username}, {isTemplate: true}]}
+  userSelector: (args) ->
+    selector = AccountsUtil._createAuthorSelector(args.userId, args.username)
+    selector.$or.push {isTemplate: true}
+    console.log('selector', selector)
+    selector
 AccountsUtil.setUpCollectionAllow(Projects)
 
 hasSession = typeof Session != 'undefined'
@@ -3070,7 +3074,7 @@ typologyCategories =
         type: Number
         decimal: true
         units: Units.deg
-        classes: extendClassesWithDefault(extendLandClasses(), 0)
+        classes: extendClassesWithDefault(extendBuildingClasses(), 0)
       eq_azmth_h:
         label: 'Azimuth Heating Energy Array'
         desc: 'Equation to predict heating energy use as a function of degrees azimuth.'
