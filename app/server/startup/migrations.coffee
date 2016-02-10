@@ -245,7 +245,8 @@ Meteor.startup ->
       unless doc[fieldId]?
         delete $rename[fieldId]
     return 0 if Object.keys($rename).length == 0
-    collection.direct.update({_id: id}, {$rename: $rename}, {validate: false})
+    # Filtering can cause the $rename to be empty and remove all fields.
+    collection.direct.update({_id: id}, {$rename: $rename}, {validate: false, filter: false})
 
   Logger.info('Migrating to latest version...')
   Migrations.migrateTo('latest')
