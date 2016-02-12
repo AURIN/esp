@@ -1616,7 +1616,7 @@ calcEnergyCost = (source, suffix) ->
   supply_price = @param('utilities.price_supply_' + suffix)
   usage_price = @param('utilities.price_usage_' + suffix)
   if source == ENERGY_SOURCE_GAS
-    usage_price = @KWH_TO_MJ(usage_price)
+    usage_price = @MJ_TO_KWH(usage_price)
   src_heat = @param('energy_demand.src_heat')
   src_hwat = @param('energy_demand.src_hwat')
   src_cook = @param('energy_demand.src_cook')
@@ -1646,7 +1646,7 @@ calcEnergyCost2 = (suffix, demand) ->
     0
   else
     365 * @param('utilities.price_supply_' + suffix) + @param('energy_demand.' + demand) *
-        @KWH_TO_MJ(@param('utilities.price_usage_' + suffix))
+        @MJ_TO_KWH(@param('utilities.price_usage_' + suffix))
 
 calcElecCost = ->
   en_elec_scheme = @param('energy_demand.en_elec_scheme')
@@ -1654,11 +1654,11 @@ calcElecCost = ->
     return 0
   usageParamId = if en_elec_scheme < 0 then 'price_usage_elec_tariff' else 'price_usage_elec'
   365 * @param('utilities.price_supply_elec') + en_elec_scheme *
-      @KWH_TO_MJ(@param('utilities.' + usageParamId))
+      @MJ_TO_KWH(@param('utilities.' + usageParamId))
 
 calcEnergyWithIntensityCost = (suffix, shortSuffix) ->
   supply_price = @param('utilities.price_supply_' + suffix)
-  usage_price = @KWH_TO_MJ(@param('utilities.price_usage_' + suffix))
+  usage_price = @MJ_TO_KWH(@param('utilities.price_usage_' + suffix))
   usage_cost = @param('energy_demand.en_use_' + shortSuffix) * usage_price
   365 * supply_price + usage_cost
 
