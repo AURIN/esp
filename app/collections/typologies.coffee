@@ -3874,8 +3874,7 @@ Lots.validateTypology = (lot, typologyId) ->
     df.resolve('Lot does not have same Typology class as the Typology being assigned.')
   else
     # Ensure the geometry of the typology will fit in the lot.
-    areaDfs = [GeometryUtils.getModelArea(typology), GeometryUtils.getModelArea(lot)]
-    Q.all(areaDfs).then(
+    Q.all([GeometryUtils.getModelArea(typology), GeometryUtils.getModelArea(lot)]).then(
       (results) ->
         lotArea = results.pop()
         typologyArea = results.pop()

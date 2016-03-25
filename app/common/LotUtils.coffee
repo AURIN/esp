@@ -462,7 +462,7 @@
         # for the given lots.
         Lots.findByProject(projectId).forEach (lot) ->
           geom_2d = SchemaUtils.getParameterValue(lot, 'space.geom_2d')
-          polygonPromises.push GeometryUtils.getWktOrC3mls(geom_2d).then (wktOrC3mls) ->
+          polygonPromises.push Q.when(GeometryUtils.getWktOrC3mls(geom_2d)).then (wktOrC3mls) ->
             try
               if Types.isString(wktOrC3mls)
                 vertices = wkt.verticesFromWKT(geom_2d)
