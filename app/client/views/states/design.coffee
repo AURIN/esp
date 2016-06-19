@@ -67,12 +67,25 @@ TemplateClass.rendered = ->
   # Don't show Atlas viewer if disabled.
   unless Window.getVarBool('atlas') == false
     requirejs [
-      'atlas-cesium/core/CesiumAtlas',
+      'atlas-cesium/core/CesiumAtlas'
+      'atlas-cesium/cesium/Source/Widgets/BaseLayerPicker/ProviderViewModel'
+      'atlas-cesium/cesium/Source/Scene/MapboxImageryProvider',
       'atlas/lib/utility/Log'
-    ], (CesiumAtlas, Log) ->
+    ], (CesiumAtlas, ProviderViewModel, MapboxImageryProvider, Log) ->
       Logger.setLevel('error')
       Logger.debug('Creating Atlas...')
-      cesiumAtlas = new CesiumAtlas()
+      cesiumAtlas = new CesiumAtlas
+        managers:
+          render:
+            viewer:
+              # Bing Maps imagery (the default) has recently broken.
+              selectedImageryProviderViewModel: new ProviderViewModel
+                name: 'MapBox',
+                tooltip: 'MapBox',
+                iconUrl: '',
+                creationFunction: ->
+                  new MapboxImageryProvider
+                    mapId: 'mapbox.satellite'
       AtlasManager.setAtlas(cesiumAtlas)
       Logger.debug('Created Atlas', cesiumAtlas)
       Logger.debug('Attaching Atlas')
