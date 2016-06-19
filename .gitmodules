@@ -46,3 +46,12 @@
 [submodule "app/packages/meteor-aurin-acs"]
 	path = app/packages/meteor-aurin-acs
 	url = https://github.com/urbanetic/meteor-aurin-acs.git
+[submodule "app/packages/meteor-utility"]
+	path = app/packages/meteor-utility
+	url = https://github.com/urbanetic/meteor-utility.git
+[submodule "app/packages/bismuth-collection-utility"]
+	path = app/packages/bismuth-collection-utility
+	url = https://github.com/urbanetic/bismuth-collection-utility.git
+[submodule "app/packages/meteor-collection-table"]
+	path = app/packages/meteor-collection-table
+	url = https://github.com/aramk/meteor-collection-table.git

@@ -28,6 +28,15 @@
           padding: 0.5rem;
         }
       }
+      .ui.menu.toolbar {
+        display: block;
+        .item {
+          margin: 0;
+          .item {
+            padding: 1rem;
+          }
+        }
+      }
       .ui.form {
         box-shadow: none;
         -webkit-box-shadow: none;
@@ -35,6 +44,16 @@
         input {
           padding: 0.3rem 0.4rem !important;
           color: black !important;
+        }
+        .fields {
+          .flex(column);
+        }
+        .form-group {
+          width: 100%;
+          display: block;
+        }
+        .ui.selection.dropdown {
+          min-height: auto;
         }
       }
     }

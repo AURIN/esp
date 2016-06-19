@@ -33,8 +33,7 @@ digilord:roles
 iron:router
 meteorhacks:npm
 # meteorhacks:kadira
-matb33:collection-hooks@=0.8.0
-npm-container
+matb33:collection-hooks
 peerlibrary:aws-sdk
 percolatestudio:percolatestudio-migrations
 raix:handlebar-helpers
@@ -43,31 +42,33 @@ semantic:ui-icon
 
 # PUBLIC-FORKS
 # These are forked repos and added as private packages.
-aldeed:autoform@=5.3.0
+aldeed:autoform
 aldeed:collection2
 aramk:pubsub
 aramk:q
 aramk:tinycolor
 
 # PRIVATE
-aramk:collection-table@=0.4.0
-aramk:dropdown@=0.5.0
-# Version is locked since changing the name of collections can remove data.
-aramk:file-upload@=0.4.0
-aramk:notifications@=0.2.0
-aramk:utility@=0.10.0
-aramk:routes@=0.2.2
-aramk:vega-charts@=0.3.2
+aramk:collection-table
+aramk:dropdown
+aramk:file-upload
+aramk:notifications
+aramk:routes
+aramk:vega-charts
 
 # These come last so RequireJS doesn't cause issues.
 aramk:requirejs
 
-urbanetic:accounts-aurin@=0.2.4
-urbanetic:accounts-local@=0.1.1
-urbanetic:atlas@=0.8.2
-urbanetic:atlas-cesium@=0.8.2
-urbanetic:atlas-util@=0.3.0
-urbanetic:aurin-acs@=0.1.3
-urbanetic:bismuth-utility@=0.2.1
-urbanetic:bismuth-schema-utility@=0.2.1
-urbanetic:subdiv@=0.5.6
+urbanetic:accounts-aurin
+urbanetic:accounts-local
+urbanetic:atlas
+urbanetic:atlas-cesium
+urbanetic:atlas-util
+urbanetic:aurin-acs
+urbanetic:bismuth-utility
+urbanetic:bismuth-schema-utility
+urbanetic:bismuth-collection-utility
+urbanetic:subdiv
+urbanetic:utility
+
+

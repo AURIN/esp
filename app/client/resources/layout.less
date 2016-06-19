@@ -39,6 +39,7 @@ body {
 
 .main.container {
   height: 100%;
+  width: 100%;
   display: flex;
   flex-direction: column;
   > .header {
@@ -154,6 +155,23 @@ body {
       border-bottom: none;
     }
   }
+}
+
+.flex(@direction: column) {
+  display: -webkit-flex;
+  display: flex;
+  -webkit-flex-direction: @direction;
+  flex-direction: @direction;
+}
+
+.flex-grow(@size: 1) {
+  flex-grow: @size;
+  -webkit-flex-grow: @size;
+}
+
+.flex-shrink(@size: 0) {
+  flex-shrink: @size;
+  -webkit-flex-shrink: @size;
 }
 
 .full-screen-panel {
