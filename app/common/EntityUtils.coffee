@@ -144,6 +144,7 @@ _.extend EntityUtils,
                 addedGeometry.push(geoEntity)
                 if entity2d
                   geoEntity.setForm(Feature.DisplayMode.FOOTPRINT, entity2d)
+                  geoEntity.setForm(Feature.DisplayMode.EXTRUSION, entity2d)
                   args.height? && entity2d.setHeight(args.height)
                   args.elevation? && entity2d.setElevation(args.elevation)
                 geoEntityDf.resolve(geoEntity)
