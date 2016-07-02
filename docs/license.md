@@ -29,7 +29,7 @@ Documentation is compiled using:
 
 
 [atlas]: https://github.com/urbanetic/atlas
-[atlas-cesium]: https://github.com/urbanetic/atlas-cesium
+[atlascesium]: https://github.com/urbanetic/atlas-cesium
 [cesium]: https://cesiumjs.org/
 [coffee]: http://coffeescript.org/
 [codo]: https://github.com/coffeedoc/codo
