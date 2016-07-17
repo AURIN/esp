@@ -1,18 +1,30 @@
 # Meteor packages used by this project, one per line.
+# Check this file (and the other files in this directory) into your repository.
 #
 # 'meteor add' and 'meteor remove' will edit this file for you,
 # but you can also edit it by hand.
+
+meteor-base             # Packages every Meteor app needs to have
+mobile-experience       # Packages for a great mobile UX
+mongo                   # The database Meteor supports right now
+blaze-html-templates    # Compile .html files into Meteor Blaze views
+reactive-var            # Reactive variable for tracker
+jquery                  # Helpful client-side library
+tracker                 # Meteor's client-side reactive programming library
+
+standard-minifier-css   # CSS minifier run for production mode
+standard-minifier-js    # JS minifier run for production mode
+es5-shim                # ECMAScript 5 compatibility for older browsers.
+ecmascript              # Enable ECMAScript2015+ syntax in app code
 
 # CORE
 accounts-password
 accounts-ui
 coffeescript
-jquery
 less
 meteor-platform
 standard-app-packages
 underscore
-reactive-var
 
 # PUBLIC
 awatson1978:dropzone
@@ -21,8 +33,7 @@ digilord:roles
 iron:router
 meteorhacks:npm
 # meteorhacks:kadira
-matb33:collection-hooks@=0.8.0
-npm-container
+matb33:collection-hooks
 peerlibrary:aws-sdk
 percolatestudio:percolatestudio-migrations
 raix:handlebar-helpers
@@ -31,31 +42,33 @@ semantic:ui-icon
 
 # PUBLIC-FORKS
 # These are forked repos and added as private packages.
-aldeed:autoform@=5.3.0
+aldeed:autoform
 aldeed:collection2
 aramk:pubsub
 aramk:q
 aramk:tinycolor
 
 # PRIVATE
-aramk:collection-table@=0.4.0
-aramk:dropdown@=0.5.0
-# Version is locked since changing the name of collections can remove data.
-aramk:file-upload@=0.4.0
-aramk:notifications@=0.2.0
-aramk:utility@=0.10.0
-aramk:routes@=0.2.2
-aramk:vega-charts@=0.3.2
+aramk:collection-table
+aramk:dropdown
+aramk:file-upload
+aramk:notifications
+aramk:routes
+aramk:vega-charts
 
 # These come last so RequireJS doesn't cause issues.
 aramk:requirejs
 
-urbanetic:accounts-aurin@=0.2.4
-urbanetic:accounts-local@=0.1.1
-urbanetic:atlas@=0.8.2
-urbanetic:atlas-cesium@=0.8.2
-urbanetic:atlas-util@=0.3.0
-urbanetic:aurin-acs@=0.1.3
-urbanetic:bismuth-utility@=0.2.1
-urbanetic:bismuth-schema-utility@=0.2.1
-urbanetic:subdiv@=0.5.6
+urbanetic:accounts-aurin
+urbanetic:accounts-local
+urbanetic:atlas
+urbanetic:atlas-cesium
+urbanetic:atlas-util
+urbanetic:aurin-acs
+urbanetic:bismuth-utility
+urbanetic:bismuth-schema-utility
+urbanetic:bismuth-collection-utility
+urbanetic:subdiv
+urbanetic:utility
+
+
