@@ -4279,61 +4279,6 @@ Layers.findByProject = (projectId) -> SchemaUtils.findByProject(Layers, projectI
 Layers.getDisplayModeItems = -> _.map LayerDisplayModes, (value, key) -> {label: value, value: key}
 
 ####################################################################################################
-# USER ASSETS SCHEMA DEFINITION
-####################################################################################################
-
-# UserAssetTypes =
-#   tree:
-#     name: 'Tree'
-#     filename: 'tree_simple.dae'
-
-# userAssetCategories =
-#   general:
-#     items:
-#       type:
-#         type: String
-#         allowedValues: _.keys(UserAssetTypes)
-#   space:
-#     items:
-#       position:
-#         type: PositionSchema
-#         optional: false
-#       scale:
-#         type: VertexSchema
-#         optional: true
-#       rotation:
-#         type: VertexSchema
-#         optional: true
-#       # TODO(aramk) For some reason, latitude and longitude are required even though offset is
-#       # optional. Using this as a workaround.
-#       offset:
-#         type: PositionSchema
-#         optional: true
-
-# UsersAssetParametersSchema = createCategoriesSchema
-#   categories: userAssetCategories
-
-# UserAssetsSchema = new SimpleSchema
-#   name:
-#     type: String
-#     index: true
-#     unique: false
-#   desc: extendSchema descSchema,
-#     optional: true
-#   parameters:
-#     label: 'Parameters'
-#     type: UsersAssetParametersSchema
-#     # Necessary to allow required fields within.
-#     optional: false
-#     defaultValue: {}
-#   project: projectSchema
-
-# @UserAssets = new Meteor.Collection 'userAssets'
-# UserAssets.attachSchema(UserAssets)
-# AccountsUtil.setUpProjectAllow(UserAssets)
-# UserAssets.findByProject = (projectId) -> SchemaUtils.findByProject(UserAssets, projectId)
-
-####################################################################################################
 # COLLECTIONS
 ####################################################################################################
 

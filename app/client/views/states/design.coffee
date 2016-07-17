@@ -155,7 +155,6 @@ TemplateClass.helpers
   lots: -> Lots.findByProject()
   typologies: -> Typologies.findByProject()
   layers: -> Layers.findByProject()
-  # userAssets: -> UserAssets.findByProject()
   tableSettings: -> getTableSettings()
   layerTableSettings: ->
     settings = getTableSettings()
