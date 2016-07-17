@@ -100,6 +100,14 @@ module.exports = function(grunt) {
           }
         ]
       }
+    },
+    docco: {
+      docs: {
+        src: ['app/client/**/*.coffee', 'app/common/**/*.coffee', 'app/server/**/*.coffee'],
+        options: {
+          output: 'code-docs/'
+        }
+      }
     }
   });
 
@@ -108,19 +116,19 @@ module.exports = function(grunt) {
   //////////////////////////////////////////////////////////////////////////////////////////////////
 
   grunt.registerTask('install', 'Installs all dependencies', function() {
-    var args = arguments,
-        tasks = [],
-        addTasks = function() {
-          Array.prototype.slice.apply(arguments).forEach(function(task) {
-            tasks.push(task);
-          });
-        },
-        hasArgs = function(arg) {
-          return Object.keys(args).some(function(argIndex) {
-            var value = args[argIndex];
-            return value === arg;
-          });
-        };
+    var args = arguments;
+    var tasks = [];
+    var addTasks = function() {
+      Array.prototype.slice.apply(arguments).forEach(function(task) {
+        tasks.push(task);
+      });
+    };
+    var hasArgs = function(arg) {
+      return Object.keys(args).some(function(argIndex) {
+        var value = args[argIndex];
+        return value === arg;
+      });
+    };
     console.log('Running tasks', tasks);
     tasks.forEach(function(task) {
       grunt.task.run(task);
@@ -266,6 +274,10 @@ module.exports = function(grunt) {
   grunt.registerTask('migrations-lock-reset', 'Resets the lock on the MongoDB database.', function() {
     shell.cd(APP_DIR);
     shell.exec('echo \'db.migrations.update({_id:"control"}, {$set:{"locked":false}});\' | meteor mongo')
+  });
+
+  grunt.registerTask('docs', function() {
+    grunt.task.run('docco:docs');
   });
 
   grunt.registerTask('default', ['install']);

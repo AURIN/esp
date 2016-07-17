@@ -5,6 +5,8 @@ app/.meteor/local
 app/tests/mongo
 .demeteorized/
 deploy/*.env.sh
+/code-docs
+dev_bundle
 
 node_modules
 bower_components
