@@ -1,5 +1,6 @@
 Meteor.methods
 
+  # Removes the given project and all related data.
   'projects/remove': (id) ->
     AccountsUtil.authorize(Projects.findOne(id), @userId)
     Projects.remove(id);
@@ -9,7 +10,7 @@ Meteor.methods
     Typologies.remove(selector)
     Lots.remove(selector)
 
-  # A custom version of projects/duplicate to handle template logic.
+  # A custom version of projects/duplicate to handle template project logic.
   'projects/duplicate2': (id) ->
     userId = @userId
     user = Meteor.users.findOne(userId)

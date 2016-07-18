@@ -30,7 +30,6 @@ TemplateClass.getValueArray = (elem) ->
   array = TemplateClass.getValue(elem)
   if array then JSON.parse(array) else null
 
-# TODO(aramk) Use this for setting the custom value on the form element when loaded.
 TemplateClass.setValue = (elem, value) ->
   return unless value
   try

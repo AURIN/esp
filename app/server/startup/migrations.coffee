@@ -1,3 +1,4 @@
+# Defines a set of data migrations. All new versions are executed on startup.
 Meteor.startup ->
 
   # NOTE: When migrating collections, ensure to use {validate: false} if the scheme has changed,

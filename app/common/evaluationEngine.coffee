@@ -1,10 +1,17 @@
+# Evaluates a parametric model defined in the typology schema to generate calculated outputs.
+
 class @EvaluationEngine
 
+  # `args.schema` - The SimpleSchema to use for finding fields.
   constructor: (args) ->
     @schema = args.schema
     unless @schema?
       throw new Error('No schema provided')
 
+  # Evaluates the given typology model.
+  #  * `args.model` - The typology document.
+  #  * `[args.project]` - The project document. Defaults to the model's project or the current
+  #                       project.
   evaluate: (args) ->
     args = _.extend({
       removeCalcFields: true
@@ -98,17 +105,20 @@ class @EvaluationEngine
         results[paramId] = result
     results
 
-  setResult: (model, paramId, value) ->
-    SchemaUtils.setParameterValue(model, paramId, value)
+  # Sets the given value on the parameter of the given model.
+  setResult: (model, paramId, value) -> SchemaUtils.setParameterValue(model, paramId, value)
 
+  # Returns the schema definition for the given local or global parameter.
   getParamSchema: (paramId) ->
     paramId = ParamUtils.addPrefix(paramId)
     @schema.schema(paramId) ? @getGlobalParamSchema(paramId)
 
+  # Returns a boolean for whether the given parameter is an output parameter.
   isOutputParam: (paramId) ->
     schema = @getParamSchema(paramId)
     if schema then schema.calc? else false
 
+  # Sanitizes numeric parameters by rounding values if necessary.
   sanitizeParamValue: (paramId, value) ->
     schema = @getParamSchema(paramId)
     if schema && schema.type == Number
@@ -118,8 +128,10 @@ class @EvaluationEngine
         value = Math.round(value)
     value
 
+  # Returns schema field definition for a global parameter.
   getGlobalParamSchema: (paramId) -> Collections.getField(Projects, ParamUtils.addPrefix(paramId))
 
+  # Returns whether the given parameter is global.
   isGlobalParam: (paramId) -> @getGlobalParamSchema(paramId)?
 
 NULL_VALUE = 0

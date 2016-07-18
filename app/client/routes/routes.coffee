@@ -1,3 +1,14 @@
+# Sets up the router for all pages.
+
+@Router.configure
+  layoutTemplate: 'mainLayout'
+  notFoundTemplate: 'notFound'
+  yieldTemplates:
+    header:
+      to: 'header'
+    footer:
+      to: 'footer'
+
 BaseController = RouteController.extend
   onBeforeAction: ->
     return unless @ready()

@@ -1,4 +1,7 @@
+# Utilities dealing with projects.
 _.extend ProjectUtils,
+
+  # Returns a cursor for all public projects.
   getPublic: -> Projects.find(isPublic: true)
 
 if Meteor.isServer
@@ -6,6 +9,7 @@ if Meteor.isServer
   # REST API for requesting public project data.
 
   HTTP.methods
+    # Returns all meta-data for public projects JSON data.
     '/api/projects':
       get: ->
         @unblock()
@@ -13,6 +17,8 @@ if Meteor.isServer
         projects = ProjectUtils.getPublic().fetch()
         JSON.stringify(projects)
     
+    # Returns the full data for the given project, including all entities, typologies, and lots
+    # contained within.
     '/api/projects/:id':
       get: ->
         id = @params.id
@@ -22,6 +28,7 @@ if Meteor.isServer
         json = ProjectUtils.toJson(id)
         JSON.stringify(json)
     
+    # Returns a KMZ asset for the given project with all 2D geometry and extrusions.
     '/api/projects/:id/to/kmz':
       get: ->
         id = @params.id
@@ -35,6 +42,7 @@ if Meteor.isServer
         sb = sbuff(result.buffer)
         sb.pipe(res)
 
+    # Returns a C3ML asset (consumable by Atlas) for the given project with all geometry data.
     '/api/projects/:id/to/c3ml':
       get: ->
         id = @params.id
@@ -45,6 +53,7 @@ if Meteor.isServer
         @addHeader('Content-Type', result.type)
         JSON.stringify(result.data)
 
+# Determines whether the current project is accessible by the public REST API.
 authorize = (projectId) ->
   check(projectId, String)
   project = Projects.findOne(projectId)

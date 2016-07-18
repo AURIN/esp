@@ -1,6 +1,7 @@
 FILL_COLOR = '#888'
 BORDER_COLOR = '#333'
 
+# A utility for converting and rendering Layers.
 @LayerUtils =
 
   fromAsset: (args) ->
@@ -46,6 +47,7 @@ BORDER_COLOR = '#333'
           df.resolve(insertId)
     df.promise
 
+  # Renders the layer with the given ID.
   render: (id, args) ->
     args = _.extend({
       showOnRender: true

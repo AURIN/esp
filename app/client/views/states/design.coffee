@@ -1,3 +1,7 @@
+####################################################################################################
+# DESIGN PAGE
+####################################################################################################
+
 # The template is limited to a single instance, so we can store it and reference it in helper
 # methods.
 templateInstance = null

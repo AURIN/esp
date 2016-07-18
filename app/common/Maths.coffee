@@ -1,3 +1,4 @@
+# A set of maths utilities.
 @Maths =
   
   interpolateRatio: (a, b, ratio) -> a + ratio * (b - a)
