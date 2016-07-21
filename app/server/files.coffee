@@ -1,6 +1,7 @@
 Meteor.methods
 
-  # Finds files which no longer exist and are referenced in typologies and entities.
+  # Finds files which no longer exist and are referenced in typologies and entities. Useful for
+  # fixing broken references.
   'files/missing-refs': ->
     AccountsUtil.authorizeUser @userId, (user) -> AccountsUtil.isAdmin(user)
 

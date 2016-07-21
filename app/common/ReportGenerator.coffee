@@ -1,21 +1,13 @@
-Aggregator =
-
-  total: (values) ->
-    total = 0
-    for value in values
-      if Numbers.isDefined(value)
-        total += value
-    total
-
-  average: (values) ->
-    len = (values.filter (value) -> value?).length
-    if len > 0 then @total(values) / len else 0
-
+# Generates report output.
 class @ReportGenerator
 
+  # `args.evalEngine` - An instance of the EvaluationEngine.
   constructor: (args) ->
     @evalEngine = args.evalEngine
 
+  # Generates report output given the following:
+  #  * `args.models` - An array of documents to run through the evaluation engine.
+  #  * `args.fields` - An array of output fields from a schema to include in the report output.
   generate: (args) ->
     models = args.models
     fields = args.fields
@@ -53,3 +45,19 @@ class @ReportGenerator
         continue
       reportResults[field.id] = result
     reportResults
+
+# Calculates aggregations of values.
+Aggregator =
+
+  # Returns the sum of all given values.
+  total: (values) ->
+    total = 0
+    for value in values
+      if Numbers.isDefined(value)
+        total += value
+    total
+
+  # Calculates the mean of the given values.
+  average: (values) ->
+    len = (values.filter (value) -> value?).length
+    if len > 0 then @total(values) / len else 0

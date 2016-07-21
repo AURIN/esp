@@ -1,10 +1,12 @@
+# A utility for converting and rendering Lots.
+
 @LotUtils =
 
   ##################################################################################################
   # IMPORTING
   ##################################################################################################
 
-  # Handles a assets/synthesize response to create lots.
+  # Handles an assets/synthesize response to create Lots.
   fromAsset: (args) ->
     c3mls = args.c3mls
     projectId = args.projectId ? Projects.getCurrentId()
@@ -111,6 +113,7 @@
   # RENDERING
   ##################################################################################################
 
+  # Returns an object consumable for Atlas to render the Lot with the given ID.
   toGeoEntityArgs: (id) ->
     lot = Lots.findOne(id)
     typologyClass = SchemaUtils.getParameterValue(lot, 'general.class')
@@ -166,9 +169,6 @@
       if isForDevelopment then 'footprint' else 'extrusion'
     else
       displayMode
-
-  # TODO(aramk) Abstract this rendering for Entities as well.
-  # TODO(aramk) This class has grown too generic - refactor.
     
   render: (id) -> @renderQueue.add id, => @_render(id)
 
@@ -220,6 +220,7 @@
   # SERVICES
   ##################################################################################################
 
+  # Bind events to run on changes to Lots.
   setUp: ->
     # Auto-align when adding new lots or adding/replacing entities on lots.
     return if @isSetUp
@@ -318,6 +319,7 @@
     )
     df.promise
 
+  # Combine the given Lots together to form a single Lot.
   amalgamate: (ids) ->
     df = Q.defer()
     if ids.length < 2
@@ -372,6 +374,7 @@
             @removeByIds(ids).then(df.resolve, df.reject)
     df.promise
 
+  # Divides the given Lots based on the given lines.
   subdivide: (ids, linePoints) ->
     if ids.length == 0
       return Q.reject('At least one Lot is needed to subdivide.')
@@ -438,6 +441,7 @@
           )
     df.promise
 
+  # Aligns the Entities in the given Lots to face in the direction of the front road.
   autoAlign: (ids) ->
     Logger.info('Auto-aligning lots...', ids)
     df = Q.defer()
@@ -507,6 +511,7 @@
 
     df.promise
       
+  # Calculates the area for the given Lots.
   getAreas: (args) ->
     args = _.extend({
       indexByArea: false
@@ -524,6 +529,7 @@
           fpas[lot._id] = area
     Q.all(areaDfs).then -> fpas
 
+  # Removes the Lots with the given IDs.
   removeByIds: (ids) ->
     dfs = []
     _.each ids, (id) ->
