@@ -14,5 +14,7 @@ pages:
 
 - ['demo/maroondah.md', 'Demo Sites']
 
-- ['developers.md', 'Developers']
+- ['tech/development.md', 'Development']
+- ['tech/operations.md', 'Operations']
+
 - ['license.md', 'License']
