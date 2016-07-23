@@ -1,11 +1,10 @@
-AURIN ESP
-============
+# AURIN ESP
 
 [![Build Status](https://travis-ci.org/urbanetic/aurin-esp.svg)](https://travis-ci.org/urbanetic/aurin-esp)
 [![Documentation Status](https://readthedocs.org/projects/aurin-esp/badge/?version=latest)](https://readthedocs.org/projects/aurin-esp/?badge=latest)
 
-Installation
-------------
+## Installation
+
 Install Grunt and Bower globally:
 
 	$ npm install -g grunt-cli
@@ -17,21 +16,24 @@ Install [Meteor](https://www.meteor.com/):
 
 Run the following:
 
-	$ npm install
-	$ grunt install
+	$ npm run build
 
-Running
--------
+## Running
+
 Run the app with `grunt meteor`.
 
-Building
---------
+## Building
+
 To build a distributable Meteor app in `dist/`:
 
-	$ grunt build
+	$ npm run buildMeteor
 
-Deployment
-----------
+To build the documentation:
+
+    $ npm run docs
+
+## Deployment
+
 Deployment settings are found in `Gruntfile.js`.
 
 ### Local
@@ -46,6 +48,16 @@ Deployment settings are found in `Gruntfile.js`.
 
 	$ grunt deploy:meteor
 
-Structure
-------------
+### Docker Cloud
+
+1. Provision a node
+2. Create a new Stack
+3. Copy `docker-compose.yml` into the Stackfile
+4. Run the Stack
+
+## Structure
+
 The Meteor app resides in `app/` to allow using Grunt and Bower, which have dependencies stored at the project root directory.
+
+
+[container]: https://hub.docker.com/r/golden/meteor-dev/
