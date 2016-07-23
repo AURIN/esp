@@ -10,10 +10,11 @@
     "postinstall": "grunt install",
     "update": "git submodule update --init",
     "build": "npm install && npm run buildAtlas && npm run buildAtlasCesium && npm run buildSubdiv",
-    "buildMeteor": "npm run build && grunt buildMeteor",
     "buildAtlas": "cd app/packages/atlas && npm run build",
     "buildAtlasCesium": "cd app/packages/atlas-cesium && npm run build",
-    "buildSubdiv": "cd app/packages/subdiv && npm run build"
+    "buildSubdiv": "cd app/packages/subdiv && npm run build",
+    "buildMeteor": "npm run build && grunt build",
+    "docs": "grunt docs"
   },
   "devDependencies": {
     "coffee-script": "^1.8.0",

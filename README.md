@@ -16,7 +16,7 @@ Install [Meteor](https://www.meteor.com/):
 
 Run the following:
 
-	$ npm install
+	$ npm run build
 
 ## Running
 
@@ -26,7 +26,11 @@ Run the app with `grunt meteor`.
 
 To build a distributable Meteor app in `dist/`:
 
-	$ npm run build
+	$ npm run buildMeteor
+
+To build the documentation:
+
+    $ npm run docs
 
 ## Deployment
 
