@@ -20,7 +20,7 @@ Run the following:
 
 ## Running
 
-Run the app with `grunt meteor`.
+Run the app with `npm start`.
 
 ## Building
 
