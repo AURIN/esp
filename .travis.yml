@@ -15,9 +15,9 @@ after_success:
   - docker login -e $DOCKER_EMAIL -u $DOCKER_USER -p $DOCKER_PASS
   - export REPO=urbanetic/aurin-esp
   - export TAG=`if [ "$TRAVIS_BRANCH" == "master" ]; then echo "latest"; else echo $TRAVIS_BRANCH ; fi`
-  - cd app && docker build -t $REPO:$COMMIT .
-  - docker tag $REPO:$COMMIT $REPO:$TAG
-  - docker tag $REPO:$COMMIT $REPO:travis-$TRAVIS_BUILD_NUMBER
+  - cd app && docker build -t $REPO:$TAG .
+  # Run twice to workaround failure on first build
+  - cd app && docker build -t $REPO:$TAG .
   - docker push $REPO
 env:
   global:
