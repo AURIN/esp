@@ -14,7 +14,7 @@ after_success:
   - npm run docs
   - docker login -e $DOCKER_EMAIL -u $DOCKER_USER -p $DOCKER_PASS
   - export REPO=urbanetic/aurin-esp
-  - export TAG=`if [ "$TRAVIS_BRANCH" == "master" ]; then echo "latest"; else echo $TRAVIS_BRANCH ; fi`
+  - export TAG=`if [ "$TRAVIS_BRANCH" == "master" ]; then echo "latest"; else echo $TRAVIS_BRANCH | sed 's#/#_#g' ; fi`
   - echo "Building Docker image $REPO:$TAG"
   - pushd app
   - docker build -f Dockerfile -t $REPO:$TAG .
