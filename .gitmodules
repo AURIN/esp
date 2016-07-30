@@ -10,12 +10,6 @@
 [submodule "app/packages/meteor-file-upload"]
 	path = app/packages/meteor-file-upload
 	url = https://github.com/aramk/meteor-file-upload.git
-[submodule "app/packages/atlas"]
-	path = app/packages/atlas
-	url=https://github.com/urbanetic/atlas.git
-[submodule "app/packages/atlas-cesium"]
-	path = app/packages/atlas-cesium
-	url=https://github.com/urbanetic/atlas-cesium.git
 [submodule "app/packages/meteor-atlas-util"]
 	path = app/packages/meteor-atlas-util
 	url = https://github.com/urbanetic/meteor-atlas-util.git
