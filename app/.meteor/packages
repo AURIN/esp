@@ -30,6 +30,7 @@ underscore@1.0.9
 awatson1978:dropzone
 cfs:http-methods
 digilord:roles
+fabienb4:autoform-semantic-ui
 iron:router
 meteorhacks:npm
 # meteorhacks:kadira

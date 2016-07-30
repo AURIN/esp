@@ -4,6 +4,8 @@ Meteor.startup ->
   # Used to remove loaders during debugging in the browser.
   window.hideLoaders = -> $('.loader').hide()
 
+  AutoForm.setDefaultTemplate('semanticUI')
+
   Notifications.config
     Logger:
       level: 'error'

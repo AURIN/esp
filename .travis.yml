@@ -7,7 +7,6 @@ services:
 
 before_install: npm install -g grunt-cli bower@1.7.9
 install: npm install
-before_script: npm run build
 script: echo "Nothing to test"
 
 after_success:
