@@ -13,9 +13,6 @@
 [submodule "app/packages/meteor-atlas-util"]
 	path = app/packages/meteor-atlas-util
 	url = https://github.com/urbanetic/meteor-atlas-util.git
-[submodule "app/packages/subdiv"]
-	path = app/packages/subdiv
-	url = https://github.com/urbanetic/subdiv.git
 [submodule "app/packages/vega-charts"]
 	path = app/packages/vega-charts
 	url = https://github.com/aramk/vega-charts.git
