@@ -10,10 +10,6 @@
     "start": "grunt meteor",
     "postinstall": "grunt install",
     "update": "git submodule update --init",
-    "build": "npm install && npm run buildAtlas && npm run buildAtlasCesium && npm run buildSubdiv",
-    "buildAtlas": "cd app/packages/atlas && npm run buildDev",
-    "buildAtlasCesium": "cd app/packages/atlas-cesium && npm run buildDev",
-    "buildSubdiv": "cd app/packages/subdiv && npm run build",
     "buildMeteor": "npm run build && grunt build",
     "docs": "grunt docs"
   },

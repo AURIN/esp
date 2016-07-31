@@ -16,7 +16,7 @@ Install [Meteor](https://www.meteor.com/):
 
 Run the following:
 
-	$ npm run build
+	$ npm install
 
 ## Running
 
