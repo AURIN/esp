@@ -1,9 +1,32 @@
 sudo: required
 language: node_js
 node_js:
-  - '0.11'
+  - '0.10'
 services:
   - docker
+
+before_install: npm install -g grunt-cli bower@1.7.9
+install: npm install
+
+script:
+  - echo "Nothing to test"
+  - export REPO=urbanetic/aurin-esp
+  - ./buildDocker.sh
+  - docker push $REPO
+
+after_success:
+  - npm run docs
+
+cache:
+  apt: true
+  directories:
+    # User specific directories.
+    - $HOME/.npm
+    - $HOME/.cache/bower
+    # Project directories.
+    - node_modules
+    - bower-components
+
 env:
   global:
     - secure: WmKPI/+e80p366je8ZFOHLsh7nz/U19pJpAgAtUtDqgxKW/ROpabFAoW9QsG0VeVtME5stlQ1DTdzHtCdDx4kEGwOQNBzESvLPIPsfM9fqN/nzfW/HxwqD6QVXD+zcNt9jgzzlJ1rrh/EFj3VAUxr6GpT9KrO3Sir9gVHT2tM3k=
@@ -15,30 +38,3 @@ env:
     - secure: S0l5lJhxwX2VKYNUrRydnroJeFpTrxVl6x797jG8NEs5HDs/yWChyBINsN9y20/oAVDL04M1snP/EHr4CGnF0mrEWYlFSrMOii0qSqDD3pL8S3OEUPOB/ZsoQbmkV71GryvZ+3L0B4Uoseu2iLC58CnvhqX+jvQ6RsWFTX3p3Dw=
     - secure: dHaZMxgyQw2M39gnet6QKO21GLQMIFQHZx/xKymMDs1EzP+2KSaP2j9WufeffpWvheAwqOgH19xhJRi5RGV/pOLZADJbsitjcS3SMfX+diy9DBU1cSOB++ypSn8mbtcIQZOw0BDBXQgIbbyUfGKOfMrPDx2vFu52GMp+CxY2R0o=
     - COMMIT=${TRAVIS_COMMIT::8}
-
-before_install: npm install -g grunt-cli bower@1.7.9
-install: npm install
-script: echo "Nothing to test"
-
-after_success:
-  - npm run docs
-  - docker login -e $DOCKER_EMAIL -u $DOCKER_USER -p $DOCKER_PASS
-  - export REPO=urbanetic/aurin-esp
-  - export TAG=`if [ "$TRAVIS_BRANCH" == "master" ]; then echo "latest"; else echo $TRAVIS_BRANCH | sed 's#/#_#g' | tr '[:upper:]' '[:lower:]' ; fi`
-  - echo "Building Docker image $REPO:$TAG"
-  - pushd app
-  - docker build -f Dockerfile -t $REPO:$TAG .
-  # Build twice to work around Meteor build issue
-  - docker build -f Dockerfile -t $REPO:$TAG .
-  - popd
-  - docker push $REPO
-
-cache:
-  apt: true
-  directories:
-    # User specific directories.
-    - $HOME/.npm
-    - $HOME/.cache/bower
-    # Project directories.
-    - node_modules
-    - bower-components

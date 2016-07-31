@@ -10,7 +10,8 @@
     "start": "grunt meteor",
     "postinstall": "grunt install",
     "update": "git submodule update --init",
-    "buildMeteor": "npm run build && grunt build",
+    "buildMeteor": "grunt build",
+    "buildDocker": "./buildDocker.sh",
     "docs": "grunt docs"
   },
   "devDependencies": {
