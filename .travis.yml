@@ -11,6 +11,7 @@ install: npm install
 script:
   - echo "Nothing to test"
   - export REPO=urbanetic/aurin-esp
+  - docker login -e $DOCKER_EMAIL -u $DOCKER_USER -p $DOCKER_PASS
   - ./buildDocker.sh
   - docker push $REPO
 
