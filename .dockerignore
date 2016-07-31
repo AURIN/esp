@@ -1,0 +1,6 @@
+# Don't copy local Meteor build files.
+/app/.meteor/local
+
+# Ignore .npm directories in packages to avoid build error:
+# Error: EXDEV, cross-device link not permitted '/opt/src/packages/<some package>/.npm/package'
+/app/**/.npm
