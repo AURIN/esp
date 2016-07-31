@@ -6,7 +6,46 @@ application.
 
 ## Build
 
-    docker build -t esp .
+ESP is a Meteor app, so to deploy it you should use the Meteor toolchain to build a bundled Node.js
+app:
+
+    npm run buildMeteor
+
+Even easier to deploy than Node.js is Docker. You can build an ESP Docker image with:
+
+    npm run buildDocker
+
+Note that this will run `meteor build` in an `ONBUILD` step, so it may take a few minutes.
+
+Once built, push the image to a Docker registry with `docker push` to make it available for
+deployment.
+
+
+## Deploy
+
+[Docker][docker] is the recommended tool for simple, declarative, repeatable deployments. Once you
+build a Docker image of ESP (as described above), you can choose to deploy the image as a Docker
+container in one of the following ways:
+
+* Standalone: SSH into your chosen server, set the required environment variables, and simply
+  [`docker run`][drun] the image.
+* Compose: run [`docker-compose up`][dc] to start and link multiple Docker containers with
+  pre-configured environment variables.
+* Docker Cloud: forget about managing servers, simply upload a [Stackfile][stack] (much like a
+  `docker-compose.yml` file) and upload it to Docker Cloud. Connect Docker Cloud to one or more
+  nodes (EC2, DigitalOcean or bring your own with the Docker Cloud agent) and deploy the stack on
+  the node by clicking a few buttons.
+
+Other deployment targets include:
+
+* Local: `grunt deploy:local`
+* Meteor: `grunt deploy:meteor`
+* Heroku: `grunt deploy:heroku`
+* Modulus: `grunt deploy:modulus`
+
+No matter how the app is deployed, it will require configuration provided in the form of environment
+variables.
+
 
 ## Configuration
 
@@ -32,14 +71,8 @@ The ESP app is primarily configured through the environment variables described 
 | CATALYST_SERVER_AUTH_HEADER   | The authentication header to send to Catalyst |
 | CATALYST_USERNAME             | The username with which to access Catalyst    |
 | CATALYST_PASSWORD             | The password with which to access Catalyst    |
+| ----------------------------- | --------------------------------------------- |
 
-## Deploy
-
-
-
-Other deployment targets include:
-
-* Local: `grunt deploy:local`
-* Meteor: `grunt deploy:meteor`
-* Heroku: `grunt deploy:heroku`
-* Modulus: `grunt deploy:modulus`
+[docker]: https://www.docker.com/
+[drun]: https://docs.docker.com/engine/reference/run/
+[dc]: https://docs.docker.com/compose/overview/

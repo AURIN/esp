@@ -16,5 +16,6 @@ pages:
 
 - ['tech/development.md', 'Development']
 - ['tech/operations.md', 'Operations']
+- ['tech/docker_cloud.md', 'Docker Cloud Walkthrough']
 
 - ['license.md', 'License']
