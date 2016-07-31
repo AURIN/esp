@@ -33,8 +33,3 @@ env:
     - secure: gjhllqeNOCgp9UyDPNX9apnyQ7ikyJcR3+SDiGchfAvgUiUMuVfazb+YlvEo3jcg3iN2SOXjfgALVL1d+ieXrHYvzvOwJk5vo+Tfq36WkJmvcT5BWSk4xyXCzjkpOcqutsmCSXQIRzN4fNatZwTR2p0QbAKiZfcjSc4s60vfsUw=
     - secure: FkqxXIaZJMZsDrvWzhIY2atJf/Fdnf0FdNqFnYaP0TzqSse8RuLHbQWWoDmgfWZqOYGyg9uD7qUIBl1+qCUf/s1mQBgW6zkz+eqqrcM1WzJUjNiMdwUNJhHX7FD6uN1ofxgaJ1k6xSSmvsF+XWNWOWe4Co1mM/Cn0XMrLUEXdks=
     - COMMIT=${TRAVIS_COMMIT::8}
-    # Aram
-    - secure: Khzo2xwOnc5HXwmqFnjMQmlhIdFvb/5MbVMdhd3cWSu/K+izyjS4WVCT+WVnoHPmFSLqKlnxvz2AGs3TFeaWuJO1gM4mZHpkTHfKJNgn58JkgEGUlU9xmfBEiBwZ0rFDhTV2llPEMIYaryv/mbsUjEBvqY0krJGbf3Xm4pWIc/Q=
-    - secure: S0l5lJhxwX2VKYNUrRydnroJeFpTrxVl6x797jG8NEs5HDs/yWChyBINsN9y20/oAVDL04M1snP/EHr4CGnF0mrEWYlFSrMOii0qSqDD3pL8S3OEUPOB/ZsoQbmkV71GryvZ+3L0B4Uoseu2iLC58CnvhqX+jvQ6RsWFTX3p3Dw=
-    - secure: dHaZMxgyQw2M39gnet6QKO21GLQMIFQHZx/xKymMDs1EzP+2KSaP2j9WufeffpWvheAwqOgH19xhJRi5RGV/pOLZADJbsitjcS3SMfX+diy9DBU1cSOB++ypSn8mbtcIQZOw0BDBXQgIbbyUfGKOfMrPDx2vFu52GMp+CxY2R0o=
-    - COMMIT=${TRAVIS_COMMIT::8}
