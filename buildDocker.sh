@@ -5,10 +5,11 @@ set -e
 export REPO=urbanetic/aurin-esp
 export VERSION=$(node -p -e "require('./package.json').version")
 if [ "$TRAVIS_BRANCH" != "" ]; then
-    export BRANCH=$TRAVIS_BRANCH
+    BRANCH=$TRAVIS_BRANCH
 else
-    export BRANCH=$(git rev-parse --abbrev-ref HEAD | sed 's#/#_#g' | tr '[:upper:]' '[:lower:]')
+    BRANCH=$(git rev-parse --abbrev-ref HEAD)
 fi
+BRANCH=$(echo $BRANCH | sed 's#/#_#g' | tr '[:upper:]' '[:lower:]')
 
 cd app
 echo "Building Docker image $REPO:$BRANCH from $(pwd)"
