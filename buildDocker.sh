@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
 
 set -e
+set -x
 
 export REPO=urbanetic/aurin-esp
-export VERSION=$(node -p -e "require('./package.json').version")
 if [ "$TRAVIS_BRANCH" != "" ]; then
     BRANCH=$TRAVIS_BRANCH
 else
@@ -17,7 +17,9 @@ docker build -t $REPO:$BRANCH .
 cd -
 
 if [ "$BRANCH" == "master" ]; then
-    docker tag $REPO:$TAG $REPO:$VERSION
-    docker tag $REPO:$TAG $REPO:latest
-    echo "Also tagged image as $REPO:$VERSION and $REPO:latest"
+    echo "Re-tagging build of master branch:"
+    VERSION=$(node -p -e "require('./package.json').version")
+    docker tag $REPO:$BRANCH $REPO:$VERSION
+    docker tag $REPO:$BRANCH $REPO:latest
+    echo "Tagged image as $REPO:$VERSION and $REPO:latest"
 fi
