@@ -58,9 +58,14 @@ Using Docker Cloud, deploying ESP with all dependent systems is just a matter of
 GUI.
 
 1. Log into [Docker Cloud][dcloud].
-2. Connect one or more nodes to a cluster.
-3. Create a new Stack, and copy in the Stackfile from the repository, replacing the passwords and
+1. Connect one or more nodes to a cluster.
+1. Create a new Stack, and copy in the Stackfile from the repository, replacing the passwords and
    secret keys as necessary.
-4.
+1. In the stack's Actions menu, click Start.
+1. (optional) Edit the created services and add a Deployment Constraint. This provides you control
+   over which nodes the services will be deployed to, and is particularly helpful for BYON (i.e. not
+   automated cluster) configurations.
+1. Click on the `web` service and browse to its **Service Endpoint** on port 80. After the
+   application has finished starting up, you should see the ESP app in the browser.
 
 [dcloud]: https://cloud.docker.com
