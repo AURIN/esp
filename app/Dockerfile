@@ -1,1 +1,1 @@
-FROM urbanetic/meteord:1.4.0.1-onbuild
+FROM urbanetic/meteord:onbuild-1.4.0.1
