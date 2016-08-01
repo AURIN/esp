@@ -1,1 +1,1 @@
-FROM danieldent/meteor:onbuild
+FROM urbanetic/meteord:1.4.0.1-onbuild
