@@ -45,12 +45,22 @@ To build the docker image locally, simply run from the root of the repository:
 
     npm run buildDocker
 
+This will build the Meteor app into a bundled Node.js app, then package that into a Docker image.
 Once it has finished, you can see that it has been created by running:
 
     docker images
 
+ESP's image will be named something like `urbanetic/aurin-esp:develop`.
+
 ## Deploy
 
-Log into [Docker Cloud][dcloud]
+Using Docker Cloud, deploying ESP with all dependent systems is just a matter of clicking around a
+GUI.
+
+1. Log into [Docker Cloud][dcloud].
+2. Connect one or more nodes to a cluster.
+3. Create a new Stack, and copy in the Stackfile from the repository, replacing the passwords and
+   secret keys as necessary.
+4.
 
 [dcloud]: https://cloud.docker.com

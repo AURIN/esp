@@ -1,0 +1,38 @@
+acs:
+  hostname: acs-local
+  image: 'urbanetic/aurin-acs:latest'
+  ports:
+    - '8090'
+mongo:
+  hostname: mongo-local
+  image: 'mongo:3.0'
+  ports:
+    - '27017'
+web:
+  environment:
+    - 'ACS_URL=http://acs:8090'
+    - AURIN_APP_NAME=ESP
+    - 'AURIN_SERVER_URL=https://envision.aurin.org.au/envisionauth'
+    - AWS_ACCESS_KEY_ID=XXX_REPLACE_ME_XXX
+    - AWS_SECRET_ACCESS_KEY=XXX_REPLACE_ME_XXX
+    - CATALYST_USERNAME=XXX_REPLACE_ME_XXX
+    - CATALYST_PASSWORD=XXX_REPLACE_ME_XXX
+    - CATALYST_SERVER_AUTH_HEADER=XXX_REPLACE_ME_XXX
+    - FILES_DIR=0
+    - KADIRA_APP_ID=XXX_REPLACE_ME_XXX
+    - KADIRA_APP_SECRET=XXX_REPLACE_ME_XXX
+    - LOG_LEVEL=debug
+    - METEOR_ADMIN_EMAIL=admin@test.com
+    - METEOR_ADMIN_PASSWORD=XXX_REPLACE_ME_XXX
+    - 'MONGO_URL=mongodb://mongo/envision'
+    - NODE_ENV=production
+    - ROOT_URL=XXX_REPLACE_ME_XXX
+    - S3_BUCKET_NAME=aurin-esp
+    - S3_REGION=us-east-1
+  hostname: esp-dev
+  image: 'urbanetic/aurin-esp:develop'
+  links:
+    - acs
+    - mongo
+  ports:
+    - '80:3000'
