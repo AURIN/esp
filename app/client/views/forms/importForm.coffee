@@ -3,6 +3,8 @@ USE_SERVER = true
 
 Meteor.startup ->
 
+  # Handles importing Lots when populating a project with precinct data.
+
   Form = Forms.defineModelForm
     name: 'importForm'
     collection: Collections.createTemporary()
