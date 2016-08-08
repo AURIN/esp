@@ -6,16 +6,14 @@ site_author: Oliver Lade
 site_favicon: img/favicon.png
 
 pages:
-- ['index.md', 'Introduction']
-- ['features.md', 'Features']
-- ['analysis.md', 'Analysis']
-- ['walkthrough.md', 'Walkthrough']
-#- ['design.md', 'Design']
+- Home: 'index.md'
+- Features: 'features.md'
+- Analysis: 'analysis.md'
+- Walkthrough: 'walkthrough.md'
 
-- ['demo/maroondah.md', 'Demo Sites']
+- Technical:
+  - Development: 'tech/development.md'
+  - Operations: 'tech/operations.md'
+  - 'Docker Cloud Walkthrough': 'tech/docker_cloud.md'
 
-- ['tech/development.md', 'Development']
-- ['tech/operations.md', 'Operations']
-- ['tech/docker_cloud.md', 'Docker Cloud Walkthrough']
-
-- ['license.md', 'License']
+- License: 'license.md'

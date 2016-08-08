@@ -30,6 +30,7 @@ cache:
 
 env:
   global:
+    # Encrypted Docker credentials used above. If you fork ESP, replace these values with your own.
     - secure: WmKPI/+e80p366je8ZFOHLsh7nz/U19pJpAgAtUtDqgxKW/ROpabFAoW9QsG0VeVtME5stlQ1DTdzHtCdDx4kEGwOQNBzESvLPIPsfM9fqN/nzfW/HxwqD6QVXD+zcNt9jgzzlJ1rrh/EFj3VAUxr6GpT9KrO3Sir9gVHT2tM3k=
     - secure: gjhllqeNOCgp9UyDPNX9apnyQ7ikyJcR3+SDiGchfAvgUiUMuVfazb+YlvEo3jcg3iN2SOXjfgALVL1d+ieXrHYvzvOwJk5vo+Tfq36WkJmvcT5BWSk4xyXCzjkpOcqutsmCSXQIRzN4fNatZwTR2p0QbAKiZfcjSc4s60vfsUw=
     - secure: FkqxXIaZJMZsDrvWzhIY2atJf/Fdnf0FdNqFnYaP0TzqSse8RuLHbQWWoDmgfWZqOYGyg9uD7qUIBl1+qCUf/s1mQBgW6zkz+eqqrcM1WzJUjNiMdwUNJhHX7FD6uN1ofxgaJ1k6xSSmvsF+XWNWOWe4Co1mM/Cn0XMrLUEXdks=

@@ -278,6 +278,7 @@ module.exports = function(grunt) {
 
   grunt.registerTask('docs', function() {
     grunt.task.run('docco:docs');
+    shell.exec('mkdocs build');
   });
 
   grunt.registerTask('default', ['install']);
