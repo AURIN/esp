@@ -1,6 +1,6 @@
 # ESP Licensing
 
-The license under which the *ESP* application will be release is yet to be determined.
+*ESP* is released by AURIN and Urbanetic under the Apache 2.0 license.
 
 ## Dependencies
 
@@ -20,6 +20,7 @@ The testing and build process is supported by:
 * [Less][less] CSS pre-processor
 * [Meteor][meteor]
 * [npm][npm] package manager
+* [Travis][travis] continuous integration service
 
 Documentation is compiled using:
 
@@ -39,3 +40,4 @@ Documentation is compiled using:
 [meteor]: https://www.meteor.com/
 [mkdocs]: http://www.mkdocs.org/
 [npm]: https://www.npmjs.org/
+[travis]: https://travis-ci.org/

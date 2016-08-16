@@ -1,35 +1,71 @@
+# The Asset Conversion Service (ACS) converts geospatial data into an Atlas-compatible format.
+# It can be run in its own container, or you can replace it with a URL to a remotely-hosted service.
 acs:
-  hostname: acs-local
+  hostname: acs-dev
   image: 'urbanetic/aurin-acs:latest'
   ports:
     - '8090'
+
+# MongoDB is the Meteor app database, which primarily stores users and project details.
+# It can be run in its own container, or you can replace it with a Mongo DB as a service (e.g. mLab).
 mongo:
-  hostname: mongo-local
+  hostname: mongo-dev
   image: 'mongo:3.0'
   ports:
     - '27017'
+
+# The ESP Web application.
 web:
-  environment:
-    - 'ACS_URL=http://acs:8090'
-    - AURIN_APP_NAME=ESP
-    - 'AURIN_SERVER_URL=https://envision.aurin.org.au/envisionauth'
-    - AWS_ACCESS_KEY_ID=XXX_REPLACE_ME_XXX
-    - AWS_SECRET_ACCESS_KEY=XXX_REPLACE_ME_XXX
-    - FILES_DIR=0
-    - KADIRA_APP_ID=XXX_REPLACE_ME_XXX
-    - KADIRA_APP_SECRET=XXX_REPLACE_ME_XXX
-    - LOG_LEVEL=debug
-    - METEOR_ADMIN_EMAIL=admin@test.com
-    - METEOR_ADMIN_PASSWORD=XXX_REPLACE_ME_XXX
-    - 'MONGO_URL=mongodb://mongo/envision'
-    - NODE_ENV=production
-    - ROOT_URL=XXX_REPLACE_ME_XXX
-    - S3_BUCKET_NAME=aurin-esp
-    - S3_REGION=us-east-1
   hostname: esp-dev
   image: 'urbanetic/aurin-esp:develop'
+
+  # Restart on failure
+  restart: always
+  # Redeploy when a new build is available
+  autoredeploy: true
+
+  environment:
+    # Constants
+    - AURIN_APP_NAME=ESP
+    - FILES_DIR=0
+    - LOG_LEVEL=debug
+    - NODE_ENV=production
+
+    # Internal services
+    # Default admin username and password to login with. Should be changed for security.
+    - METEOR_ADMIN_EMAIL=XXXXXXXXXX
+    - METEOR_ADMIN_PASSWORD=XXXXXXXXXX
+    # If running your own ACS container, it can be addressed with hostname "acs".
+    # If using a remotely-hosted ACS instance, set this to the URL of the service.
+    # To use the instance hosted by Urbanetic, set this to http://acs.urbanetic.net/
+    - 'ACS_URL=http://acs:8090'
+    # If running your own MongoDB container, it can be addressed with hostname "mongo".
+    # If using a DBaaS, set this to the provided URL.
+    - 'MONGO_URL=mongodb://mongo/envision'
+    # Set this to the DNS CNAME at which your ESP service is hosted.
+    - 'ROOT_URL=XXXXXXXXXX'
+
+    # External services
+    # AURIN authentication server
+    - 'AURIN_SERVER_URL=https://envision.aurin.org.au/envisionauth'
+    # AWS access credentials
+    - AWS_ACCESS_KEY_ID=XXXXXXXXXX
+    - AWS_SECRET_ACCESS_KEY=XXXXXXXXXX
+    # AWS S3 configuration
+    - S3_BUCKET_NAME=XXXXXXXXXX
+    - S3_REGION=us-east-1
+    # Catalyst server credentials
+    - CATALYST_USERNAME=XXXXXXXXXX
+    - CATALYST_PASSWORD=XXXXXXXXXX
+    - CATALYST_SERVER_AUTH_HEADER=XXXXXXXXXX
+    # Kadira project credentials
+    - KADIRA_APP_ID=XXXXXXXXXX
+    - KADIRA_APP_SECRET=XXXXXXXXXX
+
   links:
     - acs
     - mongo
   ports:
-    - '80:3000'
+    - '80:80'
+  tags:
+    - aurin
