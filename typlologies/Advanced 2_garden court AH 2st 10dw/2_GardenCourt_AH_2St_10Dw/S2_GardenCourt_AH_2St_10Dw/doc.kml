@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no" ?>
+<kml xmlns="http://www.opengis.net/kml/2.2" xmlns:gx="http://www.google.com/kml/ext/2.2">
+
+  <Folder>
+    <name>S2_GardenCourt_AH_2St_10Dw</name>
+    <description>Created with &lt;a href="http://sketchup.com"&gt;SketchUp&lt;/a&gt;</description>
+    <visibility>1</visibility>
+    <LookAt>
+      <longitude>115.893883299999970000</longitude> 
+      <latitude>-32.070959800000000000</latitude>
+      <altitude>100</altitude> 
+      <range>100</range>
+      <tilt>0</tilt>
+      <heading>-40</heading>
+    </LookAt>
+    <Folder>
+      <name>Tour</name>
+      <Placemark>
+        <name>Scene 1</name>
+        <visibility>1</visibility>
+        <LookAt>
+          <longitude>115.893883299999970000</longitude> 
+          <latitude>-32.070959800000000000</latitude>
+          <altitude>100</altitude> 
+          <range>100</range>
+          <tilt>0</tilt>
+          <heading>0</heading>
+        </LookAt>
+      </Placemark>
+    </Folder>
+    <Placemark>
+      <name>Model</name>
+      <description></description>
+      <Style id="default"/>
+      <Model>
+        <altitudeMode>relativeToGround</altitudeMode>
+        <Location>
+          <longitude>115.893883299999970000</longitude> 
+          <latitude>-32.070959800000000000</latitude>
+	    <altitude>0</altitude> 
+        </Location>
+        <Orientation>
+          <heading>0</heading> 
+          <tilt>0</tilt>
+          <roll>0</roll>
+        </Orientation>
+        <Scale>
+          <x>1</x>
+          <y>1</y>
+          <z>1</z>
+        </Scale>
+        <Link>
+          <href>mesh/S2_GardenCourt_AH_2St_10Dw.dae</href>
+        </Link>
+      </Model>
+    </Placemark>
+  </Folder>
+
+</kml>
